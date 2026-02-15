@@ -1,0 +1,1206 @@
+/*
+ * MyFantasyLeague Custom CSS - College Football Playoff Theme
+ * Inspired by collegefootballplayoff.com
+ *
+ * Upload this to your MFL site via:
+ * Commissioner > Site Setup > CSS Stylesheet
+ * Or reference via Custom HTML Header
+ */
+
+/* ============================================================================
+   CSS VARIABLES - CFP BRAND COLORS
+   ============================================================================ */
+:root {
+  /* Primary CFP Colors */
+  --cfp-gold: #c9920e;
+  --cfp-gold-light: #daa520;
+  --cfp-gold-dark: #a67c00;
+  --cfp-gold-hover: #b8860b;
+
+  /* Neutral Colors */
+  --cfp-white: #ffffff;
+  --cfp-off-white: #f8f9fa;
+  --cfp-light-gray: #e9ecef;
+  --cfp-medium-gray: #6c757d;
+  --cfp-dark-gray: #343a40;
+  --cfp-black: #1a1a1a;
+
+  /* Accent Colors */
+  --cfp-success: #28a745;
+  --cfp-danger: #dc3545;
+  --cfp-info: #17a2b8;
+
+  /* Typography */
+  --font-primary: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'Georgia', 'Times New Roman', serif;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Borders */
+  --border-radius: 4px;
+  --border-color: #dee2e6;
+}
+
+/* ============================================================================
+   GLOBAL STYLES
+   ============================================================================ */
+body {
+  font-family: var(--font-primary);
+  background-color: var(--cfp-off-white);
+  color: var(--cfp-black);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--cfp-gold-dark);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--cfp-gold);
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   HEADER & NAVIGATION
+   ============================================================================ */
+/* Main header bar */
+#header,
+.header,
+#mfl_header,
+.mfl-header {
+  background: linear-gradient(135deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
+  color: var(--cfp-white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#header a,
+.header a,
+#mfl_header a,
+.mfl-header a {
+  color: var(--cfp-white);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#header a:hover,
+.header a:hover {
+  color: var(--cfp-off-white);
+  text-decoration: none;
+}
+
+/* Navigation menu */
+#nav,
+.nav,
+#navigation,
+.navigation,
+.menu,
+#menu {
+  background-color: var(--cfp-black);
+  padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+#nav a,
+.nav a,
+.menu a,
+#menu a {
+  color: var(--cfp-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: inline-block;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+#nav a:hover,
+.nav a:hover,
+.menu a:hover,
+#menu a:hover {
+  color: var(--cfp-gold);
+  border-bottom-color: var(--cfp-gold);
+  text-decoration: none;
+  background-color: rgba(201, 146, 14, 0.1);
+}
+
+/* Dropdown menus */
+.dropdown-menu,
+.submenu {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--border-radius);
+}
+
+.dropdown-menu a,
+.submenu a {
+  color: var(--cfp-black) !important;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.dropdown-menu a:hover,
+.submenu a:hover {
+  background-color: var(--cfp-gold);
+  color: var(--cfp-white) !important;
+}
+
+/* ============================================================================
+   PAGE TITLES & HEADINGS
+   ============================================================================ */
+h1, h2, h3, h4, h5, h6,
+.title,
+.page-title,
+#page_title {
+  font-family: var(--font-heading);
+  color: var(--cfp-black);
+  margin-bottom: var(--spacing-md);
+}
+
+h1, .page-title, #page_title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  border-bottom: 4px solid var(--cfp-gold);
+  padding-bottom: var(--spacing-sm);
+  display: inline-block;
+}
+
+h2 {
+  font-size: 1.75rem;
+  color: var(--cfp-gold-dark);
+}
+
+h3 {
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Section headers with gold accent */
+.section-header,
+.module-header,
+.box-header {
+  background: linear-gradient(90deg, var(--cfp-gold) 0%, var(--cfp-gold-light) 100%);
+  color: var(--cfp-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+/* ============================================================================
+   TABLES - STANDINGS, SCORES, ROSTERS
+   ============================================================================ */
+table,
+.report,
+.standings,
+.scoreboard {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--cfp-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Table headers */
+th,
+thead td,
+.header-row td,
+tr.header td {
+  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
+  color: var(--cfp-white);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 2px solid var(--cfp-gold-dark);
+}
+
+/* Table cells */
+td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--cfp-light-gray);
+  vertical-align: middle;
+}
+
+/* Alternating row colors */
+tr:nth-child(even),
+.even {
+  background-color: var(--cfp-off-white);
+}
+
+tr:nth-child(odd),
+.odd {
+  background-color: var(--cfp-white);
+}
+
+/* Row hover effect */
+tbody tr:hover,
+tr.datarow:hover {
+  background-color: rgba(201, 146, 14, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+/* Rank column styling */
+td:first-child,
+.rank,
+.position {
+  font-weight: 700;
+  color: var(--cfp-gold-dark);
+  text-align: center;
+  width: 50px;
+}
+
+/* ============================================================================
+   STANDINGS - POWER RANKINGS STYLE
+   ============================================================================ */
+.standings .rank,
+.power-rankings .rank {
+  background-color: var(--cfp-gold);
+  color: var(--cfp-white);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Top 4 special styling (playoff teams) */
+tr:nth-child(-n+4) .rank,
+.top-4 .rank {
+  background-color: var(--cfp-gold);
+  box-shadow: 0 2px 4px rgba(201, 146, 14, 0.4);
+}
+
+/* Movement indicators */
+.movement-up,
+.arrow-up {
+  color: var(--cfp-success);
+  font-weight: 700;
+}
+
+.movement-down,
+.arrow-down {
+  color: var(--cfp-danger);
+  font-weight: 700;
+}
+
+.movement-none,
+.arrow-none {
+  color: var(--cfp-medium-gray);
+}
+
+/* ============================================================================
+   MATCHUP / SCOREBOARD CARDS
+   ============================================================================ */
+.matchup,
+.game,
+.scoreboard-game,
+.matchup-card {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.matchup:hover,
+.game:hover,
+.matchup-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Game of the Week / Featured matchup */
+.featured-game,
+.game-of-week,
+.college-gameday {
+  border: 3px solid var(--cfp-gold);
+  background: linear-gradient(135deg, rgba(201, 146, 14, 0.05) 0%, var(--cfp-white) 100%);
+}
+
+.featured-game::before,
+.college-gameday::before {
+  content: "GAME OF THE WEEK";
+  display: block;
+  background-color: var(--cfp-gold);
+  color: var(--cfp-white);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin: calc(var(--spacing-md) * -1);
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+/* Team names in matchups */
+.team-name,
+.franchise-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--cfp-black);
+}
+
+/* Scores */
+.score,
+.points {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--cfp-black);
+}
+
+.winning-score {
+  color: var(--cfp-gold-dark);
+}
+
+.losing-score {
+  color: var(--cfp-medium-gray);
+}
+
+/* VS divider */
+.vs,
+.at {
+  color: var(--cfp-medium-gray);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: var(--spacing-sm) 0;
+}
+
+/* ============================================================================
+   BUTTONS & LINKS
+   ============================================================================ */
+button,
+.button,
+.btn,
+input[type="submit"],
+input[type="button"] {
+  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
+  color: var(--cfp-white);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:hover,
+.button:hover,
+.btn:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+  background: linear-gradient(180deg, var(--cfp-gold-light) 0%, var(--cfp-gold) 100%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Secondary/outline button */
+.btn-secondary,
+.button-secondary {
+  background: transparent;
+  border: 2px solid var(--cfp-gold);
+  color: var(--cfp-gold-dark);
+}
+
+.btn-secondary:hover,
+.button-secondary:hover {
+  background: var(--cfp-gold);
+  color: var(--cfp-white);
+}
+
+/* ============================================================================
+   FORMS & INPUTS
+   ============================================================================ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  border: 2px solid var(--cfp-light-gray);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 14px;
+  border-radius: var(--border-radius);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cfp-gold);
+  box-shadow: 0 0 0 3px rgba(201, 146, 14, 0.2);
+  outline: none;
+}
+
+/* ============================================================================
+   CARDS & MODULES
+   ============================================================================ */
+.card,
+.module,
+.box,
+.panel {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+}
+
+.card-body,
+.module-body,
+.box-body,
+.panel-body {
+  padding: var(--spacing-md);
+}
+
+/* ============================================================================
+   CONFERENCE BADGES
+   ============================================================================ */
+.conference,
+.conf-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Conference-specific colors (customize as needed) */
+.conf-acc { background-color: #013ca6; color: white; }
+.conf-b10, .conf-big10 { background-color: #0088ce; color: white; }
+.conf-b12, .conf-big12 { background-color: #ef3340; color: white; }
+.conf-p12, .conf-pac12 { background-color: #004c54; color: white; }
+.conf-sec { background-color: #ffd046; color: #14213d; }
+.conf-aac { background-color: #c8102e; color: white; }
+.conf-mwc { background-color: #00205b; color: white; }
+.conf-mac { background-color: #003466; color: white; }
+.conf-cusa { background-color: #00205b; color: white; }
+.conf-sun { background-color: #f4aa00; color: black; }
+.conf-ind { background-color: #333333; color: white; }
+
+/* ============================================================================
+   PLAYOFF BRACKET STYLING
+   ============================================================================ */
+.bracket,
+.playoff-bracket {
+  background-color: var(--cfp-off-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+}
+
+.bracket-game,
+.bracket-matchup {
+  background-color: var(--cfp-white);
+  border: 2px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm);
+  margin: var(--spacing-sm) 0;
+}
+
+.bracket-winner {
+  border-color: var(--cfp-gold);
+  background: linear-gradient(135deg, rgba(201, 146, 14, 0.1) 0%, var(--cfp-white) 100%);
+}
+
+.bracket-seed {
+  background-color: var(--cfp-gold);
+  color: var(--cfp-white);
+  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  margin-right: var(--spacing-sm);
+}
+
+/* Championship styling */
+.championship,
+.finals {
+  border: 3px solid var(--cfp-gold);
+  box-shadow: 0 4px 16px rgba(201, 146, 14, 0.3);
+}
+
+.championship::before {
+  content: "NATIONAL CHAMPIONSHIP";
+  display: block;
+  background: linear-gradient(90deg, var(--cfp-gold) 0%, var(--cfp-gold-light) 100%);
+  color: var(--cfp-white);
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: var(--spacing-sm);
+  margin: calc(var(--spacing-sm) * -1);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================================================
+   ROSTER / PLAYER LIST
+   ============================================================================ */
+.roster,
+.player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.player,
+.roster-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--cfp-light-gray);
+  transition: background-color 0.2s ease;
+}
+
+.player:hover,
+.roster-item:hover {
+  background-color: rgba(201, 146, 14, 0.05);
+}
+
+.player-position {
+  background-color: var(--cfp-dark-gray);
+  color: var(--cfp-white);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-right: var(--spacing-sm);
+  min-width: 30px;
+  text-align: center;
+}
+
+.player-name {
+  font-weight: 600;
+  flex-grow: 1;
+}
+
+.player-team {
+  color: var(--cfp-medium-gray);
+  font-size: 13px;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+#footer,
+.footer,
+#mfl_footer {
+  background-color: var(--cfp-black);
+  color: var(--cfp-white);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+}
+
+#footer a,
+.footer a {
+  color: var(--cfp-gold);
+}
+
+#footer a:hover,
+.footer a:hover {
+  color: var(--cfp-gold-light);
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+.text-gold { color: var(--cfp-gold); }
+.text-white { color: var(--cfp-white); }
+.text-muted { color: var(--cfp-medium-gray); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.bg-gold { background-color: var(--cfp-gold); color: var(--cfp-white); }
+.bg-dark { background-color: var(--cfp-black); color: var(--cfp-white); }
+.bg-light { background-color: var(--cfp-off-white); }
+
+.font-bold { font-weight: 700; }
+.font-uppercase { text-transform: uppercase; letter-spacing: 1px; }
+
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-md); }
+.mt-3 { margin-top: var(--spacing-lg); }
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-md); }
+.mb-3 { margin-bottom: var(--spacing-lg); }
+
+.p-1 { padding: var(--spacing-sm); }
+.p-2 { padding: var(--spacing-md); }
+.p-3 { padding: var(--spacing-lg); }
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+@media (max-width: 768px) {
+  h1, .page-title {
+    font-size: 1.75rem;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .matchup, .card {
+    padding: var(--spacing-sm);
+  }
+
+  #nav a, .menu a {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 12px;
+  }
+}
+
+/* ============================================================================
+   MFL-SPECIFIC CLASSES & SELECTORS
+   These target the actual HTML classes used by MyFantasyLeague
+   ============================================================================ */
+
+/* --- PAGE STRUCTURE --- */
+.pageheader {
+  background: linear-gradient(135deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
+  padding: var(--spacing-md) var(--spacing-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.pagetitle {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cfp-white);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0;
+  padding: var(--spacing-sm) 0;
+}
+
+.welcome {
+  color: var(--cfp-white);
+  font-size: 14px;
+}
+
+.welcome a {
+  color: var(--cfp-white) !important;
+  text-decoration: underline;
+}
+
+.pagefooter {
+  background-color: var(--cfp-black);
+  color: var(--cfp-white);
+  padding: var(--spacing-lg);
+  text-align: center;
+  font-size: 12px;
+}
+
+.pagefooter a {
+  color: var(--cfp-gold) !important;
+}
+
+.brandlogo {
+  /* Hide or style the MFL logo */
+  opacity: 0.8;
+}
+
+/* --- MILONIC MENU SYSTEM --- */
+#menu0,
+.mmenucontainer {
+  background-color: var(--cfp-black) !important;
+  padding: 0 !important;
+}
+
+.milonictable {
+  background-color: transparent !important;
+}
+
+/* Menu items - inactive state */
+.mainmenuoff {
+  background-color: transparent !important;
+  color: var(--cfp-white) !important;
+  font-family: var(--font-primary) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  padding: 12px 16px !important;
+  border-bottom: 3px solid transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Menu items - hover state */
+.mainmenuon {
+  background-color: rgba(201, 146, 14, 0.15) !important;
+  color: var(--cfp-gold) !important;
+  font-family: var(--font-primary) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  padding: 12px 16px !important;
+  border-bottom: 3px solid var(--cfp-gold) !important;
+}
+
+/* Menu items - current/active page */
+.mainmenucurrent {
+  background-color: var(--cfp-gold) !important;
+  color: var(--cfp-white) !important;
+  font-family: var(--font-primary) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  padding: 12px 16px !important;
+}
+
+/* Submenu dropdown styling */
+.mmenucontainer .mmenucontainer {
+  background-color: var(--cfp-white) !important;
+  border: 1px solid var(--cfp-light-gray) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0 0 var(--border-radius) var(--border-radius) !important;
+}
+
+.mmenucontainer .mmenucontainer .mainmenuoff {
+  color: var(--cfp-black) !important;
+  background-color: var(--cfp-white) !important;
+  border-bottom: none !important;
+  padding: 10px 16px !important;
+}
+
+.mmenucontainer .mmenucontainer .mainmenuon {
+  color: var(--cfp-white) !important;
+  background-color: var(--cfp-gold) !important;
+  border-bottom: none !important;
+}
+
+/* --- MFL TABLES --- */
+.maintable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--cfp-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
+}
+
+.maintable th,
+.maintable thead td {
+  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%) !important;
+  color: var(--cfp-white) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+  padding: 12px 16px !important;
+  text-align: left !important;
+  border: none !important;
+}
+
+.instructiontable {
+  background-color: var(--cfp-off-white);
+  border-left: 4px solid var(--cfp-gold);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* MFL alternating row colors */
+.oddtablerow {
+  background-color: var(--cfp-white) !important;
+}
+
+.oddtablerow:hover {
+  background-color: rgba(201, 146, 14, 0.08) !important;
+}
+
+.eventablerow {
+  background-color: var(--cfp-off-white) !important;
+}
+
+.eventablerow:hover {
+  background-color: rgba(201, 146, 14, 0.12) !important;
+}
+
+.oddtablerow td,
+.eventablerow td {
+  padding: 10px 16px !important;
+  border-bottom: 1px solid var(--cfp-light-gray) !important;
+  vertical-align: middle !important;
+}
+
+/* --- REPORT TABLES (standings, scores, rosters) --- */
+.report {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--cfp-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--spacing-lg);
+}
+
+.report th {
+  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%) !important;
+  color: var(--cfp-white) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+  padding: 12px 16px !important;
+  border: none !important;
+}
+
+.report td {
+  padding: 10px 16px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--cfp-light-gray) !important;
+}
+
+.report tr:hover td {
+  background-color: rgba(201, 146, 14, 0.08) !important;
+}
+
+/* --- LIVE SCORING PAGE --- */
+.pointed {
+  cursor: pointer;
+}
+
+/* Matchup containers */
+table[id^="matchup_"],
+.matchup_table {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+}
+
+/* Team scores in matchups */
+.pointed[style*="font-size:24"] {
+  color: var(--cfp-gold-dark) !important;
+  font-weight: 700 !important;
+}
+
+/* --- STANDINGS PAGE --- */
+/* Rank column in first position */
+.report td:first-child,
+.maintable td:first-child {
+  font-weight: 700;
+  color: var(--cfp-gold-dark);
+  text-align: center;
+  min-width: 40px;
+}
+
+/* Team name links */
+.report a,
+.maintable a {
+  color: var(--cfp-black);
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.report a:hover,
+.maintable a:hover {
+  color: var(--cfp-gold);
+  text-decoration: none;
+}
+
+/* --- ROSTER/PLAYER PAGES --- */
+/* Position badges */
+td[nowrap] {
+  font-weight: 600;
+}
+
+/* Player status indicators */
+img[src*="injury"],
+img[src*="status"] {
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* --- TRANSACTION LOG --- */
+.report[id*="trans"] td:first-child {
+  background-color: var(--cfp-gold);
+  color: var(--cfp-white);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 4px 8px !important;
+  border-radius: 2px;
+  min-width: 60px;
+}
+
+/* --- DRAFT BOARD --- */
+.draftboard td {
+  padding: var(--spacing-sm) !important;
+  text-align: center !important;
+  border: 1px solid var(--cfp-light-gray) !important;
+}
+
+/* Current pick highlight */
+.draftboard td[style*="background"] {
+  border: 2px solid var(--cfp-gold) !important;
+  background: linear-gradient(135deg, rgba(201, 146, 14, 0.2) 0%, var(--cfp-white) 100%) !important;
+}
+
+/* --- MESSAGE BOARD --- */
+.messageboard {
+  background-color: var(--cfp-white);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.messageboard td {
+  padding: var(--spacing-md) !important;
+  border-bottom: 1px solid var(--cfp-light-gray) !important;
+}
+
+/* Message author styling */
+.messageboard td:first-child {
+  background-color: var(--cfp-off-white);
+  border-left: 4px solid var(--cfp-gold);
+  font-weight: 600;
+}
+
+/* --- FORM ELEMENTS --- */
+input.text,
+select.select,
+textarea.textarea {
+  border: 2px solid var(--cfp-light-gray) !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  border-radius: var(--border-radius) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+input.text:focus,
+select.select:focus,
+textarea.textarea:focus {
+  border-color: var(--cfp-gold) !important;
+  box-shadow: 0 0 0 3px rgba(201, 146, 14, 0.2) !important;
+  outline: none !important;
+}
+
+input.button,
+input[type="submit"],
+input[type="button"] {
+  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%) !important;
+  color: var(--cfp-white) !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  font-size: 13px !important;
+  border-radius: var(--border-radius) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+input.button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+  background: linear-gradient(180deg, var(--cfp-gold-light) 0%, var(--cfp-gold) 100%) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* --- FRANCHISE INFO BOXES --- */
+.franchise_info,
+div[id^="franchise_"] {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* --- CHAT/SHOUTBOX --- */
+#shoutbox,
+.chatbox {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+}
+
+#shoutbox .header,
+.chatbox .header {
+  background: var(--cfp-gold);
+  color: var(--cfp-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* --- CONTENT AREA --- */
+#content,
+.content,
+#main,
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+/* --- MFL HPM (Home Page Modules) --- */
+.hpm,
+.homePageModule {
+  background-color: var(--cfp-white);
+  border: 1px solid var(--cfp-light-gray);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+}
+
+.hpm_header,
+.homePageModule .header {
+  background: linear-gradient(90deg, var(--cfp-gold) 0%, var(--cfp-gold-light) 100%);
+  color: var(--cfp-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+.hpm_body,
+.homePageModule .body {
+  padding: var(--spacing-md);
+}
+
+/* --- INJURY/BYE INDICATORS --- */
+.injury,
+.bye {
+  color: var(--cfp-danger);
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.bye {
+  color: var(--cfp-medium-gray);
+}
+
+/* --- WINNING/LOSING INDICATORS --- */
+.winner,
+.winning {
+  color: var(--cfp-success);
+  font-weight: 700;
+}
+
+.loser,
+.losing {
+  color: var(--cfp-danger);
+}
+
+/* --- LINKS WITH ICONS --- */
+a img {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* --- LIVE SCORING PULSE --- */
+.live,
+.in-progress {
+  position: relative;
+}
+
+.live::after,
+.in-progress::after {
+  content: "LIVE";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: var(--cfp-danger);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* --- GLOBAL LINK OVERRIDES --- */
+a:link,
+a:visited {
+  color: var(--cfp-gold-dark);
+}
+
+a:hover,
+a:active {
+  color: var(--cfp-gold);
+}
+
+/* White links in gold/dark backgrounds */
+.pageheader a,
+.mainmenuoff,
+.mainmenuon,
+.mainmenucurrent,
+.hpm_header a,
+.pagefooter a {
+  color: var(--cfp-white) !important;
+}
+
+/* --- PRINT STYLES --- */
+@media print {
+  .pageheader,
+  .pagefooter,
+  #menu0,
+  .mmenucontainer {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .maintable,
+  .report {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}

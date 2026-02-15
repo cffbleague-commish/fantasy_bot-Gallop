@@ -1,0 +1,1000 @@
+Year,Pick,Conference,School,School ID,Player,Player ID,Position,Rebate,Years Retained,Rebate Amount,Adjusted Rebate,Proj. Score,Proj. Star Ranking,Recruited in Auction,Recruited,Final Auction
+2021,1.01,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Breece Hall,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f64cc98c-2e0e-41e9-ae36-a0bb0824b87b",RB,$20,,$20,,84.29,⭐⭐⭐⭐⭐,FALSE,☐,
+2021,1.02,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Isaiah Spiller,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5aaf79d5-6935-4ccd-91fb-16beccec2a1e",RB,$20,,$20,,38.70,⭐⭐⭐,FALSE,☐,
+2021,1.03,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,David Bell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5d7478d9-b0b8-44d4-b700-cc540f4ceb47",WR,$20,0,$20,$20,38.90,⭐⭐⭐,TRUE,☑,$61
+2021,1.04,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Malik Willis,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/c8206738-de72-4c2c-a89e-bdda7e1f6eaa",QB,$20,0,$20,$20,42.33,⭐⭐⭐⭐,TRUE,☑,$30
+2021,1.05,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,Garrett Wilson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e65e7a57-c1eb-4bdd-9a98-78ba2b8814e6",WR,$20,0,$20,$20,59.00,⭐⭐⭐⭐,TRUE,☑,$71
+2021,1.06,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,,,,,,,,,,FALSE,☐,
+2021,1.07,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,George Pickens,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/1ff0c137-5596-4a85-8b2f-c0af6f118d80",WR,$20,0,$20,$20,43.33,⭐⭐⭐⭐,TRUE,☑,$60
+2021,1.08,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,,,,,,,,,,FALSE,☐,
+2021,1.09,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Kyren Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4430737.png&w=350&h=254,RB,$20,0,$20,$20,31.70,⭐⭐⭐,TRUE,☑,$25
+2021,1.10,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Treylon Burks,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/9afda040-d35e-45b5-825c-8b0dd9db3442",WR,$20,0,$20,$20,60.33,⭐⭐⭐⭐,TRUE,☑,$91
+2021,1.11,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,,,,,,,,,,FALSE,☐,
+2021,1.12,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Zamir White,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/cee63aa5-356f-4a1a-9707-572985d3fbcb",RB,$20,0,$20,$20,38.40,⭐⭐⭐,TRUE,☑,$40
+2021,1.13,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Jahan Dotson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3edadca7-593c-46f3-9dcb-715938c37f42",WR,$20,0,$20,$20,44.00,⭐⭐⭐⭐,TRUE,☑,$47
+2021,1.14,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Chris Olave,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/d2d8f781-91aa-42fd-9a20-18be1174daec",WR,$20,,$20,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2021,1.15,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,,,,,,,,,,FALSE,☐,
+2021,1.16,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Justyn Ross,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f9f2330a-5bc7-4396-a81b-993398e75e5a",WR,$20,0,$20,$8,34.00,⭐⭐⭐,TRUE,☑,$8
+2021,1.01,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Isaiah Spiller,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5aaf79d5-6935-4ccd-91fb-16beccec2a1e",RB,$20,,$20,,38.70,⭐⭐⭐,FALSE,☐,
+2021,1.02,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,Breece Hall,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f64cc98c-2e0e-41e9-ae36-a0bb0824b87b",RB,$20,,$20,,84.29,⭐⭐⭐⭐⭐,FALSE,☐,
+2021,1.03,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,,,,,,,,,,FALSE,☐,
+2021,1.04,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Justyn Ross,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f9f2330a-5bc7-4396-a81b-993398e75e5a",WR,$20,0,$20,$5,34.00,⭐⭐⭐,TRUE,☑,$5
+2021,1.05,SEC,Memphis Tigers,https://imgur.com/MAKX6NL.png,Garrett Wilson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e65e7a57-c1eb-4bdd-9a98-78ba2b8814e6",WR,$20,,$20,,59.00,⭐⭐⭐⭐,FALSE,☐,
+2021,1.06,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Treylon Burks,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/9afda040-d35e-45b5-825c-8b0dd9db3442",WR,$20,0,$20,$20,60.33,⭐⭐⭐⭐,TRUE,☑,$115
+2021,1.07,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,,,,,,,,,,FALSE,☐,
+2021,1.08,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,CJ Verdell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/7063103a-214a-4091-8d0c-cb323c4fd9b1",RB,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2021,1.09,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,David Bell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5d7478d9-b0b8-44d4-b700-cc540f4ceb47",WR,$20,,$20,,38.90,⭐⭐⭐,FALSE,☐,
+2021,1.10,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Malik Willis,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/c8206738-de72-4c2c-a89e-bdda7e1f6eaa",QB,$20,0,$20,$20,42.33,⭐⭐⭐⭐,TRUE,☑,$22
+2021,1.11,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Matt Corral,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3c57b2e3-2d13-4b7a-90da-0ba5830a811c",QB,$20,0,$20,$20,39.40,⭐⭐⭐,TRUE,☑,$30
+2021,1.12,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Chris Olave,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/d2d8f781-91aa-42fd-9a20-18be1174daec",WR,$20,,$20,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2021,1.13,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Carson Strong,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/8d894b90-3631-4824-aa4d-4c35a9a186f6",QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2021,1.14,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,Max Borghi,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5a178450-e985-4f49-867b-f9da97f5f99f",RB,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2021,1.15,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,John Metchie,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/ca63312e-7333-4b82-bb87-f47e4cfc4ec2",WR,$20,0,$20,$20,39.20,⭐⭐⭐,TRUE,☑,$40
+2021,1.16,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Sam Howell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/93374ba1-77b0-4e36-9b36-2c95de1c272f",QB,$20,0,$20,$9,34.50,⭐⭐⭐,TRUE,☑,$9
+2021,1.01,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Isaiah Spiller,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5aaf79d5-6935-4ccd-91fb-16beccec2a1e",RB,$20,0,$20,$20,38.70,⭐⭐⭐,TRUE,☑,$30
+2021,1.02,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Breece Hall,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f64cc98c-2e0e-41e9-ae36-a0bb0824b87b",RB,$20,0,$20,$20,84.29,⭐⭐⭐⭐⭐,TRUE,☑,$150
+2021,1.03,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,Chris Olave,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/d2d8f781-91aa-42fd-9a20-18be1174daec",WR,$20,0,$20,$20,54.33,⭐⭐⭐⭐,TRUE,☑,$69
+2021,1.04,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Treylon Burks,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/9afda040-d35e-45b5-825c-8b0dd9db3442",WR,$20,,$20,,60.33,⭐⭐⭐⭐,FALSE,☐,
+2021,1.05,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Garrett Wilson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e65e7a57-c1eb-4bdd-9a98-78ba2b8814e6",WR,$20,0,$20,$20,59.00,⭐⭐⭐⭐,TRUE,☑,$66
+2021,1.06,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,,,,,,,,,,FALSE,☐,
+2021,1.07,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,David Bell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5d7478d9-b0b8-44d4-b700-cc540f4ceb47",WR,$20,,$20,,38.90,⭐⭐⭐,FALSE,☐,
+2021,1.08,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Drake London,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/b187537b-c4ca-465f-8bb1-e654e4236d5e",WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$89
+2021,1.09,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Justyn Ross,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f9f2330a-5bc7-4396-a81b-993398e75e5a",WR,$20,0,$20,$20,34.00,⭐⭐⭐,TRUE,☑,$25
+2021,1.10,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Matt Corral,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3c57b2e3-2d13-4b7a-90da-0ba5830a811c",QB,$20,0,$20,$20,39.40,⭐⭐⭐,TRUE,☑,$32
+2021,1.11,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,,,,,,,,,,FALSE,☐,
+2021,1.12,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Malik Willis,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/c8206738-de72-4c2c-a89e-bdda7e1f6eaa",QB,$20,0,$20,$20,42.33,⭐⭐⭐⭐,TRUE,☑,$41
+2021,1.13,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,,,,,,,,,,FALSE,☐,
+2021,1.14,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Jahan Dotson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3edadca7-593c-46f3-9dcb-715938c37f42",WR,$20,,$20,,44.00,⭐⭐⭐⭐,FALSE,☐,
+2021,1.15,B12,Army Black Knights,https://imgur.com/YusuhUe.png,George Pickens,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/1ff0c137-5596-4a85-8b2f-c0af6f118d80",WR,$20,,$20,,43.33,⭐⭐⭐⭐,FALSE,☐,
+2021,1.16,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,D'Vonte Price,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/86bce3c1-5802-416b-84b7-e4f3a923898c",RB,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2021,1.01,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Isaiah Spiller,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5aaf79d5-6935-4ccd-91fb-16beccec2a1e",RB,$20,0,$20,$20,38.70,⭐⭐⭐,TRUE,☑,$26
+2021,1.02,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,Malik Willis,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/c8206738-de72-4c2c-a89e-bdda7e1f6eaa",QB,$20,0,$20,$20,42.33,⭐⭐⭐⭐,TRUE,☑,$40
+2021,1.03,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,Breece Hall,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f64cc98c-2e0e-41e9-ae36-a0bb0824b87b",RB,$20,0,$20,$20,84.29,⭐⭐⭐⭐⭐,TRUE,☑,$115
+2021,1.04,ACC,UCF Knights,https://imgur.com/Azux1rV.png,Treylon Burks,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/9afda040-d35e-45b5-825c-8b0dd9db3442",WR,$20,0,$20,$20,60.33,⭐⭐⭐⭐,TRUE,☑,$92
+2021,1.05,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Sam Howell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/93374ba1-77b0-4e36-9b36-2c95de1c272f",QB,$20,0,$20,$20,34.50,⭐⭐⭐,TRUE,☑,$21
+2021,1.06,ACC,Charlotte 49ers,https://imgur.com/DTTqJUL.png,,,,,,,,,,FALSE,☐,
+2021,1.07,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Garrett Wilson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e65e7a57-c1eb-4bdd-9a98-78ba2b8814e6",WR,$20,0,$20,$20,59.00,⭐⭐⭐⭐,TRUE,☑,$106
+2021,1.08,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,John Metchie,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/ca63312e-7333-4b82-bb87-f47e4cfc4ec2",WR,$20,0,$20,$20,39.20,⭐⭐⭐,TRUE,☑,$31
+2021,1.09,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,Chris Olave,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/d2d8f781-91aa-42fd-9a20-18be1174daec",WR,$20,,$20,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2021,1.10,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,,,,,,,,,,FALSE,☐,
+2021,1.11,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Drake London,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/b187537b-c4ca-465f-8bb1-e654e4236d5e",WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$70
+2021,1.12,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Matt Corral,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3c57b2e3-2d13-4b7a-90da-0ba5830a811c",QB,$20,0,$20,$20,39.40,⭐⭐⭐,TRUE,☑,$31
+2021,1.13,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,David Bell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5d7478d9-b0b8-44d4-b700-cc540f4ceb47",WR,$20,,$20,,38.90,⭐⭐⭐,FALSE,☐,
+2021,1.14,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,Romeo Doubs,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e149b5e5-c950-4bfc-95d3-d1bea3531326",WR,$20,,$20,,27.40,⭐⭐,FALSE,☐,
+2021,1.15,ACC,Miami-FL Hurricanes,https://imgur.com/Lf9WTCK.png,,,,,,,,,,FALSE,☐,
+2021,1.16,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Kyren Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4430737.png&w=350&h=254,RB,$20,0,$20,$5,31.70,⭐⭐⭐,TRUE,☑,$5
+2021,1.01,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Isaiah Spiller,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5aaf79d5-6935-4ccd-91fb-16beccec2a1e",RB,$20,0,$20,$20,38.70,⭐⭐⭐,TRUE,☑,$31
+2021,1.02,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,Breece Hall,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f64cc98c-2e0e-41e9-ae36-a0bb0824b87b",RB,$20,,$20,,84.29,⭐⭐⭐⭐⭐,FALSE,☐,
+2021,1.03,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Matt Corral,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3c57b2e3-2d13-4b7a-90da-0ba5830a811c",QB,$20,,$20,,39.40,⭐⭐⭐,FALSE,☐,
+2021,1.04,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Chris Olave,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/d2d8f781-91aa-42fd-9a20-18be1174daec",WR,$20,0,$20,$20,54.33,⭐⭐⭐⭐,TRUE,☑,$75
+2021,1.05,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Treylon Burks,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/9afda040-d35e-45b5-825c-8b0dd9db3442",WR,$20,0,$20,$20,60.33,⭐⭐⭐⭐,TRUE,☑,$100
+2021,1.06,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,Garrett Wilson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e65e7a57-c1eb-4bdd-9a98-78ba2b8814e6",WR,$20,0,$20,$20,59.00,⭐⭐⭐⭐,TRUE,☑,$98
+2021,1.07,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,Malik Willis,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/c8206738-de72-4c2c-a89e-bdda7e1f6eaa",QB,$20,,$20,,42.33,⭐⭐⭐⭐,FALSE,☐,
+2021,1.08,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,David Bell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5d7478d9-b0b8-44d4-b700-cc540f4ceb47",WR,$20,0,$20,$20,38.90,⭐⭐⭐,TRUE,☑,$30
+2021,1.09,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,,,,,,,,,,FALSE,☐,
+2021,1.10,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,,,,,,,,,,FALSE,☐,
+2021,1.11,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,,,,,,,,,,FALSE,☐,
+2021,1.12,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,,,,,,,,,,FALSE,☐,
+2021,1.13,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Drake London,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/b187537b-c4ca-465f-8bb1-e654e4236d5e",WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$100
+2021,1.14,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Kyren Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4430737.png&w=350&h=254,RB,$20,0,$20,$6,31.70,⭐⭐⭐,TRUE,☑,$6
+2021,1.15,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Sam Howell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/93374ba1-77b0-4e36-9b36-2c95de1c272f",QB,$20,0,$20,$9,34.50,⭐⭐⭐,TRUE,☑,$9
+2021,1.16,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,George Pickens,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/1ff0c137-5596-4a85-8b2f-c0af6f118d80",WR,$20,0,$20,$20,43.33,⭐⭐⭐⭐,TRUE,☑,$70
+2021,1.01,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Malik Willis,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/c8206738-de72-4c2c-a89e-bdda7e1f6eaa",QB,$20,0,$20,$20,42.33,⭐⭐⭐⭐,TRUE,☑,$42
+2021,1.02,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,George Pickens,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/1ff0c137-5596-4a85-8b2f-c0af6f118d80",WR,$20,0,$20,$20,43.33,⭐⭐⭐⭐,TRUE,☑,$72
+2021,1.03,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Isaiah Spiller,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5aaf79d5-6935-4ccd-91fb-16beccec2a1e",RB,$20,0,$20,$20,38.70,⭐⭐⭐,TRUE,☑,$66
+2021,1.04,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Sam Howell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/93374ba1-77b0-4e36-9b36-2c95de1c272f",QB,$20,0,$20,$6,34.50,⭐⭐⭐,TRUE,☑,$6
+2021,1.05,AAC,San Diego State Aztecs,https://imgur.com/Z5c6GkQ.png,Carson Strong,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/8d894b90-3631-4824-aa4d-4c35a9a186f6",QB,$20,0,$20,$5,25.00,⭐⭐,TRUE,☑,$5
+2021,1.06,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Breece Hall,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f64cc98c-2e0e-41e9-ae36-a0bb0824b87b",RB,$20,,$20,,84.29,⭐⭐⭐⭐⭐,FALSE,☐,
+2021,1.07,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Matt Corral,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3c57b2e3-2d13-4b7a-90da-0ba5830a811c",QB,$20,0,$20,$20,39.40,⭐⭐⭐,TRUE,☑,$32
+2021,1.08,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Garrett Wilson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e65e7a57-c1eb-4bdd-9a98-78ba2b8814e6",WR,$20,0,$20,$20,59.00,⭐⭐⭐⭐,TRUE,☑,$80
+2021,1.09,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Treylon Burks,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/9afda040-d35e-45b5-825c-8b0dd9db3442",WR,$20,0,$20,$20,60.33,⭐⭐⭐⭐,TRUE,☑,$82
+2021,1.10,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,,,,,,,,,,FALSE,☐,
+2021,1.11,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,,,,,,,,,,FALSE,☐,
+2021,1.12,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,,,,,,,,,,FALSE,☐,
+2021,1.13,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,David Bell,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/5d7478d9-b0b8-44d4-b700-cc540f4ceb47",WR,$20,,$20,,38.90,⭐⭐⭐,FALSE,☐,
+2021,1.14,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,Chris Olave,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/d2d8f781-91aa-42fd-9a20-18be1174daec",WR,$20,0,$20,$20,54.33,⭐⭐⭐⭐,TRUE,☑,$70
+2021,1.15,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Jahan Dotson,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/3edadca7-593c-46f3-9dcb-715938c37f42",WR,$20,0,$20,$20,44.00,⭐⭐⭐⭐,TRUE,☑,$55
+2021,1.16,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Drake London,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/b187537b-c4ca-465f-8bb1-e654e4236d5e",WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$92
+2021,1.17,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Justyn Ross,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/f9f2330a-5bc7-4396-a81b-993398e75e5a",WR,$20,,$20,,34.00,⭐⭐⭐,FALSE,☐,
+2021,1.18,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,Jalen Wydermyer,"https://static.www.nfl.com/image/private/f_auto,q_85/league/god-combine-headshots/2022/e7bb1ebe-f7e5-4646-bb21-bb89374cd744",TE,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2021,1.19,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Kyren Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4430737.png&w=350&h=254,RB,$20,0,$20,$17,31.70,⭐⭐⭐,TRUE,☑,$17
+2021,1.20,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,,,,,,,,,,FALSE,☐,
+2022,1.01,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Bryce Young,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685720.png&w=350&h=254,QB,$20,0,$20,$20,94.39,⭐⭐⭐⭐⭐,TRUE,☑,$80
+2022,1.02,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Bijan Robinson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430807.png&w=350&h=254,RB,$20,,$20,,100.82,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.03,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,C.J. Stroud,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432577.png&w=350&h=254,QB,$20,,$20,,91.63,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.04,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,Jaxon Smith-Njigba,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430878.png&w=350&h=254,WR,$20,0,$20,$20,68.67,⭐⭐⭐⭐⭐,TRUE,☑,$70
+2022,1.05,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Jahmyr Gibbs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429795.png&w=350&h=254,RB,$20,0,$20,$20,83.37,⭐⭐⭐⭐⭐,TRUE,☑,$124
+2022,1.06,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Jordan Addison,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429205.png&w=350&h=254,WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$70
+2022,1.07,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Kayshon Boutte,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429022.png&w=350&h=254,WR,$20,0,$20,$13,32.70,⭐⭐⭐,TRUE,☑,$13
+2022,1.08,AAC,San Diego State Aztecs,https://imgur.com/Z5c6GkQ.png,Sean Tucker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,RB,$20,,$20,,30.50,⭐⭐⭐,FALSE,☐,
+2022,1.09,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Zach Evans,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685035.png&w=350&h=254,RB,$20,0,$20,$20,34.30,⭐⭐⭐,TRUE,☑,$30
+2022,1.10,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,1.11,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,Quentin Johnston,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429025.png&w=350&h=254,WR,$20,,$20,,49.33,⭐⭐⭐⭐,FALSE,☐,
+2022,1.12,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Will Levis,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361418.png&w=350&h=254,QB,$20,0,$20,$20,52.33,⭐⭐⭐⭐,TRUE,☑,$47
+2022,1.13,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Anthony Richardson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429084.png&w=350&h=254,QB,$20,,$20,,97.14,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.14,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.15,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,Josh Downs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688813.png&w=350&h=254,WR,$20,0,$20,$20,41.33,⭐⭐⭐⭐,TRUE,☑,$40
+2022,1.16,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Rakim Jarrett,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429006.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2022,1.17,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,,,,,,,,,,FALSE,☐,
+2022,1.18,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Marvin Mims,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686472.png&w=350&h=254,WR,$20,,$20,,38.80,⭐⭐⭐,FALSE,☐,
+2022,1.19,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Tank Bigsby,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429013.png&w=350&h=254,RB,$20,0,$20,$20,37.40,⭐⭐⭐,TRUE,☑,$51
+2022,1.20,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Michael Mayer,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429086.png&w=350&h=254,TE,$20,0,$20,$20,39.20,⭐⭐⭐,TRUE,☑,$29
+2022,2.01,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,,$20,,37.30,⭐⭐⭐,FALSE,☐,
+2022,2.02,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,,$20,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.03,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,A.T. Perry,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4362019.png&w=350&h=254,WR,$20,0,$20,$15,25.00,⭐⭐,TRUE,☑,$15
+2022,2.04,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,,$20,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.05,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Deuce Vaughn,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431453.png&w=350&h=254,RB,$20,,$20,,33.80,⭐⭐⭐,FALSE,☐,
+2022,2.06,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Rashee Rice,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4428331.png&w=350&h=254,RB,$20,,$20,,38.40,⭐⭐⭐,FALSE,☐,
+2022,2.07,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.08,AAC,San Diego State Aztecs,https://imgur.com/Z5c6GkQ.png,Devon Achane,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,RB,$20,0,$20,$20,48.00,⭐⭐⭐⭐,TRUE,☑,$60
+2022,2.09,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Zach Charbonnet,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426385.png&w=350&h=254,RB,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$60
+2022,2.10,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.11,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,,$20,,29.40,⭐⭐,FALSE,☐,
+2022,2.12,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Ja'Corey Brooks,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431506.png&w=350&h=254,WR,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.13,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,,$20,,30.70,⭐⭐⭐,FALSE,☐,
+2022,2.14,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,,$20,,61.00,⭐⭐⭐⭐,FALSE,☐,
+2022,2.15,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,Zay Flowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429615.png&w=350&h=254,WR,$20,,$20,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2022,2.16,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Hendon Hooker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,QB,$20,,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2022,2.17,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,,,,,,,,,,FALSE,☐,
+2022,2.18,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Chris Rodriguez Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4362619.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.19,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Kendall Milton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429012.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.20,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,,$20,,32.20,⭐⭐⭐,FALSE,☐,
+2022,1.01,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,Bijan Robinson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430807.png&w=350&h=254,RB,$20,,$20,,100.82,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.02,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,Bryce Young,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685720.png&w=350&h=254,QB,$20,0,$20,$20,94.39,⭐⭐⭐⭐⭐,TRUE,☑,$94
+2022,1.03,ACC,UCF Knights,https://imgur.com/Azux1rV.png,C.J. Stroud,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432577.png&w=350&h=254,QB,$20,,$20,,91.63,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.04,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Jaxon Smith-Njigba,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430878.png&w=350&h=254,WR,$20,0,$20,$20,68.67,⭐⭐⭐⭐⭐,TRUE,☑,$100
+2022,1.05,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,Kayshon Boutte,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429022.png&w=350&h=254,WR,$20,0,$20,$10,32.70,⭐⭐⭐,TRUE,☑,$10
+2022,1.06,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,Jordan Addison,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429205.png&w=350&h=254,WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$91
+2022,1.07,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Will Levis,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361418.png&w=350&h=254,QB,$20,0,$20,$20,52.33,⭐⭐⭐⭐,TRUE,☑,$26
+2022,1.08,ACC,Charlotte 49ers,https://imgur.com/DTTqJUL.png,,,,,,,,,,FALSE,☐,
+2022,1.09,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Jahmyr Gibbs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429795.png&w=350&h=254,RB,$20,0,$20,$20,83.37,⭐⭐⭐⭐⭐,TRUE,☑,$114
+2022,1.10,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Josh Downs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688813.png&w=350&h=254,WR,$20,0,$20,$20,41.33,⭐⭐⭐⭐,TRUE,☑,$26
+2022,1.11,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,Sean Tucker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,RB,$20,,$20,,30.50,⭐⭐⭐,FALSE,☐,
+2022,1.12,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,Zach Evans,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685035.png&w=350&h=254,RB,$20,0,$20,$8,34.30,⭐⭐⭐,TRUE,☑,$8
+2022,1.13,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,Deuce Vaughn,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431453.png&w=350&h=254,RB,$20,,$20,,33.80,⭐⭐⭐,FALSE,☐,
+2022,1.14,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Anthony Richardson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429084.png&w=350&h=254,QB,$20,0,$20,$20,97.14,⭐⭐⭐⭐⭐,TRUE,☑,$87
+2022,1.15,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,Hendon Hooker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,QB,$20,0,$20,$18,37.90,⭐⭐⭐,TRUE,☑,$18
+2022,1.16,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Quentin Johnston,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429025.png&w=350&h=254,WR,$20,0,$20,,49.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.01,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,,,,,,,,,,FALSE,☐,
+2022,2.02,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,,,,,,,,,,FALSE,☐,
+2022,2.03,ACC,UCF Knights,https://imgur.com/Azux1rV.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,0,$20,,32.20,⭐⭐⭐,FALSE,☐,
+2022,2.04,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,0,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.05,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,0,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.06,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,Tank Bigsby,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429013.png&w=350&h=254,RB,$20,0,$20,$20,37.40,⭐⭐⭐,TRUE,☑,$23
+2022,2.07,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,0,$20,,64.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.08,ACC,Charlotte 49ers,https://imgur.com/DTTqJUL.png,,,,,,,,,,FALSE,☐,
+2022,2.09,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,,$20,,29.40,⭐⭐,FALSE,☐,
+2022,2.10,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Zach Charbonnet,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426385.png&w=350&h=254,RB,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$44
+2022,2.11,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,Michael Mayer,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429086.png&w=350&h=254,TE,$20,0,$20,$20,39.20,⭐⭐⭐,TRUE,☑,$27
+2022,2.12,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,,$20,,61.00,⭐⭐⭐⭐,FALSE,☐,
+2022,2.13,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,KJ Jefferson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567149.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.14,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.15,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,,,,,,,,,,FALSE,☐,
+2022,2.16,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Cedric Tillman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4369863.png&w=350&h=254,WR,$20,,$20,,35.60,⭐⭐⭐,FALSE,☐,
+2022,1.01,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,Bijan Robinson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430807.png&w=350&h=254,RB,$20,0,$20,$20,100.82,⭐⭐⭐⭐⭐,TRUE,☑,$160
+2022,1.02,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Jordan Addison,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429205.png&w=350&h=254,WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$90
+2022,1.03,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,Jaxon Smith-Njigba,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430878.png&w=350&h=254,WR,$20,,$20,,68.67,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.04,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Zach Evans,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685035.png&w=350&h=254,RB,$20,0,$20,$15,34.30,⭐⭐⭐,TRUE,☑,$15
+2022,1.05,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,C.J. Stroud,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432577.png&w=350&h=254,QB,$20,0,$20,$20,91.63,⭐⭐⭐⭐⭐,TRUE,☑,$104
+2022,1.06,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,Kayshon Boutte,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429022.png&w=350&h=254,WR,$20,0,$20,$15,32.70,⭐⭐⭐,TRUE,☑,$15
+2022,1.07,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,Bryce Young,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685720.png&w=350&h=254,QB,$20,0,$20,$20,94.39,⭐⭐⭐⭐⭐,TRUE,☑,$106
+2022,1.08,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Jahmyr Gibbs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429795.png&w=350&h=254,RB,$20,0,$20,$20,83.37,⭐⭐⭐⭐⭐,TRUE,☑,$110
+2022,1.09,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,,$20,,64.33,⭐⭐⭐⭐,FALSE,☐,
+2022,1.10,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Sean Tucker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,RB,$20,0,$20,$7,30.50,⭐⭐⭐,TRUE,☑,$7
+2022,1.11,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,,$20,,37.30,⭐⭐⭐,FALSE,☐,
+2022,1.12,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,Will Levis,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361418.png&w=350&h=254,QB,$20,0,$20,$20,52.33,⭐⭐⭐⭐,TRUE,☑,$30
+2022,1.13,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Michael Mayer,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429086.png&w=350&h=254,TE,$20,0,$20,$16,39.20,⭐⭐⭐,TRUE,☑,$16
+2022,1.14,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Anthony Richardson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429084.png&w=350&h=254,QB,$20,0,$20,$20,97.14,⭐⭐⭐⭐⭐,TRUE,☑,$107
+2022,1.15,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Tank Bigsby,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429013.png&w=350&h=254,RB,$20,,$20,,37.40,⭐⭐⭐,FALSE,☐,
+2022,1.16,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,Quentin Johnston,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429025.png&w=350&h=254,WR,$20,0,$20,$20,49.33,⭐⭐⭐⭐,TRUE,☑,$81
+2022,2.01,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,Rakim Jarrett,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429006.png&w=350&h=254,WR,$20,0,$20,$15,25.00,⭐⭐,TRUE,☑,$15
+2022,2.02,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Josh Downs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688813.png&w=350&h=254,WR,$20,0,$20,$20,41.33,⭐⭐⭐⭐,TRUE,☑,$20
+2022,2.03,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.04,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Zach Charbonnet,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426385.png&w=350&h=254,RB,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$60
+2022,2.05,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,Devon Achane,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,RB,$20,,$20,,48.00,⭐⭐⭐⭐,FALSE,☐,
+2022,2.06,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,Marvin Mims,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686472.png&w=350&h=254,WR,$20,0,$20,$20,38.80,⭐⭐⭐,TRUE,☑,$35
+2022,2.07,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.08,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,,$20,,29.40,⭐⭐,FALSE,☐,
+2022,2.09,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,,,,,,,,,,FALSE,☐,
+2022,2.10,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Cedric Tillman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4369863.png&w=350&h=254,WR,$20,0,$20,$15,35.60,⭐⭐⭐,TRUE,☑,$15
+2022,2.11,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,,$20,,38.40,⭐⭐⭐,FALSE,☐,
+2022,2.12,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,Dontay Demus Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4372039.png&w=350&h=254,WR,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.13,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Tyler Van Dyke,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685186.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.14,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,,$20,,32.20,⭐⭐⭐,FALSE,☐,
+2022,2.15,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,,$20,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.16,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,Kendall Milton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429012.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,1.01,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Bijan Robinson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430807.png&w=350&h=254,RB,$20,0,$20,$20,100.82,⭐⭐⭐⭐⭐,TRUE,☑,$154
+2022,1.02,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Sean Tucker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,RB,$20,0,$20,$8,30.50,⭐⭐⭐,TRUE,☑,$8
+2022,1.03,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,Bryce Young,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685720.png&w=350&h=254,QB,$20,,$20,,94.39,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.04,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.05,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Jaxon Smith-Njigba,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430878.png&w=350&h=254,WR,$20,,$20,,68.67,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.06,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.07,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,C.J. Stroud,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432577.png&w=350&h=254,QB,$20,0,$20,$20,91.63,⭐⭐⭐⭐⭐,TRUE,☑,$91
+2022,1.08,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,Jahmyr Gibbs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429795.png&w=350&h=254,RB,$20,,$20,,83.37,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.09,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Kayshon Boutte,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429022.png&w=350&h=254,WR,$20,0,$20,$20,32.70,⭐⭐⭐,TRUE,☑,$23
+2022,1.10,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Jordan Addison,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429205.png&w=350&h=254,WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$86
+2022,1.11,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Tank Bigsby,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429013.png&w=350&h=254,RB,$20,0,$20,$20,37.40,⭐⭐⭐,TRUE,☑,$36
+2022,1.12,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,Zach Evans,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685035.png&w=350&h=254,RB,$20,0,$20,$7,34.30,⭐⭐⭐,TRUE,☑,$7
+2022,1.13,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,,$20,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.14,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,Will Levis,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361418.png&w=350&h=254,QB,$20,0,$20,$20,52.33,⭐⭐⭐⭐,TRUE,☑,$52
+2022,1.15,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,,$20,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2022,1.16,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,,$20,,32.20,⭐⭐⭐,FALSE,☐,
+2022,2.01,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Quentin Johnston,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429025.png&w=350&h=254,WR,$20,,$20,,49.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.02,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Zach Charbonnet,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426385.png&w=350&h=254,RB,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$45
+2022,2.03,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,,$20,,38.40,⭐⭐⭐,FALSE,☐,
+2022,2.04,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.05,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Josh Downs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688813.png&w=350&h=254,WR,$20,,$20,,41.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.06,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,,$20,,61.00,⭐⭐⭐⭐,FALSE,☐,
+2022,2.07,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,,$20,,37.30,⭐⭐⭐,FALSE,☐,
+2022,2.08,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,,$20,,29.40,⭐⭐,FALSE,☐,
+2022,2.09,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,,$20,,30.70,⭐⭐⭐,FALSE,☐,
+2022,2.10,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,,$20,,74.18,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.11,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Marvin Mims,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686472.png&w=350&h=254,WR,$20,0,$20,$20,38.80,⭐⭐⭐,TRUE,☑,$44
+2022,2.12,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,,$20,,64.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.13,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Kendall Milton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429012.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.14,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,Michael Mayer,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429086.png&w=350&h=254,TE,$20,0,$20,$15,39.20,⭐⭐⭐,TRUE,☑,$15
+2022,2.15,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Israel Abanikanda,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429202.png&w=350&h=254,RB,$20,0,$20,$19,36.10,⭐⭐⭐,TRUE,☑,$19
+2022,2.16,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Cedric Tillman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4369863.png&w=350&h=254,WR,$20,0,$20,$20,35.60,⭐⭐⭐,TRUE,☑,$21
+2022,1.01,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,Bijan Robinson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430807.png&w=350&h=254,RB,$20,0,$20,$20,100.82,⭐⭐⭐⭐⭐,TRUE,☑,$183
+2022,1.02,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,C.J. Stroud,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432577.png&w=350&h=254,QB,$20,0,$20,$20,91.63,⭐⭐⭐⭐⭐,TRUE,☑,$100
+2022,1.03,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Kayshon Boutte,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429022.png&w=350&h=254,WR,$20,0,$20,$7,32.70,⭐⭐⭐,TRUE,☑,$7
+2022,1.04,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Bryce Young,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685720.png&w=350&h=254,QB,$20,0,$20,$20,94.39,⭐⭐⭐⭐⭐,TRUE,☑,$89
+2022,1.05,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Jahmyr Gibbs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429795.png&w=350&h=254,RB,$20,,$20,,83.37,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.06,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Jordan Addison,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429205.png&w=350&h=254,WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$80
+2022,1.07,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Jaxon Smith-Njigba,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430878.png&w=350&h=254,WR,$20,,$20,,68.67,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.08,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Zach Evans,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685035.png&w=350&h=254,RB,$20,0,$20,$16,34.30,⭐⭐⭐,TRUE,☑,$16
+2022,1.09,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Sean Tucker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,RB,$20,0,$20,$8,30.50,⭐⭐⭐,TRUE,☑,$8
+2022,1.10,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Tank Bigsby,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429013.png&w=350&h=254,RB,$20,0,$20,$20,37.40,⭐⭐⭐,TRUE,☑,$30
+2022,1.11,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Devon Achane,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,RB,$20,0,$20,$20,48.00,⭐⭐⭐⭐,TRUE,☑,$60
+2022,1.12,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Zach Charbonnet,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426385.png&w=350&h=254,RB,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$76
+2022,1.13,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.14,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,Anthony Richardson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429084.png&w=350&h=254,QB,$20,0,$20,$20,97.14,⭐⭐⭐⭐⭐,TRUE,☑,$100
+2022,1.15,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,Quentin Johnston,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429025.png&w=350&h=254,WR,$20,0,$20,$20,49.33,⭐⭐⭐⭐,TRUE,☑,$100
+2022,1.16,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Will Levis,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361418.png&w=350&h=254,QB,$20,0,$20,$20,52.33,⭐⭐⭐⭐,TRUE,☑,$40
+2022,2.01,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,Josh Downs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688813.png&w=350&h=254,WR,$20,,$20,,41.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.02,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,Michael Mayer,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429086.png&w=350&h=254,TE,$20,0,$20,$20,39.20,⭐⭐⭐,TRUE,☑,$20
+2022,2.03,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,,$20,,32.20,⭐⭐⭐,FALSE,☐,
+2022,2.04,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.05,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Devin Leary,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361653.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.06,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,,$20,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.07,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,,$20,,37.30,⭐⭐⭐,FALSE,☐,
+2022,2.08,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Dontay Demus Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4372039.png&w=350&h=254,WR,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.09,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,,$20,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2022,2.10,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Deuce Vaughn,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431453.png&w=350&h=254,RB,$20,0,$20,$15,33.80,⭐⭐⭐,TRUE,☑,$15
+2022,2.11,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,,$20,,29.40,⭐⭐,FALSE,☐,
+2022,2.12,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Cedric Tillman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4369863.png&w=350&h=254,WR,$20,0,$20,$20,35.60,⭐⭐⭐,TRUE,☑,$44
+2022,2.13,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.14,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,Rakim Jarrett,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429006.png&w=350&h=254,WR,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.15,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,Tyler Van Dyke,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685186.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.16,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Marvin Mims,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686472.png&w=350&h=254,WR,$20,0,$20,$20,38.80,⭐⭐⭐,TRUE,☑,$30
+2022,1.01,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,Bryce Young,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685720.png&w=350&h=254,QB,$20,0,$20,$20,94.39,⭐⭐⭐⭐⭐,TRUE,☑,$95
+2022,1.02,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Jaxon Smith-Njigba,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430878.png&w=350&h=254,WR,$20,0,$20,$20,68.67,⭐⭐⭐⭐⭐,TRUE,☑,$90
+2022,1.03,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Bijan Robinson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430807.png&w=350&h=254,RB,$20,,$20,,100.82,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.04,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,C.J. Stroud,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432577.png&w=350&h=254,QB,$20,0,$20,$20,91.63,⭐⭐⭐⭐⭐,TRUE,☑,$104
+2022,1.05,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Zach Evans,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685035.png&w=350&h=254,RB,$20,0,$20,$10,34.30,⭐⭐⭐,TRUE,☑,$10
+2022,1.06,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,Kayshon Boutte,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429022.png&w=350&h=254,WR,$20,,$20,,32.70,⭐⭐⭐,FALSE,☐,
+2022,1.07,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Jahmyr Gibbs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429795.png&w=350&h=254,RB,$20,0,$20,$20,83.37,⭐⭐⭐⭐⭐,TRUE,☑,$118
+2022,1.08,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Jordan Addison,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429205.png&w=350&h=254,WR,$20,0,$20,$20,63.00,⭐⭐⭐⭐,TRUE,☑,$82
+2022,1.09,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Tank Bigsby,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429013.png&w=350&h=254,RB,$20,0,$20,$20,37.40,⭐⭐⭐,TRUE,☑,$30
+2022,1.10,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,1.11,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Will Levis,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361418.png&w=350&h=254,QB,$20,,$20,,52.33,⭐⭐⭐⭐,FALSE,☐,
+2022,1.12,SEC,Memphis Tigers,https://imgur.com/MAKX6NL.png,Sean Tucker,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430871.png&w=350&h=254,RB,$20,0,$20,$0,30.50,⭐⭐⭐,TRUE,☑,$0
+2022,1.13,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,Quentin Johnston,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429025.png&w=350&h=254,WR,$20,,$20,,49.33,⭐⭐⭐⭐,FALSE,☐,
+2022,1.14,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,Josh Downs,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688813.png&w=350&h=254,WR,$20,0,$20,$20,41.33,⭐⭐⭐⭐,TRUE,☑,$30
+2022,1.15,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,Zach Charbonnet,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426385.png&w=350&h=254,RB,$20,,$20,,51.67,⭐⭐⭐⭐,FALSE,☐,
+2022,1.16,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,,$20,,32.20,⭐⭐⭐,FALSE,☐,
+2022,2.01,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,,$20,,37.30,⭐⭐⭐,FALSE,☐,
+2022,2.02,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,,$20,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.03,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,,$20,,30.70,⭐⭐⭐,FALSE,☐,
+2022,2.04,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Devon Achane,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,RB,$20,0,$20,$20,48.00,⭐⭐⭐⭐,TRUE,☑,$41
+2022,2.05,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.06,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,,,,,,,,,,FALSE,☐,
+2022,2.07,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.08,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,,$20,,38.40,⭐⭐⭐,FALSE,☐,
+2022,2.09,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,,$20,,64.33,⭐⭐⭐⭐,FALSE,☐,
+2022,2.10,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,Anthony Richardson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429084.png&w=350&h=254,QB,$20,,$20,,97.14,⭐⭐⭐⭐⭐,FALSE,☐,
+2022,2.11,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Jaren Hall,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4373632.png&w=350&h=254,QB,$20,0,$20,$2,25.00,⭐⭐,TRUE,☑,$2
+2022,2.12,SEC,Memphis Tigers,https://imgur.com/MAKX6NL.png,,,,,,,,,,FALSE,☐,
+2022,2.13,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,,$20,,29.40,⭐⭐,FALSE,☐,
+2022,2.14,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.15,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,John Emery Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426333.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2022,2.16,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Travis Dye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360691.png&w=350&h=254,RB,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2023,1.01,ACC,Charlotte 49ers,https://imgur.com/DTTqJUL.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,0,$20,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.02,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,0,$20,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.03,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,Malik Nabers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4595348.png&w=350&h=254,WR,$20,0,$20,,85.20,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.04,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Rome Odunze,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431299.png&w=350&h=254,WR,$20,0,$20,,66.84,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.05,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$72
+2023,1.06,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,,,,,,,,,,FALSE,☐,
+2023,1.07,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,Keon Coleman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635008.png&w=350&h=254,WR,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$61
+2023,1.08,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.09,ACC,UCF Knights,https://imgur.com/Azux1rV.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.10,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,0,$20,$20,54.33,⭐⭐⭐⭐,TRUE,☑,$39
+2023,1.11,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,0,$20,$1,30.70,⭐⭐⭐,TRUE,☑,$1
+2023,1.12,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Troy Franklin,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431280.png&w=350&h=254,WR,$20,0,$20,$20,35.50,⭐⭐⭐,TRUE,☑,$29
+2023,1.13,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,Trey Benson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429275.png&w=350&h=254,RB,$20,0,$20,$20,52.00,⭐⭐⭐⭐,TRUE,☑,$47
+2023,1.14,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2023,1.15,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,0,$20,,38.40,⭐⭐⭐,FALSE,☐,
+2023,1.16,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.01,ACC,Charlotte 49ers,https://imgur.com/DTTqJUL.png,J.J. McCarthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4433970.png&w=350&h=254,QB,$20,0,$20,$20,76.94,⭐⭐⭐⭐⭐,TRUE,☑,$52
+2023,2.02,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,1,$15,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.03,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,Johnny Wilson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686104.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2023,2.04,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2023,2.05,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,Ja'Corey Brooks,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431506.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.06,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,,,,,,,,,,FALSE,☐,
+2023,2.07,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,1,$15,,61.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.08,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.09,ACC,UCF Knights,https://imgur.com/Azux1rV.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,1,$15,$4,32.20,⭐⭐⭐,TRUE,☑,$4
+2023,2.10,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,Donovan Edwards,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431536.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.11,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Xavier Legette,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430034.png&w=350&h=254,WR,$20,0,$20,,42.67,⭐⭐⭐⭐,FALSE,☐,
+2023,2.12,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Bo Nix,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426338.png&w=350&h=254,QB,$20,0,$20,$20,59.33,⭐⭐⭐⭐,TRUE,☑,$49
+2023,2.13,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,Jayden Daniels,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426348.png&w=350&h=254,QB,$20,0,$20,,88.88,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.14,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,1,$15,$15,64.33,⭐⭐⭐⭐,TRUE,☑,$57
+2023,2.15,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,1,$15,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.16,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,KJ Jefferson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567149.png&w=350&h=254,QB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,1.01,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,0,$20,,74.18,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.02,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,0,$20,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.03,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.04,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,Keon Coleman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635008.png&w=350&h=254,WR,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$63
+2023,1.05,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Malik Nabers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4595348.png&w=350&h=254,WR,$20,0,$20,$20,85.20,⭐⭐⭐⭐⭐,TRUE,☑,$110
+2023,1.06,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,0,$20,$20,61.00,⭐⭐⭐⭐,TRUE,☑,$78
+2023,1.07,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.08,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Adonai Mitchell,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4597500.png&w=350&h=254,WR,$20,0,$20,$20,43.67,⭐⭐⭐⭐,TRUE,☑,$37
+2023,1.09,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Rome Odunze,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431299.png&w=350&h=254,WR,$20,0,$20,$20,66.84,⭐⭐⭐⭐⭐,TRUE,☑,$99
+2023,1.10,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,,,,,,,,,,FALSE,☐,
+2023,1.11,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2023,1.12,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,Johnny Wilson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686104.png&w=350&h=254,WR,$20,0,$20,$2,25.00,⭐⭐,TRUE,☑,$2
+2023,1.13,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Troy Franklin,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431280.png&w=350&h=254,WR,$20,0,$20,$20,35.50,⭐⭐⭐,TRUE,☑,$40
+2023,1.14,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,JJ McCarthy,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.15,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,Donovan Edwards,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431536.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.16,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,0,$20,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2023,2.01,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,1,$15,$15,95.31,⭐⭐⭐⭐⭐,TRUE,☑,$171
+2023,2.02,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,Trey Benson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429275.png&w=350&h=254,RB,$20,0,$20,,52.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.03,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2023,2.04,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,Xavier Legette,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430034.png&w=350&h=254,WR,$20,0,$20,$20,42.67,⭐⭐⭐⭐,TRUE,☑,$49
+2023,2.05,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,0,$20,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.06,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,1,$15,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.07,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,1,$15,$15,32.20,⭐⭐⭐,TRUE,☑,$25
+2023,2.08,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Tyler Van Dyke,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685186.png&w=350&h=254,QB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.09,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.10,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,,,,,,,,,,FALSE,☐,
+2023,2.11,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,1,$15,$15,64.33,⭐⭐⭐⭐,TRUE,☑,$62
+2023,2.12,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,1,$15,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.13,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,1,$15,$15,38.40,⭐⭐⭐,TRUE,☑,$49
+2023,2.14,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,Kendall Milton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429012.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.15,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.16,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,,34.30,⭐⭐⭐,FALSE,☐,
+2023,1.01,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$62
+2023,1.02,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,0,$20,$20,38.40,⭐⭐⭐,TRUE,☑,$40
+2023,1.03,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,Malik Nabers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4595348.png&w=350&h=254,WR,$20,0,$20,$20,85.20,⭐⭐⭐⭐⭐,TRUE,☑,$98
+2023,1.04,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Bo Nix,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426338.png&w=350&h=254,QB,$20,0,$20,$20,59.33,⭐⭐⭐⭐,TRUE,☑,$77
+2023,1.05,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.06,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Rome Odunze,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431299.png&w=350&h=254,WR,$20,0,$20,,66.84,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.07,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,0,$20,$2,30.70,⭐⭐⭐,TRUE,☑,$2
+2023,1.08,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,0,$20,,61.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.09,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,Keon Coleman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635008.png&w=350&h=254,WR,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$48
+2023,1.10,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,0,$20,,64.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.11,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,0,$20,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.12,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,0,$20,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.13,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,1,$15,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.14,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Trey Benson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429275.png&w=350&h=254,RB,$20,0,$20,,52.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.15,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.16,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Troy Franklin,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431280.png&w=350&h=254,WR,$20,0,$20,$20,35.50,⭐⭐⭐,TRUE,☑,$26
+2023,2.01,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,Adonai Mitchell,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4597500.png&w=350&h=254,WR,$20,0,$20,$20,43.67,⭐⭐⭐⭐,TRUE,☑,$33
+2023,2.02,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,1,$15,$15,32.20,⭐⭐⭐,TRUE,☑,$22
+2023,2.03,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,Zachariah Branch,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870612.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.04,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Xavier Legette,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430034.png&w=350&h=254,WR,$20,0,$20,,42.67,⭐⭐⭐⭐,FALSE,☐,
+2023,2.05,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Devin Leary,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4361653.png&w=350&h=254,QB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.06,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,1,$15,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.07,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,1,$15,$15,37.30,⭐⭐⭐,TRUE,☑,$28
+2023,2.08,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,1,$15,$15,98.98,⭐⭐⭐⭐⭐,TRUE,☑,$153
+2023,2.09,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2023,2.10,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,Ja'Tavion Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431588.png&w=350&h=254,TE,$20,0,$20,$8,33.70,⭐⭐⭐,TRUE,☑,$8
+2023,2.11,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.12,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2023,2.13,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.14,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2023,2.15,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.16,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,,34.30,⭐⭐⭐,FALSE,☐,
+2023,1.01,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.02,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,1,$15,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.03,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,1,$15,$15,98.98,⭐⭐⭐⭐⭐,TRUE,☑,$151
+2023,1.04,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Malik Nabers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4595348.png&w=350&h=254,WR,$20,0,$20,$20,85.20,⭐⭐⭐⭐⭐,TRUE,☑,$104
+2023,1.05,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Keon Coleman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635008.png&w=350&h=254,WR,$20,0,$20,$20,51.67,⭐⭐⭐⭐,TRUE,☑,$49
+2023,1.06,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Rome Odunze,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431299.png&w=350&h=254,WR,$20,0,$20,$20,66.84,⭐⭐⭐⭐⭐,TRUE,☑,$100
+2023,1.07,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Johnny Wilson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686104.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2023,1.08,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.09,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,1,$15,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.10,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2023,1.11,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.12,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,J.J. McCarthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4433970.png&w=350&h=254,QB,$20,0,$20,$20,76.94,⭐⭐⭐⭐⭐,TRUE,☑,$48
+2023,1.13,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,0,$20,$20,54.33,⭐⭐⭐⭐,TRUE,☑,$25
+2023,1.14,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,Donovan Edwards,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431536.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.15,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Trey Benson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429275.png&w=350&h=254,RB,$20,0,$20,$20,52.00,⭐⭐⭐⭐,TRUE,☑,$45
+2023,1.16,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,Troy Franklin,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431280.png&w=350&h=254,WR,$20,0,$20,,35.50,⭐⭐⭐,FALSE,☐,
+2023,2.01,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.02,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Kendall Milton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429012.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.03,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.04,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Dorian Singer,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711055.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.05,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,0,$20,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.06,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,0,$20,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.07,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,1,$15,$6,32.20,⭐⭐⭐,TRUE,☑,$6
+2023,2.08,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,1,$15,$14,30.70,⭐⭐⭐,TRUE,☑,$14
+2023,2.09,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,1,$15,$15,61.00,⭐⭐⭐⭐,TRUE,☑,$75
+2023,2.10,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,Xavier Legette,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430034.png&w=350&h=254,WR,$20,0,$20,$20,42.67,⭐⭐⭐⭐,TRUE,☑,$31
+2023,2.11,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Demond Claiborne,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4832846.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.12,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,1,$15,$15,38.40,⭐⭐⭐,TRUE,☑,$37
+2023,2.13,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,1,$15,$15,64.33,⭐⭐⭐⭐,TRUE,☑,$55
+2023,2.14,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,J. Michael Sturdivant,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635009.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.15,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,1,$15,$15,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$62
+2023,2.16,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2023,1.01,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,Keon Coleman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635008.png&w=350&h=254,WR,$20,0,$20,,51.67,⭐⭐⭐⭐,FALSE,☐,
+2023,1.02,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,0,$20,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.03,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,0,$20,$20,61.00,⭐⭐⭐⭐,TRUE,☑,$61
+2023,1.04,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,0,$20,,74.18,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.05,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,Rome Odunze,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431299.png&w=350&h=254,WR,$20,0,$20,$20,66.84,⭐⭐⭐⭐⭐,TRUE,☑,$102
+2023,1.06,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Malik Nabers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4595348.png&w=350&h=254,WR,$20,0,$20,$20,85.20,⭐⭐⭐⭐⭐,TRUE,☑,$110
+2023,1.07,SEC,TXST Bobcats,https://imgur.com/AMjJBal.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,0,$20,$20,64.33,⭐⭐⭐⭐,TRUE,☑,$64
+2023,1.08,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,Troy Franklin,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431280.png&w=350&h=254,WR,$20,0,$20,$20,35.50,⭐⭐⭐,TRUE,☑,$25
+2023,1.09,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Rasheen Ali,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4690013.png&w=350&h=254,RB,$20,0,$20,,31.00,⭐⭐⭐,FALSE,☐,
+2023,1.10,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,0,$20,$20,54.33,⭐⭐⭐⭐,TRUE,☑,$46
+2023,1.11,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Brenden Rice,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686781.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2023,1.12,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,0,$20,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.13,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2023,1.14,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.15,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,0,$20,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.16,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Bo Nix,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426338.png&w=350&h=254,QB,$20,0,$20,,59.33,⭐⭐⭐⭐,FALSE,☐,
+2023,2.01,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,John Emery Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426333.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.02,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,Donovan Edwards,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431536.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.03,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Trey Benson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429275.png&w=350&h=254,RB,$20,0,$20,$20,52.00,⭐⭐⭐⭐,TRUE,☑,$65
+2023,2.04,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Audric Estime,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4569682.png&w=350&h=254,RB,$20,0,$20,$2,33.30,⭐⭐⭐,TRUE,☑,$2
+2023,2.05,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,Johnny Wilson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686104.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2023,2.06,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,1,$15,$15,98.98,⭐⭐⭐⭐⭐,TRUE,☑,$140
+2023,2.07,SEC,TXST Bobcats,https://imgur.com/AMjJBal.png,Xavier Legette,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430034.png&w=350&h=254,WR,$20,0,$20,$20,42.67,⭐⭐⭐⭐,TRUE,☑,$36
+2023,2.08,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2023,2.09,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,1,$15,$5,30.70,⭐⭐⭐,TRUE,☑,$5
+2023,2.10,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,1,$15,$5,32.20,⭐⭐⭐,TRUE,☑,$5
+2023,2.11,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,1,$15,$15,95.31,⭐⭐⭐⭐⭐,TRUE,☑,$151
+2023,2.12,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.13,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.14,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,1,$15,,38.40,⭐⭐⭐,FALSE,☐,
+2023,2.15,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,1,$15,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.16,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Malachi Corley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4613104.png&w=350&h=254,WR,$20,0,$20,$5,35.80,⭐⭐⭐,TRUE,☑,$5
+2023,1.01,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,0,$20,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.02,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,Drake Maye,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431452.png&w=350&h=254,QB,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$90
+2023,1.03,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Malik Nabers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4595348.png&w=350&h=254,WR,$20,0,$20,,85.20,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.04,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Brock Bowers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432665.png&w=350&h=254,TE,$20,0,$20,$20,64.33,⭐⭐⭐⭐,TRUE,☑,$56
+2023,1.05,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Keon Coleman,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4635008.png&w=350&h=254,WR,$20,0,$20,,51.67,⭐⭐⭐⭐,FALSE,☐,
+2023,1.06,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Rome Odunze,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431299.png&w=350&h=254,WR,$20,0,$20,$20,66.84,⭐⭐⭐⭐⭐,TRUE,☑,$77
+2023,1.07,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,Blake Corum,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429096.png&w=350&h=254,RB,$20,0,$20,$20,38.40,⭐⭐⭐,TRUE,☑,$56
+2023,1.08,AAC,San Diego State Aztecs,https://imgur.com/Z5c6GkQ.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,,37.90,⭐⭐⭐,FALSE,☐,
+2023,1.09,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Johnny Wilson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686104.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.10,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Donovan Edwards,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431536.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,1.11,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,J.J. McCarthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4433970.png&w=350&h=254,QB,$20,0,$20,$20,76.94,⭐⭐⭐⭐⭐,TRUE,☑,$83
+2023,1.12,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,1,$15,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,1.13,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Audric Estime,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4569682.png&w=350&h=254,RB,$20,0,$20,$20,33.30,⭐⭐⭐,TRUE,☑,$20
+2023,1.14,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.15,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Bo Nix,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426338.png&w=350&h=254,QB,$20,0,$20,,59.33,⭐⭐⭐⭐,FALSE,☐,
+2023,1.16,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Trey Benson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429275.png&w=350&h=254,RB,$20,0,$20,,52.00,⭐⭐⭐⭐,FALSE,☐,
+2023,1.17,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,Xavier Legette,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430034.png&w=350&h=254,WR,$20,0,$20,$20,42.67,⭐⭐⭐⭐,TRUE,☑,$48
+2023,1.18,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Troy Franklin,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431280.png&w=350&h=254,WR,$20,0,$20,$20,35.50,⭐⭐⭐,TRUE,☑,$41
+2023,1.19,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,1.20,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.01,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2023,2.02,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,Michael Penix Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4360423.png&w=350&h=254,QB,$20,1,$15,,54.33,⭐⭐⭐⭐,FALSE,☐,
+2023,2.03,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Adonai Mitchell,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4597500.png&w=350&h=254,WR,$20,0,$20,$20,43.67,⭐⭐⭐⭐,TRUE,☑,$58
+2023,2.04,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.05,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Ja'Tavion Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431588.png&w=350&h=254,TE,$20,0,$20,,33.70,⭐⭐⭐,FALSE,☐,
+2023,2.06,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Marvin Harrison Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432708.png&w=350&h=254,WR,$20,1,$15,,95.31,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.07,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,Malachi Corley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4613104.png&w=350&h=254,WR,$20,0,$20,$20,35.80,⭐⭐⭐,TRUE,☑,$22
+2023,2.08,AAC,San Diego State Aztecs,https://imgur.com/Z5c6GkQ.png,Bucky Irving,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4596448.png&w=350&h=254,RB,$20,0,$20,$15,35.40,⭐⭐⭐,TRUE,☑,$15
+2023,2.09,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Antwane Wells Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4696062.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.10,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Caleb Williams,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431611.png&w=350&h=254,QB,$20,1,$15,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2023,2.11,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,Tory Horton,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4597703.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.12,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,Xavier Worthy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683062.png&w=350&h=254,WR,$20,1,$15,,61.00,⭐⭐⭐⭐,FALSE,☐,
+2023,2.13,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Jermaine Burton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4429033.png&w=350&h=254,WR,$20,1,$15,$15,37.30,⭐⭐⭐,TRUE,☑,$30
+2023,2.14,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Rasheen Ali,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4690013.png&w=350&h=254,RB,$20,0,$20,$13,31.00,⭐⭐⭐,TRUE,☑,$13
+2023,2.15,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Braelon Allen,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685247.png&w=350&h=254,RB,$20,1,$15,$15,32.20,⭐⭐⭐,TRUE,☑,$21
+2023,2.16,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Will Shipley,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431545.png&w=350&h=254,RB,$20,1,$15,$15,30.70,⭐⭐⭐,TRUE,☑,$15
+2023,2.17,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,KJ Jefferson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567149.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2023,2.18,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Jalen McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430834.png&w=350&h=254,WR,$20,0,$20,$20,32.70,⭐⭐⭐,TRUE,☑,$35
+2023,2.19,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2023,2.20,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,,34.30,⭐⭐⭐,FALSE,☐,
+2024,1.01,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,Tetairoa McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685472.png&w=350&h=254,WR,$20,0,$20,$20,69.59,⭐⭐⭐⭐⭐,TRUE,☑,$100
+2024,1.02,ACC,UCF Knights,https://imgur.com/Azux1rV.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,0,$20,$20,51.00,⭐⭐⭐⭐,TRUE,☑,$64
+2024,1.03,ACC,Miami-FL Hurricanes,https://imgur.com/Lf9WTCK.png,Ashton Jeanty,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4890973.png&w=350&h=254,RB,$20,0,$20,$20,98.98,⭐⭐⭐⭐⭐,TRUE,☑,$189
+2024,1.04,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,Isaiah Bond,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808839.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,1.05,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,Elic Ayomanor,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4883647.png&w=350&h=254,WR,$20,0,$20,$10,27.60,⭐⭐,TRUE,☑,$10
+2024,1.06,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Travis Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685415.png&w=350&h=254,WR,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$95
+2024,1.07,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Omarion Hampton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685382.png&w=350&h=254,RB,$20,0,$20,$20,87.96,⭐⭐⭐⭐⭐,TRUE,☑,$146
+2024,1.08,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Ollie Gordon,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711533.png&w=350&h=254,RB,$20,0,$20,$6,31.30,⭐⭐⭐,TRUE,☑,$6
+2024,1.09,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,0,$20,$20,65.92,⭐⭐⭐⭐⭐,TRUE,☑,$109
+2024,1.10,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,0,$20,$0,29.40,⭐⭐,TRUE,☑,$0
+2024,1.11,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,Tre Harris,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686612.png&w=350&h=254,WR,$20,0,$20,$20,48.67,⭐⭐⭐⭐,TRUE,☑,$45
+2024,1.12,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.13,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.14,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,0,$20,$20,72.35,⭐⭐⭐⭐⭐,FALSE,☐,$111
+2024,1.15,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,Jalen Milroe,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432734.png&w=350&h=254,QB,$20,0,$20,$20,39.50,⭐⭐⭐,FALSE,☐,$20
+2024,1.16,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,$16,34.30,⭐⭐⭐,TRUE,☑,$16
+2024,2.01,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,Nico Iamaleava,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870799.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.02,ACC,UCF Knights,https://imgur.com/Azux1rV.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,1,$15,$15,62.33,⭐⭐⭐⭐,TRUE,☑,$96
+2024,2.03,ACC,Miami-FL Hurricanes,https://imgur.com/Lf9WTCK.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.04,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,Jaydn Ott,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685489.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.05,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,Barion Brown,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4698597.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.06,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,Xavier Restrepo,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431353.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.07,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,Ricky White,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4431479.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.08,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,1,$15,$5,37.90,⭐⭐⭐,TRUE,☑,$5
+2024,2.09,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,2.10,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,Kyren Lacy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431219.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.11,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,Ja'Corey Brooks,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431506.png&w=350&h=254,WR,$20,1,$15,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.12,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,Kaleb Johnson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4819231.png&w=350&h=254,RB,$20,0,$20,$20,58.67,⭐⭐⭐⭐,TRUE,☑,$76
+2024,2.13,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,Kalel Mullings,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4429121.png&w=350&h=254,RB,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.14,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,Trevor Etienne,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685350.png&w=350&h=254,RB,$20,,$20,,34.60,⭐⭐⭐,FALSE,☐,
+2024,2.15,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.16,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2024,1.01,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Tetairoa McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685472.png&w=350&h=254,WR,$20,0,$20,,69.59,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.02,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,Ashton Jeanty,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4890973.png&w=350&h=254,RB,$20,0,$20,$20,98.98,⭐⭐⭐⭐⭐,TRUE,☑,$194
+2024,1.03,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Ollie Gordon,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711533.png&w=350&h=254,RB,$20,0,$20,$10,31.30,⭐⭐⭐,TRUE,☑,$10
+2024,1.04,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.05,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,Isaiah Bond,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808839.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,1.06,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,0,$20,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.07,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,Travis Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685415.png&w=350&h=254,WR,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$98
+2024,1.08,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Jalen Milroe,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432734.png&w=350&h=254,QB,$20,0,$20,,39.50,⭐⭐⭐,FALSE,☐,
+2024,1.09,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Trevor Etienne,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685350.png&w=350&h=254,RB,$20,0,$20,$3,34.60,⭐⭐⭐,TRUE,☑,$3
+2024,1.10,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.11,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Omarion Hampton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685382.png&w=350&h=254,RB,$20,0,$20,$20,87.96,⭐⭐⭐⭐⭐,TRUE,☑,$126
+2024,1.12,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,$16,37.90,⭐⭐⭐,TRUE,☑,$16
+2024,1.13,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,Nico Iamaleava,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870799.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.14,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.15,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Kyle Monangai,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4608686.png&w=350&h=254,RB,$20,0,$20,$5,25.00,⭐⭐,TRUE,☑,$5
+2024,1.16,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Jaydn Ott,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685489.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.01,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,Jeremiah Smith,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/5079720.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.02,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,CJ Baxter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870609.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.03,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,Tre Harris,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686612.png&w=350&h=254,WR,$20,0,$20,$20,48.67,⭐⭐⭐⭐,TRUE,☑,$44
+2024,2.04,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,2,$10,$10,65.92,⭐⭐⭐⭐⭐,TRUE,☑,$120
+2024,2.05,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2024,2.06,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,Kaleb Johnson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4819231.png&w=350&h=254,RB,$20,0,$20,$20,58.67,⭐⭐⭐⭐,TRUE,☑,$90
+2024,2.07,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,Tory Horton,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4597703.png&w=350&h=254,WR,$20,0,$20,$4,25.00,⭐⭐,TRUE,☑,$4
+2024,2.08,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,1,$15,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2024,2.09,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,Damien Martinez,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808830.png&w=350&h=254,RB,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.10,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.11,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,2.12,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,1,$15,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2024,2.13,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,Arch Manning,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870906.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.14,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,Elic Ayomanor,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4883647.png&w=350&h=254,WR,$20,,$20,,27.60,⭐⭐,FALSE,☐,
+2024,2.15,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,1,$15,$2,34.30,⭐⭐⭐,TRUE,☑,$2
+2024,2.16,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,2,$10,$5,29.40,⭐⭐,TRUE,☑,$5
+2024,1.01,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,Tetairoa McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685472.png&w=350&h=254,WR,$20,0,$20,$20,69.59,⭐⭐⭐⭐⭐,TRUE,☑,$99
+2024,1.02,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,Ollie Gordon,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711533.png&w=350&h=254,RB,$20,0,$20,$15,31.30,⭐⭐⭐,TRUE,☑,$15
+2024,1.03,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Ashton Jeanty,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4890973.png&w=350&h=254,RB,$20,0,$20,$20,98.98,⭐⭐⭐⭐⭐,TRUE,☑,$162
+2024,1.04,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Travis Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685415.png&w=350&h=254,WR,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$105
+2024,1.05,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,2,$10,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2024,1.06,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.07,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,Isaiah Bond,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808839.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,1.08,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,0,$20,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.09,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Jalen Milroe,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432734.png&w=350&h=254,QB,$20,0,$20,$20,39.50,⭐⭐⭐,TRUE,☑,$35
+2024,1.10,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Omarion Hampton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685382.png&w=350&h=254,RB,$20,0,$20,$20,87.96,⭐⭐⭐⭐⭐,TRUE,☑,$118
+2024,1.11,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,Elic Ayomanor,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4883647.png&w=350&h=254,WR,$20,0,$20,$8,27.60,⭐⭐,TRUE,☑,$8
+2024,1.12,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Caullin Lacy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430185.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.13,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.14,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Zachariah Branch,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870612.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.15,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,1.16,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,Tre Harris,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686612.png&w=350&h=254,WR,$20,0,$20,$20,48.67,⭐⭐⭐⭐,TRUE,☑,$50
+2024,2.01,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,Colston Loveland,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4723086.png&w=350&h=254,WR,$20,0,$20,$20,53.33,⭐⭐⭐⭐,TRUE,☑,$25
+2024,2.02,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,Deion Burks,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683151.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.03,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,Antwane Wells Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4696062.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.04,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,Kaleb Johnson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4819231.png&w=350&h=254,RB,$20,0,$20,$20,58.67,⭐⭐⭐⭐,TRUE,☑,$65
+2024,2.05,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,1,$15,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2024,2.06,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Jarquez Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4710341.png&w=350&h=254,RB,$20,0,$20,$19,36.30,⭐⭐⭐,TRUE,☑,$19
+2024,2.07,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,1,$15,$15,62.33,⭐⭐⭐⭐,TRUE,☑,$90
+2024,2.08,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,2,$10,,29.40,⭐⭐,FALSE,☐,
+2024,2.09,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,,34.30,⭐⭐⭐,FALSE,☐,
+2024,2.10,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,Dylan Sampson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/5081397.png&w=350&h=254,RB,$20,0,$20,$16,35.00,⭐⭐⭐,TRUE,☑,$16
+2024,2.11,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,Kyren Lacy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431219.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.12,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,Dillon Gabriel,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4427238.png&w=350&h=254,QB,$20,0,$20,$20,36.00,⭐⭐⭐,TRUE,☑,$20
+2024,2.13,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,1,$15,$15,37.90,⭐⭐⭐,TRUE,☑,$16
+2024,2.14,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,Trevor Etienne,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685350.png&w=350&h=254,RB,$20,0,$20,$6,34.60,⭐⭐⭐,TRUE,☑,$6
+2024,2.15,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,2.16,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,2,$10,$10,65.92,⭐⭐⭐⭐⭐,TRUE,☑,$108
+2024,1.01,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,Tetairoa McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685472.png&w=350&h=254,WR,$20,0,$20,,69.59,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.02,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Arch Manning,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870906.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.03,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.04,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Isaiah Bond,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808839.png&w=350&h=254,WR,$20,0,$20,$3,25.00,⭐⭐,TRUE,☑,$3
+2024,1.05,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,0,$20,,29.40,⭐⭐,FALSE,☐,
+2024,1.06,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,Ashton Jeanty,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4890973.png&w=350&h=254,RB,$20,0,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.07,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Jeremiah Smith,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/5079720.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.08,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Ollie Gordon,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711533.png&w=350&h=254,RB,$20,0,$20,,31.30,⭐⭐⭐,FALSE,☐,
+2024,1.09,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Omarion Hampton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685382.png&w=350&h=254,RB,$20,0,$20,,87.96,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.10,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Nico Iamaleava,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870799.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.11,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,$8,34.30,⭐⭐⭐,TRUE,☑,$8
+2024,1.12,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,Elic Ayomanor,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4883647.png&w=350&h=254,WR,$20,,$20,,27.60,⭐⭐,FALSE,☐,
+2024,1.13,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Tre Harris,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686612.png&w=350&h=254,WR,$20,0,$20,$20,48.67,⭐⭐⭐⭐,TRUE,☑,$52
+2024,1.14,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Trevor Etienne,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685350.png&w=350&h=254,RB,$20,0,$20,,34.60,⭐⭐⭐,FALSE,☐,
+2024,1.15,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,Travis Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685415.png&w=350&h=254,WR,$20,0,$20,$20,74.18,⭐⭐⭐⭐⭐,TRUE,☑,$133
+2024,1.16,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,Damien Martinez,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808830.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.01,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,2,$10,$10,65.92,⭐⭐⭐⭐⭐,TRUE,☑,$149
+2024,2.02,P12,California Golden Bears,https://imgur.com/yOL6yng.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,1,$15,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2024,2.03,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,Carnell Tate,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.04,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,Xavier Restrepo,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431353.png&w=350&h=254,WR,$20,0,$20,$16,25.00,⭐⭐,TRUE,☑,$16
+2024,2.05,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,Colston Loveland,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4723086.png&w=350&h=254,TE,$20,,$20,$20,53.33,⭐⭐⭐⭐,TRUE,☑,$21
+2024,2.06,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,Jalen Milroe,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432734.png&w=350&h=254,QB,$20,,$20,$12,39.50,⭐⭐⭐,TRUE,☑,$12
+2024,2.07,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.08,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,2.09,P12,BYU Cougars,https://imgur.com/NffSRj0.png,Kyle Monangai,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4608686.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.10,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,1,$15,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,2.11,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,Jordan James,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685397.png&w=350&h=254,RB,$20,,$20,,31.80,⭐⭐⭐,FALSE,☐,
+2024,2.12,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.13,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,1,$15,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2024,2.14,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2024,2.15,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,1,$15,$15,37.90,⭐⭐⭐,TRUE,☑,$30
+2024,2.16,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,2,$10,,25.00,⭐⭐,FALSE,☐,
+2024,1.01,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Tetairoa McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685472.png&w=350&h=254,WR,$20,0,$20,,69.59,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.02,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Isaiah Bond,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808839.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,1.03,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Travis Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685415.png&w=350&h=254,WR,$20,0,$20,,74.18,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.04,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,Tre Harris,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686612.png&w=350&h=254,WR,$20,0,$20,$20,48.67,⭐⭐⭐⭐,TRUE,☑,$38
+2024,1.05,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Ashton Jeanty,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4890973.png&w=350&h=254,RB,$20,0,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.06,SEC,Tulane Green Wave,https://imgur.com/hJP1j2T.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,0,$20,,65.92,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.07,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.08,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,,55.00,⭐⭐⭐⭐,FALSE,☐,
+2024,1.09,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,0,$20,,62.33,⭐⭐⭐⭐,FALSE,☐,
+2024,1.10,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Omarion Hampton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685382.png&w=350&h=254,RB,$20,0,$20,$20,87.96,⭐⭐⭐⭐⭐,TRUE,☑,$142
+2024,1.11,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,$15,37.90,⭐⭐⭐,TRUE,☑,$15
+2024,1.12,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,Nico Iamaleava,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870799.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.13,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Jalen Milroe,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432734.png&w=350&h=254,QB,$20,0,$20,$15,39.50,⭐⭐⭐,TRUE,☑,$15
+2024,1.14,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.15,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,Jaxson Dart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4689114.png&w=350&h=254,QB,$20,0,$20,$20,57.67,⭐⭐⭐⭐,TRUE,☑,$41
+2024,1.16,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,Ollie Gordon,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711533.png&w=350&h=254,RB,$20,0,$20,$2,31.30,⭐⭐⭐,TRUE,☑,$2
+2024,2.01,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.02,SEC,Florida Gators,https://imgur.com/mahEtq3.png,Kobe Hudson,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.03,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Nyck Harbor,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.04,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,John Emery Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4426333.png&w=350&h=254,RB,$20,2,$10,,25.00,⭐⭐,FALSE,☐,
+2024,2.05,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Jaydn Ott,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685489.png&w=350&h=254,RB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.06,SEC,Tulane Green Wave,https://imgur.com/hJP1j2T.png,Arch Manning,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870906.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.07,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,Kyren Lacy,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431219.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.08,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,Donovan Edwards,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431536.png&w=350&h=254,RB,$20,1,$15,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.09,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,0,$20,$20,34.30,⭐⭐⭐,TRUE,☑,$22
+2024,2.10,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,Zachariah Branch,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870612.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.11,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,Xavier Restrepo,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431353.png&w=350&h=254,WR,$20,0,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.12,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,1,$15,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,2.13,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.14,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,Elic Ayomanor,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4883647.png&w=350&h=254,WR,$20,0,$20,$0,27.60,⭐⭐,TRUE,☑,$0
+2024,2.15,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,2,$10,$6,29.40,⭐⭐,TRUE,☑,$6
+2024,2.16,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,1,$15,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2024,1.01,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.02,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,Emeka Egbuka,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4567750.png&w=350&h=254,WR,$20,1,$15,$15,55.00,⭐⭐⭐⭐,TRUE,☑,$89
+2024,1.03,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Shedeur Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432762.png&w=350&h=254,QB,$20,0,$20,$20,37.90,⭐⭐⭐,TRUE,☑,$55
+2024,1.04,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,Ashton Jeanty,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4890973.png&w=350&h=254,RB,$20,0,$20,,98.98,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.05,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Tetairoa McMillan,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685472.png&w=350&h=254,WR,$20,0,$20,$20,69.59,⭐⭐⭐⭐⭐,TRUE,☑,$83
+2024,1.06,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,Dillon Gabriel,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4427238.png&w=350&h=254,QB,$20,0,$20,$20,36.00,⭐⭐⭐,TRUE,☑,$31
+2024,1.07,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Luther Burden,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685278.png&w=350&h=254,WR,$20,0,$20,,51.00,⭐⭐⭐⭐,FALSE,☐,
+2024,1.08,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Ollie Gordon,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4711533.png&w=350&h=254,WR,$20,0,$20,,31.30,⭐⭐⭐,FALSE,☐,
+2024,1.09,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Isaiah Bond,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808839.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.10,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,Miller Moss,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431580.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.11,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,Tre Harris,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4686612.png&w=350&h=254,WR,$20,0,$20,,48.67,⭐⭐⭐⭐,FALSE,☐,
+2024,1.12,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Omarion Hampton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685382.png&w=350&h=254,RB,$20,0,$20,,87.96,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.13,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Travis Hunter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685415.png&w=350&h=254,WR,$20,0,$20,,74.18,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.14,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,Cam Ward,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4688380.png&w=350&h=254,QB,$20,0,$20,,72.35,⭐⭐⭐⭐⭐,FALSE,☐,
+2024,1.15,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,1.16,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Arch Manning,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870906.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.17,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Nico Iamaleava,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870799.png&w=350&h=254,QB,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.18,AAC,Arkansas State Red Wolves,https://imgur.com/onD5mVO.png,Deion Burks,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683151.png&w=350&h=254,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,1.19,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Matthew Golden,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4701936.png&w=350&h=254,WR,$20,0,$20,,50.67,⭐⭐⭐⭐,FALSE,☐,
+2024,1.20,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Jalen Milroe,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432734.png&w=350&h=254,QB,$20,0,$20,$20,39.50,⭐⭐⭐,TRUE,☑,$51
+2024,2.01,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,2.02,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,Quinn Ewers,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4889929.png&w=350&h=254,QB,$20,1,$15,,29.40,⭐⭐,FALSE,☐,
+2024,2.03,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,Quinshon Judkins,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685702.png&w=350&h=254,RB,$20,1,$15,$15,62.33,⭐⭐⭐⭐,TRUE,☑,$88
+2024,2.04,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,Nyck Harbor,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,WR,$20,0,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.05,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,Raheim Sanders,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4601080.png&w=350&h=254,RB,$20,0,$20,$4,25.00,⭐⭐,TRUE,☑,$4
+2024,2.06,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,TreVeyon Henderson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4432710.png&w=350&h=254,RB,$20,2,$10,$10,65.92,⭐⭐⭐⭐⭐,TRUE,☑,$89
+2024,2.07,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$15,,25.00,⭐⭐,FALSE,☐,
+2024,2.08,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,Colston Loveland,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4723086.png&w=350&h=254,TE,$20,,$20,,53.33,⭐⭐⭐⭐,FALSE,☐,
+2024,2.09,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,Antwane Wells Jr.,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4696062.png&w=350&h=254,WR,$20,1,$15,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.10,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,Elic Ayomanor,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4883647.png&w=350&h=254,WR,$20,,$20,$20,27.60,⭐⭐,TRUE,☑,$20
+2024,2.11,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,Ricky White,https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4431479.png&w=350&h=254,WR,$20,,$20,$0,25.00,⭐⭐,TRUE,☑,$0
+2024,2.12,AAC,USU Aggies,https://imgur.com/exjhNR0.png,Jaydn Ott,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685489.png&w=350&h=254,RB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.13,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,Xavier Restrepo,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4431353.png&w=350&h=254,WR,$20,,$20,$6,25.00,⭐⭐,TRUE,☑,$6
+2024,2.14,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,Dylan Sampson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/5081397.png&w=350&h=254,RB,$20,,$20,,35.00,⭐⭐⭐,FALSE,☐,
+2024,2.15,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Devin Neal,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4682652.png&w=350&h=254,RB,$20,1,$15,,34.30,⭐⭐⭐,FALSE,☐,
+2024,2.16,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,Trevor Etienne,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685350.png&w=350&h=254,RB,$20,,$20,$20,34.60,⭐⭐⭐,TRUE,☑,$33
+2024,2.17,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,Garrett Nussmeier,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.18,AAC,Arkansas State Red Wolves,https://imgur.com/onD5mVO.png,Barion Brown,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4698597.png&w=350&h=254,WR,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2024,2.19,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,Damien Martinez,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4808830.png&w=350&h=254,RB,$20,,$20,$6,25.00,⭐⭐,TRUE,☑,$6
+2024,2.20,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,Kaleb Johnson,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4819231.png&w=350&h=254,RB,$20,,$20,$20,58.67,⭐⭐⭐⭐,TRUE,☑,$88
+2025,1.01,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,,,,,,,,,,FALSE,☐,
+2025,1.02,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,,,,,,,,,,FALSE,☐,
+2025,1.03,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,,,,,,,,,,FALSE,☐,
+2025,1.04,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,,,,,,,,,,FALSE,☐,
+2025,1.05,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,,,,,,,,,,FALSE,☐,
+2025,1.06,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,,,,,,,,,,FALSE,☐,
+2025,1.07,ACC,UCF Knights,https://imgur.com/Azux1rV.png,,,,,,,,,,FALSE,☐,
+2025,1.08,ACC,Miami-FL Hurricanes,https://imgur.com/Lf9WTCK.png,,,,,,,,,,FALSE,☐,
+2025,1.09,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,,,,,,,,,,FALSE,☐,
+2025,1.10,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,,,,,,,,,,FALSE,☐,
+2025,1.11,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,,,,,,,,,,FALSE,☐,
+2025,1.12,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,,,,,,,,,,FALSE,☐,
+2025,1.13,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,,,,,,,,,,FALSE,☐,
+2025,1.14,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,,,,,,,,,,FALSE,☐,
+2025,1.15,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,,,,,,,,,,FALSE,☐,
+2025,1.16,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,,,,,,,,,,FALSE,☐,
+2025,2.01,ACC,Virginia Tech Hokies,https://imgur.com/Fcss8yq.png,,,,,,,,,,FALSE,☐,
+2025,2.02,ACC,Louisville Cardinals,https://imgur.com/UZGB1YB.png,,,,,,,,,,FALSE,☐,
+2025,2.03,ACC,Pittsburgh Panthers,https://imgur.com/684qMlr.png,,,,,,,,,,FALSE,☐,
+2025,2.04,ACC,Florida State Seminoles,https://imgur.com/Y6j0iCc.png,,,,,,,,,,FALSE,☐,
+2025,2.05,ACC,Virginia Cavaliers,https://imgur.com/iKKVygo.png,,,,,,,,,,FALSE,☐,
+2025,2.06,ACC,Boston College Eagles,https://imgur.com/7O17t8S.png,,,,,,,,,,FALSE,☐,
+2025,2.07,ACC,UCF Knights,https://imgur.com/Azux1rV.png,,,,,,,,,,FALSE,☐,
+2025,2.08,ACC,Miami-FL Hurricanes,https://imgur.com/Lf9WTCK.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.09,ACC,UCONN Huskies,https://imgur.com/s7WT5V3.png,,,,,,,,,,FALSE,☐,
+2025,2.10,ACC,Duke Blue Devils,https://imgur.com/cetLdEj.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.11,ACC,GT Yellow Jackets,https://imgur.com/R3vZKwu.png,,,,,,,,,,FALSE,☐,
+2025,2.12,ACC,Clemson Tigers,https://imgur.com/NY2PAdP.png,,,,,,,,,,FALSE,☐,
+2025,2.13,ACC,Syracuse Orange,https://imgur.com/TDjx2Ej.png,,,,,,,,,,FALSE,☐,
+2025,2.14,ACC,Wake Forest Demon Deacons,https://imgur.com/6rx06T4.png,,,,,,,,,,FALSE,☐,
+2025,2.15,ACC,NC State Wolfpack,https://imgur.com/8Y0NuRp.png,,,,,,,,,,FALSE,☐,
+2025,2.16,ACC,North Carolina Tar Heels,https://imgur.com/N1K4nox.png,,,,,,,,,,FALSE,☐,
+2025,1.01,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,,,,,,,,,,FALSE,☐,
+2025,1.02,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,,,,,,,,,,FALSE,☐,
+2025,1.03,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,,,,,,,,,,FALSE,☐,
+2025,1.04,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,,,,,,,,,,FALSE,☐,
+2025,1.05,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,,,,,,,,,,FALSE,☐,
+2025,1.06,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,,,,,,,,,,FALSE,☐,
+2025,1.07,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,,,,,,,,,,FALSE,☐,
+2025,1.08,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,,,,,,,,,,FALSE,☐,
+2025,1.09,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,,,,,,,,,,FALSE,☐,
+2025,1.10,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,,,,,,,,,,FALSE,☐,
+2025,1.11,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,,,,,,,,,,FALSE,☐,
+2025,1.12,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,,,,,,,,,,FALSE,☐,
+2025,1.13,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,,,,,,,,,,FALSE,☐,
+2025,1.14,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,,,,,,,,,,FALSE,☐,
+2025,1.15,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,,,,,,,,,,FALSE,☐,
+2025,1.16,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,,,,,,,,,,FALSE,☐,
+2025,2.01,B10,Notre Dame Fighting Irish,https://imgur.com/tEx2oQX.png,,,,,,,,,,FALSE,☐,
+2025,2.02,B10,Maryland Terrapins,https://imgur.com/YDTYndR.png,CJ Baxter,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870609.png&w=350&h=254,RB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.03,B10,Indiana Hoosiers,https://imgur.com/HSbythX.png,,,,,,,,,,FALSE,☐,
+2025,2.04,B10,Purdue Boilermakers,https://imgur.com/PLomQQs.png,,,,,,,,,,FALSE,☐,
+2025,2.05,B10,Nebraska Cornhuskers,https://imgur.com/bywXlyu.png,,,,,,,,,,FALSE,☐,
+2025,2.06,B10,MSU Spartans,https://imgur.com/NxsXm0X.png,,,,,,,,,,FALSE,☐,
+2025,2.07,B10,Minnesota Golden Gophers,https://imgur.com/CtFPQdi.png,,,,,,,,,,FALSE,☐,
+2025,2.08,B10,Michigan Wolverines,https://imgur.com/m24sXup.png,,,,,,,,,,FALSE,☐,
+2025,2.09,B10,Rutgers Scarlet Knights,https://imgur.com/8Q7ySSS.png,,,,,,,,,,FALSE,☐,
+2025,2.10,B10,Penn State Nittany Lions,https://imgur.com/TEC141m.png,,,,,,,,,,FALSE,☐,
+2025,2.11,B10,Illinois Fighting Illini,https://imgur.com/XcEemcz.png,Jaydn Ott,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685489.png&w=350&h=254,RB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.12,B10,Navy Midshipmen,https://imgur.com/AZW3Hsy.png,,,,,,,,,,FALSE,☐,
+2025,2.13,B10,Northwestern Wildcats,https://imgur.com/7zEFIFC.png,,,,,,,,,,FALSE,☐,
+2025,2.14,B10,Iowa Hawkeyes,https://imgur.com/WDKYaw9.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.15,B10,Wisconsin Badgers,https://imgur.com/Xl6byto.png,,,,,,,,,,FALSE,☐,
+2025,2.16,B10,Ohio State Buckeyes,https://imgur.com/pa7FWA0.png,,,,,,,,,,FALSE,☐,
+2025,1.01,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,,,,,,,,,,FALSE,☐,
+2025,1.02,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,,,,,,,,,,FALSE,☐,
+2025,1.03,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,,,,,,,,,,FALSE,☐,
+2025,1.04,B12,Army Black Knights,https://imgur.com/YusuhUe.png,,,,,,,,,,FALSE,☐,
+2025,1.05,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,,,,,,,,,,FALSE,☐,
+2025,1.06,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,,,,,,,,,,FALSE,☐,
+2025,1.07,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,,,,,,,,,,FALSE,☐,
+2025,1.08,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,,,,,,,,,,FALSE,☐,
+2025,1.09,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,,,,,,,,,,FALSE,☐,
+2025,1.10,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,,,,,,,,,,FALSE,☐,
+2025,1.11,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,,$20,,25.00,⭐⭐,FALSE,☐,
+2025,1.12,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,,,,,,,,,,FALSE,☐,
+2025,1.13,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,2,$20,,25.00,⭐⭐,FALSE,☐,
+2025,1.14,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,,,,,,,,,,FALSE,☐,
+2025,1.15,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,,,,,,,,,,FALSE,☐,
+2025,1.16,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,,,,,,,,,,FALSE,☐,
+2025,2.01,B12,Baylor Bears,https://imgur.com/MaFi8BB.png,,,,,,,,,,FALSE,☐,
+2025,2.02,B12,Kansas Jayhawks,https://imgur.com/DJGm6wZ.png,,,,,,,,,,FALSE,☐,
+2025,2.03,B12,Texas Longhorns,https://imgur.com/ZzWH07G.png,,,,,,,,,,FALSE,☐,
+2025,2.04,B12,Army Black Knights,https://imgur.com/YusuhUe.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.05,B12,OKST Cowboys,https://imgur.com/QxDsGr9.png,,,,,,,,,,FALSE,☐,
+2025,2.06,B12,Oklahoma Sooners,https://imgur.com/dh5q8h1.png,,,,,,,,,,FALSE,☐,
+2025,2.07,B12,Iowa State Cyclones,https://imgur.com/guqNnbk.png,,,,,,,,,,FALSE,☐,
+2025,2.08,B12,K-State Wildcats,https://imgur.com/rXnJp8T.png,,,,,,,,,,FALSE,☐,
+2025,2.09,B12,Houston Cougars,https://imgur.com/B3uVcEL.png,,,,,,,,,,FALSE,☐,
+2025,2.10,B12,West Virginia Mountaineers,https://imgur.com/go9nZjM.png,,,,,,,,,,FALSE,☐,
+2025,2.11,B12,Texas Tech Red Raiders,https://imgur.com/jbKtegW.png,,,,,,,,,,FALSE,☐,
+2025,2.12,B12,TCU Horned Frogs,https://imgur.com/Qx7CWS6.png,,,,,,,,,,FALSE,☐,
+2025,2.13,B12,Marshall Thundering Herd,https://imgur.com/Kj8aVsP.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,2,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.14,B12,Tulsa Golden Hurricanes,https://imgur.com/sv4lNYQ.png,,,,,,,,,,FALSE,☐,
+2025,2.15,B12,Cincinnati Bearcats,https://imgur.com/2OCLYsV.png,,,,,,,,,,FALSE,☐,
+2025,2.16,B12,SMU Mustangs,https://imgur.com/eniSn1i.png,,,,,,,,,,FALSE,☐,
+2025,1.01,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,,,,,,,,,,FALSE,☐,
+2025,1.02,P12,California Golden Bears,https://imgur.com/yOL6yng.png,,,,,,,,,,FALSE,☐,
+2025,1.03,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,,,,,,,,,,FALSE,☐,
+2025,1.04,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,,,,,,,,,,FALSE,☐,
+2025,1.05,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,,,,,,,,,,FALSE,☐,
+2025,1.06,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,,,,,,,,,,FALSE,☐,
+2025,1.07,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,,,,,,,,,,FALSE,☐,
+2025,1.08,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,,,,,,,,,,FALSE,☐,
+2025,1.09,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,,,,,,,,,,FALSE,☐,
+2025,1.10,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,,,,,,,,,,FALSE,☐,
+2025,1.11,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,,,,,,,,,,FALSE,☐,
+2025,1.12,P12,BYU Cougars,https://imgur.com/NffSRj0.png,,,,,,,,,,FALSE,☐,
+2025,1.13,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,,,,,,,,,,FALSE,☐,
+2025,1.14,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,1.15,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,,,,,,,,,,FALSE,☐,
+2025,1.16,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,,,,,,,,,,FALSE,☐,
+2025,2.01,P12,ASU Sun Devils,https://imgur.com/iiwegnP.png,,,,,,,,,,FALSE,☐,
+2025,2.02,P12,California Golden Bears,https://imgur.com/yOL6yng.png,,,,,,,,,,FALSE,☐,
+2025,2.03,P12,Arizona Wildcats,https://imgur.com/Hc8JJtF.png,,,,,,,,,,FALSE,☐,
+2025,2.04,P12,Oregon Ducks,https://imgur.com/KH3H42U.png,,,,,,,,,,FALSE,☐,
+2025,2.05,P12,UCLA Bruins,https://imgur.com/f9XBDi6.png,,,,,,,,,,FALSE,☐,
+2025,2.06,P12,Boise State Broncos,https://imgur.com/bQcEmsG.png,,,,,,,,,,FALSE,☐,
+2025,2.07,P12,USC Trojans,https://imgur.com/7R5rb9Z.png,,,,,,,,,,FALSE,☐,
+2025,2.08,P12,Oregon State Beavers,https://imgur.com/TEKnb3E.png,,,,,,,,,,FALSE,☐,
+2025,2.09,P12,Utah Utes,https://imgur.com/7o6KqZQ.png,,,,,,,,,,FALSE,☐,
+2025,2.10,P12,Colorado State Rams,https://imgur.com/EYBimsX.png,,,,,,,,,,FALSE,☐,
+2025,2.11,P12,Stanford Cardinal,https://imgur.com/SZRFavd.png,,,,,,,,,,FALSE,☐,
+2025,2.12,P12,BYU Cougars,https://imgur.com/NffSRj0.png,,,,,,,,,,FALSE,☐,
+2025,2.13,P12,WSU Cougars,https://imgur.com/6LXY0rD.png,,,,,,,,,,FALSE,☐,
+2025,2.14,P12,Washington Huskies,https://imgur.com/OiW1y4x.png,Jeremiah Smith,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/5079720.png&w=350&h=254,WR,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.15,P12,Colorado Buffaloes,https://imgur.com/hYnA2rL.png,,,,,,,,,,FALSE,☐,
+2025,2.16,P12,Air Force Falcons,https://imgur.com/15oPTUP.png,,,,,,,,,,FALSE,☐,
+2025,1.01,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,,,,,,,,,,FALSE,☐,
+2025,1.02,SEC,Florida Gators,https://imgur.com/mahEtq3.png,,,,,,,,,,FALSE,☐,
+2025,1.03,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,,,,,,,,,,FALSE,☐,
+2025,1.04,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,,,,,,,,,,FALSE,☐,
+2025,1.05,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,,,,,,,,,,FALSE,☐,
+2025,1.06,SEC,Tulane Green Wave,https://imgur.com/hJP1j2T.png,,,,,,,,,,FALSE,☐,
+2025,1.07,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,,,,,,,,,,FALSE,☐,
+2025,1.08,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,,,,,,,,,,FALSE,☐,
+2025,1.09,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,,,,,,,,,,FALSE,☐,
+2025,1.10,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,,,,,,,,,,FALSE,☐,
+2025,1.11,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,,,,,,,,,,FALSE,☐,
+2025,1.12,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,,,,,,,,,,FALSE,☐,
+2025,1.13,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,,,,,,,,,,FALSE,☐,
+2025,1.14,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,,,,,,,,,,FALSE,☐,
+2025,1.15,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,,,,,,,,,,FALSE,☐,
+2025,1.16,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,,,,,,,,,,FALSE,☐,
+2025,2.01,SEC,Texas A&M Aggies,https://imgur.com/Fi3H672.png,,,,,,,,,,FALSE,☐,
+2025,2.02,SEC,Florida Gators,https://imgur.com/mahEtq3.png,,,,,,,,,,FALSE,☐,
+2025,2.03,SEC,Ole Miss Rebels,https://imgur.com/kWscMrr.png,,,,,,,,,,FALSE,☐,
+2025,2.04,SEC,Auburn Tigers,https://imgur.com/JFw56MP.png,,,,,,,,,,FALSE,☐,
+2025,2.05,SEC,Missouri Tigers,https://imgur.com/YtHwcEI.png,,,,,,,,,,FALSE,☐,
+2025,2.06,SEC,Tulane Green Wave,https://imgur.com/hJP1j2T.png,Arch Manning,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4870906.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.07,SEC,East Carolina Pirates,https://imgur.com/Z68tPII.png,,,,,,,,,,FALSE,☐,
+2025,2.08,SEC,Tennessee Volunteers,https://imgur.com/FKvJ1B3.png,Nyck Harbor,https://imagecomposer.nfl.com/?l=http://static.nfl.com/static/content/static/wildcat/assets/img/application-shell/default_placeholder_asset.png&f=png&w=308&c=71,WR,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.09,SEC,Kentucky Wildcats,https://imgur.com/9fC664b.png,,,,,,,,,,FALSE,☐,
+2025,2.10,SEC,Vanderbilt Commodores,https://imgur.com/VukUxuo.png,,,,,,,,,,FALSE,☐,
+2025,2.11,SEC,South Carolina Gamecocks,https://imgur.com/SrSaW5p.png,Jaydn Ott,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685489.png&w=350&h=254,RB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.12,SEC,Alabama Crimson Tide,https://imgur.com/e998Id9.png,,,,,,,,,,FALSE,☐,
+2025,2.13,SEC,Mississippi State Bulldogs,https://imgur.com/JFKE3QZ.png,,,,,,,,,,FALSE,☐,
+2025,2.14,SEC,LSU Tigers,https://imgur.com/qyuC1FL.png,,,,,,,,,,FALSE,☐,
+2025,2.15,SEC,Arkansas Razorbacks,https://imgur.com/xuVVsKb.png,Drew Allar,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4714771.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.16,SEC,Georgia Bulldogs,https://imgur.com/2YcmlBC.png,,,,,,,,,,FALSE,☐,
+2025,1.01,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,,,,,,,,,,FALSE,☐,
+2025,1.02,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,,,,,,,,,,FALSE,☐,
+2025,1.03,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,,,,,,,,,,FALSE,☐,
+2025,1.04,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,,,,,,,,,,FALSE,☐,
+2025,1.05,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,,,,,,,,,,FALSE,☐,
+2025,1.06,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,,,,,,,,,,FALSE,☐,
+2025,1.07,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,,,,,,,,,,FALSE,☐,
+2025,1.08,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,,,,,,,,,,FALSE,☐,
+2025,1.09,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,,,,,,,,,,FALSE,☐,
+2025,1.10,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,,,,,,,,,,FALSE,☐,
+2025,1.11,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,,,,,,,,,,FALSE,☐,
+2025,1.12,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,,,,,,,,,,FALSE,☐,
+2025,1.13,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,,,,,,,,,,FALSE,☐,
+2025,1.14,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,,,,,,,,,,FALSE,☐,
+2025,1.15,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,,,,,,,,,,FALSE,☐,
+2025,1.16,AAC,USU Aggies,https://imgur.com/exjhNR0.png,,,,,,,,,,FALSE,☐,
+2025,1.17,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,,,,,,,,,,FALSE,☐,
+2025,1.18,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,,,,,,,,,,FALSE,☐,
+2025,1.19,AAC,Arkansas State Red Wolves,https://imgur.com/onD5mVO.png,Deion Burks,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4683151.png&w=350&h=254,WR,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,1.20,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,,,,,,,,,,FALSE,☐,
+2025,2.01,AAC,Ohio Bobcats,https://imgur.com/ulUlF4e.png,,,,,,,,,,FALSE,☐,
+2025,2.02,AAC,UNLV Rebels,https://imgur.com/5UtsH8C.png,,,,,,,,,,FALSE,☐,
+2025,2.03,AAC,New Mexico Lobos,https://imgur.com/cMMVuQw.png,Nick Singleton,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685555.png&w=350&h=254,RB,$20,2,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.04,AAC,Toledo Rockets,https://imgur.com/HYhoKAQ.png,Carson Beck,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4430841.png&w=350&h=254,QB,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.05,AAC,Wyoming Cowboys,https://imgur.com/vqCuCXY.png,,,,,,,,,,FALSE,☐,
+2025,2.06,AAC,Hawaii Warriors,https://imgur.com/0FDiCy9.png,,,,,,,,,,FALSE,☐,
+2025,2.07,AAC,Bowling Green Falcons,https://imgur.com/JG14ZgJ.png,,,,,,,,,,FALSE,☐,
+2025,2.08,AAC,NMSU Aggies,https://imgur.com/iYv6Y2E.png,,,,,,,,,,FALSE,☐,
+2025,2.09,AAC,WMU Broncos,https://imgur.com/MnxvLTN.png,,,,,,,,,,FALSE,☐,
+2025,2.10,AAC,Central Michigan Chippewas,https://imgur.com/jE74GPJ.png,,,,,,,,,,FALSE,☐,
+2025,2.11,AAC,Miami-OH Redhawks,https://imgur.com/93PCE8l.png,,,,,,,,,,FALSE,☐,
+2025,2.12,AAC,Northern Illinois Huskies,https://imgur.com/gbh3vKR.png,Evan Stewart,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4685565.png&w=350&h=254,WR,$20,2,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.13,AAC,Kent State Golden Flashes,https://imgur.com/dwgJgK2.png,,,,,,,,,,FALSE,☐,
+2025,2.14,AAC,Nevada Wolfpack,https://imgur.com/aoEsd39.png,,,,,,,,,,FALSE,☐,
+2025,2.15,AAC,Fresno State Bulldogs,https://imgur.com/k5cWd8X.png,,,,,,,,,,FALSE,☐,
+2025,2.16,AAC,USU Aggies,https://imgur.com/exjhNR0.png,,,,,,,,,,FALSE,☐,
+2025,2.17,AAC,Buffalo Bulls,https://imgur.com/pVMsKUA.png,,,,,,,,,,FALSE,☐,
+2025,2.18,AAC,San Jose State Spartans,https://imgur.com/klqOFvn.png,,,,,,,,,,FALSE,☐,
+2025,2.19,AAC,Arkansas State Red Wolves,https://imgur.com/onD5mVO.png,Barion Brown,https://a.espncdn.com/combiner/i?img=/i/headshots/college-football/players/full/4698597.png&w=350&h=254,WR,$20,1,$20,,25.00,⭐⭐,FALSE,☐,
+2025,2.20,AAC,Ball State Cardinals,https://imgur.com/3KqNySJ.png,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
+,,,,,,,,,,,,,,FALSE,☐,
