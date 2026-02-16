@@ -1,8 +1,12 @@
+import os
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 
-BOT_TOKEN = "MTQ0MjU1NjU2NzkwNjk0NzE4NA.GwTxe9.g8dSDn7IUnZdOHiZyz6OfivElYHKWSQ-CYWPWA"
-GUILD_ID = 1365109875889279009  # your server ID
+load_dotenv()
+
+BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+GUILD_ID = int(os.getenv("DISCORD_GUILD_ID", "0"))
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)

@@ -6,6 +6,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, time
 import os
+import asyncio
+import traceback
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -59,7 +61,7 @@ MAX_WAGER = 5
 def get_submission_status(setting_name: str) -> bool:
     """Get the current status of a submission setting (RIVALRIES_OPEN or NC_GAMES_OPEN)."""
     try:
-        records = settings_ws.get_all_records()
+        records = settings_ws.get_all_records(expected_headers=[])
         for r in records:
             if r.get("Setting") == setting_name:
                 return str(r.get("Value", "")).upper() == "TRUE"
@@ -71,7 +73,7 @@ def get_submission_status(setting_name: str) -> bool:
 def set_submission_status(setting_name: str, is_open: bool) -> bool:
     """Set the status of a submission setting. Returns True if successful."""
     try:
-        records = settings_ws.get_all_records()
+        records = settings_ws.get_all_records(expected_headers=[])
         for idx, r in enumerate(records, start=2):  # start=2 for row number (1-indexed + header)
             if r.get("Setting") == setting_name:
                 settings_ws.update_cell(idx, 2, "TRUE" if is_open else "FALSE")
@@ -109,7 +111,7 @@ def parse_dollar_value(value) -> int:
 def get_team_rivalry_count(franchise_id: str) -> int:
     """Count confirmed rivalries for a team (deduplicated by pair)."""
     normalized_id = str(franchise_id).zfill(3)
-    records = rivalries_ws.get_all_records()
+    records = rivalries_ws.get_all_records(expected_headers=[])
     seen_pairs = set()  # Track unique rivalry pairs to prevent double counting
     count = 0
     for r in records:
@@ -128,7 +130,7 @@ def get_team_rivalry_count(franchise_id: str) -> int:
 def get_team_pending_rivalries(franchise_id: str) -> list:
     """Get pending rivalries where this team is involved (deduplicated by pair)."""
     normalized_id = str(franchise_id).zfill(3)
-    records = rivalries_ws.get_all_records()
+    records = rivalries_ws.get_all_records(expected_headers=[])
     pending = []
     seen_pairs = set()  # Track unique rivalry pairs to prevent double counting
     for idx, r in enumerate(records, start=2):  # start=2 for row number (1-indexed + header)
@@ -148,11 +150,28 @@ def build_rivalry_key(team_a: str, team_b: str) -> str:
     ids = sorted([str(team_a).zfill(3), str(team_b).zfill(3)])
     return f"{ids[0]}-{ids[1]}"
 
+def has_existing_rivalry(team_a: str, team_b: str) -> dict:
+    """Check if any rivalry (PENDING or CONFIRMED) already exists between two teams."""
+    normalized_a = str(team_a).zfill(3)
+    normalized_b = str(team_b).zfill(3)
+    records = rivalries_ws.get_all_records(expected_headers=[])
+
+    for r in records:
+        row_a = str(r.get("Team A", "")).zfill(3)
+        row_b = str(r.get("Team B", "")).zfill(3)
+        status = r.get("Status", "")
+        if status not in ("PENDING", "CONFIRMED"):
+            continue
+        if (row_a == normalized_a and row_b == normalized_b) or \
+           (row_a == normalized_b and row_b == normalized_a):
+            return {"exists": True, "status": status, "name": r.get("Rivalry Name", ""), "record": r}
+    return {"exists": False}
+
 def find_pending_rivalry(team_a: str, team_b: str) -> dict:
     """Find a pending rivalry between two teams."""
     normalized_a = str(team_a).zfill(3)
     normalized_b = str(team_b).zfill(3)
-    records = rivalries_ws.get_all_records()
+    records = rivalries_ws.get_all_records(expected_headers=[])
 
     for idx, r in enumerate(records, start=2):
         if r.get("Status") != "PENDING":
@@ -200,7 +219,7 @@ async def notify_opponent_dm(opponent_id: str, subject: str, message: str, embed
     """
     try:
         # Get Discord ID for the opponent's franchise
-        teams = teams_ws.get_all_records()
+        teams = await asyncio.to_thread(teams_ws.get_all_records)
         discord_id = None
         for t in teams:
             fid = str(t.get("Franchise ID", "")).zfill(3)
@@ -227,7 +246,7 @@ async def notify_opponent_dm(opponent_id: str, subject: str, message: str, embed
 
 # ----------------- Team Lookup Helpter ---------------
 def get_team_by_discord_id(discord_id: int):
-    teams = teams_ws.get_all_records()
+    teams = teams_ws.get_all_records(expected_headers=[])
     for row in teams:
         if str(row.get("Owner Discord ID", "")).strip() == str(discord_id):
             return {
@@ -242,7 +261,7 @@ def try_confirm_manual_game(match_key: str):
     Check if both teams have submitted matching game requests.
     Returns True if game was confirmed, False otherwise.
     """
-    subs = manual_sub_ws.get_all_records()
+    subs = manual_sub_ws.get_all_records(expected_headers=[])
 
     pending = [
         (i + 2, r)
@@ -266,7 +285,7 @@ def try_confirm_manual_game(match_key: str):
     team1 = a[1]["Team A"]
     team2 = a[1]["Team B"]
 
-    existing = manual_games_ws.get_all_records()
+    existing = manual_games_ws.get_all_records(expected_headers=[])
     for g in existing:
         if g["Week"] == week and set([g["Team A"], g["Team B"]]) == set([team1, team2]):
             return False  # Already exists
@@ -356,6 +375,30 @@ devy = app_commands.Group(
     description="Devy draft commands"
 )
 bot.tree.add_command(devy)
+
+commish = app_commands.Group(
+    name="commish",
+    description="Commissioner-only commands",
+    default_permissions=discord.Permissions(manage_guild=True)
+)
+bot.tree.add_command(commish)
+
+# ----------------- Global Slash Command Error Handler -----------------
+@bot.tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    traceback.print_exc()
+    error_msg = "An unexpected error occurred. Please try again or contact the Commish."
+
+    if interaction.response.is_done():
+        try:
+            await interaction.followup.send(error_msg, ephemeral=True)
+        except discord.HTTPException:
+            pass
+    else:
+        try:
+            await interaction.response.send_message(error_msg, ephemeral=True)
+        except discord.HTTPException:
+            pass
 
 # ----------------- Awards Sheet Setup -----------------
 try:
@@ -486,6 +529,27 @@ print(f"[DEBUG] Fallback DRAFT_CHANNEL_ID: {DRAFT_CHANNEL_ID}")
 # Track last posted Heisman leader to detect changes
 last_posted_heisman = None
 
+# Toggle for scheduled auto-posts (awards & rankings) - controlled via /toggle_autoposts (Commish only)
+auto_posts_enabled = True
+
+# ----------------- Slash Command: toggle_autoposts -----------------
+@bot.tree.command(
+    name="toggle_autoposts", description="Turn scheduled auto-posts on or off (Commissioner only)")
+async def toggle_autoposts(interaction: discord.Interaction):
+    global auto_posts_enabled
+    commissioner_role_name = os.getenv("COMMISSIONER_ROLE_NAME", "Commish")
+    if not any(role.name.lower() == commissioner_role_name.lower() for role in interaction.user.roles):
+        await interaction.response.send_message("❌ You must be a Commissioner to run this command.", ephemeral=True)
+        return
+
+    auto_posts_enabled = not auto_posts_enabled
+    status = "✅ **ON**" if auto_posts_enabled else "⛔ **OFF**"
+    await interaction.response.send_message(
+        f"Scheduled auto-posts are now {status}.\n"
+        f"Affected: Weekly Awards Update, Tuesday Power Rankings.",
+        ephemeral=False
+    )
+
 # ----------------- Legacy Example Command -----------------
 @bot.command()
 async def ping(ctx):
@@ -510,7 +574,7 @@ async def post_teams(interaction: discord.Interaction):
         await interaction.followup.send("❌ Cannot find the team list channel. Check the channel ID.")
         return
 
-    data = teams_ws.get_all_records()
+    data = teams_ws.get_all_records(expected_headers=[])
     if not data:
         await channel.send("No teams found in the Teams sheet.")
         return
@@ -579,89 +643,237 @@ async def schedule_submit(
 ):
     await interaction.response.defer(ephemeral=True)
 
-    # Check channel restriction
-    if interaction.channel_id != SCHEDULING_CHANNEL_ID:
-        await interaction.followup.send(
-            f"This command can only be used in <#{SCHEDULING_CHANNEL_ID}>."
+    try:
+        # Check channel restriction
+        if interaction.channel_id != SCHEDULING_CHANNEL_ID:
+            await interaction.followup.send(
+                f"This command can only be used in <#{SCHEDULING_CHANNEL_ID}>."
+            )
+            return
+
+        # Check if NC game submissions are open
+        if not await asyncio.to_thread(are_nc_games_open):
+            await interaction.followup.send(
+                "🔒 **NC game submissions are currently closed.**\n"
+                "Please wait for the Commish to open the submission period."
+            )
+            return
+
+        team = await asyncio.to_thread(get_team_by_discord_id, interaction.user.id)
+        if not team:
+            await interaction.followup.send("You are not registered as a team owner.")
+            return
+
+        # Look up opponent team by their Discord ID
+        opponent_team = await asyncio.to_thread(get_team_by_discord_id, opponent.id)
+        if not opponent_team:
+            await interaction.followup.send(f"{opponent.mention} is not registered as a team owner.")
+            return
+
+        if opponent_team["conference"] == team["conference"]:
+            await interaction.followup.send("Manual games must be non-conference.")
+            return
+
+        opponent_id = str(opponent_team["id"]).zfill(3)
+        opponent_name = opponent_team["name"]
+
+        match_key = f"{week}-{'-'.join(sorted([team['name'], opponent_name]))}"
+
+        status_msg = await interaction.followup.send(
+            f"Submitting NC game request for Week {week}...", ephemeral=True
         )
-        return
 
-    # Check if NC game submissions are open
-    if not are_nc_games_open():
-        await interaction.followup.send(
-            "🔒 **NC game submissions are currently closed.**\n"
-            "Please wait for the Commish to open the submission period."
-        )
-        return
+        await asyncio.to_thread(manual_sub_ws.append_row, [
+            datetime.utcnow().isoformat(),
+            week,
+            team["name"],
+            opponent_name,
+            interaction.user.id,
+            "PENDING",
+            match_key
+        ])
 
-    team = get_team_by_discord_id(interaction.user.id)
-    if not team:
-        await interaction.followup.send("❌ You are not registered as a team owner.")
-        return
+        confirmed = await asyncio.to_thread(try_confirm_manual_game, match_key)
 
-    # Look up opponent team by their Discord ID
-    opponent_team = get_team_by_discord_id(opponent.id)
-    if not opponent_team:
-        await interaction.followup.send(f"❌ {opponent.mention} is not registered as a team owner.")
-        return
-
-    if opponent_team["conference"] == team["conference"]:
-        await interaction.followup.send("❌ Manual games must be non-conference.")
-        return
-
-    opponent_id = str(opponent_team["id"]).zfill(3)
-    opponent_name = opponent_team["name"]
-
-    match_key = f"{week}-{'-'.join(sorted([team['name'], opponent_name]))}"
-
-    manual_sub_ws.append_row([
-        datetime.utcnow().isoformat(),
-        week,
-        team["name"],
-        opponent_name,
-        interaction.user.id,
-        "PENDING",
-        match_key
-    ])
-
-    confirmed = try_confirm_manual_game(match_key)
-
-    if confirmed:
-        # Game was confirmed - no need to DM, both teams already submitted
-        await interaction.followup.send(
-            f"✅ **Game Confirmed!**\n"
-            f"Week {week}: {team['name']} vs {opponent_name}\n"
-            f"This game has been locked in for scheduling!"
-        )
-    else:
-        # Game is pending - DM the opponent
-        dm_embed = discord.Embed(
-            title="NC Game Request Received!",
-            description=f"**{team['name']}** wants to schedule a non-conference game with you.",
-            color=discord.Color.blue()
-        )
-        dm_embed.add_field(name="Week", value=str(week), inline=True)
-        dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
-        dm_embed.add_field(
-            name="To Confirm",
-            value=f"Submit matching details:\n`/schedule submit week:{week} opponent:@{team['name']}`",
-            inline=False
-        )
-        dm_embed.set_footer(text="Both teams must submit the same week to confirm.")
-
-        dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
-
-        dm_status = ""
-        if dm_result["sent"]:
-            dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+        if confirmed:
+            await status_msg.edit(
+                content=(
+                    f"**Game Confirmed!**\n"
+                    f"Week {week}: {team['name']} vs {opponent_name}\n"
+                    f"This game has been locked in for scheduling!"
+                )
+            )
         else:
-            dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
+            # Game is pending - DM the opponent
+            dm_embed = discord.Embed(
+                title="NC Game Request Received!",
+                description=f"**{team['name']}** wants to schedule a non-conference game with you.",
+                color=discord.Color.blue()
+            )
+            dm_embed.add_field(name="Week", value=str(week), inline=True)
+            dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
+            dm_embed.add_field(
+                name="To Confirm",
+                value=f"Submit matching details:\n`/schedule submit week:{week} opponent:@{team['name']}`",
+                inline=False
+            )
+            dm_embed.set_footer(text="Both teams must submit the same week to confirm.")
 
+            dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
+
+            dm_status = ""
+            if dm_result["sent"]:
+                dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+            else:
+                dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
+
+            await status_msg.edit(
+                content=(
+                    f"🕒 Submission recorded\n"
+                    f"Week {week}: {team['name']} vs {opponent_name}\n"
+                    f"Waiting for reciprocal submission.{dm_status}"
+                )
+            )
+
+    except Exception as e:
+        traceback.print_exc()
         await interaction.followup.send(
-            f"🕒 Submission recorded\n"
-            f"Week {week}: {team['name']} vs {opponent_name}\n"
-            f"Waiting for reciprocal submission.{dm_status}"
+            "An error occurred while submitting the schedule request. Please try again.",
+            ephemeral=True
         )
+
+
+@commish.command(name="schedule_submit", description="Submit an NC game on behalf of a team owner")
+@app_commands.describe(
+    team_owner="@ mention the team owner you are submitting for",
+    opponent="@ mention the team owner they want to schedule against",
+    week="Week number (1-4 for NC games)"
+)
+async def schedule_submit_for(
+    interaction: discord.Interaction,
+    team_owner: discord.Member,
+    opponent: discord.Member,
+    week: int
+):
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        # Commish role check
+        if not has_commish_role(interaction):
+            await interaction.followup.send(
+                "You must have the **Commish** role to use this command.",
+                ephemeral=True
+            )
+            return
+
+        # Check channel restriction
+        if interaction.channel_id != SCHEDULING_CHANNEL_ID:
+            await interaction.followup.send(
+                f"This command can only be used in <#{SCHEDULING_CHANNEL_ID}>."
+            )
+            return
+
+        # Check if NC game submissions are open
+        if not await asyncio.to_thread(are_nc_games_open):
+            await interaction.followup.send(
+                "🔒 **NC game submissions are currently closed.**\n"
+                "Please open submissions first with `/commish open`."
+            )
+            return
+
+        # Look up team_owner's team (submitting on their behalf)
+        team = await asyncio.to_thread(get_team_by_discord_id, team_owner.id)
+        if not team:
+            await interaction.followup.send(
+                f"{team_owner.mention} is not registered as a team owner."
+            )
+            return
+
+        # Look up opponent team
+        opponent_team = await asyncio.to_thread(get_team_by_discord_id, opponent.id)
+        if not opponent_team:
+            await interaction.followup.send(
+                f"{opponent.mention} is not registered as a team owner."
+            )
+            return
+
+        if opponent_team["conference"] == team["conference"]:
+            await interaction.followup.send("Manual games must be non-conference.")
+            return
+
+        opponent_id = str(opponent_team["id"]).zfill(3)
+        opponent_name = opponent_team["name"]
+
+        match_key = f"{week}-{'-'.join(sorted([team['name'], opponent_name]))}"
+
+        status_msg = await interaction.followup.send(
+            f"Submitting NC game request on behalf of {team['name']}...", ephemeral=True
+        )
+
+        # Use team_owner.id so it appears in team_owner's /schedule status
+        await asyncio.to_thread(manual_sub_ws.append_row, [
+            datetime.utcnow().isoformat(),
+            week,
+            team["name"],
+            opponent_name,
+            team_owner.id,
+            "PENDING",
+            match_key
+        ])
+
+        confirmed = await asyncio.to_thread(try_confirm_manual_game, match_key)
+
+        if confirmed:
+            await status_msg.edit(
+                content=(
+                    f"**Game Confirmed!** (submitted on behalf of {team['name']})\n"
+                    f"Week {week}: {team['name']} vs {opponent_name}\n"
+                    f"This game has been locked in for scheduling!"
+                )
+            )
+        else:
+            # Game is pending - DM the opponent
+            dm_embed = discord.Embed(
+                title="NC Game Request Received!",
+                description=(
+                    f"**{team['name']}** wants to schedule a non-conference game with you.\n"
+                    f"*(Submitted by the Commissioner on their behalf)*"
+                ),
+                color=discord.Color.blue()
+            )
+            dm_embed.add_field(name="Week", value=str(week), inline=True)
+            dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
+            dm_embed.add_field(
+                name="To Confirm",
+                value=f"Submit matching details:\n`/schedule submit week:{week} opponent:@{team['name']}`",
+                inline=False
+            )
+            dm_embed.set_footer(text="Both teams must submit the same week to confirm.")
+
+            dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
+
+            dm_status = ""
+            if dm_result["sent"]:
+                dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+            else:
+                dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
+
+            await status_msg.edit(
+                content=(
+                    f"Submission recorded on behalf of **{team['name']}**.\n"
+                    f"Week {week}: {team['name']} vs {opponent_name}\n"
+                    f"Waiting for reciprocal submission.{dm_status}"
+                )
+            )
+
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error occurred while submitting the schedule request. Please try again.",
+            ephemeral=True
+        )
+
+
 # ----------------- Schedule Status Matchup Command -----------------
 @schedule.command(
     name="status",
@@ -670,36 +882,44 @@ async def schedule_submit(
 async def schedule_status(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
 
-    user_id = str(interaction.user.id)
+    try:
+        user_id = str(interaction.user.id)
 
-    subs = manual_sub_ws.get_all_records()
+        subs = await asyncio.to_thread(manual_sub_ws.get_all_records)
 
-    my_subs = [
-        r for r in subs
-        if normalize_discord_id(r.get("Submitter Discord ID")) == user_id
-    ]
+        my_subs = [
+            r for r in subs
+            if normalize_discord_id(r.get("Submitter Discord ID")) == user_id
+        ]
 
-    if not my_subs:
+        if not my_subs:
+            await interaction.followup.send(
+                "You have not submitted any manual scheduling requests."
+            )
+            return
+
+        lines = []
+        for r in my_subs:
+            week = r.get("Week", "?")
+            team_a = r.get("Team A", "?")
+            team_b = r.get("Team B", "?")
+            status = r.get("Status", "UNKNOWN")
+
+            lines.append(
+                f"**Week {week}**: {team_a} vs {team_b} → **{status}**"
+            )
+
         await interaction.followup.send(
-            "ℹ️ You have not submitted any manual scheduling requests."
-        )
-        return
-
-    lines = []
-    for r in my_subs:
-        week = r.get("Week", "?")
-        team_a = r.get("Team A", "?")
-        team_b = r.get("Team B", "?")
-        status = r.get("Status", "UNKNOWN")
-
-        lines.append(
-            f"**Week {week}**: {team_a} vs {team_b} → **{status}**"
+            "**Your Manual Scheduling Submissions**\n\n" + "\n".join(lines),
+            ephemeral=True
         )
 
-    await interaction.followup.send(
-        "📋 **Your Manual Scheduling Submissions**\n\n" + "\n".join(lines),
-        ephemeral=True
-    )
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error occurred while checking your schedule status. Please try again.",
+            ephemeral=True
+        )
 
 # ----------------- Rivalry Commands -----------------
 
@@ -717,262 +937,465 @@ async def rival_submit(
 ):
     await interaction.response.defer(ephemeral=True)
 
-    # Check channel restriction
-    if interaction.channel_id != SCHEDULING_CHANNEL_ID:
-        await interaction.followup.send(
-            f"This command can only be used in <#{SCHEDULING_CHANNEL_ID}>."
-        )
-        return
+    try:
+        # Check channel restriction
+        if interaction.channel_id != SCHEDULING_CHANNEL_ID:
+            await interaction.followup.send(
+                f"This command can only be used in <#{SCHEDULING_CHANNEL_ID}>."
+            )
+            return
 
-    # Check if rivalry submissions are open
-    if not are_rivalries_open():
-        await interaction.followup.send(
-            "🔒 **Rivalry submissions are currently closed.**\n"
-            "Please wait for the Commish to open the submission period."
-        )
-        return
+        # Check if rivalry submissions are open
+        if not await asyncio.to_thread(are_rivalries_open):
+            await interaction.followup.send(
+                "🔒 **Rivalry submissions are currently closed.**\n"
+                "Please wait for the Commish to open the submission period."
+            )
+            return
 
-    # Get submitter's team
-    submitter = get_team_by_discord_id(interaction.user.id)
-    if not submitter:
-        await interaction.followup.send(
-            "You are not registered as a team owner in FranchiseLookup."
-        )
-        return
+        # Get submitter's team
+        submitter = await asyncio.to_thread(get_team_by_discord_id, interaction.user.id)
+        if not submitter:
+            await interaction.followup.send(
+                "You are not registered as a team owner in FranchiseLookup."
+            )
+            return
 
-    submitter_id = str(submitter["id"]).zfill(3)
-    submitter_name = submitter["name"]
-    submitter_conf = submitter["conference"]
+        submitter_id = str(submitter["id"]).zfill(3)
+        submitter_name = submitter["name"]
+        submitter_conf = submitter["conference"]
 
-    # Look up opponent team by their Discord ID
-    opponent_team = get_team_by_discord_id(opponent.id)
-    if not opponent_team:
-        await interaction.followup.send(
-            f"{opponent.mention} is not registered as a team owner in FranchiseLookup."
-        )
-        return
+        # Look up opponent team by their Discord ID
+        opponent_team = await asyncio.to_thread(get_team_by_discord_id, opponent.id)
+        if not opponent_team:
+            await interaction.followup.send(
+                f"{opponent.mention} is not registered as a team owner in FranchiseLookup."
+            )
+            return
 
-    opponent_id = str(opponent_team["id"]).zfill(3)
-    opponent_name = opponent_team["name"]
-    opponent_conf = opponent_team["conference"]
+        opponent_id = str(opponent_team["id"]).zfill(3)
+        opponent_name = opponent_team["name"]
+        opponent_conf = opponent_team["conference"]
 
-    # Cannot rival yourself
-    if submitter_id == opponent_id:
-        await interaction.followup.send("You cannot create a rivalry with yourself.")
-        return
+        # Cannot rival yourself
+        if submitter_id == opponent_id:
+            await interaction.followup.send("You cannot create a rivalry with yourself.")
+            return
 
-    # Validate wager
-    if wager < 0 or wager > MAX_WAGER:
-        await interaction.followup.send(
-            f"Wager must be between $0 and ${MAX_WAGER}."
-        )
-        return
+        # Validate wager
+        if wager < 0 or wager > MAX_WAGER:
+            await interaction.followup.send(
+                f"Wager must be between $0 and ${MAX_WAGER}."
+            )
+            return
 
-    # Check submitter's rivalry count
-    submitter_count = get_team_rivalry_count(submitter_id)
-    if submitter_count >= MAX_RIVALS_PER_TEAM:
-        await interaction.followup.send(
-            f"You already have {submitter_count} confirmed rivalries (max {MAX_RIVALS_PER_TEAM})."
-        )
-        return
+        # Check if a rivalry already exists between these two teams (PENDING or CONFIRMED)
+        existing_rivalry = await asyncio.to_thread(has_existing_rivalry, submitter_id, opponent_id)
+        if existing_rivalry["exists"]:
+            rec = existing_rivalry["record"]
+            if existing_rivalry["status"] == "CONFIRMED":
+                await interaction.followup.send(
+                    f"A rivalry between **{submitter_name}** and **{opponent_name}** is already **confirmed**.\n\n"
+                    f"**{rec.get('Rivalry Name')}**\n"
+                    f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
+                    f"No further action needed."
+                )
+                return
+            else:
+                # PENDING - tell them it's already in the system
+                # Check who submitted it
+                row_a = str(rec.get("Team A", "")).zfill(3)
+                if row_a == submitter_id:
+                    await interaction.followup.send(
+                        f"You already have a **pending** rivalry request to **{opponent_name}**.\n\n"
+                        f"**{rec.get('Rivalry Name')}**\n"
+                        f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n"
+                        f"Submitted: {rec.get('Team A Submitted')}\n\n"
+                        f"Waiting for **{opponent_name}** to submit matching details to confirm."
+                    )
+                else:
+                    await interaction.followup.send(
+                        f"**{opponent_name}** already submitted a rivalry request to you.\n\n"
+                        f"**{rec.get('Rivalry Name')}**\n"
+                        f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
+                        f"To confirm, submit with **matching** details:\n"
+                        f"`/rival submit opponent:@{opponent_name} name:{rec.get('Rivalry Name')} wager:{rec.get('Wager')}`"
+                    )
+                return
 
-    # Check opponent's rivalry count
-    opponent_count = get_team_rivalry_count(opponent_id)
-    if opponent_count >= MAX_RIVALS_PER_TEAM:
-        await interaction.followup.send(
-            f"{opponent_name} already has {opponent_count} confirmed rivalries (max {MAX_RIVALS_PER_TEAM})."
-        )
-        return
+        # Check submitter's rivalry count
+        submitter_count = await asyncio.to_thread(get_team_rivalry_count, submitter_id)
+        if submitter_count >= MAX_RIVALS_PER_TEAM:
+            await interaction.followup.send(
+                f"You already have {submitter_count} confirmed rivalries (max {MAX_RIVALS_PER_TEAM})."
+            )
+            return
 
-    # Determine rivalry type (CONF or NC)
-    rivalry_type = "CONF" if submitter_conf == opponent_conf else "NC"
+        # Check opponent's rivalry count
+        opponent_count = await asyncio.to_thread(get_team_rivalry_count, opponent_id)
+        if opponent_count >= MAX_RIVALS_PER_TEAM:
+            await interaction.followup.send(
+                f"{opponent_name} already has {opponent_count} confirmed rivalries (max {MAX_RIVALS_PER_TEAM})."
+            )
+            return
 
-    # Check if opponent already submitted matching request
-    confirm_result = try_confirm_rivalry(submitter_id, opponent_id, name, wager)
+        # Determine rivalry type (CONF or NC)
+        rivalry_type = "CONF" if submitter_conf == opponent_conf else "NC"
 
-    if confirm_result.get("already_submitted"):
-        existing = confirm_result["existing"]
-        await interaction.followup.send(
-            f"You already submitted a rivalry request to **{opponent_name}**.\n"
-            f"Waiting for them to confirm with matching details:\n"
-            f"- Name: **{existing.get('Rivalry Name')}**\n"
-            f"- Wager: **${existing.get('Wager')}**"
-        )
-        return
-
-    if confirm_result.get("mismatch"):
-        existing = confirm_result["existing"]
-        await interaction.followup.send(
-            f"**{opponent_name}** submitted a rivalry request, but details don't match:\n"
-            f"- Their Name: **{existing.get('Rivalry Name')}** | Yours: **{name}**\n"
-            f"- Their Wager: **${existing.get('Wager')}** | Yours: **${wager}**\n\n"
-            f"Coordinate with {opponent_name} to submit matching details."
-        )
-        return
-
-    if confirm_result["matched"]:
-        # Both teams match - confirm the rivalry!
-        row_num = confirm_result["row"]
+        # No existing submission from opponent - create new pending rivalry
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        new_row = [
+            submitter_id,       # Team A
+            submitter_name,     # Team A Name
+            opponent_id,        # Team B
+            opponent_name,      # Team B Name
+            name,               # Rivalry Name
+            wager,              # Wager
+            rivalry_type,       # Type (CONF or NC)
+            "PENDING",          # Status
+            now,                # Team A Submitted
+            "",                 # Team B Submitted
+            ""                  # Confirmed At
+        ]
 
-        # Update the row: add Team B Submitted timestamp and change status to CONFIRMED
-        rivalries_ws.update(f"J{row_num}", [[now]])  # Team B Submitted
-        rivalries_ws.update(f"K{row_num}", [[now]])  # Confirmed At
-        rivalries_ws.update(f"H{row_num}", [["CONFIRMED"]])  # Status
-
-        await interaction.followup.send(
-            f"**RIVALRY CONFIRMED!**\n\n"
-            f"**{name}**\n"
-            f"{submitter_name} vs {opponent_name}\n"
-            f"Type: {rivalry_type} | Wager: ${wager}\n\n"
-            f"This rivalry has been locked in for scheduling!"
+        status_msg = await interaction.followup.send(
+            f"Submitting rivalry request **{name}**...", ephemeral=True
         )
-        return
 
-    # No existing submission from opponent - create new pending rivalry
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    new_row = [
-        submitter_id,       # Team A
-        submitter_name,     # Team A Name
-        opponent_id,        # Team B
-        opponent_name,      # Team B Name
-        name,               # Rivalry Name
-        wager,              # Wager
-        rivalry_type,       # Type (CONF or NC)
-        "PENDING",          # Status
-        now,                # Team A Submitted
-        "",                 # Team B Submitted
-        ""                  # Confirmed At
-    ]
-    rivalries_ws.append_row(new_row)
+        await asyncio.to_thread(rivalries_ws.append_row, new_row)
 
-    # DM the opponent about the rivalry request
-    dm_embed = discord.Embed(
-        title="Rivalry Request Received!",
-        description=f"**{submitter_name}** wants to establish a rivalry with you.",
-        color=discord.Color.orange()
-    )
-    dm_embed.add_field(name="Rivalry Name", value=name, inline=True)
-    dm_embed.add_field(name="Wager", value=f"${wager}", inline=True)
-    dm_embed.add_field(name="Type", value=rivalry_type, inline=True)
-    dm_embed.add_field(
-        name="To Confirm",
-        value=f"Submit matching details:\n`/rival submit opponent:@{submitter_name} name:{name} wager:{wager}`",
-        inline=False
-    )
-    dm_embed.set_footer(text="Both teams must submit identical details to confirm.")
+        # DM the opponent about the rivalry request
+        dm_embed = discord.Embed(
+            title="Rivalry Request Received!",
+            description=f"**{submitter_name}** wants to establish a rivalry with you.",
+            color=discord.Color.orange()
+        )
+        dm_embed.add_field(name="Rivalry Name", value=name, inline=True)
+        dm_embed.add_field(name="Wager", value=f"${wager}", inline=True)
+        dm_embed.add_field(name="Type", value=rivalry_type, inline=True)
+        dm_embed.add_field(
+            name="To Confirm",
+            value=f"Submit matching details:\n`/rival submit opponent:@{submitter_name} name:{name} wager:{wager}`",
+            inline=False
+        )
+        dm_embed.set_footer(text="Both teams must submit identical details to confirm.")
 
-    dm_result = await notify_opponent_dm(opponent_id, "Rivalry Request", "", embed=dm_embed)
+        dm_result = await notify_opponent_dm(opponent_id, "Rivalry Request", "", embed=dm_embed)
 
-    dm_status = ""
-    if dm_result["sent"]:
-        dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
-    else:
-        dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
+        dm_status = ""
+        if dm_result["sent"]:
+            dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+        else:
+            dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
 
-    await interaction.followup.send(
-        f"**Rivalry Request Submitted!**\n\n"
-        f"**{name}**\n"
-        f"{submitter_name} vs {opponent_name}\n"
-        f"Type: {rivalry_type} | Wager: ${wager}\n\n"
-        f"Waiting for **{opponent_name}** to submit matching details:\n"
-        f"`/rival submit opponent:@{submitter_name} name:{name} wager:{wager}`"
-        f"{dm_status}"
-    )
+        await status_msg.edit(
+            content=(
+                f"**Rivalry Request Logged Successfully!**\n\n"
+                f"**{name}**\n"
+                f"{submitter_name} vs {opponent_name}\n"
+                f"Type: {rivalry_type} | Wager: ${wager}\n"
+                f"Submitted: {now}\n\n"
+                f"Waiting for **{opponent_name}** to submit matching details:\n"
+                f"`/rival submit opponent:@{submitter_name} name:{name} wager:{wager}`"
+                f"{dm_status}"
+            )
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error occurred while processing your rivalry submission. Please try again.",
+            ephemeral=True
+        )
 
 
 @rival.command(name="status", description="Check your rivalry status")
 async def rival_status(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
 
-    # Get user's team
-    team = get_team_by_discord_id(interaction.user.id)
-    if not team:
-        await interaction.followup.send(
-            "You are not registered as a team owner in FranchiseLookup."
-        )
-        return
-
-    team_id = str(team["id"]).zfill(3)
-    team_name = team["name"]
-
-    # Get all rivalries involving this team
-    records = rivalries_ws.get_all_records()
-    confirmed = []
-    pending_mine = []
-    pending_theirs = []
-    seen_pairs = set()  # Track unique rivalry pairs to prevent double counting
-
-    for r in records:
-        team_a = str(r.get("Team A", "")).zfill(3)
-        team_b = str(r.get("Team B", "")).zfill(3)
-
-        if team_a != team_id and team_b != team_id:
-            continue
-
-        # Create unique key for this rivalry pair (sorted to handle A-B and B-A as same)
-        pair_key = "-".join(sorted([team_a, team_b]))
-        status = r.get("Status", "")
-
-        # Skip if we've already processed this pair with the same status
-        pair_status_key = f"{pair_key}:{status}"
-        if pair_status_key in seen_pairs:
-            continue
-        seen_pairs.add(pair_status_key)
-
-        rival_name = r.get("Rivalry Name", "Unnamed")
-        wager = r.get("Wager", 0)
-        rival_type = r.get("Type", "?")
-
-        # Determine opponent
-        if team_a == team_id:
-            opponent_name = r.get("Team B Name", team_b)
-            i_submitted = True
-        else:
-            opponent_name = r.get("Team A Name", team_a)
-            i_submitted = False
-
-        rivalry_info = {
-            "name": rival_name,
-            "opponent": opponent_name,
-            "wager": wager,
-            "type": rival_type
-        }
-
-        if status == "CONFIRMED":
-            confirmed.append(rivalry_info)
-        elif status == "PENDING":
-            if i_submitted:
-                pending_mine.append(rivalry_info)
-            else:
-                pending_theirs.append(rivalry_info)
-
-    # Build response
-    lines = [f"**Rivalry Status for {team_name}**\n"]
-    lines.append(f"Confirmed: {len(confirmed)}/{MAX_RIVALS_PER_TEAM}\n")
-
-    if confirmed:
-        lines.append("**Confirmed Rivalries:**")
-        for r in confirmed:
-            lines.append(f"  - **{r['name']}** vs {r['opponent']} ({r['type']}, ${r['wager']})")
-
-    if pending_mine:
-        lines.append("\n**Awaiting Opponent Confirmation:**")
-        for r in pending_mine:
-            lines.append(f"  - **{r['name']}** vs {r['opponent']} ({r['type']}, ${r['wager']})")
-
-    if pending_theirs:
-        lines.append("\n**Pending Your Confirmation:**")
-        for r in pending_theirs:
-            lines.append(
-                f"  - **{r['name']}** vs {r['opponent']} ({r['type']}, ${r['wager']})\n"
-                f"    Use `/rival submit` with matching details to confirm"
+    try:
+        # Get user's team
+        team = await asyncio.to_thread(get_team_by_discord_id, interaction.user.id)
+        if not team:
+            await interaction.followup.send(
+                "You are not registered as a team owner in FranchiseLookup."
             )
+            return
 
-    if not confirmed and not pending_mine and not pending_theirs:
-        lines.append("\nNo rivalries found. Use `/rival submit` to create one!")
+        team_id = str(team["id"]).zfill(3)
+        team_name = team["name"]
 
-    await interaction.followup.send("\n".join(lines), ephemeral=True)
+        # Get all rivalries involving this team
+        records = await asyncio.to_thread(rivalries_ws.get_all_records)
+        confirmed = []
+        pending_mine = []
+        pending_theirs = []
+        seen_pairs = set()  # Track unique rivalry pairs to prevent double counting
+
+        for r in records:
+            team_a = str(r.get("Team A", "")).zfill(3)
+            team_b = str(r.get("Team B", "")).zfill(3)
+
+            if team_a != team_id and team_b != team_id:
+                continue
+
+            # Create unique key for this rivalry pair (sorted to handle A-B and B-A as same)
+            pair_key = "-".join(sorted([team_a, team_b]))
+            status = r.get("Status", "")
+
+            # Skip if we've already processed this pair with the same status
+            pair_status_key = f"{pair_key}:{status}"
+            if pair_status_key in seen_pairs:
+                continue
+            seen_pairs.add(pair_status_key)
+
+            rival_name = r.get("Rivalry Name", "Unnamed")
+            wager = r.get("Wager", 0)
+            rival_type = r.get("Type", "?")
+
+            # Determine opponent
+            if team_a == team_id:
+                opponent_name = r.get("Team B Name", team_b)
+                i_submitted = True
+            else:
+                opponent_name = r.get("Team A Name", team_a)
+                i_submitted = False
+
+            rivalry_info = {
+                "name": rival_name,
+                "opponent": opponent_name,
+                "wager": wager,
+                "type": rival_type
+            }
+
+            if status == "CONFIRMED":
+                confirmed.append(rivalry_info)
+            elif status == "PENDING":
+                if i_submitted:
+                    pending_mine.append(rivalry_info)
+                else:
+                    pending_theirs.append(rivalry_info)
+
+        # Build response
+        lines = [f"**Rivalry Status for {team_name}**\n"]
+        lines.append(f"Confirmed: {len(confirmed)}/{MAX_RIVALS_PER_TEAM}\n")
+
+        if confirmed:
+            lines.append("**Confirmed Rivalries:**")
+            for r in confirmed:
+                lines.append(f"  - **{r['name']}** vs {r['opponent']} ({r['type']}, ${r['wager']})")
+
+        if pending_mine:
+            lines.append("\n**Awaiting Opponent Confirmation:**")
+            for r in pending_mine:
+                lines.append(f"  - **{r['name']}** vs {r['opponent']} ({r['type']}, ${r['wager']})")
+
+        if pending_theirs:
+            lines.append("\n**Pending Your Confirmation:**")
+            for r in pending_theirs:
+                lines.append(
+                    f"  - **{r['name']}** vs {r['opponent']} ({r['type']}, ${r['wager']})\n"
+                    f"    Use `/rival submit` with matching details to confirm"
+                )
+
+        if not confirmed and not pending_mine and not pending_theirs:
+            lines.append("\nNo rivalries found. Use `/rival submit` to create one!")
+
+        await interaction.followup.send("\n".join(lines), ephemeral=True)
+
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error occurred while checking your rivalry status. Please try again.",
+            ephemeral=True
+        )
+
+
+@commish.command(name="rival_submit", description="Submit a rivalry request on behalf of a team owner")
+@app_commands.describe(
+    team_owner="@ mention the team owner you are submitting for",
+    opponent="@ mention the team owner they want to rival",
+    name="Name for the rivalry (e.g., 'The Iron Bowl')",
+    wager="Wager amount for the rivalry ($0-5)"
+)
+async def rival_submit_for(
+    interaction: discord.Interaction,
+    team_owner: discord.Member,
+    opponent: discord.Member,
+    name: str,
+    wager: int
+):
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        # Commish role check
+        if not has_commish_role(interaction):
+            await interaction.followup.send(
+                "You must have the **Commish** role to use this command.",
+                ephemeral=True
+            )
+            return
+
+        # Check channel restriction
+        if interaction.channel_id != SCHEDULING_CHANNEL_ID:
+            await interaction.followup.send(
+                f"This command can only be used in <#{SCHEDULING_CHANNEL_ID}>."
+            )
+            return
+
+        # Check if rivalry submissions are open
+        if not await asyncio.to_thread(are_rivalries_open):
+            await interaction.followup.send(
+                "🔒 **Rivalry submissions are currently closed.**\n"
+                "Please open submissions first with `/commish open`."
+            )
+            return
+
+        # Look up team_owner's team (submitting on their behalf)
+        submitter = await asyncio.to_thread(get_team_by_discord_id, team_owner.id)
+        if not submitter:
+            await interaction.followup.send(
+                f"{team_owner.mention} is not registered as a team owner in FranchiseLookup."
+            )
+            return
+
+        submitter_id = str(submitter["id"]).zfill(3)
+        submitter_name = submitter["name"]
+        submitter_conf = submitter["conference"]
+
+        # Look up opponent team
+        opponent_team = await asyncio.to_thread(get_team_by_discord_id, opponent.id)
+        if not opponent_team:
+            await interaction.followup.send(
+                f"{opponent.mention} is not registered as a team owner in FranchiseLookup."
+            )
+            return
+
+        opponent_id = str(opponent_team["id"]).zfill(3)
+        opponent_name = opponent_team["name"]
+        opponent_conf = opponent_team["conference"]
+
+        # Cannot rival yourself
+        if submitter_id == opponent_id:
+            await interaction.followup.send("A team cannot create a rivalry with itself.")
+            return
+
+        # Validate wager
+        if wager < 0 or wager > MAX_WAGER:
+            await interaction.followup.send(
+                f"Wager must be between $0 and ${MAX_WAGER}."
+            )
+            return
+
+        # Check if a rivalry already exists between these two teams (PENDING or CONFIRMED)
+        existing_rivalry = await asyncio.to_thread(has_existing_rivalry, submitter_id, opponent_id)
+        if existing_rivalry["exists"]:
+            rec = existing_rivalry["record"]
+            if existing_rivalry["status"] == "CONFIRMED":
+                await interaction.followup.send(
+                    f"A rivalry between **{submitter_name}** and **{opponent_name}** is already **confirmed**.\n\n"
+                    f"**{rec.get('Rivalry Name')}**\n"
+                    f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
+                    f"No further action needed."
+                )
+                return
+            else:
+                await interaction.followup.send(
+                    f"A **pending** rivalry already exists between **{submitter_name}** and **{opponent_name}**.\n\n"
+                    f"**{rec.get('Rivalry Name')}**\n"
+                    f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n"
+                    f"Submitted: {rec.get('Team A Submitted')}\n\n"
+                    f"Waiting for the other team to submit matching details to confirm."
+                )
+                return
+
+        # Check submitter's rivalry count
+        submitter_count = await asyncio.to_thread(get_team_rivalry_count, submitter_id)
+        if submitter_count >= MAX_RIVALS_PER_TEAM:
+            await interaction.followup.send(
+                f"{submitter_name} already has {submitter_count} confirmed rivalries (max {MAX_RIVALS_PER_TEAM})."
+            )
+            return
+
+        # Check opponent's rivalry count
+        opponent_count = await asyncio.to_thread(get_team_rivalry_count, opponent_id)
+        if opponent_count >= MAX_RIVALS_PER_TEAM:
+            await interaction.followup.send(
+                f"{opponent_name} already has {opponent_count} confirmed rivalries (max {MAX_RIVALS_PER_TEAM})."
+            )
+            return
+
+        # Determine rivalry type (CONF or NC)
+        rivalry_type = "CONF" if submitter_conf == opponent_conf else "NC"
+
+        # No existing rivalry - create new pending submission
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        new_row = [
+            submitter_id,       # Team A
+            submitter_name,     # Team A Name
+            opponent_id,        # Team B
+            opponent_name,      # Team B Name
+            name,               # Rivalry Name
+            wager,              # Wager
+            rivalry_type,       # Type (CONF or NC)
+            "PENDING",          # Status
+            now,                # Team A Submitted
+            "",                 # Team B Submitted
+            ""                  # Confirmed At
+        ]
+
+        status_msg = await interaction.followup.send(
+            f"Submitting rivalry request **{name}** on behalf of {submitter_name}...", ephemeral=True
+        )
+
+        await asyncio.to_thread(rivalries_ws.append_row, new_row)
+
+        # DM the opponent about the rivalry request
+        dm_embed = discord.Embed(
+            title="Rivalry Request Received!",
+            description=(
+                f"**{submitter_name}** wants to establish a rivalry with you.\n"
+                f"*(Submitted by the Commissioner on their behalf)*"
+            ),
+            color=discord.Color.orange()
+        )
+        dm_embed.add_field(name="Rivalry Name", value=name, inline=True)
+        dm_embed.add_field(name="Wager", value=f"${wager}", inline=True)
+        dm_embed.add_field(name="Type", value=rivalry_type, inline=True)
+        dm_embed.add_field(
+            name="To Confirm",
+            value=f"Submit matching details:\n`/rival submit opponent:@{submitter_name} name:{name} wager:{wager}`",
+            inline=False
+        )
+        dm_embed.set_footer(text="Both teams must submit identical details to confirm.")
+
+        dm_result = await notify_opponent_dm(opponent_id, "Rivalry Request", "", embed=dm_embed)
+
+        dm_status = ""
+        if dm_result["sent"]:
+            dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+        else:
+            dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
+
+        await status_msg.edit(
+            content=(
+                f"**Rivalry Request Logged Successfully on behalf of {submitter_name}!**\n\n"
+                f"**{name}**\n"
+                f"{submitter_name} vs {opponent_name}\n"
+                f"Type: {rivalry_type} | Wager: ${wager}\n"
+                f"Submitted: {now}\n\n"
+                f"Waiting for **{opponent_name}** to submit matching details:\n"
+                f"`/rival submit opponent:@{submitter_name} name:{name} wager:{wager}`"
+                f"{dm_status}"
+            )
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error occurred while submitting the rivalry. Please try again.",
+            ephemeral=True
+        )
 
 # ----------------- Commish Pending Submissions Command -----------------
 
@@ -998,7 +1421,7 @@ def has_commish_role(interaction: discord.Interaction) -> bool:
 
     return False
 
-@bot.tree.command(name="pending", description="[Commish] List all pending rivalry and NC game submissions")
+@commish.command(name="pending", description="List all pending rivalry and NC game submissions")
 async def pending_submissions(interaction: discord.Interaction):
     # Check for Commish role
     if not has_commish_role(interaction):
@@ -1011,11 +1434,11 @@ async def pending_submissions(interaction: discord.Interaction):
     await interaction.response.defer()
 
     # Get pending rivalries
-    rivalry_records = rivalries_ws.get_all_records()
+    rivalry_records = rivalries_ws.get_all_records(expected_headers=[])
     pending_rivalries = [r for r in rivalry_records if r.get("Status") == "PENDING"]
 
     # Get pending NC game submissions
-    nc_records = manual_sub_ws.get_all_records()
+    nc_records = manual_sub_ws.get_all_records(expected_headers=[])
     pending_nc = [r for r in nc_records if r.get("Status") == "PENDING"]
 
     # Build the response
@@ -1104,9 +1527,7 @@ async def pending_submissions(interaction: discord.Interaction):
 
 # ----------------- Submission Control Commands (Commish Only) -----------------
 
-submissions = app_commands.Group(name="submissions", description="[Commish] Control rivalry and NC game submission periods")
-
-@submissions.command(name="open", description="[Commish] Open submissions for rivalries, NC games, or both")
+@commish.command(name="open", description="Open submissions for rivalries, NC games, or both")
 @app_commands.describe(
     submission_type="What type of submissions to open"
 )
@@ -1159,7 +1580,7 @@ async def submissions_open(
 
     await interaction.followup.send("\n".join(results) + f"\n\nAnnouncement posted to <#{SCHEDULING_CHANNEL_ID}>")
 
-@submissions.command(name="close", description="[Commish] Close submissions for rivalries, NC games, or both")
+@commish.command(name="close", description="Close submissions for rivalries, NC games, or both")
 @app_commands.describe(
     submission_type="What type of submissions to close"
 )
@@ -1207,7 +1628,7 @@ async def submissions_close(
 
     await interaction.followup.send("\n".join(results) + f"\n\nAnnouncement posted to <#{SCHEDULING_CHANNEL_ID}>")
 
-@submissions.command(name="status", description="[Commish] Check current submission status")
+@commish.command(name="submission_status", description="Check current submission open/close status")
 async def submissions_status(interaction: discord.Interaction):
     if not has_commish_role(interaction):
         await interaction.response.send_message(
@@ -1235,14 +1656,11 @@ async def submissions_status(interaction: discord.Interaction):
     )
     embed.add_field(
         name="Commands",
-        value="`/submissions open` - Open submissions\n`/submissions close` - Close submissions",
+        value="`/commish open` - Open submissions\n`/commish close` - Close submissions",
         inline=False
     )
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
-
-# Register the submissions command group
-bot.tree.add_command(submissions)
 
 # ----------------- Recruiting Dollars Commands -----------------
 
@@ -1266,7 +1684,7 @@ async def recruiting_dollars(interaction: discord.Interaction):
 
     # Get all recruiting dollars data
     try:
-        data = recruiting_dollars_ws.get_all_records()
+        data = recruiting_dollars_ws.get_all_records(expected_headers=[])
     except Exception as e:
         await interaction.followup.send(f"Error reading recruiting dollars data: {e}")
         return
@@ -1475,7 +1893,7 @@ async def recruiting_draft(interaction: discord.Interaction):
 
     # Read draft data
     try:
-        draft_data = theoretical_draft_ws.get_all_records()
+        draft_data = theoretical_draft_ws.get_all_records(expected_headers=[])
     except Exception as e:
         await interaction.followup.send(f"❌ Error reading draft data: {e}")
         return
@@ -1747,7 +2165,7 @@ def get_team_emoji_map():
     Returns dict: franchiseId -> emoji string
     """
     try:
-        data = teams_ws.get_all_records()
+        data = teams_ws.get_all_records(expected_headers=[])
         emoji_map = {}
         for row in data:
             franchise_id = str(row.get("Franchise ID", "")).strip()
@@ -1768,7 +2186,7 @@ def get_team_name_map():
     Returns dict: franchiseId -> team name
     """
     try:
-        data = teams_ws.get_all_records()
+        data = teams_ws.get_all_records(expected_headers=[])
         name_map = {}
         for row in data:
             franchise_id = str(row.get("Franchise ID", "")).strip()
@@ -1787,7 +2205,7 @@ def get_awards_data(year: int = None):
     if awards_ws is None:
         return None
 
-    data = awards_ws.get_all_records()
+    data = awards_ws.get_all_records(expected_headers=[])
     if not data:
         return []
 
@@ -2261,7 +2679,7 @@ def record_retention_decision_in_sheet(copy_id: str, decision: str):
 
     raise Exception(f"Player copy {copy_id} not found")
 
-@retention.command(name="eligible", description="View players eligible for early declaration")
+@commish.command(name="eligible", description="View players eligible for early declaration")
 @app_commands.describe(conference="Filter by conference (optional)")
 @app_commands.choices(conference=[
     app_commands.Choice(name="ACC", value="ACC"),
@@ -2534,7 +2952,7 @@ def get_franchise_owner_discord_ids():
     Returns dict: franchiseId (3-digit padded) -> discord_id (string)
     """
     try:
-        data = teams_ws.get_all_records()
+        data = teams_ws.get_all_records(expected_headers=[])
         owner_map = {}
         for row in data:
             franchise_id = str(row.get("Franchise ID", "")).strip()
@@ -2732,7 +3150,7 @@ def get_rankings_data(year: int = None, week: int = None):
     if rankings_ws is None:
         return None
 
-    data = rankings_ws.get_all_records()
+    data = rankings_ws.get_all_records(expected_headers=[])
     if not data:
         return []
 
@@ -2842,7 +3260,7 @@ def get_franchise_owner_map():
     Returns dict: franchiseId (3-digit padded) -> discord_id (string)
     """
     try:
-        data = teams_ws.get_all_records()
+        data = teams_ws.get_all_records(expected_headers=[])
         owner_map = {}
         for row in data:
             franchise_id = str(row.get("Franchise ID", "")).strip()
@@ -3378,6 +3796,9 @@ async def post_weekly_awards_update():
     """Post weekly awards update to the awards channel"""
     global last_posted_heisman
 
+    if not auto_posts_enabled:
+        return
+
     if AWARDS_CHANNEL_ID == 0:
         return
 
@@ -3536,7 +3957,7 @@ def get_schedule_results_info():
         return None, None
 
     try:
-        sr_data = schedule_results_ws.get_all_records()
+        sr_data = schedule_results_ws.get_all_records(expected_headers=[])
         if not sr_data:
             return None, None
 
@@ -3578,7 +3999,7 @@ def get_gameday_matchups(week: int, year: int = None):
     rank_map = {}
 
     try:
-        sr_data = schedule_results_ws.get_all_records()
+        sr_data = schedule_results_ws.get_all_records(expected_headers=[])
         for row in sr_data:
             # Use int() conversion to handle potential type mismatches
             row_year = int(row.get("Year", 0))
@@ -3595,7 +4016,7 @@ def get_gameday_matchups(week: int, year: int = None):
     if not rank_map:
         print(f"Gameday: No ranks found in ScheduleResults for {year} Week {week}, trying PowerRankings")
         try:
-            pr_data = rankings_ws.get_all_records()
+            pr_data = rankings_ws.get_all_records(expected_headers=[])
             for row in pr_data:
                 row_year = int(row.get("Year", 0))
                 row_week = int(row.get("Week", 0))
@@ -3614,7 +4035,7 @@ def get_gameday_matchups(week: int, year: int = None):
     print(f"Gameday: Found {len(rank_map)} team rankings for {year} Week {week}")
 
     # Get team info
-    teams = teams_ws.get_all_records()
+    teams = teams_ws.get_all_records(expected_headers=[])
     team_map = {}
     emoji_map = {}
     for t in teams:
@@ -3625,7 +4046,7 @@ def get_gameday_matchups(week: int, year: int = None):
     # Get matchups for the selected week from ScheduleResults
     matchups = []
     try:
-        sr_data = schedule_results_ws.get_all_records()
+        sr_data = schedule_results_ws.get_all_records(expected_headers=[])
         processed_pairs = set()
 
         for row in sr_data:
@@ -3758,7 +4179,7 @@ def create_gameday_embed(data: dict) -> discord.Embed:
     return embed
 
 # ----------------- College Gameday Commands -----------------
-@gameday.command(name="preview", description="Preview College Gameday matchups for a week")
+@commish.command(name="gameday_preview", description="Preview College Gameday matchups for a week")
 @app_commands.describe(week="Week number to preview (defaults to latest week in ScheduleResults)")
 async def gameday_preview(interaction: discord.Interaction, week: int = None):
     await interaction.response.defer()
@@ -3842,7 +4263,7 @@ def get_projections_data(year: int = None, week: int = None):
     if projections_ws is None:
         return None
 
-    data = projections_ws.get_all_records()
+    data = projections_ws.get_all_records(expected_headers=[])
     if not data:
         return []
 
@@ -3871,7 +4292,7 @@ def format_pct_bar(pct: float, width: int = 10) -> str:
 
 # ----------------- Projections Commands -----------------
 
-@projections.command(name="playoff", description="Show playoff probability for all teams")
+@commish.command(name="playoff", description="Show playoff probability for all teams")
 @app_commands.describe(year="Season year (default: current)")
 async def projections_playoff(interaction: discord.Interaction, year: int = None):
     await interaction.response.defer()
@@ -3936,7 +4357,7 @@ async def projections_playoff(interaction: discord.Interaction, year: int = None
     embed.set_footer(text=f"Projections as of Week {week}")
     await interaction.followup.send(embed=embed)
 
-@projections.command(name="bowl", description="Show bowl eligibility projections")
+@commish.command(name="bowl", description="Show bowl eligibility projections")
 @app_commands.describe(year="Season year (default: current)")
 async def projections_bowl(interaction: discord.Interaction, year: int = None):
     await interaction.response.defer()
@@ -4295,7 +4716,7 @@ async def projections_standings(interaction: discord.Interaction, conference: st
 
     # Get all data from sheet
     try:
-        all_data = conference_standings_ws.get_all_records()
+        all_data = conference_standings_ws.get_all_records(expected_headers=[])
     except Exception as e:
         await interaction.followup.send(f"Error reading standings: {e}")
         return
@@ -4400,7 +4821,7 @@ async def projections_ccg(interaction: discord.Interaction):
 
     # Get all data from sheet
     try:
-        all_data = conference_standings_ws.get_all_records()
+        all_data = conference_standings_ws.get_all_records(expected_headers=[])
     except Exception as e:
         await interaction.followup.send(f"Error reading standings: {e}")
         return
@@ -4510,7 +4931,7 @@ def get_devy_draft_setting(key: str):
     if devy_draft_settings_ws is None:
         return None
     try:
-        data = devy_draft_settings_ws.get_all_records()
+        data = devy_draft_settings_ws.get_all_records(expected_headers=[])
         for row in data:
             if row.get("SettingKey") == key:
                 return row.get("SettingValue")
@@ -4524,7 +4945,7 @@ def set_devy_draft_setting(key: str, value):
     if devy_draft_settings_ws is None:
         return False
     try:
-        data = devy_draft_settings_ws.get_all_records()
+        data = devy_draft_settings_ws.get_all_records(expected_headers=[])
         for idx, row in enumerate(data, start=2):
             if row.get("SettingKey") == key:
                 devy_draft_settings_ws.update_cell(idx, 2, value)
@@ -4544,7 +4965,7 @@ def get_available_devy_players(conference: str = None):
     if devy_player_pool_ws is None:
         return []
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
         players = []
         for row in data:
             # Check if available (not drafted, status is Available or Retained)
@@ -4594,7 +5015,7 @@ def get_team_devy_roster(franchise_id: str, conference: str = None):
     if devy_player_pool_ws is None:
         return []
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
         normalized_id = str(franchise_id).zfill(3)
         players = []
 
@@ -4641,7 +5062,7 @@ def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
         return {"success": False, "message": "Devy player pool sheet not configured"}
 
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
         normalized_id = str(franchise_id).zfill(3)
 
         for idx, row in enumerate(data, start=2):
@@ -4689,7 +5110,7 @@ def release_devy_player(player_id: str, franchise_id: str):
         return {"success": False, "message": "Devy player pool sheet not configured"}
 
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
         normalized_id = str(franchise_id).zfill(3)
 
         for idx, row in enumerate(data, start=2):
@@ -4731,7 +5152,7 @@ def get_all_retained_players(conference: str = None):
     if devy_player_pool_ws is None:
         return []
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
         players = []
 
         for row in data:
@@ -4771,7 +5192,7 @@ def get_current_devy_pick(conference: str):
     current_pick = int(get_devy_draft_setting("CurrentPick") or 1)
 
     try:
-        order_data = devy_draft_order_ws.get_all_records()
+        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
         for row in order_data:
             if (row.get("Year") == int(draft_year) and
                 row.get("Conference") == conference and
@@ -4796,8 +5217,8 @@ def get_devy_draft_order_with_status(conference: str, year: int):
         return []
 
     try:
-        order_data = devy_draft_order_ws.get_all_records()
-        history_data = devy_draft_history_ws.get_all_records()
+        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
+        history_data = devy_draft_history_ws.get_all_records(expected_headers=[])
 
         # Build set of completed picks
         completed_picks = set()
@@ -4864,7 +5285,7 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
 
     # Find and validate player
     try:
-        pool_data = devy_player_pool_ws.get_all_records()
+        pool_data = devy_player_pool_ws.get_all_records(expected_headers=[])
         player = None
         player_row = None
 
@@ -5002,7 +5423,7 @@ def advance_devy_draft(conference: str):
     current_pick = int(get_devy_draft_setting("CurrentPick") or 1)
 
     try:
-        order_data = devy_draft_order_ws.get_all_records()
+        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
 
         # Get all picks for this conference/year sorted by overall pick
         conf_picks = sorted(
@@ -5104,7 +5525,7 @@ async def devy_order(interaction: discord.Interaction, conference: str):
     if not draft_year:
         # Fall back to finding the most recent year in the draft order sheet
         try:
-            order_data = devy_draft_order_ws.get_all_records()
+            order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
             conf_years = [
                 row.get("Year") for row in order_data
                 if row.get("Conference", "").upper() == conference.upper() and row.get("Year")
@@ -5407,7 +5828,7 @@ async def devy_history(interaction: discord.Interaction, conference: str = None,
             draft_year = int(draft_year)
 
     try:
-        history_data = devy_draft_history_ws.get_all_records()
+        history_data = devy_draft_history_ws.get_all_records(expected_headers=[])
         history = [
             row for row in history_data
             if row.get("Year") == int(draft_year) and row.get("Conference") == conference.upper()
@@ -5468,7 +5889,7 @@ async def devy_my_history(interaction: discord.Interaction, year: int = None):
     team_name = team.get("name", "Your Team")
 
     try:
-        history_data = devy_draft_history_ws.get_all_records()
+        history_data = devy_draft_history_ws.get_all_records(expected_headers=[])
         if year is not None:
             my_picks = [
                 row for row in history_data
@@ -5548,7 +5969,7 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
 
     # Verify conference exists in draft order for this year
     try:
-        order_data = devy_draft_order_ws.get_all_records()
+        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
         conf_exists = any(
             row.get("Year") == draft_year and row.get("Conference") == conference.upper()
             for row in order_data
@@ -5679,7 +6100,7 @@ async def devy_release(interaction: discord.Interaction, player_id: str):
     else:
         await interaction.followup.send(f"❌ {result['message']}")
 
-@devy.command(name="retained", description="View all retained devy players in a conference")
+@commish.command(name="devy_retained", description="View all retained devy players in a conference")
 @app_commands.describe(conference="Conference to view (defaults to your conference)")
 async def devy_retained(interaction: discord.Interaction, conference: str = None):
     await interaction.response.defer()
@@ -5722,7 +6143,7 @@ async def devy_retained(interaction: discord.Interaction, conference: str = None
     emoji_map = get_team_emoji_map()
     team_names = {}
     try:
-        teams_data = teams_ws.get_all_records()
+        teams_data = teams_ws.get_all_records(expected_headers=[])
         for t in teams_data:
             fid = str(t.get("Franchise ID", "")).zfill(3)
             team_names[fid] = t.get("Team Name", f"Team {fid}")
@@ -5885,7 +6306,7 @@ def get_teams_with_drafted_devy_players(conference: str = None):
         return {}
 
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
         teams = {}  # franchise_id -> list of players
 
         for row in data:
@@ -5944,7 +6365,7 @@ async def devy_retention_start(interaction: discord.Interaction, year: int, conf
     team_names = {}
     team_conferences = {}
     try:
-        teams_data = teams_ws.get_all_records()
+        teams_data = teams_ws.get_all_records(expected_headers=[])
         for t in teams_data:
             fid = str(t.get("Franchise ID", "")).zfill(3)
             team_names[fid] = t.get("Team Name", f"Team {fid}")
@@ -6026,7 +6447,7 @@ async def devy_retention_status(interaction: discord.Interaction, conference: st
 
     # Get all players and count by status
     try:
-        data = devy_player_pool_ws.get_all_records()
+        data = devy_player_pool_ws.get_all_records(expected_headers=[])
     except Exception as e:
         await interaction.followup.send(f"Error reading data: {e}")
         return
@@ -6034,7 +6455,7 @@ async def devy_retention_status(interaction: discord.Interaction, conference: st
     # Get team info
     team_names = {}
     try:
-        teams_data = teams_ws.get_all_records()
+        teams_data = teams_ws.get_all_records(expected_headers=[])
         for t in teams_data:
             fid = str(t.get("Franchise ID", "")).zfill(3)
             team_names[fid] = t.get("Team Name", f"Team {fid}")
@@ -6136,7 +6557,7 @@ async def devy_retention_remind(interaction: discord.Interaction, conference: st
     owner_map = get_franchise_owner_map()
     team_names = {}
     try:
-        teams_data = teams_ws.get_all_records()
+        teams_data = teams_ws.get_all_records(expected_headers=[])
         for t in teams_data:
             fid = str(t.get("Franchise ID", "")).zfill(3)
             team_names[fid] = t.get("Team Name", f"Team {fid}")
@@ -6178,6 +6599,9 @@ async def devy_retention_remind(interaction: discord.Interaction, conference: st
 @tasks.loop(time=time(hour=10, minute=0))  # Runs daily at 10:00 AM UTC
 async def post_tuesday_rankings():
     """Post rankings update every Tuesday to the rankings channel"""
+    if not auto_posts_enabled:
+        return
+
     # Only run on Tuesdays (weekday 1)
     if datetime.now().weekday() != 1:
         return
