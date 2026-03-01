@@ -2748,6 +2748,84 @@ async def retention_eligible(interaction: discord.Interaction, conference: str =
     embed.set_footer(text="Use /retention retain or /retention release to record decisions")
     await interaction.followup.send(embed=embed)
 
+@commish.command(name="retention_decide", description="Record a retention decision on behalf of a team owner")
+@app_commands.describe(
+    team_owner="@ mention the team owner you are deciding for",
+    player_name="Player name (or copy ID)",
+    decision="Retain or release the player"
+)
+@app_commands.choices(decision=[
+    app_commands.Choice(name="Retain", value="RETAIN"),
+    app_commands.Choice(name="Release", value="RELEASE"),
+])
+async def commish_retention_decide(
+    interaction: discord.Interaction,
+    team_owner: discord.Member,
+    player_name: str,
+    decision: app_commands.Choice[str]
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if not has_commish_role(interaction):
+        await interaction.followup.send(
+            "You must have the **Commish** role to use this command.",
+            ephemeral=True
+        )
+        return
+
+    if player_copies_ws is None:
+        await interaction.followup.send("PlayerCopies sheet not found.")
+        return
+
+    # Look up the team owner's team
+    team = await asyncio.to_thread(get_team_by_discord_id, team_owner.id)
+    if not team:
+        await interaction.followup.send(f"{team_owner.mention} is not registered as a team owner.")
+        return
+
+    franchise_id = str(team['id']).zfill(3) if team['id'] else ''
+    eligible = get_eligible_players_for_retention(franchise_id=franchise_id)
+
+    if not eligible:
+        await interaction.followup.send(f"No players on **{team['name']}** are eligible for early declaration.")
+        return
+
+    # Find matching player
+    search = player_name.lower().strip()
+    matches = [p for p in eligible if search in p['player_name'].lower() or search == p['copy_id'].lower()]
+
+    if len(matches) == 0:
+        names = [p['player_name'] for p in eligible]
+        await interaction.followup.send(f"Player not found. Eligible players on **{team['name']}**: {', '.join(names)}")
+        return
+
+    if len(matches) > 1:
+        names = [p['player_name'] for p in matches]
+        await interaction.followup.send(f"Multiple matches found: {', '.join(names)}. Please be more specific.")
+        return
+
+    player = matches[0]
+
+    try:
+        result = record_retention_decision_in_sheet(player['copy_id'], decision.value)
+        if decision.value == 'RETAIN':
+            await interaction.followup.send(
+                f"✅ **RETAINED** {result['player_name']} (on behalf of **{team['name']}**)\n"
+                f"Copy ID: `{result['copy_id']}`\n\n"
+                f"💰 **Retention Cost: {player['retention_cost_label']}**\n"
+                f"This cost will be deducted from their recruiting budget.\n\n"
+                f"Decided by: {interaction.user.mention} (Commissioner)"
+            )
+        else:
+            await interaction.followup.send(
+                f"📤 **RELEASED** {result['player_name']} (on behalf of **{team['name']}**)\n"
+                f"Copy ID: `{result['copy_id']}`\n\n"
+                f"💰 **No retention cost** - player is being released.\n\n"
+                f"Decided by: {interaction.user.mention} (Commissioner)"
+            )
+    except Exception as e:
+        await interaction.followup.send(f"Error recording decision: {str(e)}")
+
 @retention.command(name="my_team", description="View eligible players on your team")
 async def retention_my_team(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
