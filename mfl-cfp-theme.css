@@ -1,5 +1,5 @@
 /*
- * MyFantasyLeague Custom CSS - College Football Playoff Theme
+ * MyFantasyLeague Custom CSS - College Football Playoff Theme (Dark Mode)
  * Inspired by collegefootballplayoff.com
  *
  * Upload this to your MFL site via:
@@ -8,7 +8,7 @@
  */
 
 /* ============================================================================
-   CSS VARIABLES - CFP BRAND COLORS
+   CSS VARIABLES - CFP BRAND COLORS (DARK MODE)
    ============================================================================ */
 :root {
   /* Primary CFP Colors */
@@ -17,18 +17,22 @@
   --cfp-gold-dark: #a67c00;
   --cfp-gold-hover: #b8860b;
 
-  /* Neutral Colors */
-  --cfp-white: #ffffff;
-  --cfp-off-white: #f8f9fa;
-  --cfp-light-gray: #e9ecef;
-  --cfp-medium-gray: #6c757d;
-  --cfp-dark-gray: #343a40;
-  --cfp-black: #1a1a1a;
+  /* Dark Mode Surface Colors */
+  --cfp-bg-darkest: #0d0d0d;
+  --cfp-bg-dark: #141414;
+  --cfp-bg-card: #1c1c1e;
+  --cfp-bg-elevated: #242426;
+  --cfp-bg-hover: #2c2c2e;
+
+  /* Text Colors */
+  --cfp-text-primary: #e5e5e7;
+  --cfp-text-secondary: #a1a1a6;
+  --cfp-text-muted: #6e6e73;
 
   /* Accent Colors */
-  --cfp-success: #28a745;
-  --cfp-danger: #dc3545;
-  --cfp-info: #17a2b8;
+  --cfp-success: #32d74b;
+  --cfp-danger: #ff453a;
+  --cfp-info: #64d2ff;
 
   /* Typography */
   --font-primary: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -43,7 +47,7 @@
 
   /* Borders */
   --border-radius: 4px;
-  --border-color: #dee2e6;
+  --border-color: #2c2c2e;
 }
 
 /* ============================================================================
@@ -51,15 +55,15 @@
    ============================================================================ */
 body {
   font-family: var(--font-primary);
-  background-color: var(--cfp-off-white);
-  color: var(--cfp-black);
+  background-color: var(--cfp-bg-darkest);
+  color: var(--cfp-text-primary);
   line-height: 1.6;
   margin: 0;
   padding: 0;
 }
 
 a {
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -77,17 +81,18 @@ a:hover {
 .header,
 #mfl_header,
 .mfl-header {
-  background: linear-gradient(135deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
-  color: var(--cfp-white);
+  background: linear-gradient(135deg, var(--cfp-bg-dark) 0%, var(--cfp-bg-darkest) 100%);
+  color: var(--cfp-text-primary);
   padding: var(--spacing-md) var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-bottom: 3px solid var(--cfp-gold);
 }
 
 #header a,
 .header a,
 #mfl_header a,
 .mfl-header a {
-  color: var(--cfp-white);
+  color: var(--cfp-gold-light);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -95,7 +100,7 @@ a:hover {
 
 #header a:hover,
 .header a:hover {
-  color: var(--cfp-off-white);
+  color: var(--cfp-gold);
   text-decoration: none;
 }
 
@@ -106,7 +111,7 @@ a:hover {
 .navigation,
 .menu,
 #menu {
-  background-color: var(--cfp-black);
+  background-color: var(--cfp-bg-dark);
   padding: var(--spacing-sm) var(--spacing-lg);
 }
 
@@ -114,7 +119,7 @@ a:hover {
 .nav a,
 .menu a,
 #menu a {
-  color: var(--cfp-white);
+  color: var(--cfp-text-secondary);
   padding: var(--spacing-sm) var(--spacing-md);
   display: inline-block;
   font-size: 14px;
@@ -137,22 +142,22 @@ a:hover {
 /* Dropdown menus */
 .dropdown-menu,
 .submenu {
-  background-color: var(--cfp-white);
+  background-color: var(--cfp-bg-elevated);
   border: 1px solid var(--border-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   border-radius: var(--border-radius);
 }
 
 .dropdown-menu a,
 .submenu a {
-  color: var(--cfp-black) !important;
+  color: var(--cfp-text-primary) !important;
   padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .dropdown-menu a:hover,
 .submenu a:hover {
   background-color: var(--cfp-gold);
-  color: var(--cfp-white) !important;
+  color: var(--cfp-bg-darkest) !important;
 }
 
 /* ============================================================================
@@ -163,7 +168,7 @@ h1, h2, h3, h4, h5, h6,
 .page-title,
 #page_title {
   font-family: var(--font-heading);
-  color: var(--cfp-black);
+  color: var(--cfp-text-primary);
   margin-bottom: var(--spacing-md);
 }
 
@@ -177,26 +182,28 @@ h1, .page-title, #page_title {
 
 h2 {
   font-size: 1.75rem;
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
 }
 
 h3 {
   font-size: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  color: var(--cfp-text-secondary);
 }
 
 /* Section headers with gold accent */
 .section-header,
 .module-header,
 .box-header {
-  background: linear-gradient(90deg, var(--cfp-gold) 0%, var(--cfp-gold-light) 100%);
-  color: var(--cfp-white);
+  background: linear-gradient(90deg, rgba(201, 146, 14, 0.25) 0%, rgba(201, 146, 14, 0.1) 100%);
+  color: var(--cfp-gold-light);
   padding: var(--spacing-sm) var(--spacing-md);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
+  border-bottom: 2px solid var(--cfp-gold);
 }
 
 /* ============================================================================
@@ -208,8 +215,8 @@ table,
 .scoreboard {
   width: 100%;
   border-collapse: collapse;
-  background-color: var(--cfp-white);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--cfp-bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   border-radius: var(--border-radius);
   overflow: hidden;
   margin-bottom: var(--spacing-lg);
@@ -220,8 +227,8 @@ th,
 thead td,
 .header-row td,
 tr.header td {
-  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
-  color: var(--cfp-white);
+  background: linear-gradient(180deg, rgba(201, 146, 14, 0.3) 0%, rgba(166, 124, 0, 0.2) 100%);
+  color: var(--cfp-gold-light);
   font-weight: 700;
   text-transform: uppercase;
   font-size: 12px;
@@ -234,19 +241,20 @@ tr.header td {
 /* Table cells */
 td {
   padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--cfp-light-gray);
+  border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
+  color: var(--cfp-text-primary);
 }
 
 /* Alternating row colors */
 tr:nth-child(even),
 .even {
-  background-color: var(--cfp-off-white);
+  background-color: var(--cfp-bg-elevated);
 }
 
 tr:nth-child(odd),
 .odd {
-  background-color: var(--cfp-white);
+  background-color: var(--cfp-bg-card);
 }
 
 /* Row hover effect */
@@ -261,7 +269,7 @@ td:first-child,
 .rank,
 .position {
   font-weight: 700;
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
   text-align: center;
   width: 50px;
 }
@@ -272,7 +280,7 @@ td:first-child,
 .standings .rank,
 .power-rankings .rank {
   background-color: var(--cfp-gold);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -287,7 +295,7 @@ td:first-child,
 tr:nth-child(-n+4) .rank,
 .top-4 .rank {
   background-color: var(--cfp-gold);
-  box-shadow: 0 2px 4px rgba(201, 146, 14, 0.4);
+  box-shadow: 0 2px 8px rgba(201, 146, 14, 0.5);
 }
 
 /* Movement indicators */
@@ -315,12 +323,12 @@ tr:nth-child(-n+4) .rank,
 .game,
 .scoreboard-game,
 .matchup-card {
-  background-color: var(--cfp-white);
-  border: 1px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -328,7 +336,7 @@ tr:nth-child(-n+4) .rank,
 .game:hover,
 .matchup-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* Game of the Week / Featured matchup */
@@ -336,7 +344,7 @@ tr:nth-child(-n+4) .rank,
 .game-of-week,
 .college-gameday {
   border: 3px solid var(--cfp-gold);
-  background: linear-gradient(135deg, rgba(201, 146, 14, 0.05) 0%, var(--cfp-white) 100%);
+  background: linear-gradient(135deg, rgba(201, 146, 14, 0.1) 0%, var(--cfp-bg-card) 100%);
 }
 
 .featured-game::before,
@@ -344,7 +352,7 @@ tr:nth-child(-n+4) .rank,
   content: "GAME OF THE WEEK";
   display: block;
   background-color: var(--cfp-gold);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
@@ -359,7 +367,7 @@ tr:nth-child(-n+4) .rank,
 .franchise-name {
   font-weight: 700;
   font-size: 16px;
-  color: var(--cfp-black);
+  color: var(--cfp-text-primary);
 }
 
 /* Scores */
@@ -367,21 +375,21 @@ tr:nth-child(-n+4) .rank,
 .points {
   font-size: 24px;
   font-weight: 700;
-  color: var(--cfp-black);
+  color: var(--cfp-text-primary);
 }
 
 .winning-score {
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
 }
 
 .losing-score {
-  color: var(--cfp-medium-gray);
+  color: var(--cfp-text-muted);
 }
 
 /* VS divider */
 .vs,
 .at {
-  color: var(--cfp-medium-gray);
+  color: var(--cfp-text-muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -397,7 +405,7 @@ button,
 input[type="submit"],
 input[type="button"] {
   background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   font-weight: 700;
@@ -407,7 +415,7 @@ input[type="button"] {
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 button:hover,
@@ -416,7 +424,7 @@ button:hover,
 input[type="submit"]:hover,
 input[type="button"]:hover {
   background: linear-gradient(180deg, var(--cfp-gold-light) 0%, var(--cfp-gold) 100%);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(201, 146, 14, 0.3);
   transform: translateY(-1px);
 }
 
@@ -425,13 +433,13 @@ input[type="button"]:hover {
 .button-secondary {
   background: transparent;
   border: 2px solid var(--cfp-gold);
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
 }
 
 .btn-secondary:hover,
 .button-secondary:hover {
   background: var(--cfp-gold);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
 }
 
 /* ============================================================================
@@ -443,7 +451,9 @@ input[type="password"],
 input[type="number"],
 select,
 textarea {
-  border: 2px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-elevated);
+  color: var(--cfp-text-primary);
+  border: 2px solid var(--border-color);
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: 14px;
   border-radius: var(--border-radius);
@@ -470,10 +480,10 @@ textarea:focus {
 .module,
 .box,
 .panel {
-  background-color: var(--cfp-white);
-  border: 1px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: var(--spacing-lg);
   overflow: hidden;
 }
@@ -517,15 +527,15 @@ textarea:focus {
    ============================================================================ */
 .bracket,
 .playoff-bracket {
-  background-color: var(--cfp-off-white);
+  background-color: var(--cfp-bg-dark);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius);
 }
 
 .bracket-game,
 .bracket-matchup {
-  background-color: var(--cfp-white);
-  border: 2px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: var(--spacing-sm);
   margin: var(--spacing-sm) 0;
@@ -533,12 +543,12 @@ textarea:focus {
 
 .bracket-winner {
   border-color: var(--cfp-gold);
-  background: linear-gradient(135deg, rgba(201, 146, 14, 0.1) 0%, var(--cfp-white) 100%);
+  background: linear-gradient(135deg, rgba(201, 146, 14, 0.15) 0%, var(--cfp-bg-card) 100%);
 }
 
 .bracket-seed {
   background-color: var(--cfp-gold);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
   font-weight: 700;
   width: 24px;
   height: 24px;
@@ -561,7 +571,7 @@ textarea:focus {
   content: "NATIONAL CHAMPIONSHIP";
   display: block;
   background: linear-gradient(90deg, var(--cfp-gold) 0%, var(--cfp-gold-light) 100%);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
   text-align: center;
   font-weight: 700;
   letter-spacing: 2px;
@@ -585,18 +595,18 @@ textarea:focus {
   display: flex;
   align-items: center;
   padding: var(--spacing-sm) var(--spacing-md);
-  border-bottom: 1px solid var(--cfp-light-gray);
+  border-bottom: 1px solid var(--border-color);
   transition: background-color 0.2s ease;
 }
 
 .player:hover,
 .roster-item:hover {
-  background-color: rgba(201, 146, 14, 0.05);
+  background-color: rgba(201, 146, 14, 0.08);
 }
 
 .player-position {
-  background-color: var(--cfp-dark-gray);
-  color: var(--cfp-white);
+  background-color: rgba(201, 146, 14, 0.2);
+  color: var(--cfp-gold-light);
   font-size: 11px;
   font-weight: 700;
   padding: 2px 6px;
@@ -609,10 +619,11 @@ textarea:focus {
 .player-name {
   font-weight: 600;
   flex-grow: 1;
+  color: var(--cfp-text-primary);
 }
 
 .player-team {
-  color: var(--cfp-medium-gray);
+  color: var(--cfp-text-muted);
   font-size: 13px;
 }
 
@@ -622,10 +633,11 @@ textarea:focus {
 #footer,
 .footer,
 #mfl_footer {
-  background-color: var(--cfp-black);
-  color: var(--cfp-white);
+  background-color: var(--cfp-bg-dark);
+  color: var(--cfp-text-secondary);
   padding: var(--spacing-xl) var(--spacing-lg);
   margin-top: var(--spacing-xl);
+  border-top: 2px solid var(--cfp-gold-dark);
 }
 
 #footer a,
@@ -642,14 +654,14 @@ textarea:focus {
    UTILITY CLASSES
    ============================================================================ */
 .text-gold { color: var(--cfp-gold); }
-.text-white { color: var(--cfp-white); }
-.text-muted { color: var(--cfp-medium-gray); }
+.text-white { color: var(--cfp-text-primary); }
+.text-muted { color: var(--cfp-text-muted); }
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 
-.bg-gold { background-color: var(--cfp-gold); color: var(--cfp-white); }
-.bg-dark { background-color: var(--cfp-black); color: var(--cfp-white); }
-.bg-light { background-color: var(--cfp-off-white); }
+.bg-gold { background-color: var(--cfp-gold); color: var(--cfp-bg-darkest); }
+.bg-dark { background-color: var(--cfp-bg-darkest); color: var(--cfp-text-primary); }
+.bg-light { background-color: var(--cfp-bg-elevated); }
 
 .font-bold { font-weight: 700; }
 .font-uppercase { text-transform: uppercase; letter-spacing: 1px; }
@@ -698,16 +710,17 @@ textarea:focus {
 
 /* --- PAGE STRUCTURE --- */
 .pageheader {
-  background: linear-gradient(135deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%);
+  background: linear-gradient(135deg, var(--cfp-bg-dark) 0%, var(--cfp-bg-darkest) 100%);
   padding: var(--spacing-md) var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-bottom: 3px solid var(--cfp-gold);
 }
 
 .pagetitle {
   font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 700;
-  color: var(--cfp-white);
+  color: var(--cfp-gold-light);
   text-transform: uppercase;
   letter-spacing: 2px;
   margin: 0;
@@ -715,21 +728,22 @@ textarea:focus {
 }
 
 .welcome {
-  color: var(--cfp-white);
+  color: var(--cfp-text-secondary);
   font-size: 14px;
 }
 
 .welcome a {
-  color: var(--cfp-white) !important;
+  color: var(--cfp-gold-light) !important;
   text-decoration: underline;
 }
 
 .pagefooter {
-  background-color: var(--cfp-black);
-  color: var(--cfp-white);
+  background-color: var(--cfp-bg-dark);
+  color: var(--cfp-text-muted);
   padding: var(--spacing-lg);
   text-align: center;
   font-size: 12px;
+  border-top: 2px solid var(--cfp-gold-dark);
 }
 
 .pagefooter a {
@@ -744,7 +758,7 @@ textarea:focus {
 /* --- MILONIC MENU SYSTEM --- */
 #menu0,
 .mmenucontainer {
-  background-color: var(--cfp-black) !important;
+  background-color: var(--cfp-bg-dark) !important;
   padding: 0 !important;
 }
 
@@ -755,7 +769,7 @@ textarea:focus {
 /* Menu items - inactive state */
 .mainmenuoff {
   background-color: transparent !important;
-  color: var(--cfp-white) !important;
+  color: var(--cfp-text-secondary) !important;
   font-family: var(--font-primary) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
@@ -782,7 +796,7 @@ textarea:focus {
 /* Menu items - current/active page */
 .mainmenucurrent {
   background-color: var(--cfp-gold) !important;
-  color: var(--cfp-white) !important;
+  color: var(--cfp-bg-darkest) !important;
   font-family: var(--font-primary) !important;
   font-size: 13px !important;
   font-weight: 700 !important;
@@ -793,21 +807,21 @@ textarea:focus {
 
 /* Submenu dropdown styling */
 .mmenucontainer .mmenucontainer {
-  background-color: var(--cfp-white) !important;
-  border: 1px solid var(--cfp-light-gray) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  background-color: var(--cfp-bg-elevated) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
   border-radius: 0 0 var(--border-radius) var(--border-radius) !important;
 }
 
 .mmenucontainer .mmenucontainer .mainmenuoff {
-  color: var(--cfp-black) !important;
-  background-color: var(--cfp-white) !important;
+  color: var(--cfp-text-primary) !important;
+  background-color: var(--cfp-bg-elevated) !important;
   border-bottom: none !important;
   padding: 10px 16px !important;
 }
 
 .mmenucontainer .mmenucontainer .mainmenuon {
-  color: var(--cfp-white) !important;
+  color: var(--cfp-bg-darkest) !important;
   background-color: var(--cfp-gold) !important;
   border-bottom: none !important;
 }
@@ -816,8 +830,8 @@ textarea:focus {
 .maintable {
   width: 100%;
   border-collapse: collapse;
-  background-color: var(--cfp-white);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--cfp-bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   border-radius: var(--border-radius);
   overflow: hidden;
   margin-bottom: var(--spacing-lg);
@@ -825,8 +839,8 @@ textarea:focus {
 
 .maintable th,
 .maintable thead td {
-  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%) !important;
-  color: var(--cfp-white) !important;
+  background: linear-gradient(180deg, rgba(201, 146, 14, 0.3) 0%, rgba(166, 124, 0, 0.2) 100%) !important;
+  color: var(--cfp-gold-light) !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   font-size: 11px !important;
@@ -834,18 +848,20 @@ textarea:focus {
   padding: 12px 16px !important;
   text-align: left !important;
   border: none !important;
+  border-bottom: 2px solid var(--cfp-gold-dark) !important;
 }
 
 .instructiontable {
-  background-color: var(--cfp-off-white);
+  background-color: var(--cfp-bg-elevated);
   border-left: 4px solid var(--cfp-gold);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+  color: var(--cfp-text-primary);
 }
 
 /* MFL alternating row colors */
 .oddtablerow {
-  background-color: var(--cfp-white) !important;
+  background-color: var(--cfp-bg-card) !important;
 }
 
 .oddtablerow:hover {
@@ -853,7 +869,7 @@ textarea:focus {
 }
 
 .eventablerow {
-  background-color: var(--cfp-off-white) !important;
+  background-color: var(--cfp-bg-elevated) !important;
 }
 
 .eventablerow:hover {
@@ -863,34 +879,37 @@ textarea:focus {
 .oddtablerow td,
 .eventablerow td {
   padding: 10px 16px !important;
-  border-bottom: 1px solid var(--cfp-light-gray) !important;
+  border-bottom: 1px solid var(--border-color) !important;
   vertical-align: middle !important;
+  color: var(--cfp-text-primary) !important;
 }
 
 /* --- REPORT TABLES (standings, scores, rosters) --- */
 .report {
   width: 100%;
   border-collapse: collapse;
-  background-color: var(--cfp-white);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--cfp-bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: var(--spacing-lg);
 }
 
 .report th {
-  background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%) !important;
-  color: var(--cfp-white) !important;
+  background: linear-gradient(180deg, rgba(201, 146, 14, 0.3) 0%, rgba(166, 124, 0, 0.2) 100%) !important;
+  color: var(--cfp-gold-light) !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   font-size: 11px !important;
   letter-spacing: 1px !important;
   padding: 12px 16px !important;
   border: none !important;
+  border-bottom: 2px solid var(--cfp-gold-dark) !important;
 }
 
 .report td {
   padding: 10px 16px !important;
   border: none !important;
-  border-bottom: 1px solid var(--cfp-light-gray) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--cfp-text-primary) !important;
 }
 
 .report tr:hover td {
@@ -905,17 +924,17 @@ textarea:focus {
 /* Matchup containers */
 table[id^="matchup_"],
 .matchup_table {
-  background-color: var(--cfp-white);
-  border: 1px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: var(--spacing-md);
   overflow: hidden;
 }
 
 /* Team scores in matchups */
 .pointed[style*="font-size:24"] {
-  color: var(--cfp-gold-dark) !important;
+  color: var(--cfp-gold-light) !important;
   font-weight: 700 !important;
 }
 
@@ -924,7 +943,7 @@ table[id^="matchup_"],
 .report td:first-child,
 .maintable td:first-child {
   font-weight: 700;
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
   text-align: center;
   min-width: 40px;
 }
@@ -932,7 +951,7 @@ table[id^="matchup_"],
 /* Team name links */
 .report a,
 .maintable a {
-  color: var(--cfp-black);
+  color: var(--cfp-text-primary);
   font-weight: 600;
   transition: color 0.2s ease;
 }
@@ -959,7 +978,7 @@ img[src*="status"] {
 /* --- TRANSACTION LOG --- */
 .report[id*="trans"] td:first-child {
   background-color: var(--cfp-gold);
-  color: var(--cfp-white);
+  color: var(--cfp-bg-darkest);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -973,30 +992,31 @@ img[src*="status"] {
 .draftboard td {
   padding: var(--spacing-sm) !important;
   text-align: center !important;
-  border: 1px solid var(--cfp-light-gray) !important;
+  border: 1px solid var(--border-color) !important;
 }
 
 /* Current pick highlight */
 .draftboard td[style*="background"] {
   border: 2px solid var(--cfp-gold) !important;
-  background: linear-gradient(135deg, rgba(201, 146, 14, 0.2) 0%, var(--cfp-white) 100%) !important;
+  background: linear-gradient(135deg, rgba(201, 146, 14, 0.2) 0%, var(--cfp-bg-card) 100%) !important;
 }
 
 /* --- MESSAGE BOARD --- */
 .messageboard {
-  background-color: var(--cfp-white);
+  background-color: var(--cfp-bg-card);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .messageboard td {
   padding: var(--spacing-md) !important;
-  border-bottom: 1px solid var(--cfp-light-gray) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--cfp-text-primary) !important;
 }
 
 /* Message author styling */
 .messageboard td:first-child {
-  background-color: var(--cfp-off-white);
+  background-color: var(--cfp-bg-elevated);
   border-left: 4px solid var(--cfp-gold);
   font-weight: 600;
 }
@@ -1005,7 +1025,9 @@ img[src*="status"] {
 input.text,
 select.select,
 textarea.textarea {
-  border: 2px solid var(--cfp-light-gray) !important;
+  background-color: var(--cfp-bg-elevated) !important;
+  color: var(--cfp-text-primary) !important;
+  border: 2px solid var(--border-color) !important;
   padding: 8px 12px !important;
   font-size: 14px !important;
   border-radius: var(--border-radius) !important;
@@ -1024,7 +1046,7 @@ input.button,
 input[type="submit"],
 input[type="button"] {
   background: linear-gradient(180deg, var(--cfp-gold) 0%, var(--cfp-gold-dark) 100%) !important;
-  color: var(--cfp-white) !important;
+  color: var(--cfp-bg-darkest) !important;
   border: none !important;
   padding: 10px 20px !important;
   font-weight: 700 !important;
@@ -1046,28 +1068,30 @@ input[type="button"]:hover {
 /* --- FRANCHISE INFO BOXES --- */
 .franchise_info,
 div[id^="franchise_"] {
-  background-color: var(--cfp-white);
-  border: 1px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+  color: var(--cfp-text-primary);
 }
 
 /* --- CHAT/SHOUTBOX --- */
 #shoutbox,
 .chatbox {
-  background-color: var(--cfp-white);
-  border: 1px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
 }
 
 #shoutbox .header,
 .chatbox .header {
-  background: var(--cfp-gold);
-  color: var(--cfp-white);
+  background: rgba(201, 146, 14, 0.25);
+  color: var(--cfp-gold-light);
   padding: var(--spacing-sm) var(--spacing-md);
   font-weight: 700;
   text-transform: uppercase;
+  border-bottom: 2px solid var(--cfp-gold);
 }
 
 /* --- CONTENT AREA --- */
@@ -1083,23 +1107,24 @@ div[id^="franchise_"] {
 /* --- MFL HPM (Home Page Modules) --- */
 .hpm,
 .homePageModule {
-  background-color: var(--cfp-white);
-  border: 1px solid var(--cfp-light-gray);
+  background-color: var(--cfp-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   margin-bottom: var(--spacing-lg);
   overflow: hidden;
 }
 
 .hpm_header,
 .homePageModule .header {
-  background: linear-gradient(90deg, var(--cfp-gold) 0%, var(--cfp-gold-light) 100%);
-  color: var(--cfp-white);
+  background: linear-gradient(90deg, rgba(201, 146, 14, 0.25) 0%, rgba(201, 146, 14, 0.1) 100%);
+  color: var(--cfp-gold-light);
   padding: var(--spacing-sm) var(--spacing-md);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 14px;
+  border-bottom: 2px solid var(--cfp-gold);
 }
 
 .hpm_body,
@@ -1167,7 +1192,7 @@ a img {
 /* --- GLOBAL LINK OVERRIDES --- */
 a:link,
 a:visited {
-  color: var(--cfp-gold-dark);
+  color: var(--cfp-gold-light);
 }
 
 a:hover,
@@ -1175,15 +1200,13 @@ a:active {
   color: var(--cfp-gold);
 }
 
-/* White links in gold/dark backgrounds */
+/* Gold links in dark backgrounds */
 .pageheader a,
-.mainmenuoff,
-.mainmenuon,
-.mainmenucurrent,
 .hpm_header a,
 .pagefooter a {
-  color: var(--cfp-white) !important;
+  color: var(--cfp-gold-light) !important;
 }
+
 
 /* --- PRINT STYLES --- */
 @media print {
@@ -1196,11 +1219,13 @@ a:active {
 
   body {
     background: white !important;
+    color: black !important;
   }
 
   .maintable,
   .report {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
+    background-color: white !important;
   }
 }
