@@ -55,11 +55,50 @@
    ============================================================================ */
 body {
   font-family: var(--font-primary);
-  background-color: var(--cfp-bg-darkest);
-  color: var(--cfp-text-primary);
+  background-color: var(--cfp-bg-darkest) !important;
+  color: var(--cfp-text-primary) !important;
   line-height: 1.6;
   margin: 0;
   padding: 0;
+}
+
+/* Override MFL inline bgcolor attributes on body and wrapper elements */
+body[bgcolor],
+div[bgcolor] {
+  background-color: var(--cfp-bg-darkest) !important;
+}
+
+table[bgcolor] {
+  background-color: var(--cfp-bg-card) !important;
+}
+
+td[bgcolor],
+tr[bgcolor] {
+  background-color: var(--cfp-bg-elevated) !important;
+  color: var(--cfp-text-primary) !important;
+}
+
+/* MFL page wrapper / content containers */
+#page,
+#wrapper,
+#container,
+.page,
+.wrapper,
+.container,
+#mfl_page {
+  background-color: var(--cfp-bg-darkest) !important;
+  color: var(--cfp-text-primary) !important;
+}
+
+/* Text selection highlight */
+::selection {
+  background-color: var(--cfp-gold);
+  color: var(--cfp-bg-darkest);
+}
+
+::-moz-selection {
+  background-color: var(--cfp-gold);
+  color: var(--cfp-bg-darkest);
 }
 
 a {
@@ -206,6 +245,20 @@ h3 {
   border-bottom: 2px solid var(--cfp-gold);
 }
 
+/* Table captions */
+caption {
+  background-color: var(--cfp-bg-elevated);
+  color: var(--cfp-gold-light);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 13px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  border-bottom: 2px solid var(--cfp-gold-dark);
+  caption-side: top;
+}
+
 /* ============================================================================
    TABLES - STANDINGS, SCORES, ROSTERS
    ============================================================================ */
@@ -260,8 +313,13 @@ tr:nth-child(odd),
 /* Row hover effect */
 tbody tr:hover,
 tr.datarow:hover {
-  background-color: rgba(201, 146, 14, 0.1);
+  background-color: rgba(201, 146, 14, 0.15);
   transition: background-color 0.2s ease;
+}
+
+tbody tr:hover td,
+tr.datarow:hover td {
+  color: var(--cfp-gold-light) !important;
 }
 
 /* Rank column styling */
@@ -601,7 +659,11 @@ textarea:focus {
 
 .player:hover,
 .roster-item:hover {
-  background-color: rgba(201, 146, 14, 0.08);
+  background-color: rgba(201, 146, 14, 0.12);
+}
+
+.player:hover .player-name {
+  color: var(--cfp-gold-light);
 }
 
 .player-position {
@@ -826,6 +888,63 @@ textarea:focus {
   border-bottom: none !important;
 }
 
+/* --- MFL MAIN MENU WRAPPER --- */
+div.myfantasyleague_menu,
+div.myfantasyleague_menu table,
+div.myfantasyleague_menu td {
+  background-color: var(--cfp-bg-dark) !important;
+  color: var(--cfp-text-secondary) !important;
+  border: none !important;
+}
+
+div.myfantasyleague_menu a {
+  color: var(--cfp-text-secondary) !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease !important;
+}
+
+div.myfantasyleague_menu a:hover {
+  color: var(--cfp-gold) !important;
+}
+
+/* --- HORIZONTAL SUBMENU --- */
+.hsubmenu,
+.hsubmenu table {
+  background-color: var(--cfp-bg-elevated) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.hsubmenu td {
+  background-color: var(--cfp-bg-elevated) !important;
+  color: var(--cfp-text-secondary) !important;
+  padding: 6px 12px !important;
+}
+
+.hsubmenu a,
+.hsubmenu td a {
+  color: var(--cfp-text-secondary) !important;
+  font-size: 12px !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease !important;
+}
+
+.hsubmenu a:hover,
+.hsubmenu td a:hover {
+  color: var(--cfp-gold) !important;
+}
+
+/* Active/selected submenu item */
+.hsubmenu .selected,
+.hsubmenu .selected a,
+.hsubmenu td.selected,
+.hsubmenu td.selected a,
+.hsubmenu a.selected,
+.hsubmenu b,
+.hsubmenu b a {
+  color: var(--cfp-gold-light) !important;
+  font-weight: 700 !important;
+}
+
 /* --- MFL TABLES --- */
 .maintable {
   width: 100%;
@@ -865,7 +984,11 @@ textarea:focus {
 }
 
 .oddtablerow:hover {
-  background-color: rgba(201, 146, 14, 0.08) !important;
+  background-color: rgba(201, 146, 14, 0.15) !important;
+}
+
+.oddtablerow:hover td {
+  color: var(--cfp-gold-light) !important;
 }
 
 .eventablerow {
@@ -873,7 +996,11 @@ textarea:focus {
 }
 
 .eventablerow:hover {
-  background-color: rgba(201, 146, 14, 0.12) !important;
+  background-color: rgba(201, 146, 14, 0.15) !important;
+}
+
+.eventablerow:hover td {
+  color: var(--cfp-gold-light) !important;
 }
 
 .oddtablerow td,
@@ -913,7 +1040,8 @@ textarea:focus {
 }
 
 .report tr:hover td {
-  background-color: rgba(201, 146, 14, 0.08) !important;
+  background-color: rgba(201, 146, 14, 0.15) !important;
+  color: var(--cfp-gold-light) !important;
 }
 
 /* --- LIVE SCORING PAGE --- */
@@ -960,6 +1088,15 @@ table[id^="matchup_"],
 .maintable a:hover {
   color: var(--cfp-gold);
   text-decoration: none;
+}
+
+/* Ensure links in hovered rows stay readable */
+.report tr:hover a,
+.maintable tr:hover a,
+.oddtablerow:hover a,
+.eventablerow:hover a,
+tbody tr:hover a {
+  color: var(--cfp-gold) !important;
 }
 
 /* --- ROSTER/PLAYER PAGES --- */
