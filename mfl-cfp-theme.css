@@ -91,7 +91,9 @@ tr[bgcolor] {
 .page,
 .wrapper,
 .container,
-#mfl_page {
+#mfl_page,
+.mobile-wrap,
+#mobile-wrap {
   background-color: var(--cfp-bg-darkest) !important;
   color: var(--cfp-text-primary) !important;
 }
