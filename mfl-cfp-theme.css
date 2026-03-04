@@ -62,6 +62,12 @@ body {
   padding: 0;
 }
 
+/* MFL home page body */
+body#body_home {
+  background-color: var(--cfp-bg-darkest) !important;
+  color: var(--cfp-text-primary) !important;
+}
+
 /* Override MFL inline bgcolor attributes on body and wrapper elements */
 body[bgcolor],
 div[bgcolor] {
@@ -90,6 +96,12 @@ tr[bgcolor] {
   color: var(--cfp-text-primary) !important;
 }
 
+/* MFL main content frame */
+div#contentframe {
+  background-color: var(--cfp-bg-darkest) !important;
+  color: var(--cfp-text-primary) !important;
+}
+
 /* Text selection highlight */
 ::selection {
   background-color: var(--cfp-gold);
@@ -102,14 +114,32 @@ tr[bgcolor] {
 }
 
 a {
-  color: var(--cfp-gold-light);
+  color: var(--cfp-gold-light) !important;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: var(--cfp-gold);
+  color: var(--cfp-gold) !important;
   text-decoration: underline;
+}
+
+a:visited {
+  color: var(--cfp-gold-dark) !important;
+}
+
+/* Override MFL font color tags inside links */
+a font, a span {
+  color: inherit !important;
+}
+
+/* Override MFL inline styles on span and font elements */
+span, font {
+  color: var(--cfp-text-primary) !important;
+}
+
+span[style], font[style] {
+  color: var(--cfp-text-primary) !important;
 }
 
 /* ============================================================================
@@ -228,7 +258,17 @@ h3 {
   font-size: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--cfp-text-secondary);
+  color: var(--cfp-text-secondary) !important;
+  background-color: transparent !important;
+}
+h3 a {
+  color: var(--cfp-gold-light) !important;
+}
+h3 a:hover {
+  color: var(--cfp-gold) !important;
+}
+h3 font, h3 span {
+  color: inherit !important;
 }
 
 /* Section headers with gold accent */
@@ -310,7 +350,7 @@ tr:nth-child(odd),
   background-color: var(--cfp-bg-card);
 }
 
-/* Row hover effect */
+/* Row hover effect — only on direct data rows, not layout tables */
 tbody tr:hover,
 tr.datarow:hover {
   background-color: rgba(201, 146, 14, 0.15);
@@ -320,6 +360,13 @@ tr.datarow:hover {
 tbody tr:hover td,
 tr.datarow:hover td {
   color: var(--cfp-gold-light) !important;
+}
+
+/* Prevent hover effects on layout-level wrapper rows */
+div#contentframe > table > tbody > tr:hover,
+div#contentframe > table > tbody > tr:hover > td {
+  background-color: transparent !important;
+  color: var(--cfp-text-primary) !important;
 }
 
 /* Rank column styling */
@@ -942,6 +989,52 @@ div.myfantasyleague_menu a:hover {
 .hsubmenu b,
 .hsubmenu b a {
   color: var(--cfp-gold-light) !important;
+  font-weight: 700 !important;
+}
+
+/* --- MFL HOME PAGE TABS --- */
+ul#homepagetabs {
+  background-color: var(--cfp-bg-dark) !important;
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  border-bottom: 2px solid var(--cfp-gold-dark) !important;
+}
+
+ul#homepagetabs li {
+  background-color: var(--cfp-bg-elevated) !important;
+  margin: 0 2px 0 0 !important;
+}
+
+ul#homepagetabs li a {
+  color: var(--cfp-text-secondary) !important;
+  background-color: var(--cfp-bg-elevated) !important;
+  padding: 8px 16px !important;
+  display: block !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+ul#homepagetabs li a:hover {
+  color: var(--cfp-gold) !important;
+  background-color: var(--cfp-bg-hover) !important;
+}
+
+ul#homepagetabs li.selected,
+ul#homepagetabs li.active,
+ul#homepagetabs li.current {
+  background-color: var(--cfp-bg-card) !important;
+  border-bottom: 2px solid var(--cfp-gold) !important;
+}
+
+ul#homepagetabs li.selected a,
+ul#homepagetabs li.active a,
+ul#homepagetabs li.current a {
+  color: var(--cfp-gold-light) !important;
+  background-color: var(--cfp-bg-card) !important;
   font-weight: 700 !important;
 }
 
