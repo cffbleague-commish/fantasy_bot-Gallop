@@ -6257,6 +6257,179 @@ async def devy_retained(interaction: discord.Interaction, conference: str = None
 
     await interaction.followup.send(embed=embed)
 
+# ----------------- Schedule DM Command (Commissioner Only) -----------------
+
+def build_schedule_map(schedule_records):
+    """Build per-team schedule from Schedule sheet records.
+    Returns: {franchise_id (3-digit str): {week (int): opponent_id (3-digit str)}}
+    """
+    schedule = defaultdict(dict)
+    for row in schedule_records:
+        try:
+            week = int(row.get("Week", 0))
+            home = str(row.get("Home", "")).strip().zfill(3)
+            away = str(row.get("Away", "")).strip().zfill(3)
+            if week and home != "000" and away != "000":
+                schedule[home][week] = away
+                schedule[away][week] = home
+        except (ValueError, TypeError):
+            continue
+    return dict(schedule)
+
+
+def build_confirmed_rivalry_set(rivalry_records):
+    """Build set of confirmed rivalry pairs.
+    Returns: set of frozenset({teamA_id, teamB_id})
+    """
+    rivalry_pairs = set()
+    for r in rivalry_records:
+        if r.get("Status") != "CONFIRMED":
+            continue
+        team_a = str(r.get("Team A", "")).strip().zfill(3)
+        team_b = str(r.get("Team B", "")).strip().zfill(3)
+        if team_a != "000" and team_b != "000":
+            rivalry_pairs.add(frozenset({team_a, team_b}))
+    return rivalry_pairs
+
+
+def build_schedule_embed(franchise_id, team_name, team_schedule, emoji_map, name_map, rivalry_set, year, num_weeks=12):
+    """Build a Discord embed showing a team's 12-week schedule."""
+    embed = discord.Embed(
+        title=f"📋 Your {year} Schedule",
+        description=f"**{team_name}**",
+        color=discord.Color.blue()
+    )
+
+    for week in range(1, num_weeks + 1):
+        opponent_id = team_schedule.get(week)
+        if opponent_id:
+            opp_emoji = emoji_map.get(opponent_id, "")
+            opp_name = name_map.get(opponent_id, f"Team {opponent_id}")
+            is_rivalry = frozenset({franchise_id, opponent_id}) in rivalry_set
+            rivalry_marker = " ⚔️" if is_rivalry else ""
+            value = f"{opp_emoji} {opp_name}{rivalry_marker}"
+        else:
+            value = "🔓 OPEN"
+
+        embed.add_field(name=f"Week {week}", value=value, inline=True)
+
+    embed.set_footer(text="⚔️ = Rivalry Game  |  🔓 = Open Week")
+    return embed
+
+
+@commish.command(name="send_schedules", description="DM every team owner their 12-week schedule")
+async def send_schedules(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    if not has_commish_role(interaction):
+        await interaction.followup.send(
+            "You must have the **Commish** role to use this command.",
+            ephemeral=True
+        )
+        return
+
+    # Load Schedule sheet on-demand (may not exist until scheduler has run)
+    try:
+        schedule_ws = await asyncio.to_thread(scheduler_sheet.worksheet, "Schedule")
+        schedule_records = await asyncio.to_thread(schedule_ws.get_all_records, expected_headers=[])
+    except gspread.exceptions.WorksheetNotFound:
+        await interaction.followup.send("❌ **Schedule sheet not found.** The scheduler has not been run yet.")
+        return
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(f"❌ Error reading Schedule sheet: {str(e)[:200]}")
+        return
+
+    if not schedule_records:
+        await interaction.followup.send("❌ **Schedule sheet is empty.** No games have been scheduled yet.")
+        return
+
+    schedule_map = build_schedule_map(schedule_records)
+
+    if not schedule_map:
+        await interaction.followup.send("❌ **No valid games found** in the Schedule sheet.")
+        return
+
+    # Load rivalries (non-fatal if it fails)
+    try:
+        rivalry_records = await asyncio.to_thread(rivalries_ws.get_all_records, expected_headers=[])
+        rivalry_set = build_confirmed_rivalry_set(rivalry_records)
+    except Exception as e:
+        print(f"Warning: Could not load rivalries for send_schedules: {e}")
+        rivalry_set = set()
+
+    # Load team lookup data
+    emoji_map = await asyncio.to_thread(get_team_emoji_map)
+    name_map = await asyncio.to_thread(get_team_name_map)
+    owner_map = await asyncio.to_thread(get_franchise_owner_map)
+    year = get_current_year()
+
+    sent_count = 0
+    failed_count = 0
+    skipped_count = 0
+    no_schedule_count = 0
+    status_lines = []
+
+    for franchise_id, discord_id in owner_map.items():
+        team_name = name_map.get(franchise_id, f"Team {franchise_id}")
+
+        team_schedule = schedule_map.get(franchise_id, {})
+        if not team_schedule:
+            status_lines.append(f"⏭️ {team_name}: No games scheduled")
+            no_schedule_count += 1
+            continue
+
+        if not discord_id:
+            status_lines.append(f"⚠️ {team_name}: No Discord ID configured")
+            skipped_count += 1
+            continue
+
+        try:
+            user = await bot.fetch_user(int(discord_id))
+            embed = build_schedule_embed(
+                franchise_id, team_name, team_schedule,
+                emoji_map, name_map, rivalry_set, year
+            )
+            await user.send(embed=embed)
+            status_lines.append(f"✅ {team_name}: DM sent")
+            sent_count += 1
+
+            # Rate limit protection
+            if sent_count % 5 == 0:
+                await asyncio.sleep(1.0)
+
+        except discord.Forbidden:
+            status_lines.append(f"❌ {team_name}: DMs disabled")
+            failed_count += 1
+        except discord.NotFound:
+            status_lines.append(f"❌ {team_name}: User not found")
+            failed_count += 1
+        except Exception as e:
+            status_lines.append(f"❌ {team_name}: {str(e)[:50]}")
+            failed_count += 1
+
+    # Report summary to commissioner
+    summary_embed = discord.Embed(
+        title="📋 Schedule DMs Summary",
+        description=(
+            f"**Sent:** {sent_count}\n"
+            f"**Failed:** {failed_count}\n"
+            f"**Skipped (no Discord ID):** {skipped_count}\n"
+            f"**No schedule:** {no_schedule_count}"
+        ),
+        color=discord.Color.green() if failed_count == 0 else discord.Color.orange()
+    )
+
+    if status_lines:
+        details_text = "\n".join(status_lines[:25])
+        if len(status_lines) > 25:
+            details_text += f"\n*...and {len(status_lines) - 25} more*"
+        if len(details_text) > 1024:
+            details_text = details_text[:1020] + "..."
+        summary_embed.add_field(name="Details", value=details_text, inline=False)
+
+    await interaction.followup.send(embed=summary_embed)
+
 # ----------------- Devy Retention Process (Commissioner-triggered DMs) -----------------
 
 class DevyRetentionView(discord.ui.View):
