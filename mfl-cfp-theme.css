@@ -360,15 +360,20 @@ th,
 thead td,
 .header-row td,
 tr.header td {
-  background: linear-gradient(180deg, rgba(201, 146, 14, 0.3) 0%, rgba(166, 124, 0, 0.2) 100%);
-  color: var(--cfp-gold-light);
+  background: linear-gradient(180deg, rgba(201, 146, 14, 0.3) 0%, rgba(166, 124, 0, 0.2) 100%) !important;
+  color: var(--cfp-gold-light) !important;
   font-weight: 700;
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 1px;
   padding: var(--spacing-md);
   text-align: left;
-  border-bottom: 2px solid var(--cfp-gold-dark);
+  border-bottom: 2px solid var(--cfp-gold-dark) !important;
+}
+
+th font, th span,
+thead td font, thead td span {
+  color: inherit !important;
 }
 
 /* Table cells */
