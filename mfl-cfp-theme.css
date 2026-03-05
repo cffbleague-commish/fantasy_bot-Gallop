@@ -110,7 +110,7 @@ div.pagebody,
   background-image: url('https://on3static.com/uploads/dev/assets/cms/2023/12/03165348/college-football-playoff-national-championship-odds-released-michigan-alabama-texas-washington.png') !important;
   background-repeat: no-repeat !important;
   background-position: center center !important;
-  background-size: 500px !important;
+  background-size: 100% auto !important;
   background-blend-mode: luminosity !important;
   background-attachment: fixed !important;
   color: var(--cfp-text-primary) !important;
