@@ -323,16 +323,20 @@ h3 font, h3 span {
 
 /* Table captions */
 caption {
-  background-color: var(--cfp-bg-elevated);
-  color: var(--cfp-gold-light);
+  background-color: var(--cfp-bg-elevated) !important;
+  color: var(--cfp-gold-light) !important;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 13px;
   padding: var(--spacing-sm) var(--spacing-md);
   text-align: left;
-  border-bottom: 2px solid var(--cfp-gold-dark);
+  border-bottom: 2px solid var(--cfp-gold-dark) !important;
   caption-side: top;
+}
+
+caption font, caption span {
+  color: inherit !important;
 }
 
 /* ============================================================================
