@@ -386,23 +386,29 @@ tr:nth-child(odd),
   background-color: var(--cfp-bg-card);
 }
 
-/* Row hover effect — only on direct data rows, not layout tables */
-tbody tr:hover,
+/* Row hover effect — only on known data tables */
+.report tr:hover,
+.maintable tr:hover,
+.oddtablerow:hover,
+.eventablerow:hover,
 tr.datarow:hover {
   background-color: rgba(201, 146, 14, 0.15);
   transition: background-color 0.2s ease;
 }
 
-tbody tr:hover td,
+.report tr:hover td,
+.maintable tr:hover td,
 tr.datarow:hover td {
   color: var(--cfp-gold-light) !important;
 }
 
-/* Prevent hover effects on layout-level wrapper rows */
-div#contentframe > table > tbody > tr:hover,
-div#contentframe > table > tbody > tr:hover > td {
+/* Kill hover effects on all generic/layout table rows */
+tbody tr:hover {
   background-color: transparent !important;
-  color: var(--cfp-text-primary) !important;
+}
+
+tbody tr:hover td {
+  color: inherit !important;
 }
 
 /* Rank column styling */
@@ -1224,7 +1230,7 @@ table[id^="matchup_"],
 .maintable tr:hover a,
 .oddtablerow:hover a,
 .eventablerow:hover a,
-tbody tr:hover a {
+tr.datarow:hover a {
   color: var(--cfp-gold) !important;
 }
 
