@@ -980,13 +980,17 @@ textarea:focus {
 /* --- MFL MAIN MENU WRAPPER --- */
 div.myfantasyleague_menu,
 div.myfantasyleague_menu table,
-div.myfantasyleague_menu td {
+div.myfantasyleague_menu td,
+div.myfantasyleague_menu tr,
+div.myfantasyleague_menu div {
   background-color: var(--cfp-bg-dark) !important;
   color: var(--cfp-text-secondary) !important;
   border: none !important;
 }
 
-div.myfantasyleague_menu a {
+div.myfantasyleague_menu a,
+div.myfantasyleague_menu a:link,
+div.myfantasyleague_menu a:visited {
   color: var(--cfp-text-secondary) !important;
   text-decoration: none !important;
   transition: color 0.2s ease !important;
@@ -996,30 +1000,90 @@ div.myfantasyleague_menu a:hover {
   color: var(--cfp-gold) !important;
 }
 
+/* MFL dropdown/flyout menus */
+div.myfantasyleague_menu ul,
+div.myfantasyleague_menu li,
+div.myfantasyleague_menu ol {
+  background-color: var(--cfp-bg-elevated) !important;
+  color: var(--cfp-text-secondary) !important;
+  list-style: none !important;
+}
+
+div.myfantasyleague_menu li a,
+div.myfantasyleague_menu li a:link,
+div.myfantasyleague_menu li a:visited {
+  color: var(--cfp-text-secondary) !important;
+  background-color: var(--cfp-bg-elevated) !important;
+  padding: 6px 12px !important;
+  display: block !important;
+}
+
+div.myfantasyleague_menu li a:hover {
+  color: var(--cfp-gold) !important;
+  background-color: var(--cfp-bg-hover) !important;
+}
+
+/* Milonic menu system dropdowns */
+.mmenucontainer,
+.mmenucontainer table,
+.mmenucontainer td,
+.mmenucontainer tr,
+.mmenucontainer div {
+  background-color: var(--cfp-bg-elevated) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.mainmenuoff,
+.mainmenuoff a {
+  background-color: var(--cfp-bg-elevated) !important;
+  color: var(--cfp-text-secondary) !important;
+}
+
+.mainmenuon,
+.mainmenuon a {
+  background-color: var(--cfp-bg-hover) !important;
+  color: var(--cfp-gold) !important;
+}
+
+.mainmenucurrent,
+.mainmenucurrent a {
+  background-color: var(--cfp-bg-card) !important;
+  color: var(--cfp-gold-light) !important;
+}
+
 /* --- HORIZONTAL SUBMENU --- */
 .hsubmenu,
 .hsubmenu table {
-  background-color: var(--cfp-bg-elevated) !important;
-  border-bottom: 1px solid var(--border-color) !important;
+  background-color: var(--cfp-bg-dark) !important;
+  border-bottom: 2px solid var(--cfp-gold-dark) !important;
+  display: flex !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .hsubmenu td {
   background-color: var(--cfp-bg-elevated) !important;
   color: var(--cfp-text-secondary) !important;
-  padding: 6px 12px !important;
+  margin: 0 2px 0 0 !important;
+  padding: 0 !important;
 }
 
 .hsubmenu a,
 .hsubmenu td a {
   color: var(--cfp-text-secondary) !important;
+  background-color: var(--cfp-bg-elevated) !important;
+  padding: 8px 16px !important;
+  display: block !important;
   font-size: 12px !important;
   text-decoration: none !important;
-  transition: color 0.2s ease !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
 }
 
 .hsubmenu a:hover,
 .hsubmenu td a:hover {
   color: var(--cfp-gold) !important;
+  background-color: var(--cfp-bg-hover) !important;
 }
 
 /* Active/selected submenu item */
@@ -1031,7 +1095,9 @@ div.myfantasyleague_menu a:hover {
 .hsubmenu b,
 .hsubmenu b a {
   color: var(--cfp-gold-light) !important;
+  background-color: var(--cfp-bg-card) !important;
   font-weight: 700 !important;
+  border-bottom: 2px solid var(--cfp-gold) !important;
 }
 
 /* --- MFL HOME PAGE TABS --- */
