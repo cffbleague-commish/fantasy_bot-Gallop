@@ -928,7 +928,7 @@ textarea:focus {
 
 /* Menu items - inactive state */
 .mainmenuoff {
-  background-color: transparent !important;
+  background-color: var(--cfp-bg-dark) !important;
   color: var(--cfp-text-secondary) !important;
   font-family: var(--font-primary) !important;
   font-size: 13px !important;
@@ -1032,33 +1032,6 @@ div.myfantasyleague_menu li a:hover {
   background-color: var(--cfp-bg-hover) !important;
 }
 
-/* Milonic menu system dropdowns */
-.mmenucontainer,
-.mmenucontainer table,
-.mmenucontainer td,
-.mmenucontainer tr,
-.mmenucontainer div {
-  background-color: var(--cfp-bg-elevated) !important;
-  border: 1px solid var(--border-color) !important;
-}
-
-.mainmenuoff,
-.mainmenuoff a {
-  background-color: var(--cfp-bg-elevated) !important;
-  color: var(--cfp-text-secondary) !important;
-}
-
-.mainmenuon,
-.mainmenuon a {
-  background-color: var(--cfp-bg-hover) !important;
-  color: var(--cfp-gold) !important;
-}
-
-.mainmenucurrent,
-.mainmenucurrent a {
-  background-color: var(--cfp-bg-card) !important;
-  color: var(--cfp-gold-light) !important;
-}
 
 /* --- HORIZONTAL SUBMENU --- */
 .hsubmenu,

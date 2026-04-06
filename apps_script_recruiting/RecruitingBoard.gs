@@ -396,6 +396,43 @@ function getESPNGradeRange(grade) {
 }
 
 /**
+ * Calculate confidence score for a price prediction.
+ * Combines sample size, price spread tightness, and data source quality
+ * into a single 0-100 score with a human-readable label.
+ *
+ * @param {Object} bucket - Bucket stats from computeBucketStats()
+ * @param {String} sourceType - "perPick", "tier", "udfa", or "grade"
+ * @returns {Object} - { score: Number, label: String }
+ */
+function calcConfidence(bucket, sourceType) {
+  // 1. Sample size (40%) — log scale, diminishing returns past ~30
+  var sampleScore = Math.min(100, 30 * Math.log(bucket.count));
+
+  // 2. Spread tightness (35%) — IQR relative to median
+  var spreadScore = 50; // default when median is 0 or undefined
+  if (bucket.median > 0) {
+    var spreadRatio = (bucket.p75 - bucket.p25) / bucket.median;
+    spreadScore = Math.max(0, 100 * (1 - spreadRatio));
+  }
+
+  // 3. Data source quality (25%)
+  var sourceScores = { perPick: 100, tier: 80, udfa: 60, grade: 40 };
+  var sourceScore = sourceScores[sourceType] || 40;
+
+  var score = Math.round(
+    (sampleScore * 0.40) + (spreadScore * 0.35) + (sourceScore * 0.25)
+  );
+  score = Math.max(0, Math.min(100, score));
+
+  var label = "Very Low";
+  if (score >= 75) label = "High";
+  else if (score >= 50) label = "Medium";
+  else if (score >= 25) label = "Low";
+
+  return { score: score, label: label };
+}
+
+/**
  * Calculate positional scarcity factor for a given draft class.
  * Compares current year's prospect count to historical average.
  *
@@ -441,11 +478,13 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
   const pos = player.position;
   let bucket = null;
   let tierKey = null; // For grade adjustment lookup
+  let sourceType = null; // For confidence calculation
 
   // 1. Post-draft Round 1: per-pick sliding window (most granular)
   if (!isPreDraft && player.draftRound === "1" && player.overallPick && player.overallPick <= 32) {
     bucket = pricingModel.byPick[`${pos}|${player.overallPick}`];
     tierKey = `${pos}|${getDraftPickTier(player.overallPick, player.draftRound) || ""}`;
+    if (bucket) sourceType = "perPick";
   }
 
   // 2. Post-draft Round 2+: tier-based
@@ -454,6 +493,7 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     if (tier) {
       bucket = pricingModel.byTier[`${pos}|${tier}`];
       tierKey = `${pos}|${tier}`;
+      if (bucket) sourceType = "tier";
     }
   }
 
@@ -461,6 +501,7 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
   if (!bucket && !isPreDraft && !player.overallPick && player.dataSource && player.dataSource.includes("UDFA")) {
     bucket = pricingModel.byTier[`${pos}|UDFA`];
     tierKey = `${pos}|UDFA`;
+    if (bucket) sourceType = "udfa";
   }
 
   // 4. Pre-draft or no match: fall back to ESPN grade range
@@ -469,6 +510,7 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     bucket = pricingModel.byGrade[`${pos}|${gradeRange}`];
     // No grade adjustment needed here - already bucketed by grade
     tierKey = null;
+    if (bucket) sourceType = "grade";
   }
 
   if (!bucket || bucket.count < 3) return null;
@@ -502,7 +544,8 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     p25: p25,
     p75: p75,
     skew: bucket.skew,
-    count: bucket.count
+    count: bucket.count,
+    confidence: calcConfidence(bucket, sourceType)
   };
 }
 
@@ -746,7 +789,7 @@ function generateRecruitingBoardForYear(year) {
     "ESPN Grade", "ESPN Rank", "Pos Rank",
     "Draft Rd", "Draft Pick", "Draft Capital",
     "Recruit Score",
-    "Predicted Cost", "Price Range", "Skew", "Sample (n)",
+    "Predicted Cost", "Price Range", "Skew", "Sample (n)", "Confidence",
     "Data Source", "HeadshotURL"
   ];
 
@@ -784,6 +827,7 @@ function generateRecruitingBoardForYear(year) {
       pr ? `$${pr.p25}-$${pr.p75}` : "",
       pr ? pr.skew : "",
       pr ? pr.count : "",
+      pr && pr.confidence ? `${pr.confidence.label} (${pr.confidence.score})` : "",
       p.dataSource,
       p.headshotUrl
     ];
@@ -813,8 +857,9 @@ function generateRecruitingBoardForYear(year) {
     sheet.setColumnWidth(15, 110);  // Price Range
     sheet.setColumnWidth(16, 80);   // Skew
     sheet.setColumnWidth(17, 70);   // Sample (n)
-    sheet.setColumnWidth(18, 110);  // Data Source
-    sheet.setColumnWidth(19, 80);   // Headshot URL
+    sheet.setColumnWidth(18, 110);  // Confidence
+    sheet.setColumnWidth(19, 110);  // Data Source
+    sheet.setColumnWidth(20, 80);   // Headshot URL
   }
 
   Logger.log(`\n  Wrote ${rows.length} prospects to ${config.sheets.recruitingBoard}`);
