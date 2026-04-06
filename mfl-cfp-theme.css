@@ -165,16 +165,18 @@ a:visited {
 }
 
 /* Override MFL font color tags inside links */
-a font, a span {
+a font, a span,
+a:hover font, a:hover span,
+a:visited font, a:visited span {
   color: inherit !important;
 }
 
-/* Override MFL inline styles on span and font elements */
-span, font {
+/* Override MFL inline styles on span and font elements (not inside links) */
+span:not(a span), font:not(a font) {
   color: var(--cfp-text-primary) !important;
 }
 
-span[style], font[style] {
+span[style]:not(a span), font[style]:not(a font) {
   color: var(--cfp-text-primary) !important;
 }
 

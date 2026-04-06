@@ -419,6 +419,167 @@ function analyzeAuctionHistory() {
   });
   analysisData.push([]);
 
+  // --- 4e. By Position + Startup ADP Tier ---
+  // Cross-reference rookie auctions with DLF Startup ADP data
+  const adpLookup = buildADPLookupByName();
+  const adpConfig = config.adpConfig || {};
+  const adpTierDefs = adpConfig.tiers || [];
+  const adpTierLabels = adpTierDefs.map(t => t.label);
+
+  // Match rookie auctions to ADP data
+  const auctionsWithADP = rookieAuctions.map(a => {
+    const normalizedName = normalizeNameForMatch(a.playerName);
+    if (!normalizedName) return { ...a, startupADP: null, adpTier: null };
+
+    const yearKey = `${normalizedName}|${a.auctionYear}`;
+    const adpEntry = adpLookup[yearKey] || adpLookup[normalizedName];
+
+    const adp = adpEntry ? adpEntry.adp : null;
+    const tier = adp ? getADPTier(adp, adpTierDefs) : null;
+    return { ...a, startupADP: adp, adpTier: tier };
+  });
+
+  const adpMatchedCount = auctionsWithADP.filter(a => a.startupADP !== null).length;
+  Logger.log(`  ADP matched: ${adpMatchedCount} of ${rookieAuctions.length} rookie auctions`);
+
+  if (adpMatchedCount > 0) {
+    // ADP tier summary
+    analysisData.push(["ROOKIE AUCTIONS BY STARTUP ADP TIER"]);
+    analysisData.push(["ADP Tier", "Count", "Avg Bid", "Median Bid", "Max Bid", "Min Bid"]);
+
+    adpTierLabels.forEach(tier => {
+      const tierAuctions = auctionsWithADP.filter(a => a.adpTier === tier);
+      if (tierAuctions.length === 0) {
+        analysisData.push([tier, 0, "N/A", "N/A", "N/A", "N/A"]);
+        return;
+      }
+      const bids = tierAuctions.map(a => a.bidAmount);
+      analysisData.push([
+        tier,
+        tierAuctions.length,
+        avg(bids).toFixed(2),
+        median(bids).toFixed(2),
+        Math.max(...bids),
+        Math.min(...bids)
+      ]);
+    });
+
+    // Also show "No ADP" bucket
+    const noAdpAuctions = auctionsWithADP.filter(a => a.startupADP === null);
+    if (noAdpAuctions.length > 0) {
+      const bids = noAdpAuctions.map(a => a.bidAmount);
+      analysisData.push([
+        "No ADP Data",
+        noAdpAuctions.length,
+        avg(bids).toFixed(2),
+        median(bids).toFixed(2),
+        Math.max(...bids),
+        Math.min(...bids)
+      ]);
+    }
+    analysisData.push([]);
+
+    // Avg bid: Position x ADP Tier
+    analysisData.push(["ROOKIE AVG BID: POSITION x ADP TIER"]);
+    analysisData.push(["Position", ...adpTierLabels, "No ADP"]);
+
+    positions.forEach(pos => {
+      const row = [pos];
+      adpTierLabels.forEach(tier => {
+        const bids = auctionsWithADP
+          .filter(a => a.position === pos && a.adpTier === tier)
+          .map(a => a.bidAmount);
+        row.push(bids.length > 0 ? avg(bids).toFixed(1) : "-");
+      });
+      const noAdpBids = auctionsWithADP
+        .filter(a => a.position === pos && a.startupADP === null)
+        .map(a => a.bidAmount);
+      row.push(noAdpBids.length > 0 ? avg(noAdpBids).toFixed(1) : "-");
+      analysisData.push(row);
+    });
+    analysisData.push([]);
+
+    // Sample size: Position x ADP Tier
+    analysisData.push(["SAMPLE SIZE (n): POSITION x ADP TIER"]);
+    analysisData.push(["Position", ...adpTierLabels, "No ADP"]);
+
+    positions.forEach(pos => {
+      const row = [pos];
+      adpTierLabels.forEach(tier => {
+        const count = auctionsWithADP
+          .filter(a => a.position === pos && a.adpTier === tier)
+          .length;
+        row.push(count > 0 ? count : "-");
+      });
+      const noAdpCount = auctionsWithADP
+        .filter(a => a.position === pos && a.startupADP === null)
+        .length;
+      row.push(noAdpCount > 0 ? noAdpCount : "-");
+      analysisData.push(row);
+    });
+    analysisData.push([]);
+
+    // Median bid: Position x ADP Tier
+    analysisData.push(["ROOKIE MEDIAN BID: POSITION x ADP TIER"]);
+    analysisData.push(["Position", ...adpTierLabels, "No ADP"]);
+
+    positions.forEach(pos => {
+      const row = [pos];
+      adpTierLabels.forEach(tier => {
+        const bids = auctionsWithADP
+          .filter(a => a.position === pos && a.adpTier === tier)
+          .map(a => a.bidAmount);
+        row.push(bids.length > 0 ? median(bids).toFixed(1) : "-");
+      });
+      const noAdpBids = auctionsWithADP
+        .filter(a => a.position === pos && a.startupADP === null)
+        .map(a => a.bidAmount);
+      row.push(noAdpBids.length > 0 ? median(noAdpBids).toFixed(1) : "-");
+      analysisData.push(row);
+    });
+    analysisData.push([]);
+
+    // ADP vs Draft Capital comparison — shows how ADP diverges from draft position
+    analysisData.push(["ADP vs DRAFT PICK: BIGGEST FANTASY RISERS AND FALLERS"]);
+    analysisData.push(["Player", "Position", "Year", "Draft Pick", "Startup ADP", "ADP Tier", "Avg Bid", "Copies"]);
+
+    // Group by player+year, compute avg bid, attach ADP and pick
+    const adpPlayerGroups = {};
+    auctionsWithADP.filter(a => a.startupADP !== null).forEach(a => {
+      const key = `${a.playerName}|${a.auctionYear}`;
+      if (!adpPlayerGroups[key]) {
+        const overallPick = parseOverallPick(a.draftPick, a.draftRound);
+        adpPlayerGroups[key] = {
+          playerName: a.playerName, position: a.position, auctionYear: a.auctionYear,
+          overallPick: overallPick, startupADP: a.startupADP, adpTier: a.adpTier,
+          bids: []
+        };
+      }
+      adpPlayerGroups[key].bids.push(a.bidAmount);
+    });
+
+    // Sort by startup ADP (best first) and take top 25
+    const topByADP = Object.values(adpPlayerGroups)
+      .sort((a, b) => a.startupADP - b.startupADP)
+      .slice(0, 25);
+
+    topByADP.forEach(p => {
+      analysisData.push([
+        p.playerName,
+        p.position,
+        p.auctionYear,
+        p.overallPick || "-",
+        p.startupADP,
+        p.adpTier || "-",
+        "$" + avg(p.bids).toFixed(0),
+        p.bids.length
+      ]);
+    });
+    analysisData.push([]);
+  } else {
+    Logger.log("  No ADP data found. Run buildADPLookupByName() requires the 'DLF Rookie Startup ADP' sheet.");
+  }
+
   // --- 5. By Year ---
   analysisData.push(["ROOKIE AUCTIONS BY YEAR"]);
   analysisData.push(["Year", "Count", "Avg Bid", "Median Bid", "Total Spent", "Max Bid"]);
