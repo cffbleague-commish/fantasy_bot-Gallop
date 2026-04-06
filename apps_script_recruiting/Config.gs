@@ -61,7 +61,8 @@ function getConfig() {
       auctionAnalysis: "AuctionAnalysis",    // Processed analysis output
       recruitingBoard: "RecruitingBoard",    // Star ratings and cost predictions
       recruitingGrades: "RecruitingGrades",  // Team recruiting class grades
-      espnProspects: "ESPNProspects"         // ESPN draft prospect data (grades, ranks, headshots)
+      espnProspects: "ESPNProspects",         // ESPN draft prospect data (grades, ranks, headshots)
+      dlfRookieStartupADP: "DLF Rookie Startup ADP"  // DLF startup ADP data (market consensus values)
     },
 
     // Source Sheet Tab Names (tabs in the League Sheet we read from)
@@ -97,7 +98,33 @@ function getConfig() {
 
     // Draft Capital Score decay rate (controls curve steepness)
     // Higher value = steeper drop-off between picks
-    draftCapitalDecayRate: 0.019
+    draftCapitalDecayRate: 0.019,
+
+    // Startup ADP Configuration
+    // DLF Rookie Startup ADP captures fantasy market consensus on rookie value.
+    // ADP = overall pick position in startup drafts (rookies mixed with veterans).
+    adpConfig: {
+      // ADP tier boundaries (for 12-team, ~360-pick startup drafts)
+      tiers: [
+        { label: "Elite (1-24)", min: 1, max: 24 },
+        { label: "Premium (25-60)", min: 25, max: 60 },
+        { label: "Starter (61-120)", min: 61, max: 120 },
+        { label: "Depth (121-200)", min: 121, max: 200 },
+        { label: "Flier (201+)", min: 201, max: 9999 }
+      ],
+      // How much ADP deviation from tier average affects price (0 = disabled, 1.0 = full effect)
+      adjustmentSensitivity: 0.30,
+      // Blend weight: how much ADP-tier pricing contributes vs draft-capital pricing
+      blendWeights: {
+        round1: 0.30,      // Round 1: ADP gets 30%, per-pick gets 70%
+        round2Plus: 0.50   // Round 2+: ADP gets 50%, tier gets 50%
+      },
+      // Default ADP for players not found in ADP data (post-draft only)
+      // Treats missing ADP as worst-case: fantasy market doesn't value them
+      defaultADP: 360,
+      // Minimum sample size for ADP tier buckets
+      minSampleSize: 3
+    }
   };
 }
 

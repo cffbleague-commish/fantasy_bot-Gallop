@@ -152,6 +152,72 @@ function starDisplay(stars) {
 }
 
 // ============================================================================
+// STARTUP ADP HELPERS
+// ============================================================================
+
+/**
+ * Build a lookup map from DLF Rookie Startup ADP data for name-based matching.
+ * Reads from the "DLF Rookie Startup ADP" sheet.
+ *
+ * Sheet columns: Year(0), Rank(1), ADP(2), Pos(3), Player(4), Team(5), Position(6)
+ *
+ * @returns {Object} - Map keyed by "normalizedName|year" and "normalizedName"
+ *                      -> { adp, rank, posRank, position, year }
+ */
+function buildADPLookupByName() {
+  const config = getConfig();
+  const ss = SpreadsheetApp.getActive();
+  const sheet = ss.getSheetByName(config.sheets.dlfRookieStartupADP);
+
+  if (!sheet) return {};
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return {};
+
+  const lookup = {};
+  data.slice(1).forEach(row => {
+    const year = String(row[0]);
+    const rank = row[1] !== "" && row[1] !== null ? Number(row[1]) : null;
+    const adp = row[2] !== "" && row[2] !== null ? Number(row[2]) : null;
+    const posRank = String(row[3] || "");
+    const playerName = String(row[4] || "");
+    const position = String(row[6] || "");
+
+    if (!playerName || adp === null || isNaN(adp)) return;
+
+    const normalizedName = normalizeNameForMatch(playerName);
+    if (!normalizedName) return;
+
+    const entry = { adp, rank, posRank, position, year };
+
+    // Key by name + year for uniqueness
+    const yearKey = `${normalizedName}|${year}`;
+    lookup[yearKey] = entry;
+
+    // Also store by name only (most recent wins if duplicates)
+    if (!lookup[normalizedName]) {
+      lookup[normalizedName] = entry;
+    }
+  });
+
+  return lookup;
+}
+
+/**
+ * Get ADP tier label for a given startup ADP value.
+ * @param {Number} adp - Startup ADP (1-360+)
+ * @param {Array} tiers - Tier config array from getConfig().adpConfig.tiers
+ * @returns {String|null} - Tier label or null if no ADP
+ */
+function getADPTier(adp, tiers) {
+  if (!adp || adp < 1) return null;
+  for (var i = 0; i < tiers.length; i++) {
+    if (adp >= tiers[i].min && adp <= tiers[i].max) return tiers[i].label;
+  }
+  return null;
+}
+
+// ============================================================================
 // PRICING MODEL
 // ============================================================================
 
@@ -318,7 +384,60 @@ function buildPricingModel(config) {
     gradeAvgByTier[key] = grades.reduce((s, v) => s + v, 0) / grades.length;
   });
 
-  // --- 4. Historical position counts per year (for scarcity) ---
+  // --- 4. ADP-based tier buckets ---
+  // Cross-reference historical rookie auctions with startup ADP data
+  // to build pricing buckets by position × ADP tier
+  const adpLookup = buildADPLookupByName();
+  const adpConfig = config.adpConfig || {};
+  const adpTiers = adpConfig.tiers || [];
+  const byADPRaw = {};
+  const adpByDraftTier = {}; // Track ADP values per draft-capital tier for adjustment calc
+
+  rookieAuctions.forEach(a => {
+    const normalizedName = normalizeNameForMatch(a.playerName);
+    if (!normalizedName) return;
+
+    // Look up this player's ADP for their auction year
+    const yearKey = `${normalizedName}|${a.auctionYear}`;
+    const adpEntry = adpLookup[yearKey] || adpLookup[normalizedName];
+
+    if (!adpEntry || !adpEntry.adp) return;
+
+    // Bucket by position + ADP tier
+    const adpTierLabel = getADPTier(adpEntry.adp, adpTiers);
+    if (adpTierLabel) {
+      const key = `${a.position}|${adpTierLabel}`;
+      if (!byADPRaw[key]) byADPRaw[key] = [];
+      byADPRaw[key].push(a.bidAmount);
+    }
+
+    // Track ADP per draft-capital tier for the ADP adjustment multiplier
+    const draftTier = getDraftPickTier(a.overallPick, a.draftRound);
+    if (draftTier) {
+      const tierKey = `${a.position}|${draftTier}`;
+      if (!adpByDraftTier[tierKey]) adpByDraftTier[tierKey] = [];
+      adpByDraftTier[tierKey].push(adpEntry.adp);
+    }
+  });
+
+  const byADP = {};
+  Object.keys(byADPRaw).forEach(key => {
+    if (byADPRaw[key].length >= (adpConfig.minSampleSize || 3)) {
+      byADP[key] = computeBucketStats(byADPRaw[key]);
+    }
+  });
+
+  // Compute average ADP per draft-capital tier (for ADP adjustment)
+  const adpAvgByTier = {};
+  Object.keys(adpByDraftTier).forEach(key => {
+    const adps = adpByDraftTier[key];
+    adpAvgByTier[key] = adps.reduce((s, v) => s + v, 0) / adps.length;
+  });
+
+  Logger.log(`  ADP lookup entries: ${Object.keys(adpLookup).length}`);
+  Logger.log(`  ADP tier buckets: ${Object.keys(byADP).length}, ADP-tracked draft tiers: ${Object.keys(adpAvgByTier).length}`);
+
+  // --- 5. Historical position counts per year (for scarcity) ---
   const positionsByYear = {};
   rookieAuctions.forEach(a => {
     const yk = `${a.auctionYear}|${a.position}`;
@@ -354,7 +473,9 @@ function buildPricingModel(config) {
     byPick,
     byTier: byTierStats,
     byGrade: byGradeStats,
+    byADP,
     gradeAvgByTier,
+    adpAvgByTier,
     historicalPositionCounts
   };
 }
@@ -402,9 +523,10 @@ function getESPNGradeRange(grade) {
  *
  * @param {Object} bucket - Bucket stats from computeBucketStats()
  * @param {String} sourceType - "perPick", "tier", "udfa", or "grade"
+ * @param {Boolean} hasADP - Whether ADP data contributed to the prediction
  * @returns {Object} - { score: Number, label: String }
  */
-function calcConfidence(bucket, sourceType) {
+function calcConfidence(bucket, sourceType, hasADP) {
   // 1. Sample size (40%) — log scale, diminishing returns past ~30
   var sampleScore = Math.min(100, 30 * Math.log(bucket.count));
 
@@ -419,8 +541,11 @@ function calcConfidence(bucket, sourceType) {
   var sourceScores = { perPick: 100, tier: 80, udfa: 60, grade: 40 };
   var sourceScore = sourceScores[sourceType] || 40;
 
+  // 4. ADP bonus — additional signal from startup ADP data (+5 points)
+  var adpBonus = hasADP ? 5 : 0;
+
   var score = Math.round(
-    (sampleScore * 0.40) + (spreadScore * 0.35) + (sourceScore * 0.25)
+    (sampleScore * 0.40) + (spreadScore * 0.35) + (sourceScore * 0.25) + adpBonus
   );
   score = Math.max(0, Math.min(100, score));
 
@@ -462,22 +587,30 @@ function calcScarcityFactor(position, currentYearCounts, historicalAvgCounts) {
  *   3. ESPN grade range (pre-draft fallback)
  *
  * After finding the base price, applies:
- *   - ESPN grade adjustment: if player's grade differs from the tier average,
- *     scale price proportionally (higher grade = higher price within the bucket)
+ *   - ADP blending: blends draft-capital pricing with ADP-tier pricing
+ *   - ESPN grade adjustment: scale price based on grade vs tier average
+ *   - ADP adjustment: scale price based on ADP vs tier average
  *   - Scarcity factor: fewer prospects at this position = higher prices
  *
- * @param {Object} player - Board player object
+ * Missing ADP (post-draft) is treated as worst-case (defaultADP from config),
+ * reflecting that the fantasy market doesn't value the player.
+ *
+ * @param {Object} player - Board player object (must include startupADP)
  * @param {Object} pricingModel - From buildPricingModel()
  * @param {Object} currentYearCounts - Position counts for this draft class
  * @param {Boolean} isPreDraft - Whether the draft has occurred
- * @returns {Object|null} - { predicted, p25, p75, skew, count } or null
+ * @returns {Object|null} - { predicted, p25, p75, skew, count, confidence } or null
  */
 function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
   if (!pricingModel) return null;
 
   const pos = player.position;
+  const config = getConfig();
+  const adpConfig = config.adpConfig || {};
+  const adpTiers = adpConfig.tiers || [];
+
   let bucket = null;
-  let tierKey = null; // For grade adjustment lookup
+  let tierKey = null; // For grade/ADP adjustment lookup
   let sourceType = null; // For confidence calculation
 
   // 1. Post-draft Round 1: per-pick sliding window (most granular)
@@ -515,6 +648,36 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
 
   if (!bucket || bucket.count < 3) return null;
 
+  // --- ADP blending ---
+  // Blend draft-capital-based pricing with ADP-tier pricing when available.
+  // Post-draft: use player's actual ADP, or defaultADP if not in ADP data.
+  // Pre-draft: skip ADP entirely (startup drafts haven't happened yet).
+  let baseMedian = bucket.median;
+  let baseP25 = bucket.p25;
+  let baseP75 = bucket.p75;
+  let hasADP = false;
+
+  if (!isPreDraft && pricingModel.byADP) {
+    const effectiveADP = player.startupADP || adpConfig.defaultADP || 360;
+    const adpTierLabel = getADPTier(effectiveADP, adpTiers);
+
+    if (adpTierLabel) {
+      const adpBucket = pricingModel.byADP[`${pos}|${adpTierLabel}`];
+
+      if (adpBucket && adpBucket.count >= (adpConfig.minSampleSize || 3) && sourceType !== "grade") {
+        // Blend weights: Round 1 per-pick data is already granular, so ADP gets less weight
+        const blendWeights = adpConfig.blendWeights || { round1: 0.30, round2Plus: 0.50 };
+        const adpWeight = (sourceType === "perPick") ? blendWeights.round1 : blendWeights.round2Plus;
+        const draftWeight = 1.0 - adpWeight;
+
+        baseMedian = (bucket.median * draftWeight) + (adpBucket.median * adpWeight);
+        baseP25 = (bucket.p25 * draftWeight) + (adpBucket.p25 * adpWeight);
+        baseP75 = (bucket.p75 * draftWeight) + (adpBucket.p75 * adpWeight);
+        hasADP = true;
+      }
+    }
+  }
+
   // --- ESPN grade adjustment ---
   // If the player's grade is above/below the historical average for this tier,
   // scale prices proportionally. A 96-grade pick at #1 should price higher
@@ -531,13 +694,30 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     }
   }
 
+  // --- ADP adjustment multiplier ---
+  // If a player's startup ADP is better/worse than the average ADP for their
+  // draft-capital tier, adjust price proportionally. Lower ADP = better value.
+  // Post-draft only. Missing ADP uses defaultADP (worst-case).
+  let adpMultiplier = 1.0;
+  if (!isPreDraft && tierKey && pricingModel.adpAvgByTier && pricingModel.adpAvgByTier[tierKey]) {
+    const effectiveADP = player.startupADP || adpConfig.defaultADP || 360;
+    const avgADP = pricingModel.adpAvgByTier[tierKey];
+    if (avgADP > 0) {
+      // Lower ADP = better → positive adjustment
+      // (avgADP - playerADP) is positive when player is better than tier avg
+      const sensitivity = adpConfig.adjustmentSensitivity || 0.30;
+      adpMultiplier = 1.0 + ((avgADP - effectiveADP) / avgADP) * sensitivity;
+      adpMultiplier = Math.max(0.70, Math.min(1.50, adpMultiplier));
+    }
+  }
+
   // --- Scarcity adjustment ---
   const scarcity = calcScarcityFactor(pos, currentYearCounts, pricingModel.historicalPositionCounts);
 
-  const totalMultiplier = gradeMultiplier * scarcity;
-  const predicted = Math.round(bucket.median * totalMultiplier);
-  const p25 = Math.round(bucket.p25 * totalMultiplier);
-  const p75 = Math.round(bucket.p75 * totalMultiplier);
+  const totalMultiplier = gradeMultiplier * adpMultiplier * scarcity;
+  const predicted = Math.round(baseMedian * totalMultiplier);
+  const p25 = Math.round(baseP25 * totalMultiplier);
+  const p75 = Math.round(baseP75 * totalMultiplier);
 
   return {
     predicted: predicted,
@@ -545,7 +725,7 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     p75: p75,
     skew: bucket.skew,
     count: bucket.count,
-    confidence: calcConfidence(bucket, sourceType)
+    confidence: calcConfidence(bucket, sourceType, hasADP)
   };
 }
 
@@ -624,6 +804,11 @@ function generateRecruitingBoardForYear(year) {
   // --- Build pricing model from historical auction data ---
   const pricingModel = buildPricingModel(config);
 
+  // --- Build ADP lookup for this year's prospects ---
+  const adpLookup = buildADPLookupByName();
+  const adpTiers = (config.adpConfig || {}).tiers || [];
+  Logger.log(`  ADP lookup entries: ${Object.keys(adpLookup).length}`);
+
   // Count prospects at each position in this draft class (for scarcity)
   const currentYearCounts = { QB: 0, RB: 0, WR: 0, TE: 0 };
   espnProspects.forEach(p => {
@@ -689,6 +874,10 @@ function generateRecruitingBoardForYear(year) {
     else if (espn.grade !== null && !isDrafted) dataSource = "ESPN (UDFA)";
     else if (isDrafted) dataSource = "Draft Only";
 
+    // Look up startup ADP for this player
+    const adpYearKey = `${normalizedName}|${yearStr}`;
+    const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
+
     const playerObj = {
       name: espn.name,
       position: espn.position,
@@ -700,6 +889,8 @@ function generateRecruitingBoardForYear(year) {
       draftPick: espn.draftPick || "",
       overallPick: overallPick,
       draftCapitalScore: draftCapital,
+      startupADP: adpEntry ? adpEntry.adp : null,
+      adpTier: adpEntry ? getADPTier(adpEntry.adp, adpTiers) : null,
       recruitScore: recruitScore,
       stars: stars,
       headshotUrl: espn.headshotUrl,
@@ -746,6 +937,10 @@ function generateRecruitingBoardForYear(year) {
       if (parts.length >= 2) displayName = `${parts[1]} ${parts[0]}`;
     }
 
+    // Look up startup ADP for this player
+    const adpYearKey = `${normalizedName}|${yearStr}`;
+    const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
+
     const mflPlayerObj = {
       name: displayName,
       position: mfl.position || "",
@@ -757,6 +952,8 @@ function generateRecruitingBoardForYear(year) {
       draftPick: mfl.draft_pick || "",
       overallPick: overallPick,
       draftCapitalScore: draftCapital,
+      startupADP: adpEntry ? adpEntry.adp : null,
+      adpTier: adpEntry ? getADPTier(adpEntry.adp, adpTiers) : null,
       recruitScore: recruitScore,
       stars: stars,
       headshotUrl: "",
@@ -788,6 +985,7 @@ function generateRecruitingBoardForYear(year) {
     "DraftYear", "Stars", "Rating", "Player", "Position", "College",
     "ESPN Grade", "ESPN Rank", "Pos Rank",
     "Draft Rd", "Draft Pick", "Draft Capital",
+    "Startup ADP", "ADP Tier",
     "Recruit Score",
     "Predicted Cost", "Price Range", "Skew", "Sample (n)", "Confidence",
     "Data Source", "HeadshotURL"
@@ -822,6 +1020,8 @@ function generateRecruitingBoardForYear(year) {
       p.draftRound || "",
       p.overallPick || "",
       p.draftCapitalScore > 0 ? p.draftCapitalScore.toFixed(1) : "",
+      p.startupADP || "",
+      p.adpTier || "",
       p.recruitScore.toFixed(1),
       pr ? `$${pr.predicted}` : "",
       pr ? `$${pr.p25}-$${pr.p75}` : "",
@@ -852,14 +1052,16 @@ function generateRecruitingBoardForYear(year) {
     sheet.setColumnWidth(10, 60);   // Draft Rd
     sheet.setColumnWidth(11, 70);   // Draft Pick
     sheet.setColumnWidth(12, 85);   // Draft Capital
-    sheet.setColumnWidth(13, 90);   // Recruit Score
-    sheet.setColumnWidth(14, 95);   // Predicted Cost
-    sheet.setColumnWidth(15, 110);  // Price Range
-    sheet.setColumnWidth(16, 80);   // Skew
-    sheet.setColumnWidth(17, 70);   // Sample (n)
-    sheet.setColumnWidth(18, 110);  // Confidence
-    sheet.setColumnWidth(19, 110);  // Data Source
-    sheet.setColumnWidth(20, 80);   // Headshot URL
+    sheet.setColumnWidth(13, 80);   // Startup ADP
+    sheet.setColumnWidth(14, 120);  // ADP Tier
+    sheet.setColumnWidth(15, 90);   // Recruit Score
+    sheet.setColumnWidth(16, 95);   // Predicted Cost
+    sheet.setColumnWidth(17, 110);  // Price Range
+    sheet.setColumnWidth(18, 80);   // Skew
+    sheet.setColumnWidth(19, 70);   // Sample (n)
+    sheet.setColumnWidth(20, 110);  // Confidence
+    sheet.setColumnWidth(21, 110);  // Data Source
+    sheet.setColumnWidth(22, 80);   // Headshot URL
   }
 
   Logger.log(`\n  Wrote ${rows.length} prospects to ${config.sheets.recruitingBoard}`);

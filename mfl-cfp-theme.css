@@ -1262,15 +1262,15 @@ table[id^="matchup_"],
 /* Team name links */
 .report a,
 .maintable a {
-  color: var(--cfp-text-primary);
+  color: var(--cfp-text-primary) !important;
   font-weight: 600;
   transition: color 0.2s ease;
 }
 
 .report a:hover,
 .maintable a:hover {
-  color: var(--cfp-gold);
-  text-decoration: none;
+  color: var(--cfp-gold) !important;
+  text-decoration: none !important;
 }
 
 /* Ensure links in hovered rows stay readable */
@@ -1450,6 +1450,18 @@ div[id^="franchise_"] {
 .hpm_body,
 .homePageModule .body {
   padding: var(--spacing-md);
+}
+
+.hpm a,
+.homePageModule a {
+  color: var(--cfp-gold-light) !important;
+  text-decoration: none !important;
+}
+
+.hpm a:hover,
+.homePageModule a:hover {
+  color: var(--cfp-gold) !important;
+  text-decoration: none !important;
 }
 
 /* --- INJURY/BYE INDICATORS --- */
