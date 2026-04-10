@@ -844,10 +844,19 @@ function generateRecruitingBoardForYear(year) {
   // --- Build pricing model from historical auction data ---
   const pricingModel = buildPricingModel(config);
 
-  // --- Build ADP lookup for this year's prospects ---
+  // --- Build lookups for cross-referencing data sources ---
   const adpLookup = buildADPLookupByName();
   const adpTiers = (config.adpConfig || {}).tiers || [];
+  const espnLookup = buildESPNLookupByName();
   Logger.log(`  ADP lookup entries: ${Object.keys(adpLookup).length}`);
+  Logger.log(`  ESPN lookup entries: ${Object.keys(espnLookup).length}`);
+
+  // Build MFL lookup by normalized name for cross-referencing draft info into ESPN prospects
+  const mflLookup = {};
+  mflRookies.forEach(mfl => {
+    const name = normalizeNameForMatch(mfl.name || "");
+    if (name) mflLookup[name] = mfl;
+  });
 
   // Count prospects at each position in this draft class (for scarcity)
   const currentYearCounts = { QB: 0, RB: 0, WR: 0, TE: 0 };
@@ -881,20 +890,36 @@ function generateRecruitingBoardForYear(year) {
     const normalizedName = normalizeNameForMatch(espn.name);
     processedNames.add(normalizedName);
 
+    // Cross-reference MFL data to fill in missing draft info
+    let draftRound = espn.draftRound;
+    let draftPick = espn.draftPick;
+    if ((!draftRound || draftRound === "0") && mflLookup[normalizedName]) {
+      const mfl = mflLookup[normalizedName];
+      if (mfl.draft_round && mfl.draft_round !== "0") {
+        draftRound = String(mfl.draft_round);
+        draftPick = String(mfl.draft_pick || "");
+      }
+    }
+
     // ESPN stores pick-within-round (not overall pick) from URL: /rounds/{R}/picks/{P}
     // Convert to overall pick: (round - 1) * 32 + pickInRound
     // Don't use parseOverallPick() here — that's designed for MFL's "1.05" format
-    const round = Number(espn.draftRound);
-    const pickInRound = Number(espn.draftPick);
-    const overallPick = (!isNaN(round) && round > 0 && !isNaN(pickInRound) && pickInRound > 0)
+    const round = Number(draftRound);
+    const pickInRound = Number(draftPick);
+    let overallPick = (!isNaN(round) && round > 0 && !isNaN(pickInRound) && pickInRound > 0)
       ? (round - 1) * 32 + pickInRound
       : null;
 
-    // Track draft slot to catch name variants (Ken vs Kenneth, etc.)
-    if (espn.draftRound && espn.draftPick) {
-      processedDraftPicks.add(`${espn.draftRound}|${espn.draftPick}`);
+    // If draft info came from MFL, the pick format is MFL's "1.05" style — use parseOverallPick
+    if (!overallPick && draftRound && draftPick && mflLookup[normalizedName]) {
+      overallPick = parseOverallPick(draftPick, draftRound);
     }
-    const isDrafted = espn.draftRound !== "" && espn.draftRound !== "0";
+
+    // Track draft slot to catch name variants (Ken vs Kenneth, etc.)
+    if (draftRound && draftPick) {
+      processedDraftPicks.add(`${draftRound}|${draftPick}`);
+    }
+    const isDrafted = draftRound !== "" && draftRound !== "0";
     const draftCapital = calcDraftCapitalScore(overallPick, config.draftCapitalDecayRate);
 
     // Look up startup ADP for this player (needed for recruit score)
@@ -926,8 +951,8 @@ function generateRecruitingBoardForYear(year) {
       espnGrade: espn.grade,
       espnOverallRank: espn.overallRank,
       espnPositionRank: espn.positionRank,
-      draftRound: espn.draftRound || "",
-      draftPick: espn.draftPick || "",
+      draftRound: draftRound || "",
+      draftPick: draftPick || "",
       overallPick: overallPick,
       draftCapitalScore: draftCapital,
       startupADP: adpEntry ? adpEntry.adp : null,
@@ -961,13 +986,19 @@ function generateRecruitingBoardForYear(year) {
     const isDrafted = mfl.draft_round && mfl.draft_round !== "0";
     const draftCapital = calcDraftCapitalScore(overallPick, config.draftCapitalDecayRate);
 
+    // Cross-reference ESPN data for grade/rank info
+    const espnYearKey = `${normalizedName}|${yearStr}`;
+    const espnEntry = espnLookup[espnYearKey] || espnLookup[normalizedName];
+
     // Look up startup ADP for this player (needed for recruit score)
     const adpYearKey = `${normalizedName}|${yearStr}`;
     const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
 
+    const espnGrade = espnEntry ? espnEntry.grade : null;
+
     const recruitScore = calcRecruitScore({
       draftCapitalScore: draftCapital > 0 ? draftCapital : null,
-      espnGrade: null,
+      espnGrade: espnGrade,
       position: mfl.position,
       isDrafted: isDrafted !== false,
       isPreDraft: false,
@@ -987,9 +1018,9 @@ function generateRecruitingBoardForYear(year) {
       name: displayName,
       position: mfl.position || "",
       college: "",
-      espnGrade: null,
-      espnOverallRank: null,
-      espnPositionRank: null,
+      espnGrade: espnGrade,
+      espnOverallRank: espnEntry ? espnEntry.overallRank : null,
+      espnPositionRank: espnEntry ? espnEntry.positionRank : null,
       draftRound: mfl.draft_round || "",
       draftPick: mfl.draft_pick || "",
       overallPick: overallPick,
@@ -999,7 +1030,9 @@ function generateRecruitingBoardForYear(year) {
       recruitScore: recruitScore,
       stars: stars,
       headshotUrl: "",
-      dataSource: isDrafted ? "MFL Only" : "MFL (UDFA)"
+      dataSource: espnEntry && espnGrade !== null
+        ? (isDrafted ? "MFL + ESPN" : "MFL + ESPN (UDFA)")
+        : (isDrafted ? "MFL Only" : "MFL (UDFA)")
     };
     mflPlayerObj.pricing = predictPrice(mflPlayerObj, pricingModel, currentYearCounts, false);
     boardPlayers.push(mflPlayerObj);
