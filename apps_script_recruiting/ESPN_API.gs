@@ -231,8 +231,11 @@ function parseESPNAthlete(data, espnId) {
       }
     }
 
-    // Headshot URL - ESPN CDN pattern (may or may not exist for all prospects)
-    const headshotUrl = `https://a.espncdn.com/i/headshots/college-football/players/full/${espnId}.png`;
+    // Headshot URL - use NFL path for drafted players, college path for pre-draft
+    const headshotPath = (draftRound && draftRound !== "0")
+      ? `/i/headshots/nfl/players/full/${espnId}.png`
+      : `/i/headshots/college-football/players/full/${espnId}.png`;
+    const headshotUrl = `https://a.espncdn.com/combiner/i?img=${headshotPath}&w=350&h=254`;
 
     return {
       espnId: String(espnId),

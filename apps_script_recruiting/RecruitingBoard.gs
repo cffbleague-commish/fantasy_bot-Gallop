@@ -251,8 +251,11 @@ function buildADPLookupByName() {
  */
 function getADPTier(adp, tiers) {
   if (!adp || adp < 1) return null;
+  // Round up decimal ADPs so they land in a definitive bucket
+  // e.g., ADP 24.5 → 25 → "Premium (25-60)"
+  var rounded = Math.ceil(adp);
   for (var i = 0; i < tiers.length; i++) {
-    if (adp >= tiers[i].min && adp <= tiers[i].max) return tiers[i].label;
+    if (rounded >= tiers[i].min && rounded <= tiers[i].max) return tiers[i].label;
   }
   return null;
 }
