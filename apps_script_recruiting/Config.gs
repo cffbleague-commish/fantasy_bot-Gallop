@@ -84,9 +84,9 @@ function getConfig() {
       "WR/TE": ["WR", "TE"]
     },
 
-    // Star Rating Thresholds (based on Draft Capital Score, NOT auction price)
-    // Draft Capital Score uses exponential decay from overall pick position.
-    // Stars are position-agnostic - they reflect draft investment/talent evaluation.
+    // Star Rating Thresholds (based on composite Recruit Score, NOT auction price)
+    // Recruit Score blends ADP (50%), draft capital (25%), ESPN grade (15%), position (10%).
+    // Stars are position-agnostic - they reflect overall prospect evaluation.
     // Expected auction cost is calculated separately by position + draft tier.
     starThresholds: {
       fiveStar: 80,    // ~Picks 1-12  (elite prospects)
@@ -122,6 +122,12 @@ function getConfig() {
       // Default ADP for players not found in ADP data (post-draft only)
       // Treats missing ADP as worst-case: fantasy market doesn't value them
       defaultADP: 360,
+      // Default ADP for recruit scoring (separate from pricing)
+      // 257 = one pick outside the startup ADP zone — harsh but not extreme
+      defaultADPForScoring: 257,
+      // Decay rate for converting ADP to a 0-100 score (gentler than draft capital
+      // because ADP range is wider: 1-360 vs 1-262 for NFL draft picks)
+      adpScoreDecayRate: 0.012,
       // Minimum sample size for ADP tier buckets
       minSampleSize: 3
     }

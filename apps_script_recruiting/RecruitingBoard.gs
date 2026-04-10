@@ -1,14 +1,17 @@
 /**
  * RECRUITING ANALYTICS - RECRUITING BOARD
  * Generates star ratings for incoming draft class prospects.
- * Combines ESPN grades, NFL draft capital, and position to evaluate players.
+ * Combines startup ADP, NFL draft capital, ESPN grades, and position to evaluate players.
  *
- * Scoring handles four scenarios:
- *   1. Full data (ESPN grade + draft pick) - weighted blend
- *   2. Draft pick only (no ESPN grade) - draft capital with penalty
- *   3. ESPN grade only (pre-draft) - grade-driven evaluation
- *   4. ESPN grade only (UDFA post-draft) - capped score
- *   5. No data at all - auto 1-star
+ * Post-draft scoring (ADP available):
+ *   1. ADP + Draft Capital + ESPN Grade - full weighted blend (50/25/15/10)
+ *   2. ADP + Draft Capital - no grade (50/40/10)
+ *   3. ADP + ESPN Grade - UDFA with grade (60/30/10)
+ *   4. ADP only - UDFA no grade (85/15)
+ *
+ * Pre-draft scoring (no ADP):
+ *   5. ESPN grade only - grade-driven evaluation
+ *   6. No data at all - auto 1-star
  */
 
 // ============================================================================
@@ -31,6 +34,25 @@
 function calcDraftCapitalScore(overallPick, decayRate) {
   if (!overallPick || overallPick < 1) return 0;
   return 100 * Math.exp(-decayRate * (overallPick - 1));
+}
+
+/**
+ * Calculate ADP Score from startup draft ADP position.
+ * Uses exponential decay like draft capital, but with a gentler curve
+ * because ADP ranges 1-360 (wider than NFL draft's 1-262).
+ *
+ * Examples with default decay rate (0.012):
+ *   ADP 1   → 100.0    ADP 60  → 49.3
+ *   ADP 12  → 87.7     ADP 120 → 24.0
+ *   ADP 24  → 75.9     ADP 257 → 4.6   (default for missing ADP)
+ *
+ * @param {Number} adp - Startup ADP position (1-based, lower = better)
+ * @param {Number} decayRate - Exponential decay rate (from config)
+ * @returns {Number} - Score from 0-100
+ */
+function calcADPScore(adp, decayRate) {
+  if (!adp || adp < 1) return 0;
+  return 100 * Math.exp(-decayRate * (adp - 1));
 }
 
 // ============================================================================
@@ -64,12 +86,19 @@ function getPositionWeight(position) {
 
 /**
  * Calculate the composite Recruit Score for a prospect.
- * Blends draft capital, ESPN grade, and position into a single 0-100 score.
+ * Blends startup ADP, draft capital, ESPN grade, and position into a single 0-100 score.
  *
- * Weight allocation (when both data sources available):
- *   55% Draft Capital Score - where the NFL valued them
- *   35% ESPN Grade - pre-draft scouting consensus
- *   10% Position modifier - fantasy position relevance
+ * ADP is the strongest signal — it reflects how the fantasy market values each rookie
+ * including landing spot, opportunity, and positional value that raw draft capital misses.
+ *
+ * Post-draft weight allocation (when all data available):
+ *   50% ADP Score     - fantasy market consensus (startup drafts)
+ *   25% Draft Capital - where the NFL valued them
+ *   15% ESPN Grade    - pre-draft scouting consensus
+ *   10% Position      - fantasy position relevance
+ *
+ * Pre-draft: ADP is unavailable (startup drafts happen after NFL draft),
+ * so existing grade-based logic applies.
  *
  * @param {Object} params
  * @param {Number|null} params.draftCapitalScore - From calcDraftCapitalScore()
@@ -77,47 +106,58 @@ function getPositionWeight(position) {
  * @param {String} params.position - Player position (QB, RB, WR, TE)
  * @param {Boolean} params.isDrafted - Whether the player was selected in the NFL draft
  * @param {Boolean} params.isPreDraft - True if the draft hasn't happened yet for this class
+ * @param {Number|null} params.startupADP - Startup draft ADP (1-360+), lower = better
  * @returns {Number} - Composite recruit score (0-100)
  */
-function calcRecruitScore({ draftCapitalScore, espnGrade, position, isDrafted, isPreDraft }) {
+function calcRecruitScore({ draftCapitalScore, espnGrade, position, isDrafted, isPreDraft, startupADP }) {
   const posWeight = getPositionWeight(position);
   const hasDraftCapital = draftCapitalScore !== null && draftCapitalScore > 0;
   const hasGrade = espnGrade !== null && !isNaN(espnGrade);
 
-  // Scenario 1: Both draft capital and ESPN grade (best case, post-draft)
-  if (hasDraftCapital && hasGrade) {
-    const raw = (draftCapitalScore * 0.55) + (espnGrade * 0.35) + (posWeight * 10);
-    return Math.min(raw, 100);
-  }
+  // --- Post-draft with ADP available ---
+  // ADP is the dominant signal. Missing ADP post-draft gets defaultADPForScoring (257).
+  if (!isPreDraft) {
+    const config = getConfig();
+    const adpConfig = config.adpConfig || {};
+    const effectiveADP = startupADP || adpConfig.defaultADPForScoring || 257;
+    const adpScore = calcADPScore(effectiveADP, adpConfig.adpScoreDecayRate || 0.012);
 
-  // Scenario 2: Draft capital only (player drafted but not in ESPN's system)
-  // 10% penalty for missing scouting data
-  if (hasDraftCapital && !hasGrade) {
-    return Math.min(draftCapitalScore * 0.90 * posWeight, 100);
-  }
-
-  // Scenario 3: ESPN grade only
-  if (!hasDraftCapital && hasGrade) {
-    // 3a: Pre-draft - ESPN grade is our best signal, no draft info exists yet
-    if (isPreDraft) {
-      const raw = (espnGrade * 0.80) + (posWeight * 10);
+    // Scenario 1: ADP + Draft Capital + ESPN Grade (best case)
+    // 50% ADP, 25% Draft Capital, 15% ESPN Grade, 10% Position
+    if (hasDraftCapital && hasGrade) {
+      const raw = (adpScore * 0.50) + (draftCapitalScore * 0.25) + (espnGrade * 0.15) + (posWeight * 10);
       return Math.min(raw, 100);
     }
 
-    // 3b: UDFA (post-draft, player wasn't selected)
-    // Good scouting grade but going undrafted is a strong negative signal
-    // Cap at 2-star threshold so even a 95-grade UDFA maxes at high 2-star
-    if (!isDrafted) {
-      const raw = espnGrade * 0.30 * posWeight;
-      return Math.min(raw, 25);
+    // Scenario 2: ADP + Draft Capital (no ESPN grade)
+    // 50% ADP, 40% Draft Capital, 10% Position
+    if (hasDraftCapital && !hasGrade) {
+      const raw = (adpScore * 0.50) + (draftCapitalScore * 0.40) + (posWeight * 10);
+      return Math.min(raw, 100);
     }
 
-    // 3c: Drafted but we couldn't parse pick info - treat as mid-round estimate
-    const raw = (espnGrade * 0.75) + (posWeight * 10);
+    // Scenario 3: ADP + ESPN Grade (UDFA with grade)
+    // 60% ADP, 30% ESPN Grade, 10% Position
+    if (!hasDraftCapital && hasGrade) {
+      const raw = (adpScore * 0.60) + (espnGrade * 0.30) + (posWeight * 10);
+      return Math.min(raw, 100);
+    }
+
+    // Scenario 4: ADP only (UDFA, no grade)
+    // 85% ADP, 15% Position
+    const raw = (adpScore * 0.85) + (posWeight * 15);
     return Math.min(raw, 100);
   }
 
-  // Scenario 4: No ESPN grade, not drafted
+  // --- Pre-draft (no ADP available — startup drafts haven't happened) ---
+
+  // Scenario 5: ESPN grade only, pre-draft - grade is our best signal
+  if (hasGrade) {
+    const raw = (espnGrade * 0.80) + (posWeight * 10);
+    return Math.min(raw, 100);
+  }
+
+  // Scenario 6: No data at all (pre-draft, no grade)
   // Complete unknowns - auto 1-star
   return 3;
 }
@@ -857,12 +897,17 @@ function generateRecruitingBoardForYear(year) {
     const isDrafted = espn.draftRound !== "" && espn.draftRound !== "0";
     const draftCapital = calcDraftCapitalScore(overallPick, config.draftCapitalDecayRate);
 
+    // Look up startup ADP for this player (needed for recruit score)
+    const adpYearKey = `${normalizedName}|${yearStr}`;
+    const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
+
     const recruitScore = calcRecruitScore({
       draftCapitalScore: draftCapital > 0 ? draftCapital : null,
       espnGrade: espn.grade,
       position: espn.position,
       isDrafted: isDrafted,
-      isPreDraft: !draftHasOccurred
+      isPreDraft: !draftHasOccurred,
+      startupADP: adpEntry ? adpEntry.adp : null
     });
 
     const stars = getStarRating(recruitScore, config.starThresholds);
@@ -873,10 +918,6 @@ function generateRecruitingBoardForYear(year) {
     else if (espn.grade !== null && !draftHasOccurred) dataSource = "ESPN (Pre-Draft)";
     else if (espn.grade !== null && !isDrafted) dataSource = "ESPN (UDFA)";
     else if (isDrafted) dataSource = "Draft Only";
-
-    // Look up startup ADP for this player
-    const adpYearKey = `${normalizedName}|${yearStr}`;
-    const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
 
     const playerObj = {
       name: espn.name,
@@ -920,12 +961,17 @@ function generateRecruitingBoardForYear(year) {
     const isDrafted = mfl.draft_round && mfl.draft_round !== "0";
     const draftCapital = calcDraftCapitalScore(overallPick, config.draftCapitalDecayRate);
 
+    // Look up startup ADP for this player (needed for recruit score)
+    const adpYearKey = `${normalizedName}|${yearStr}`;
+    const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
+
     const recruitScore = calcRecruitScore({
       draftCapitalScore: draftCapital > 0 ? draftCapital : null,
       espnGrade: null,
       position: mfl.position,
       isDrafted: isDrafted !== false,
-      isPreDraft: false
+      isPreDraft: false,
+      startupADP: adpEntry ? adpEntry.adp : null
     });
 
     const stars = getStarRating(recruitScore, config.starThresholds);
@@ -936,10 +982,6 @@ function generateRecruitingBoardForYear(year) {
       const parts = mflName.split(",").map(s => s.trim());
       if (parts.length >= 2) displayName = `${parts[1]} ${parts[0]}`;
     }
-
-    // Look up startup ADP for this player
-    const adpYearKey = `${normalizedName}|${yearStr}`;
-    const adpEntry = adpLookup[adpYearKey] || adpLookup[normalizedName];
 
     const mflPlayerObj = {
       name: displayName,
