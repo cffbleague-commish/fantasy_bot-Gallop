@@ -126,9 +126,9 @@ function getRegressionPrediction(reg, x) {
   var p75 = predicted + 0.675 * sePred;
 
   return {
-    predicted: Math.max(1, Math.round(predicted)),
-    p25: Math.max(1, Math.round(p25)),
-    p75: Math.max(1, Math.round(p75))
+    predicted: Math.max(0, Math.round(predicted)),
+    p25: Math.max(0, Math.round(p25)),
+    p75: Math.max(0, Math.round(p75))
   };
 }
 
@@ -817,9 +817,9 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     // Grade adjustment: ESPN grade provides independent signal about player quality
     // that the market (ADP) may not fully capture. Compare to position average.
     var gradeAdj = calcGradeAdjustment(player.espnGrade, pos, pricingModel, adpConfig);
-    predicted = Math.max(1, Math.round(predicted * gradeAdj));
-    p25 = Math.max(1, Math.round(p25 * gradeAdj));
-    p75 = Math.max(1, Math.round(p75 * gradeAdj));
+    predicted = Math.max(0, Math.round(predicted * gradeAdj));
+    p25 = Math.max(0, Math.round(p25 * gradeAdj));
+    p75 = Math.max(0, Math.round(p75 * gradeAdj));
 
     return {
       predicted: predicted,
@@ -876,9 +876,9 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
   var totalMult = Math.max(0.75, Math.min(1.25, gradeMultiplier));
 
   return {
-    predicted: Math.max(1, Math.round(bucket.median * totalMult)),
-    p25: Math.max(1, Math.round(bucket.p25 * totalMult)),
-    p75: Math.max(1, Math.round(bucket.p75 * totalMult)),
+    predicted: Math.max(0, Math.round(bucket.median * totalMult)),
+    p25: Math.max(0, Math.round(bucket.p25 * totalMult)),
+    p75: Math.max(0, Math.round(bucket.p75 * totalMult)),
     sourceType: sourceType,
     count: bucket.count,
     confidence: calcConfidence(bucket, sourceType, false)
@@ -1009,12 +1009,12 @@ function calcScarcityPrices(boardPlayers, pricingModel, config, isPreDraft) {
       copy2 = playerShare * ratio / (1 + ratio);
 
       if (size === 16 || size === Math.min.apply(null, confTypes.map(Number))) {
-        entry.copy1_16 = Math.max(1, Math.round(copy1));
-        entry.copy2_16 = Math.max(1, Math.round(copy2));
+        entry.copy1_16 = Math.max(0, Math.round(copy1));
+        entry.copy2_16 = Math.max(0, Math.round(copy2));
       }
       if (size === 20 || size === Math.max.apply(null, confTypes.map(Number))) {
-        entry.copy1_20 = Math.max(1, Math.round(copy1));
-        entry.copy2_20 = Math.max(1, Math.round(copy2));
+        entry.copy1_20 = Math.max(0, Math.round(copy1));
+        entry.copy2_20 = Math.max(0, Math.round(copy2));
       }
     });
 

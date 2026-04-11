@@ -83,10 +83,11 @@ function importTransactionLog() {
     const playerNameFromTxn = row[colIndex["PlayerName"]] || "";
     const franchiseId = String(row[colIndex["FranchiseID"]] || "");
     const conference = row[colIndex["Conference"]] || "";
-    const bidAmount = row[colIndex["BidAmount"]] || "";
+    const rawBid = row[colIndex["BidAmount"]];
+    const bidAmount = (rawBid === 0 || rawBid === "0") ? 0 : (rawBid || "");
 
-    // Skip rows with no player or no bid
-    if (!playerId || !bidAmount) return;
+    // Skip rows with no player or missing bid (allow $0 bids through)
+    if (!playerId || (bidAmount !== 0 && !bidAmount)) return;
 
     // Enrich with MFL player data
     const player = playerLookup[playerId] || {};
