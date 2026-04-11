@@ -434,8 +434,8 @@ function analyzeAuctionHistory() {
   // Cross-reference rookie auctions with DLF Startup ADP data
   const adpLookup = buildADPLookupByName();
   const adpConfig = config.adpConfig || {};
-  const adpTierDefs = adpConfig.tiers || [];
-  const adpTierLabels = adpTierDefs.map(t => t.label);
+  const adpTierDefs = adpConfig.tiers || {};
+  const adpTierLabels = adpConfig.tierLabels || ["Elite", "Premium", "Starter", "Depth", "Flier"];
 
   // Match rookie auctions to ADP data
   const auctionsWithADP = rookieAuctions.map(a => {
@@ -446,7 +446,7 @@ function analyzeAuctionHistory() {
     const adpEntry = adpLookup[yearKey] || adpLookup[normalizedName];
 
     const adp = adpEntry ? adpEntry.adp : null;
-    const tier = adp ? getADPTier(adp, adpTierDefs) : null;
+    const tier = adp ? getADPTier(adp, adpTierDefs, a.position) : null;
     return { ...a, startupADP: adp, adpTier: tier };
   });
 

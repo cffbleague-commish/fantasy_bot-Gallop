@@ -113,14 +113,42 @@ function getConfig() {
     // ADP = overall pick position in startup drafts (rookies mixed with veterans).
     // Pricing uses ADP regression (continuous curve) — tiers are for display labels only.
     adpConfig: {
-      // ADP tier boundaries (display labels only — pricing uses regression, not tier buckets)
-      tiers: [
-        { label: "Elite (1-24)", min: 1, max: 24 },
-        { label: "Premium (25-60)", min: 25, max: 60 },
-        { label: "Starter (61-120)", min: 61, max: 120 },
-        { label: "Depth (121-200)", min: 121, max: 200 },
-        { label: "Flier (201+)", min: 201, max: 9999 }
-      ],
+      // Position-specific ADP tier boundaries (display labels only — pricing uses regression)
+      // Different positions have different ADP distributions in startup drafts:
+      //   QB/TE: wider ranges (fewer drafted, more spread out in ADP)
+      //   RB/WR: tighter ranges (more drafted, clustered higher in ADP)
+      tiers: {
+        QB: [
+          { label: "Elite", min: 1, max: 36 },
+          { label: "Premium", min: 37, max: 72 },
+          { label: "Starter", min: 73, max: 144 },
+          { label: "Depth", min: 145, max: 240 },
+          { label: "Flier", min: 241, max: 9999 }
+        ],
+        RB: [
+          { label: "Elite", min: 1, max: 24 },
+          { label: "Premium", min: 25, max: 60 },
+          { label: "Starter", min: 61, max: 120 },
+          { label: "Depth", min: 121, max: 200 },
+          { label: "Flier", min: 201, max: 9999 }
+        ],
+        WR: [
+          { label: "Elite", min: 1, max: 24 },
+          { label: "Premium", min: 25, max: 60 },
+          { label: "Starter", min: 61, max: 120 },
+          { label: "Depth", min: 121, max: 200 },
+          { label: "Flier", min: 201, max: 9999 }
+        ],
+        TE: [
+          { label: "Elite", min: 1, max: 60 },
+          { label: "Premium", min: 61, max: 120 },
+          { label: "Starter", min: 121, max: 200 },
+          { label: "Depth", min: 201, max: 300 },
+          { label: "Flier", min: 301, max: 9999 }
+        ]
+      },
+      // Canonical tier labels for cross-tabulation headers
+      tierLabels: ["Elite", "Premium", "Starter", "Depth", "Flier"],
       // Default ADP for players not found in ADP data (post-draft only)
       // Treats missing ADP as worst-case: fantasy market doesn't value them
       defaultADP: 360,
@@ -139,7 +167,26 @@ function getConfig() {
       minRegressionR2: 0.10
     },
 
-    // League structure (for scarcity/budget calculations)
+    // Scarcity Pricing Configuration
+    // Models how a fixed conference auction budget distributes across the draft class.
+    // Cross-position (teams bid from one pool), with copy 1/copy 2 split.
+    scarcityConfig: {
+      // Conference structure: code → team count
+      // 5 conferences with 16 teams, 1 conference (AAC) with 20 teams
+      conferences: { ACC: 16, B10: 16, B12: 16, P12: 16, SEC: 16, AAC: 20 },
+      copiesPerConference: 2,
+      // Copy discount bins: ratio = Copy2Price / Copy1Price
+      // Elite: small % gap (everyone wants them), Mid: largest gap, Flier: small absolute gap
+      // Defaults used when empirical data has fewer than minCopyPairsForEmpirical pairs
+      copyDiscountBins: [
+        { label: "elite",  minAvgPrice: 40, defaultRatio: 0.85 },
+        { label: "mid",    minAvgPrice: 15, defaultRatio: 0.65 },
+        { label: "flier",  minAvgPrice: 0,  defaultRatio: 0.75 }
+      ],
+      minCopyPairsForEmpirical: 8
+    },
+
+    // League structure
     numberOfConferences: 6,
     copiesPerPlayer: 12
   };

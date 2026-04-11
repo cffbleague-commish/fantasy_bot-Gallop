@@ -305,18 +305,25 @@ function buildADPLookupByName() {
 }
 
 /**
- * Get ADP tier label for a given startup ADP value.
+ * Get ADP tier label for a given startup ADP value and position.
+ * Tiers are position-specific: QB/TE have wider ranges (fewer drafted, more spread),
+ * RB/WR have tighter ranges (more drafted, clustered higher in ADP).
+ *
  * @param {Number} adp - Startup ADP (1-360+)
- * @param {Array} tiers - Tier config array from getConfig().adpConfig.tiers
+ * @param {Object} tiers - Position-keyed tier config from getConfig().adpConfig.tiers
+ *                          e.g., { QB: [{label, min, max}, ...], RB: [...], ... }
+ * @param {String} position - Player position (QB, RB, WR, TE)
  * @returns {String|null} - Tier label or null if no ADP
  */
-function getADPTier(adp, tiers) {
+function getADPTier(adp, tiers, position) {
   if (!adp || adp < 1) return null;
+  // Look up position-specific tier array; fall back to RB tiers as default
+  var posTiers = tiers[position] || tiers["RB"] || [];
   // Round up decimal ADPs so they land in a definitive bucket
-  // e.g., ADP 24.5 → 25 → "Premium (25-60)"
+  // e.g., ADP 24.5 → 25 → "Premium"
   var rounded = Math.ceil(adp);
-  for (var i = 0; i < tiers.length; i++) {
-    if (rounded >= tiers[i].min && rounded <= tiers[i].max) return tiers[i].label;
+  for (var i = 0; i < posTiers.length; i++) {
+    if (rounded >= posTiers[i].min && rounded <= posTiers[i].max) return posTiers[i].label;
   }
   return null;
 }
@@ -341,7 +348,7 @@ function getADPTier(adp, tiers) {
  *
  * @param {Object} config - From getConfig()
  * @returns {Object} - { adpRegression, byPick, byTier, byGrade, avgGradeByPosition,
- *                        positionBudgets, historicalPositionCounts }
+ *                        conferenceBudgets, copyDiscountCurve, historicalPositionCounts }
  */
 function buildPricingModel(config) {
   const ss = SpreadsheetApp.getActive();
@@ -381,6 +388,7 @@ function buildPricingModel(config) {
 
     rookieAuctions.push({
       auctionYear, position, draftRound, draftPick, overallPick, conference,
+      playerID: String(row[1]),
       playerName: String(row[2]),
       bidAmount: Number(row[11]) || 0
     });
@@ -532,37 +540,103 @@ function buildPricingModel(config) {
     return pos + "=" + (avgGradeByPosition[pos] ? avgGradeByPosition[pos].toFixed(1) : "N/A");
   }).join(", "));
 
-  // --- 5. Position budgets (for scarcity pricing) ---
-  // Compute avg total spend per conference per position per year.
-  // This represents the "budget" each conference allocates to a position's rookie auction.
+  // --- 5. Conference-type budgets (for scarcity pricing) ---
+  // Compute avg total rookie spend per conference per year, grouped by conference size (16 vs 20 teams).
+  // Cross-position: the total budget is what a conference spends on ALL rookies, not per-position.
   const years = [...new Set(rookieAuctions.map(a => a.auctionYear))];
-  const conferences = new Set();
-  rookieAuctions.forEach(a => { if (a.conference) conferences.add(a.conference); });
-  const numConferences = conferences.size || (config.numberOfConferences || 6);
+  const scarcityCfg = config.scarcityConfig || {};
+  const confTeamCounts = scarcityCfg.conferences || {};
 
-  // Total league spend per position per year, then divide by conferences
-  const yearPosSpend = {};
+  // Build a map of conference code → team count (default 16 for unknown)
+  const confSizeMap = {};
+  Object.keys(confTeamCounts).forEach(function(code) { confSizeMap[code] = confTeamCounts[code]; });
+
+  // Total spend per conference per year (cross-position)
+  const confYearSpend = {};
   rookieAuctions.forEach(a => {
-    const key = `${a.auctionYear}|${a.position}`;
-    yearPosSpend[key] = (yearPosSpend[key] || 0) + a.bidAmount;
+    if (!a.conference) return;
+    const key = `${a.conference}|${a.auctionYear}`;
+    confYearSpend[key] = (confYearSpend[key] || 0) + a.bidAmount;
   });
 
-  const positionBudgets = {};
-  ["QB", "RB", "WR", "TE"].forEach(pos => {
-    const yearSpends = years.map(y => {
-      var total = yearPosSpend[`${y}|${pos}`] || 0;
-      return total / numConferences;
-    }).filter(s => s > 0);
-    positionBudgets[pos] = yearSpends.length > 0
-      ? yearSpends.reduce((s, v) => s + v, 0) / yearSpends.length
-      : 0;
+  // Group conference-year totals by team count (16 or 20)
+  const budgetsBySize = {};
+  Object.keys(confYearSpend).forEach(function(key) {
+    var parts = key.split("|");
+    var confCode = parts[0];
+    var teamCount = confSizeMap[confCode] || 16;
+    if (!budgetsBySize[teamCount]) budgetsBySize[teamCount] = [];
+    budgetsBySize[teamCount].push(confYearSpend[key]);
   });
 
-  Logger.log("  Avg conference budget/yr: " + ["QB", "RB", "WR", "TE"].map(function(pos) {
-    return pos + "=$" + (positionBudgets[pos] ? positionBudgets[pos].toFixed(0) : "0");
-  }).join(", ") + " (from " + numConferences + " conferences, " + years.length + " years)");
+  // Average budget per conference type
+  const conferenceBudgets = {};
+  Object.keys(budgetsBySize).forEach(function(size) {
+    var spends = budgetsBySize[size];
+    conferenceBudgets[Number(size)] = spends.reduce(function(s, v) { return s + v; }, 0) / spends.length;
+  });
 
-  // --- 6. Historical position counts per year (for reference/scarcity factor) ---
+  Logger.log("  Conference budgets: " + Object.keys(conferenceBudgets).map(function(size) {
+    return size + "-tm=$" + conferenceBudgets[size].toFixed(0);
+  }).join(", ") + " (from " + years.length + " years)");
+
+  // --- 5b. Copy discount curve (empirical) ---
+  // Group by (playerID, conference, year) to find copy pairs.
+  // Where exactly 2 entries: higher bid = Copy 1, lower = Copy 2.
+  const copyGroups = {};
+  rookieAuctions.forEach(a => {
+    if (!a.playerID || !a.conference) return;
+    const key = `${a.playerID}|${a.conference}|${a.auctionYear}`;
+    if (!copyGroups[key]) copyGroups[key] = [];
+    copyGroups[key].push(a.bidAmount);
+  });
+
+  // Extract copy pairs and compute discount ratios
+  const discountBins = (scarcityCfg.copyDiscountBins || []).map(function(b) {
+    return { label: b.label, minAvgPrice: b.minAvgPrice, defaultRatio: b.defaultRatio, ratios: [] };
+  });
+  var totalPairs = 0;
+
+  Object.keys(copyGroups).forEach(function(key) {
+    var bids = copyGroups[key];
+    if (bids.length !== 2) return;
+    totalPairs++;
+    var sorted = bids.sort(function(a, b) { return b - a; }); // descending
+    var copy1 = sorted[0];
+    var copy2 = sorted[1];
+    if (copy1 <= 0) return;
+    var ratio = copy2 / copy1;
+    var avgPrice = (copy1 + copy2) / 2;
+    // Assign to appropriate bin (bins are sorted by minAvgPrice descending)
+    for (var i = 0; i < discountBins.length; i++) {
+      if (avgPrice >= discountBins[i].minAvgPrice) {
+        discountBins[i].ratios.push(ratio);
+        break;
+      }
+    }
+  });
+
+  // Compute median ratio per bin, fall back to default if insufficient data
+  var minPairs = scarcityCfg.minCopyPairsForEmpirical || 8;
+  var copyDiscountCurve = {};
+  discountBins.forEach(function(bin) {
+    var ratios = bin.ratios.sort(function(a, b) { return a - b; });
+    var n = ratios.length;
+    if (n >= minPairs) {
+      var medianRatio = n % 2 !== 0 ? ratios[Math.floor(n / 2)] : (ratios[n / 2 - 1] + ratios[n / 2]) / 2;
+      copyDiscountCurve[bin.label] = { ratio: medianRatio, count: n, source: "empirical" };
+    } else {
+      copyDiscountCurve[bin.label] = { ratio: bin.defaultRatio, count: n, source: "default" };
+    }
+  });
+
+  Logger.log("  Copy pairs: " + totalPairs + " total. Discount curve: " +
+    Object.keys(copyDiscountCurve).map(function(label) {
+      var d = copyDiscountCurve[label];
+      return label + "=" + d.ratio.toFixed(2) + " (" + d.source + ", n=" + d.count + ")";
+    }).join(", "));
+
+  // --- 6. Historical position counts per year (for reference) ---
   const positionsByYear = {};
   rookieAuctions.forEach(a => {
     const yk = `${a.auctionYear}|${a.position}`;
@@ -590,7 +664,8 @@ function buildPricingModel(config) {
     byTier: byTierStats,
     byGrade: byGradeStats,
     avgGradeByPosition,
-    positionBudgets,
+    conferenceBudgets,
+    copyDiscountCurve,
     historicalPositionCounts
   };
 }
@@ -797,9 +872,8 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
     gradeMultiplier = calcGradeAdjustment(player.espnGrade, pos, pricingModel, adpConfig);
   }
 
-  // Scarcity factor for bucket-based fallback (regression users get scarcity via separate scarcity price)
-  var scarcity = calcScarcityFactor(pos, currentYearCounts, pricingModel.historicalPositionCounts);
-  var totalMult = Math.max(0.50, Math.min(1.40, gradeMultiplier * scarcity));
+  // Scarcity is handled separately via Copy 1/Copy 2 columns — not baked into predicted cost
+  var totalMult = Math.max(0.75, Math.min(1.25, gradeMultiplier));
 
   return {
     predicted: Math.max(1, Math.round(bucket.median * totalMult)),
@@ -865,64 +939,109 @@ function calcRegressionConfidence(reg) {
 // ============================================================================
 
 /**
- * Calculate scarcity-based price for all prospects at a given position.
- * Models how a fixed conference budget gets allocated across this year's draft class.
+ * Calculate scarcity-based Copy 1 / Copy 2 prices for both conference types.
+ * Models how a fixed conference auction budget distributes across the draft class.
+ *
+ * Cross-position: teams bid from one budget pool, not per-position.
+ * Positional scarcity emerges naturally — fewer quality RBs means each RB
+ * captures a larger share of the total budget.
  *
  * Logic:
- *   1. From historical data: average conference spend per position per year
- *   2. Current year: distribute that same budget across this year's prospects
- *   3. Each player's share is proportional to their ADP score relative to the group
- *   4. Per-copy price: divide by copies per conference (12 total / 6 conferences = 2)
+ *   1. Total conference budget (historical avg for 16-team and 20-team conferences)
+ *   2. Each player × 2 copies, weighted by ADP score (or recruit score pre-draft)
+ *   3. Player's total share = (adpScore × 2 / totalScoreAllCopies) × totalBudget
+ *   4. Split into Copy 1 and Copy 2 using empirical copy discount curve
  *
- * When scarcity price > predicted price: thin class, expect bidding wars.
- * When scarcity price < predicted price: deep class, potential bargains.
- *
- * @param {Array} boardPlayers - All players on the board (need full list for position totals)
- * @param {Object} pricingModel - From buildPricingModel() (needs positionBudgets)
+ * @param {Array} boardPlayers - All players on the board
+ * @param {Object} pricingModel - From buildPricingModel()
  * @param {Object} config - From getConfig()
- * @returns {Object} - Map of playerName → scarcityPrice (Number)
+ * @param {Boolean} isPreDraft - Whether the draft has occurred
+ * @returns {Object} - Map of playerName → { copy1_16, copy2_16, copy1_20, copy2_20 }
  */
-function calcScarcityPrices(boardPlayers, pricingModel, config) {
+function calcScarcityPrices(boardPlayers, pricingModel, config, isPreDraft) {
   var result = {};
-  if (!pricingModel || !pricingModel.positionBudgets) return result;
+  if (!pricingModel || !pricingModel.conferenceBudgets) return result;
 
   var adpConfig = config.adpConfig || {};
   var adpDecayRate = adpConfig.adpScoreDecayRate || 0.012;
   var defaultADP = adpConfig.defaultADP || 360;
-  var numConferences = config.numberOfConferences || 6;
-  var copiesPerPlayer = config.copiesPerPlayer || 12;
-  var copiesPerConference = copiesPerPlayer / numConferences;
+  var scarcityCfg = config.scarcityConfig || {};
+  var copiesPerConf = scarcityCfg.copiesPerConference || 2;
+  var discountCurve = pricingModel.copyDiscountCurve || {};
+  var discountBins = scarcityCfg.copyDiscountBins || [];
 
-  // Group players by position and compute ADP scores
-  var positionGroups = {};
-  boardPlayers.forEach(function(p) {
-    var pos = p.position;
-    if (!positionGroups[pos]) positionGroups[pos] = [];
-    var adp = p.startupADP || defaultADP;
-    var adpScore = calcADPScore(adp, adpDecayRate);
-    positionGroups[pos].push({ name: p.name, adpScore: adpScore });
+  // Compute each player's allocation weight (ADP score post-draft, recruit score pre-draft)
+  var players = boardPlayers.map(function(p) {
+    var weight;
+    if (!isPreDraft && (p.startupADP || defaultADP)) {
+      weight = calcADPScore(p.startupADP || defaultADP, adpDecayRate);
+    } else {
+      weight = p.recruitScore || 1;
+    }
+    return { name: p.name, weight: weight };
   });
 
-  // For each position, distribute the conference budget proportionally
-  Object.keys(positionGroups).forEach(function(pos) {
-    var players = positionGroups[pos];
-    var budget = pricingModel.positionBudgets[pos] || 0;
-    if (budget <= 0 || players.length === 0) return;
+  // Total weight across all copies (cross-position)
+  var totalWeight = 0;
+  players.forEach(function(p) { totalWeight += p.weight * copiesPerConf; });
+  if (totalWeight <= 0) return result;
 
-    // Total ADP score across all copies in the conference
-    // Each player has copiesPerConference copies, all with the same ADP score
-    var totalScore = 0;
-    players.forEach(function(p) { totalScore += p.adpScore * copiesPerConference; });
-    if (totalScore <= 0) return;
+  // For each conference type (16-team, 20-team), distribute the budget
+  var confTypes = Object.keys(pricingModel.conferenceBudgets);
+  players.forEach(function(p) {
+    var entry = {};
+    var playerShare, avgCopyPrice, ratio, copy1, copy2;
 
-    players.forEach(function(p) {
-      // This player's per-copy share of the conference position budget
-      var perCopyShare = (p.adpScore / totalScore) * budget;
-      result[p.name] = Math.max(1, Math.round(perCopyShare));
+    confTypes.forEach(function(sizeStr) {
+      var size = Number(sizeStr);
+      var budget = pricingModel.conferenceBudgets[size] || 0;
+      if (budget <= 0) return;
+
+      // Player's total share (both copies) of the conference budget
+      playerShare = (p.weight * copiesPerConf / totalWeight) * budget;
+      avgCopyPrice = playerShare / copiesPerConf;
+
+      // Look up copy discount ratio based on avg copy price
+      ratio = getCopyDiscountRatio(avgCopyPrice, discountCurve, discountBins);
+
+      // Split: copy1 + copy2 = playerShare, copy2 = copy1 * ratio
+      copy1 = playerShare / (1 + ratio);
+      copy2 = playerShare * ratio / (1 + ratio);
+
+      if (size === 16 || size === Math.min.apply(null, confTypes.map(Number))) {
+        entry.copy1_16 = Math.max(1, Math.round(copy1));
+        entry.copy2_16 = Math.max(1, Math.round(copy2));
+      }
+      if (size === 20 || size === Math.max.apply(null, confTypes.map(Number))) {
+        entry.copy1_20 = Math.max(1, Math.round(copy1));
+        entry.copy2_20 = Math.max(1, Math.round(copy2));
+      }
     });
+
+    result[p.name] = entry;
   });
 
   return result;
+}
+
+/**
+ * Look up the copy discount ratio for a given average copy price.
+ * Bins are sorted by minAvgPrice descending (elite first, flier last).
+ *
+ * @param {Number} avgCopyPrice - Average price of a single copy
+ * @param {Object} discountCurve - From buildPricingModel()
+ * @param {Array} discountBins - From config.scarcityConfig.copyDiscountBins
+ * @returns {Number} - Copy2/Copy1 ratio (0-1)
+ */
+function getCopyDiscountRatio(avgCopyPrice, discountCurve, discountBins) {
+  for (var i = 0; i < discountBins.length; i++) {
+    if (avgCopyPrice >= discountBins[i].minAvgPrice) {
+      var binLabel = discountBins[i].label;
+      var curveEntry = discountCurve[binLabel];
+      return curveEntry ? curveEntry.ratio : discountBins[i].defaultRatio;
+    }
+  }
+  return 0.75; // fallback
 }
 
 // ============================================================================
@@ -1112,7 +1231,7 @@ function generateRecruitingBoardForYear(year) {
       overallPick: overallPick,
       draftCapitalScore: draftCapital,
       startupADP: adpEntry ? adpEntry.adp : null,
-      adpTier: adpEntry ? getADPTier(adpEntry.adp, adpTiers) : null,
+      adpTier: adpEntry ? getADPTier(adpEntry.adp, adpTiers, espn.position) : null,
       recruitScore: recruitScore,
       stars: stars,
       headshotUrl: espn.headshotUrl,
@@ -1182,7 +1301,7 @@ function generateRecruitingBoardForYear(year) {
       overallPick: overallPick,
       draftCapitalScore: draftCapital,
       startupADP: adpEntry ? adpEntry.adp : null,
-      adpTier: adpEntry ? getADPTier(adpEntry.adp, adpTiers) : null,
+      adpTier: adpEntry ? getADPTier(adpEntry.adp, adpTiers, mfl.position || "") : null,
       recruitScore: recruitScore,
       stars: stars,
       headshotUrl: "",
@@ -1206,16 +1325,15 @@ function generateRecruitingBoardForYear(year) {
   }
 
   // --- 4. Calculate scarcity prices (budget allocation model) ---
-  const scarcityPrices = calcScarcityPrices(boardPlayers, pricingModel, config);
+  const scarcityPrices = calcScarcityPrices(boardPlayers, pricingModel, config, !draftHasOccurred);
   const scarcityCount = Object.keys(scarcityPrices).length;
   if (scarcityCount > 0) {
     Logger.log(`  Scarcity prices calculated for ${scarcityCount} players`);
-    // Log a few examples
     boardPlayers.slice(0, 3).forEach(p => {
       const sp = scarcityPrices[p.name];
       const pp = p.pricing ? p.pricing.predicted : null;
       if (sp && pp) {
-        Logger.log(`    ${p.name} (${p.position}): predicted=$${pp}, scarcity=$${sp}`);
+        Logger.log(`    ${p.name} (${p.position}): predicted=$${pp}, 16-tm Copy1=$${sp.copy1_16 || "?"}/Copy2=$${sp.copy2_16 || "?"}, 20-tm Copy1=$${sp.copy1_20 || "?"}/Copy2=$${sp.copy2_20 || "?"}`);
       }
     });
   }
@@ -1233,7 +1351,8 @@ function generateRecruitingBoardForYear(year) {
     "Draft Rd", "Draft Pick", "Draft Capital",
     "Startup ADP", "ADP Tier",
     "Recruit Score",
-    "Predicted Cost", "Scarcity Price", "Price Range", "Price Source", "Sample (n)", "Confidence",
+    "Predicted Cost", "Copy1 (16-Tm)", "Copy2 (16-Tm)", "Copy1 (20-Tm)", "Copy2 (20-Tm)",
+    "Price Range", "Price Source", "Sample (n)", "Confidence",
     "Data Source", "HeadshotURL"
   ];
 
@@ -1253,7 +1372,7 @@ function generateRecruitingBoardForYear(year) {
 
   const rows = boardPlayers.map(p => {
     const pr = p.pricing;
-    const sp = scarcityPrices[p.name] || null;
+    const sp = scarcityPrices[p.name] || {};
     return [
       Number(yearStr),
       starDisplay(p.stars),
@@ -1271,7 +1390,10 @@ function generateRecruitingBoardForYear(year) {
       p.adpTier || "",
       p.recruitScore.toFixed(1),
       pr ? `$${pr.predicted}` : "",
-      sp ? `$${sp}` : "",
+      sp.copy1_16 ? `$${sp.copy1_16}` : "",
+      sp.copy2_16 ? `$${sp.copy2_16}` : "",
+      sp.copy1_20 ? `$${sp.copy1_20}` : "",
+      sp.copy2_20 ? `$${sp.copy2_20}` : "",
       pr ? `$${pr.p25}-$${pr.p75}` : "",
       pr ? pr.sourceType : "",
       pr ? pr.count : "",
@@ -1304,13 +1426,16 @@ function generateRecruitingBoardForYear(year) {
     sheet.setColumnWidth(14, 120);  // ADP Tier
     sheet.setColumnWidth(15, 90);   // Recruit Score
     sheet.setColumnWidth(16, 95);   // Predicted Cost
-    sheet.setColumnWidth(17, 95);   // Scarcity Price
-    sheet.setColumnWidth(18, 110);  // Price Range
-    sheet.setColumnWidth(19, 95);   // Price Source
-    sheet.setColumnWidth(20, 70);   // Sample (n)
-    sheet.setColumnWidth(21, 110);  // Confidence
-    sheet.setColumnWidth(22, 110);  // Data Source
-    sheet.setColumnWidth(23, 80);   // Headshot URL
+    sheet.setColumnWidth(17, 90);   // Copy1 (16-Tm)
+    sheet.setColumnWidth(18, 90);   // Copy2 (16-Tm)
+    sheet.setColumnWidth(19, 90);   // Copy1 (20-Tm)
+    sheet.setColumnWidth(20, 90);   // Copy2 (20-Tm)
+    sheet.setColumnWidth(21, 110);  // Price Range
+    sheet.setColumnWidth(22, 95);   // Price Source
+    sheet.setColumnWidth(23, 70);   // Sample (n)
+    sheet.setColumnWidth(24, 110);  // Confidence
+    sheet.setColumnWidth(25, 110);  // Data Source
+    sheet.setColumnWidth(26, 80);   // Headshot URL
   }
 
   Logger.log(`\n  Wrote ${rows.length} prospects to ${config.sheets.recruitingBoard}`);
