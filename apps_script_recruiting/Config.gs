@@ -111,8 +111,9 @@ function getConfig() {
     // Startup ADP Configuration
     // DLF Rookie Startup ADP captures fantasy market consensus on rookie value.
     // ADP = overall pick position in startup drafts (rookies mixed with veterans).
+    // Pricing uses ADP regression (continuous curve) — tiers are for display labels only.
     adpConfig: {
-      // ADP tier boundaries (for 12-team, ~360-pick startup drafts)
+      // ADP tier boundaries (display labels only — pricing uses regression, not tier buckets)
       tiers: [
         { label: "Elite (1-24)", min: 1, max: 24 },
         { label: "Premium (25-60)", min: 25, max: 60 },
@@ -120,13 +121,6 @@ function getConfig() {
         { label: "Depth (121-200)", min: 121, max: 200 },
         { label: "Flier (201+)", min: 201, max: 9999 }
       ],
-      // How much ADP deviation from tier average affects price (0 = disabled, 1.0 = full effect)
-      adjustmentSensitivity: 0.30,
-      // Blend weight: how much ADP-tier pricing contributes vs draft-capital pricing
-      blendWeights: {
-        round1: 0.30,      // Round 1: ADP gets 30%, per-pick gets 70%
-        round2Plus: 0.50   // Round 2+: ADP gets 50%, tier gets 50%
-      },
       // Default ADP for players not found in ADP data (post-draft only)
       // Treats missing ADP as worst-case: fantasy market doesn't value them
       defaultADP: 360,
@@ -136,9 +130,18 @@ function getConfig() {
       // Decay rate for converting ADP to a 0-100 score (gentler than draft capital
       // because ADP range is wider: 1-360 vs 1-262 for NFL draft picks)
       adpScoreDecayRate: 0.012,
-      // Minimum sample size for ADP tier buckets
-      minSampleSize: 3
-    }
+      // ESPN grade adjustment: how much each grade point above/below position average
+      // adjusts the predicted price. 0.01 = 1% per point, capped at ±25%.
+      gradeAdjustmentPerPoint: 0.01,
+      // Minimum data points needed for ADP regression (per position)
+      minRegressionPoints: 10,
+      // Minimum R² for ADP regression to be used (below this, falls back to draft-capital buckets)
+      minRegressionR2: 0.10
+    },
+
+    // League structure (for scarcity/budget calculations)
+    numberOfConferences: 6,
+    copiesPerPlayer: 12
   };
 }
 

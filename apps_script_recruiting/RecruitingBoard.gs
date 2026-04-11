@@ -1,17 +1,17 @@
 /**
  * RECRUITING ANALYTICS - RECRUITING BOARD
- * Generates star ratings for incoming draft class prospects.
- * Combines startup ADP, NFL draft capital, ESPN grades, and position to evaluate players.
+ * Generates star ratings and price predictions for incoming draft class prospects.
  *
- * Post-draft scoring (ADP available):
- *   1. ADP + Draft Capital + ESPN Grade - full weighted blend (50/25/15/10)
- *   2. ADP + Draft Capital - no grade (50/40/10)
- *   3. ADP + ESPN Grade - UDFA with grade (60/30/10)
- *   4. ADP only - UDFA no grade (85/15)
+ * RECRUIT SCORING (0-100):
+ *   Post-draft: 50% ADP + 25% Draft Capital + 15% ESPN Grade + 10% Position
+ *   Pre-draft:  80% ESPN Grade + 10% Position (ADP unavailable)
+ *   Missing data gets floor scores (defaultDraftPick, defaultESPNGrade, defaultADP)
  *
- * Pre-draft scoring (no ADP):
- *   5. ESPN grade only - grade-driven evaluation
- *   6. No data at all - auto 1-star
+ * PRICE PREDICTION (two independent prices):
+ *   Predicted Cost: ADP regression (continuous curve, no tier jumps) with grade adjustment
+ *     - Fallback: draft-capital buckets when ADP regression unavailable
+ *   Scarcity Price: Budget allocation model (conference budget ÷ class size × player quality)
+ *     - Models how a fixed conference auction budget distributes across the draft class
  */
 
 // ============================================================================
@@ -53,6 +53,83 @@ function calcDraftCapitalScore(overallPick, decayRate) {
 function calcADPScore(adp, decayRate) {
   if (!adp || adp < 1) return 0;
   return 100 * Math.exp(-decayRate * (adp - 1));
+}
+
+// ============================================================================
+// LINEAR REGRESSION
+// ============================================================================
+
+/**
+ * Fit a simple linear regression: y = intercept + slope * x
+ * Used to model continuous ADP → auction price relationships per position.
+ *
+ * @param {Array<{x: Number, y: Number}>} points - Data points
+ * @returns {Object|null} - { slope, intercept, r2, se, n, xMean, xVar } or null if insufficient data
+ */
+function fitLinearRegression(points) {
+  var n = points.length;
+  if (n < 5) return null;
+
+  var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+  for (var i = 0; i < n; i++) {
+    sumX += points[i].x;
+    sumY += points[i].y;
+    sumXY += points[i].x * points[i].y;
+    sumX2 += points[i].x * points[i].x;
+    sumY2 += points[i].y * points[i].y;
+  }
+
+  var denom = n * sumX2 - sumX * sumX;
+  if (denom === 0) return null;
+
+  var slope = (n * sumXY - sumX * sumY) / denom;
+  var intercept = (sumY - slope * sumX) / n;
+
+  // R-squared (coefficient of determination)
+  var yMean = sumY / n;
+  var ssTot = sumY2 - n * yMean * yMean;
+  var ssRes = 0;
+  for (var j = 0; j < n; j++) {
+    var residual = points[j].y - (intercept + slope * points[j].x);
+    ssRes += residual * residual;
+  }
+  var r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+
+  // Standard error of estimate (for prediction intervals)
+  var se = Math.sqrt(ssRes / Math.max(1, n - 2));
+
+  // Store x stats for prediction interval width calculation
+  var xMean = sumX / n;
+  var xVar = sumX2 / n - xMean * xMean;
+
+  return { slope: slope, intercept: intercept, r2: r2, se: se, n: n, xMean: xMean, xVar: xVar };
+}
+
+/**
+ * Get prediction interval bounds for a regression at a given x value.
+ * Returns the approximate 25th and 75th percentile bounds.
+ *
+ * @param {Object} reg - Regression result from fitLinearRegression()
+ * @param {Number} x - The x value to predict at
+ * @returns {Object} - { predicted, p25, p75 }
+ */
+function getRegressionPrediction(reg, x) {
+  var predicted = reg.intercept + reg.slope * x;
+
+  // Prediction interval widens for x values far from the mean
+  // SE_pred = SE * sqrt(1 + 1/n + (x - xMean)^2 / (n * xVar))
+  var xDeviation = (reg.xVar > 0) ? (x - reg.xMean) * (x - reg.xMean) / (reg.n * reg.xVar) : 0;
+  var sePred = reg.se * Math.sqrt(1 + 1 / reg.n + xDeviation);
+
+  // z ≈ 0.675 for 25th/75th percentile of normal distribution
+  var p25 = predicted - 0.675 * sePred;
+  var p75 = predicted + 0.675 * sePred;
+
+  return {
+    predicted: Math.max(1, Math.round(predicted)),
+    p25: Math.max(1, Math.round(p25)),
+    p75: Math.max(1, Math.round(p75))
+  };
 }
 
 // ============================================================================
@@ -250,13 +327,21 @@ function getADPTier(adp, tiers) {
 
 /**
  * Build a pricing model from historical auction data.
- * Uses two approaches for maximum accuracy:
- *   1. Per-pick sliding window (picks 1-32): groups nearby picks for granular pricing
- *   2. Tier-based (Round 2+): broader buckets where sample size matters more
- * Also builds ESPN grade range buckets for pre-draft fallback.
+ *
+ * Pricing approaches (in priority order):
+ *   1. ADP regression (post-draft, ADP available): continuous price curve per position
+ *   2. Per-pick sliding window (Round 1 fallback): groups nearby picks for granular pricing
+ *   3. Tier-based (Round 2+ fallback): broader buckets when no ADP
+ *   4. ESPN grade range (pre-draft fallback)
+ *
+ * Also builds:
+ *   - Position budgets: avg conference spend per position per year (for scarcity pricing)
+ *   - Avg ESPN grade per position (for grade adjustment reference)
+ *   - Historical position counts (for scarcity factor)
  *
  * @param {Object} config - From getConfig()
- * @returns {Object} - { byPick, byTier, byGrade, gradeAvgByTier, historicalPositionCounts }
+ * @returns {Object} - { adpRegression, byPick, byTier, byGrade, avgGradeByPosition,
+ *                        positionBudgets, historicalPositionCounts }
  */
 function buildPricingModel(config) {
   const ss = SpreadsheetApp.getActive();
@@ -292,9 +377,10 @@ function buildPricingModel(config) {
     const draftRound = String(row[6]);
     const draftPick = String(row[7]);
     const overallPick = parseOverallPick(draftPick, draftRound);
+    const conference = String(row[10]);
 
     rookieAuctions.push({
-      auctionYear, position, draftRound, draftPick, overallPick,
+      auctionYear, position, draftRound, draftPick, overallPick, conference,
       playerName: String(row[2]),
       bidAmount: Number(row[11]) || 0
     });
@@ -303,12 +389,52 @@ function buildPricingModel(config) {
   if (rookieAuctions.length === 0) return null;
   Logger.log(`  Pricing model: ${rookieAuctions.length} historical rookie auctions`);
 
-  // --- 1. Per-pick sliding window for Round 1 (picks 1-32) ---
-  // Window radius varies by position based on how often they're drafted in Round 1:
-  //   WR: ±3  (most frequent Round 1 position, tight window is accurate)
-  //   QB: ±4  (fewer per round, need slightly wider reach)
-  //   RB: ±6  (1-3 per year in Round 1, spread across the round)
-  //   TE: ±8  (rarely in Round 1, need wide window to find enough data)
+  // --- 1. ADP regression per position (primary pricing method) ---
+  // Fits a linear regression: auctionPrice = intercept + slope × adpScore
+  // adpScore uses exponential decay (calcADPScore), so the regression captures
+  // the non-linear relationship between raw ADP and price.
+  const adpLookup = buildADPLookupByName();
+  const adpConfig = config.adpConfig || {};
+  const adpDecayRate = adpConfig.adpScoreDecayRate || 0.012;
+
+  const regressionPoints = {};
+  rookieAuctions.forEach(a => {
+    const normalizedName = normalizeNameForMatch(a.playerName);
+    if (!normalizedName) return;
+
+    const yearKey = `${normalizedName}|${a.auctionYear}`;
+    const adpEntry = adpLookup[yearKey] || adpLookup[normalizedName];
+    if (!adpEntry || !adpEntry.adp) return;
+
+    const adpScore = calcADPScore(adpEntry.adp, adpDecayRate);
+    if (!regressionPoints[a.position]) regressionPoints[a.position] = [];
+    regressionPoints[a.position].push({ x: adpScore, y: a.bidAmount });
+  });
+
+  const adpRegression = {};
+  var minRegPoints = (adpConfig.minRegressionPoints || 10);
+  var minR2 = (adpConfig.minRegressionR2 || 0.10);
+  ["QB", "RB", "WR", "TE"].forEach(function(pos) {
+    var pts = regressionPoints[pos];
+    if (!pts || pts.length < minRegPoints) return;
+    var reg = fitLinearRegression(pts);
+    if (reg && reg.r2 >= minR2) {
+      adpRegression[pos] = reg;
+      Logger.log("  ADP regression " + pos + ": price = " + reg.intercept.toFixed(1) +
+        " + " + reg.slope.toFixed(2) + " × adpScore (R²=" + reg.r2.toFixed(3) +
+        ", SE=" + reg.se.toFixed(1) + ", n=" + reg.n + ")");
+    } else if (reg) {
+      Logger.log("  ADP regression " + pos + ": R²=" + reg.r2.toFixed(3) +
+        " too low (min " + minR2 + "), using fallback buckets");
+    }
+  });
+
+  Logger.log("  ADP lookup entries: " + Object.keys(adpLookup).length +
+    ", regressions fit: " + Object.keys(adpRegression).length);
+
+  // --- 2. Per-pick sliding window for Round 1 (picks 1-32) ---
+  // Fallback when ADP regression isn't available for a position.
+  // Also used for Round 1 grade-adjustment reference.
   const WINDOW_BY_POSITION = { WR: 3, QB: 4, RB: 6, TE: 8 };
   const byPick = {};
 
@@ -318,9 +444,6 @@ function buildPricingModel(config) {
       const windowBids = rookieAuctions
         .filter(a => {
           if (a.position !== pos || !a.overallPick) return false;
-          // MUST filter to Round 1 only — plain-number draft_pick values from
-          // Round 2+ get misinterpreted as low overall picks by parseOverallPick(),
-          // which would contaminate top-pick pricing with cheap late-round bids
           return a.draftRound === "1" && Math.abs(a.overallPick - targetPick) <= radius;
         })
         .map(a => a.bidAmount);
@@ -331,10 +454,9 @@ function buildPricingModel(config) {
     });
   }
 
-  // --- 2. Tier-based for Round 2+ and UDFA ---
+  // --- 3. Tier-based for Round 2+ and UDFA (fallback) ---
   const byTier = {};
   rookieAuctions.forEach(a => {
-    // Skip Round 1 picks from tier buckets (they use per-pick above)
     if (a.draftRound === "1") return;
 
     const tier = getDraftPickTier(a.overallPick, a.draftRound);
@@ -346,7 +468,6 @@ function buildPricingModel(config) {
     byTier[key].push(a.bidAmount);
   });
 
-  // Also add UDFA auctions
   rookieAuctions.forEach(a => {
     if (draftRounds.includes(a.draftRound)) return;
     const key = `${a.position}|UDFA`;
@@ -361,12 +482,12 @@ function buildPricingModel(config) {
     }
   });
 
-  // --- 3. ESPN grade range buckets (pre-draft fallback) ---
+  // --- 4. ESPN grade range buckets (pre-draft fallback) ---
   const byGrade = {};
   const espnLookup = buildESPNLookupByName();
 
-  // Also track average ESPN grade per position × tier for grade adjustment
-  const gradesByTier = {};
+  // Track grades per position for the position-level average used in grade adjustments
+  const gradesByPosition = {};
 
   rows.forEach(row => {
     const auctionYear = Number(row[0]) || 0;
@@ -377,28 +498,19 @@ function buildPricingModel(config) {
     if (!["QB", "RB", "WR", "TE"].includes(position)) return;
     const playerName = String(row[2]);
     const bidAmount = Number(row[11]) || 0;
-    const draftRound = String(row[6]);
-    const draftPick = String(row[7]);
 
     const normalizedName = normalizeNameForMatch(playerName);
     const yearKey = `${normalizedName}|${auctionYear}`;
     const espn = espnLookup[yearKey] || espnLookup[normalizedName];
 
     if (espn && espn.grade !== null) {
-      // Grade range bucket
       const gradeRange = getESPNGradeRange(espn.grade);
       const gradeKey = `${position}|${gradeRange}`;
       if (!byGrade[gradeKey]) byGrade[gradeKey] = [];
       byGrade[gradeKey].push(bidAmount);
 
-      // Track grades per tier for grade adjustment calculation
-      const overallPick = parseOverallPick(draftPick, draftRound);
-      const tier = getDraftPickTier(overallPick, draftRound);
-      if (tier) {
-        const tierKey = `${position}|${tier}`;
-        if (!gradesByTier[tierKey]) gradesByTier[tierKey] = [];
-        gradesByTier[tierKey].push({ grade: espn.grade, bid: bidAmount });
-      }
+      if (!gradesByPosition[position]) gradesByPosition[position] = [];
+      gradesByPosition[position].push(espn.grade);
     }
   });
 
@@ -409,67 +521,48 @@ function buildPricingModel(config) {
     }
   });
 
-  // Compute average grade per tier (for grade adjustment)
-  const gradeAvgByTier = {};
-  Object.keys(gradesByTier).forEach(key => {
-    const grades = gradesByTier[key].map(g => g.grade);
-    gradeAvgByTier[key] = grades.reduce((s, v) => s + v, 0) / grades.length;
+  // Average ESPN grade per position (for grade adjustment: player grade vs position average)
+  const avgGradeByPosition = {};
+  Object.keys(gradesByPosition).forEach(pos => {
+    const grades = gradesByPosition[pos];
+    avgGradeByPosition[pos] = grades.reduce((s, v) => s + v, 0) / grades.length;
   });
 
-  // --- 4. ADP-based tier buckets ---
-  // Cross-reference historical rookie auctions with startup ADP data
-  // to build pricing buckets by position × ADP tier
-  const adpLookup = buildADPLookupByName();
-  const adpConfig = config.adpConfig || {};
-  const adpTiers = adpConfig.tiers || [];
-  const byADPRaw = {};
-  const adpByDraftTier = {}; // Track ADP values per draft-capital tier for adjustment calc
+  Logger.log("  Avg ESPN grade: " + ["QB", "RB", "WR", "TE"].map(function(pos) {
+    return pos + "=" + (avgGradeByPosition[pos] ? avgGradeByPosition[pos].toFixed(1) : "N/A");
+  }).join(", "));
 
+  // --- 5. Position budgets (for scarcity pricing) ---
+  // Compute avg total spend per conference per position per year.
+  // This represents the "budget" each conference allocates to a position's rookie auction.
+  const years = [...new Set(rookieAuctions.map(a => a.auctionYear))];
+  const conferences = new Set();
+  rookieAuctions.forEach(a => { if (a.conference) conferences.add(a.conference); });
+  const numConferences = conferences.size || (config.numberOfConferences || 6);
+
+  // Total league spend per position per year, then divide by conferences
+  const yearPosSpend = {};
   rookieAuctions.forEach(a => {
-    const normalizedName = normalizeNameForMatch(a.playerName);
-    if (!normalizedName) return;
-
-    // Look up this player's ADP for their auction year
-    const yearKey = `${normalizedName}|${a.auctionYear}`;
-    const adpEntry = adpLookup[yearKey] || adpLookup[normalizedName];
-
-    if (!adpEntry || !adpEntry.adp) return;
-
-    // Bucket by position + ADP tier
-    const adpTierLabel = getADPTier(adpEntry.adp, adpTiers);
-    if (adpTierLabel) {
-      const key = `${a.position}|${adpTierLabel}`;
-      if (!byADPRaw[key]) byADPRaw[key] = [];
-      byADPRaw[key].push(a.bidAmount);
-    }
-
-    // Track ADP per draft-capital tier for the ADP adjustment multiplier
-    const draftTier = getDraftPickTier(a.overallPick, a.draftRound);
-    if (draftTier) {
-      const tierKey = `${a.position}|${draftTier}`;
-      if (!adpByDraftTier[tierKey]) adpByDraftTier[tierKey] = [];
-      adpByDraftTier[tierKey].push(adpEntry.adp);
-    }
+    const key = `${a.auctionYear}|${a.position}`;
+    yearPosSpend[key] = (yearPosSpend[key] || 0) + a.bidAmount;
   });
 
-  const byADP = {};
-  Object.keys(byADPRaw).forEach(key => {
-    if (byADPRaw[key].length >= (adpConfig.minSampleSize || 3)) {
-      byADP[key] = computeBucketStats(byADPRaw[key]);
-    }
+  const positionBudgets = {};
+  ["QB", "RB", "WR", "TE"].forEach(pos => {
+    const yearSpends = years.map(y => {
+      var total = yearPosSpend[`${y}|${pos}`] || 0;
+      return total / numConferences;
+    }).filter(s => s > 0);
+    positionBudgets[pos] = yearSpends.length > 0
+      ? yearSpends.reduce((s, v) => s + v, 0) / yearSpends.length
+      : 0;
   });
 
-  // Compute average ADP per draft-capital tier (for ADP adjustment)
-  const adpAvgByTier = {};
-  Object.keys(adpByDraftTier).forEach(key => {
-    const adps = adpByDraftTier[key];
-    adpAvgByTier[key] = adps.reduce((s, v) => s + v, 0) / adps.length;
-  });
+  Logger.log("  Avg conference budget/yr: " + ["QB", "RB", "WR", "TE"].map(function(pos) {
+    return pos + "=$" + (positionBudgets[pos] ? positionBudgets[pos].toFixed(0) : "0");
+  }).join(", ") + " (from " + numConferences + " conferences, " + years.length + " years)");
 
-  Logger.log(`  ADP lookup entries: ${Object.keys(adpLookup).length}`);
-  Logger.log(`  ADP tier buckets: ${Object.keys(byADP).length}, ADP-tracked draft tiers: ${Object.keys(adpAvgByTier).length}`);
-
-  // --- 5. Historical position counts per year (for scarcity) ---
+  // --- 6. Historical position counts per year (for reference/scarcity factor) ---
   const positionsByYear = {};
   rookieAuctions.forEach(a => {
     const yk = `${a.auctionYear}|${a.position}`;
@@ -477,7 +570,6 @@ function buildPricingModel(config) {
     positionsByYear[yk].add(`${a.draftRound}|${a.draftPick}`);
   });
 
-  const years = [...new Set(rookieAuctions.map(a => a.auctionYear))];
   const historicalPositionCounts = {};
   ["QB", "RB", "WR", "TE"].forEach(pos => {
     const yearCounts = years.map(y => {
@@ -492,22 +584,13 @@ function buildPricingModel(config) {
   Logger.log(`  Historical avg per year: QB=${historicalPositionCounts.QB.toFixed(1)}, RB=${historicalPositionCounts.RB.toFixed(1)}, WR=${historicalPositionCounts.WR.toFixed(1)}, TE=${historicalPositionCounts.TE.toFixed(1)}`);
   Logger.log(`  Per-pick buckets (Rd 1): ${Object.keys(byPick).length}, Tier buckets (Rd 2+): ${Object.keys(byTierStats).length}`);
 
-  // Log sample per-pick stats for top picks to verify pricing
-  [1, 4, 6, 10].forEach(pick => {
-    const wrKey = `WR|${pick}`;
-    if (byPick[wrKey]) {
-      const s = byPick[wrKey];
-      Logger.log(`    WR pick ${pick}: median=$${s.median}, range=$${s.p25}-$${s.p75}, n=${s.count}, ${s.skew}`);
-    }
-  });
-
   return {
+    adpRegression,
     byPick,
     byTier: byTierStats,
     byGrade: byGradeStats,
-    byADP,
-    gradeAvgByTier,
-    adpAvgByTier,
+    avgGradeByPosition,
+    positionBudgets,
     historicalPositionCounts
   };
 }
@@ -613,156 +696,233 @@ function calcScarcityFactor(position, currentYearCounts, historicalAvgCounts) {
 /**
  * Predict auction price for a prospect using the pricing model.
  *
- * Lookup priority:
- *   1. Per-pick sliding window (Round 1, picks 1-32) — most granular
- *   2. Tier-based (Round 2+, UDFA) — broader buckets
- *   3. ESPN grade range (pre-draft fallback)
+ * Priority:
+ *   1. ADP regression (post-draft, ADP available) — continuous, no tier jumps
+ *   2. Per-pick sliding window (Round 1, no ADP regression) — granular fallback
+ *   3. Tier-based (Round 2+/UDFA, no ADP regression) — broader fallback
+ *   4. ESPN grade range (pre-draft) — grade-only fallback
  *
  * After finding the base price, applies:
- *   - ADP blending: blends draft-capital pricing with ADP-tier pricing
- *   - ESPN grade adjustment: scale price based on grade vs tier average
- *   - ADP adjustment: scale price based on ADP vs tier average
- *   - Scarcity factor: fewer prospects at this position = higher prices
- *
- * Missing ADP (post-draft) is treated as worst-case (defaultADP from config),
- * reflecting that the fantasy market doesn't value the player.
+ *   - ESPN grade adjustment: scale price based on grade vs position average
+ *     (ADP already captures draft capital, so grade is the only independent signal)
+ *   - No ADP multiplier — ADP is the base price source, not a modifier
+ *   - No tier blending — regression is continuous, no buckets to blend
  *
  * @param {Object} player - Board player object (must include startupADP)
  * @param {Object} pricingModel - From buildPricingModel()
  * @param {Object} currentYearCounts - Position counts for this draft class
  * @param {Boolean} isPreDraft - Whether the draft has occurred
- * @returns {Object|null} - { predicted, p25, p75, skew, count, confidence } or null
+ * @returns {Object|null} - { predicted, p25, p75, sourceType, count, confidence } or null
  */
 function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
   if (!pricingModel) return null;
 
-  const pos = player.position;
-  const config = getConfig();
-  const adpConfig = config.adpConfig || {};
-  const adpTiers = adpConfig.tiers || [];
+  var pos = player.position;
+  var config = getConfig();
+  var adpConfig = config.adpConfig || {};
 
-  let bucket = null;
-  let tierKey = null; // For grade/ADP adjustment lookup
-  let sourceType = null; // For confidence calculation
+  var predicted, p25, p75, sourceType, sampleSize;
 
-  // 1. Post-draft Round 1: per-pick sliding window (most granular)
-  if (!isPreDraft && player.draftRound === "1" && player.overallPick && player.overallPick <= 32) {
-    bucket = pricingModel.byPick[`${pos}|${player.overallPick}`];
-    tierKey = `${pos}|${getDraftPickTier(player.overallPick, player.draftRound) || ""}`;
-    if (bucket) sourceType = "perPick";
+  // === 1. ADP regression (post-draft, primary) ===
+  // When ADP data exists, the regression gives a continuous price curve per position.
+  // ADP already incorporates draft capital + landing spot + positional value,
+  // so draft capital is NOT weighted separately — avoiding double-counting.
+  if (!isPreDraft && pricingModel.adpRegression && pricingModel.adpRegression[pos]) {
+    var effectiveADP = player.startupADP || adpConfig.defaultADP || 360;
+    var adpScore = calcADPScore(effectiveADP, adpConfig.adpScoreDecayRate || 0.012);
+    var reg = pricingModel.adpRegression[pos];
+    var pred = getRegressionPrediction(reg, adpScore);
+
+    predicted = pred.predicted;
+    p25 = pred.p25;
+    p75 = pred.p75;
+    sourceType = "adpRegression";
+    sampleSize = reg.n;
+
+    // Grade adjustment: ESPN grade provides independent signal about player quality
+    // that the market (ADP) may not fully capture. Compare to position average.
+    var gradeAdj = calcGradeAdjustment(player.espnGrade, pos, pricingModel, adpConfig);
+    predicted = Math.max(1, Math.round(predicted * gradeAdj));
+    p25 = Math.max(1, Math.round(p25 * gradeAdj));
+    p75 = Math.max(1, Math.round(p75 * gradeAdj));
+
+    return {
+      predicted: predicted,
+      p25: p25,
+      p75: p75,
+      sourceType: sourceType,
+      count: sampleSize,
+      confidence: calcRegressionConfidence(reg)
+    };
   }
 
-  // 2. Post-draft Round 2+: tier-based
-  if (!bucket && !isPreDraft && player.overallPick && player.overallPick > 32) {
-    const tier = getDraftPickTier(player.overallPick, player.draftRound);
-    if (tier) {
-      bucket = pricingModel.byTier[`${pos}|${tier}`];
-      tierKey = `${pos}|${tier}`;
-      if (bucket) sourceType = "tier";
+  // === 2. Draft-capital bucket fallback (post-draft, no ADP regression) ===
+  var bucket = null;
+
+  if (!isPreDraft) {
+    // Round 1: per-pick sliding window
+    if (player.draftRound === "1" && player.overallPick && player.overallPick <= 32) {
+      bucket = pricingModel.byPick[pos + "|" + player.overallPick];
+      if (bucket) sourceType = "perPick";
+    }
+
+    // Round 2+: tier-based
+    if (!bucket && player.overallPick) {
+      var tier = getDraftPickTier(player.overallPick, player.draftRound);
+      if (tier) {
+        bucket = pricingModel.byTier[pos + "|" + tier];
+        if (bucket) sourceType = "tier";
+      }
+    }
+
+    // UDFA
+    if (!bucket && player.dataSource && player.dataSource.includes("UDFA")) {
+      bucket = pricingModel.byTier[pos + "|UDFA"];
+      if (bucket) sourceType = "udfa";
     }
   }
 
-  // 3. Post-draft UDFA
-  if (!bucket && !isPreDraft && !player.overallPick && player.dataSource && player.dataSource.includes("UDFA")) {
-    bucket = pricingModel.byTier[`${pos}|UDFA`];
-    tierKey = `${pos}|UDFA`;
-    if (bucket) sourceType = "udfa";
-  }
-
-  // 4. Pre-draft or no match: fall back to ESPN grade range
+  // === 3. ESPN grade range fallback (pre-draft or no other match) ===
   if (!bucket && player.espnGrade !== null) {
-    const gradeRange = getESPNGradeRange(player.espnGrade);
-    bucket = pricingModel.byGrade[`${pos}|${gradeRange}`];
-    // No grade adjustment needed here - already bucketed by grade
-    tierKey = null;
+    var gradeRange = getESPNGradeRange(player.espnGrade);
+    bucket = pricingModel.byGrade[pos + "|" + gradeRange];
     if (bucket) sourceType = "grade";
   }
 
   if (!bucket || bucket.count < 3) return null;
 
-  // --- ADP blending ---
-  // Blend draft-capital-based pricing with ADP-tier pricing when available.
-  // Post-draft: use player's actual ADP, or defaultADP if not in ADP data.
-  // Pre-draft: skip ADP entirely (startup drafts haven't happened yet).
-  let baseMedian = bucket.median;
-  let baseP25 = bucket.p25;
-  let baseP75 = bucket.p75;
-  let hasADP = false;
-
-  if (!isPreDraft && pricingModel.byADP) {
-    const effectiveADP = player.startupADP || adpConfig.defaultADP || 360;
-    const adpTierLabel = getADPTier(effectiveADP, adpTiers);
-
-    if (adpTierLabel) {
-      const adpBucket = pricingModel.byADP[`${pos}|${adpTierLabel}`];
-
-      if (adpBucket && adpBucket.count >= (adpConfig.minSampleSize || 3) && sourceType !== "grade") {
-        // Blend weights: Round 1 per-pick data is already granular, so ADP gets less weight
-        const blendWeights = adpConfig.blendWeights || { round1: 0.30, round2Plus: 0.50 };
-        const adpWeight = (sourceType === "perPick") ? blendWeights.round1 : blendWeights.round2Plus;
-        const draftWeight = 1.0 - adpWeight;
-
-        baseMedian = (bucket.median * draftWeight) + (adpBucket.median * adpWeight);
-        baseP25 = (bucket.p25 * draftWeight) + (adpBucket.p25 * adpWeight);
-        baseP75 = (bucket.p75 * draftWeight) + (adpBucket.p75 * adpWeight);
-        hasADP = true;
-      }
-    }
+  // Grade adjustment for bucket-based predictions (skip for grade-bucketed since already grouped by grade)
+  var gradeMultiplier = 1.0;
+  if (sourceType !== "grade") {
+    gradeMultiplier = calcGradeAdjustment(player.espnGrade, pos, pricingModel, adpConfig);
   }
 
-  // --- ESPN grade adjustment ---
-  // If the player's grade is above/below the historical average for this tier,
-  // scale prices proportionally. A 96-grade pick at #1 should price higher
-  // than an 85-grade pick at #1.
-  let gradeMultiplier = 1.0;
-  if (tierKey && player.espnGrade !== null && pricingModel.gradeAvgByTier[tierKey]) {
-    const avgGrade = pricingModel.gradeAvgByTier[tierKey];
-    if (avgGrade > 0) {
-      // Each grade point above/below average adjusts price by ~1.5%
-      // e.g., grade 96 vs avg 88 = +8 points = +12% price
-      const gradeDiff = player.espnGrade - avgGrade;
-      gradeMultiplier = 1.0 + (gradeDiff * 0.015);
-      gradeMultiplier = Math.max(0.70, Math.min(1.50, gradeMultiplier));
-    }
-  }
-
-  // --- ADP adjustment multiplier ---
-  // If a player's startup ADP is better/worse than the average ADP for their
-  // draft-capital tier, adjust price proportionally. Lower ADP = better value.
-  // Post-draft only. Missing ADP uses defaultADP (worst-case).
-  let adpMultiplier = 1.0;
-  if (!isPreDraft && tierKey && pricingModel.adpAvgByTier && pricingModel.adpAvgByTier[tierKey]) {
-    const effectiveADP = player.startupADP || adpConfig.defaultADP || 360;
-    const avgADP = pricingModel.adpAvgByTier[tierKey];
-    if (avgADP > 0) {
-      // Lower ADP = better → positive adjustment
-      // (avgADP - playerADP) is positive when player is better than tier avg
-      const sensitivity = adpConfig.adjustmentSensitivity || 0.30;
-      adpMultiplier = 1.0 + ((avgADP - effectiveADP) / avgADP) * sensitivity;
-      adpMultiplier = Math.max(0.70, Math.min(1.50, adpMultiplier));
-    }
-  }
-
-  // --- Scarcity adjustment ---
-  const scarcity = calcScarcityFactor(pos, currentYearCounts, pricingModel.historicalPositionCounts);
-
-  // Cap combined multiplier to prevent grade + ADP + scarcity from compounding excessively.
-  // Without the cap, an outlier player (high grade + elite ADP in a later-round bucket)
-  // can get 1.5 * 1.5 * scarcity ≈ 2.5x, producing unrealistic price predictions.
-  const rawMultiplier = gradeMultiplier * adpMultiplier * scarcity;
-  const totalMultiplier = Math.max(0.50, Math.min(1.40, rawMultiplier));
-  const predicted = Math.round(baseMedian * totalMultiplier);
-  const p25 = Math.round(baseP25 * totalMultiplier);
-  const p75 = Math.round(baseP75 * totalMultiplier);
+  // Scarcity factor for bucket-based fallback (regression users get scarcity via separate scarcity price)
+  var scarcity = calcScarcityFactor(pos, currentYearCounts, pricingModel.historicalPositionCounts);
+  var totalMult = Math.max(0.50, Math.min(1.40, gradeMultiplier * scarcity));
 
   return {
-    predicted: predicted,
-    p25: p25,
-    p75: p75,
-    skew: bucket.skew,
+    predicted: Math.max(1, Math.round(bucket.median * totalMult)),
+    p25: Math.max(1, Math.round(bucket.p25 * totalMult)),
+    p75: Math.max(1, Math.round(bucket.p75 * totalMult)),
+    sourceType: sourceType,
     count: bucket.count,
-    confidence: calcConfidence(bucket, sourceType, hasADP)
+    confidence: calcConfidence(bucket, sourceType, false)
   };
+}
+
+/**
+ * Calculate ESPN grade adjustment multiplier.
+ * Compares a player's grade to the position average.
+ * Each grade point above/below average adjusts price by a configurable %.
+ *
+ * @param {Number|null} espnGrade - Player's ESPN grade
+ * @param {String} position - Player position
+ * @param {Object} pricingModel - From buildPricingModel()
+ * @param {Object} adpConfig - ADP config from getConfig()
+ * @returns {Number} - Multiplier (0.75-1.25, or 1.0 if no grade)
+ */
+function calcGradeAdjustment(espnGrade, position, pricingModel, adpConfig) {
+  if (espnGrade === null || espnGrade === undefined || isNaN(espnGrade)) return 1.0;
+  if (!pricingModel.avgGradeByPosition || !pricingModel.avgGradeByPosition[position]) return 1.0;
+
+  var avgGrade = pricingModel.avgGradeByPosition[position];
+  if (avgGrade <= 0) return 1.0;
+
+  var perPoint = adpConfig.gradeAdjustmentPerPoint || 0.01;
+  var gradeDiff = espnGrade - avgGrade;
+  var multiplier = 1.0 + (gradeDiff * perPoint);
+  return Math.max(0.75, Math.min(1.25, multiplier));
+}
+
+/**
+ * Calculate confidence for an ADP regression prediction.
+ * Based on R² (model quality) and sample size.
+ *
+ * @param {Object} reg - Regression result from fitLinearRegression()
+ * @returns {Object} - { score: Number, label: String }
+ */
+function calcRegressionConfidence(reg) {
+  // R² contribution (50%) — how well ADP explains price
+  var r2Score = Math.min(100, reg.r2 * 120);  // R²=0.83 → 100
+
+  // Sample size contribution (50%) — log scale
+  var sampleScore = Math.min(100, 30 * Math.log(reg.n));
+
+  var score = Math.round(r2Score * 0.50 + sampleScore * 0.50);
+  score = Math.max(0, Math.min(100, score));
+
+  var label = "Very Low";
+  if (score >= 75) label = "High";
+  else if (score >= 50) label = "Medium";
+  else if (score >= 25) label = "Low";
+
+  return { score: score, label: label };
+}
+
+// ============================================================================
+// SCARCITY PRICING (BUDGET ALLOCATION MODEL)
+// ============================================================================
+
+/**
+ * Calculate scarcity-based price for all prospects at a given position.
+ * Models how a fixed conference budget gets allocated across this year's draft class.
+ *
+ * Logic:
+ *   1. From historical data: average conference spend per position per year
+ *   2. Current year: distribute that same budget across this year's prospects
+ *   3. Each player's share is proportional to their ADP score relative to the group
+ *   4. Per-copy price: divide by copies per conference (12 total / 6 conferences = 2)
+ *
+ * When scarcity price > predicted price: thin class, expect bidding wars.
+ * When scarcity price < predicted price: deep class, potential bargains.
+ *
+ * @param {Array} boardPlayers - All players on the board (need full list for position totals)
+ * @param {Object} pricingModel - From buildPricingModel() (needs positionBudgets)
+ * @param {Object} config - From getConfig()
+ * @returns {Object} - Map of playerName → scarcityPrice (Number)
+ */
+function calcScarcityPrices(boardPlayers, pricingModel, config) {
+  var result = {};
+  if (!pricingModel || !pricingModel.positionBudgets) return result;
+
+  var adpConfig = config.adpConfig || {};
+  var adpDecayRate = adpConfig.adpScoreDecayRate || 0.012;
+  var defaultADP = adpConfig.defaultADP || 360;
+  var numConferences = config.numberOfConferences || 6;
+  var copiesPerPlayer = config.copiesPerPlayer || 12;
+  var copiesPerConference = copiesPerPlayer / numConferences;
+
+  // Group players by position and compute ADP scores
+  var positionGroups = {};
+  boardPlayers.forEach(function(p) {
+    var pos = p.position;
+    if (!positionGroups[pos]) positionGroups[pos] = [];
+    var adp = p.startupADP || defaultADP;
+    var adpScore = calcADPScore(adp, adpDecayRate);
+    positionGroups[pos].push({ name: p.name, adpScore: adpScore });
+  });
+
+  // For each position, distribute the conference budget proportionally
+  Object.keys(positionGroups).forEach(function(pos) {
+    var players = positionGroups[pos];
+    var budget = pricingModel.positionBudgets[pos] || 0;
+    if (budget <= 0 || players.length === 0) return;
+
+    // Total ADP score across all copies in the conference
+    // Each player has copiesPerConference copies, all with the same ADP score
+    var totalScore = 0;
+    players.forEach(function(p) { totalScore += p.adpScore * copiesPerConference; });
+    if (totalScore <= 0) return;
+
+    players.forEach(function(p) {
+      // This player's per-copy share of the conference position budget
+      var perCopyShare = (p.adpScore / totalScore) * budget;
+      result[p.name] = Math.max(1, Math.round(perCopyShare));
+    });
+  });
+
+  return result;
 }
 
 // ============================================================================
@@ -1045,7 +1205,22 @@ function generateRecruitingBoardForYear(year) {
     Logger.log(`    ${s}-Star: ${count} players`);
   }
 
-  // --- 4. Write to RecruitingBoard sheet ---
+  // --- 4. Calculate scarcity prices (budget allocation model) ---
+  const scarcityPrices = calcScarcityPrices(boardPlayers, pricingModel, config);
+  const scarcityCount = Object.keys(scarcityPrices).length;
+  if (scarcityCount > 0) {
+    Logger.log(`  Scarcity prices calculated for ${scarcityCount} players`);
+    // Log a few examples
+    boardPlayers.slice(0, 3).forEach(p => {
+      const sp = scarcityPrices[p.name];
+      const pp = p.pricing ? p.pricing.predicted : null;
+      if (sp && pp) {
+        Logger.log(`    ${p.name} (${p.position}): predicted=$${pp}, scarcity=$${sp}`);
+      }
+    });
+  }
+
+  // --- 5. Write to RecruitingBoard sheet ---
   let sheet = ss.getSheetByName(config.sheets.recruitingBoard);
   const isNewSheet = !sheet;
   if (isNewSheet) {
@@ -1058,7 +1233,7 @@ function generateRecruitingBoardForYear(year) {
     "Draft Rd", "Draft Pick", "Draft Capital",
     "Startup ADP", "ADP Tier",
     "Recruit Score",
-    "Predicted Cost", "Price Range", "Skew", "Sample (n)", "Confidence",
+    "Predicted Cost", "Scarcity Price", "Price Range", "Price Source", "Sample (n)", "Confidence",
     "Data Source", "HeadshotURL"
   ];
 
@@ -1078,6 +1253,7 @@ function generateRecruitingBoardForYear(year) {
 
   const rows = boardPlayers.map(p => {
     const pr = p.pricing;
+    const sp = scarcityPrices[p.name] || null;
     return [
       Number(yearStr),
       starDisplay(p.stars),
@@ -1095,8 +1271,9 @@ function generateRecruitingBoardForYear(year) {
       p.adpTier || "",
       p.recruitScore.toFixed(1),
       pr ? `$${pr.predicted}` : "",
+      sp ? `$${sp}` : "",
       pr ? `$${pr.p25}-$${pr.p75}` : "",
-      pr ? pr.skew : "",
+      pr ? pr.sourceType : "",
       pr ? pr.count : "",
       pr && pr.confidence ? `${pr.confidence.label} (${pr.confidence.score})` : "",
       p.dataSource,
@@ -1127,12 +1304,13 @@ function generateRecruitingBoardForYear(year) {
     sheet.setColumnWidth(14, 120);  // ADP Tier
     sheet.setColumnWidth(15, 90);   // Recruit Score
     sheet.setColumnWidth(16, 95);   // Predicted Cost
-    sheet.setColumnWidth(17, 110);  // Price Range
-    sheet.setColumnWidth(18, 80);   // Skew
-    sheet.setColumnWidth(19, 70);   // Sample (n)
-    sheet.setColumnWidth(20, 110);  // Confidence
-    sheet.setColumnWidth(21, 110);  // Data Source
-    sheet.setColumnWidth(22, 80);   // Headshot URL
+    sheet.setColumnWidth(17, 95);   // Scarcity Price
+    sheet.setColumnWidth(18, 110);  // Price Range
+    sheet.setColumnWidth(19, 95);   // Price Source
+    sheet.setColumnWidth(20, 70);   // Sample (n)
+    sheet.setColumnWidth(21, 110);  // Confidence
+    sheet.setColumnWidth(22, 110);  // Data Source
+    sheet.setColumnWidth(23, 80);   // Headshot URL
   }
 
   Logger.log(`\n  Wrote ${rows.length} prospects to ${config.sheets.recruitingBoard}`);
