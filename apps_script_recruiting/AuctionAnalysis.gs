@@ -14,7 +14,7 @@
  * Writes raw auction data to the local AuctionData tab.
  *
  * Columns written: Year, PlayerID, PlayerName, Position, NFLTeam, DraftYear,
- *                  DraftRound, DraftPick, FranchiseID, FranchiseName, Conference, BidAmount
+ *                  DraftRound, DraftPick, FranchiseID, FranchiseName, Conference, BidAmount, IsRookie
  */
 function importTransactionLog() {
   const config = getConfig();
@@ -88,7 +88,7 @@ function importTransactionLog() {
     // Skip rows with no player or no bid
     if (!playerId || !bidAmount) return;
 
-    // Enrich with MFL data
+    // Enrich with MFL player data
     const player = playerLookup[playerId] || {};
     const playerName = player.name || playerNameFromTxn;
     const position = player.position || "";
@@ -97,6 +97,9 @@ function importTransactionLog() {
     const draftRound = player.draftRound || "";
     const draftPick = player.draftPick || "";
     const franchiseName = franchiseNames[franchiseId] || "";
+
+    // Flag whether this is a rookie auction (draft year matches auction year)
+    const isRookie = (draftYear !== "" && draftYear === String(year));
 
     enrichedRows.push([
       year,
@@ -110,7 +113,8 @@ function importTransactionLog() {
       franchiseId,
       franchiseName,
       conference,
-      Number(bidAmount) || 0
+      Number(bidAmount) || 0,
+      isRookie ? "TRUE" : "FALSE"
     ]);
   });
 
@@ -131,7 +135,7 @@ function importTransactionLog() {
   const headers = [
     "AuctionYear", "PlayerID", "PlayerName", "Position", "NFLTeam",
     "DraftYear", "DraftRound", "DraftPick", "FranchiseID", "FranchiseName",
-    "Conference", "BidAmount"
+    "Conference", "BidAmount", "IsRookie"
   ];
   auctionSheet.appendRow(headers);
   auctionSheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -155,8 +159,13 @@ function importTransactionLog() {
   auctionSheet.setColumnWidth(10, 150); // FranchiseName
   auctionSheet.setColumnWidth(11, 80);  // Conference
   auctionSheet.setColumnWidth(12, 80);  // BidAmount
+  auctionSheet.setColumnWidth(13, 70);  // IsRookie
 
+  // Log rookie vs non-rookie breakdown
+  const rookieCount = enrichedRows.filter(r => r[12] === "TRUE").length;
+  const nonRookieCount = enrichedRows.length - rookieCount;
   Logger.log(`\n  Wrote ${enrichedRows.length} auction records to ${config.sheets.auctionData}`);
+  Logger.log(`  Rookie auctions: ${rookieCount} | Non-rookie: ${nonRookieCount}`);
 }
 
 // ============================================================================
@@ -201,7 +210,8 @@ function analyzeAuctionHistory() {
     franchiseId: String(row[8]),
     franchiseName: String(row[9]),
     conference: String(row[10]),
-    bidAmount: Number(row[11]) || 0
+    bidAmount: Number(row[11]) || 0,
+    isRookie: String(row[12]).toUpperCase() === "TRUE"
   }));
 
   Logger.log(`  Total auction records: ${auctions.length}`);
@@ -216,10 +226,11 @@ function analyzeAuctionHistory() {
     Logger.log(`  Excluded years: ${excludeYears.join(", ")} (${auctions.length - filteredAuctions.length} records removed)`);
   }
 
-  // Filter to only rookie auctions (player's draft year = auction year)
-  // This focuses the analysis on incoming rookies, not mid-season pickups
-  const rookieAuctions = filteredAuctions.filter(a => a.draftYear === String(a.auctionYear));
-  const nonRookieAuctions = filteredAuctions.filter(a => a.draftYear !== String(a.auctionYear));
+  // Filter to only rookie auctions using the IsRookie flag set during import.
+  // The flag is based on per-year MFL player lookups (more accurate than current-year-only).
+  // Falls back to draftYear === auctionYear check for older data without the IsRookie column.
+  const rookieAuctions = filteredAuctions.filter(a => a.isRookie || a.draftYear === String(a.auctionYear));
+  const nonRookieAuctions = filteredAuctions.filter(a => !a.isRookie && a.draftYear !== String(a.auctionYear));
 
   Logger.log(`  Rookie auctions (draft year = auction year): ${rookieAuctions.length}`);
   Logger.log(`  Non-rookie auctions: ${nonRookieAuctions.length}`);

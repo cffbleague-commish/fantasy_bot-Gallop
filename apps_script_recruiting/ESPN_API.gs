@@ -460,6 +460,80 @@ function promptImportESPNYear() {
  * @param {String} name - Player name in any format
  * @returns {String} - Normalized lowercase "first last" format
  */
+// Common nickname → canonical first name mappings.
+// Used by normalizeNameForMatch() to resolve name variants across data sources.
+var NICKNAME_MAP = {
+  "ken": "kenneth",
+  "kenny": "kenneth",
+  "mike": "michael",
+  "mikey": "michael",
+  "matt": "matthew",
+  "matty": "matthew",
+  "rob": "robert",
+  "robby": "robert",
+  "robbie": "robert",
+  "bob": "robert",
+  "bobby": "robert",
+  "chris": "christopher",
+  "dan": "daniel",
+  "danny": "daniel",
+  "dave": "david",
+  "davey": "david",
+  "dj": "daniel",       // DJ Moore etc. — first initial combos
+  "tj": "thomas",       // TJ Hockenson etc.
+  "rj": "robert",
+  "aj": "albert",       // AJ Brown etc.
+  "cj": "christopher",
+  "jj": "james",
+  "kj": "kenneth",
+  "pj": "patrick",
+  "bj": "brian",
+  "pat": "patrick",
+  "nick": "nicholas",
+  "nic": "nicholas",
+  "nicky": "nicholas",
+  "joe": "joseph",
+  "joey": "joseph",
+  "josh": "joshua",
+  "tom": "thomas",
+  "tommy": "thomas",
+  "tony": "anthony",
+  "will": "william",
+  "willy": "william",
+  "bill": "william",
+  "billy": "william",
+  "ben": "benjamin",
+  "benny": "benjamin",
+  "drew": "andrew",
+  "andy": "andrew",
+  "alex": "alexander",
+  "zach": "zachary",
+  "zack": "zachary",
+  "jake": "jacob",
+  "jim": "james",
+  "jimmy": "james",
+  "jeff": "jeffrey",
+  "greg": "gregory",
+  "greg": "gregory",
+  "steve": "steven",
+  "gabe": "gabriel",
+  "abe": "abraham",
+  "ed": "edward",
+  "ted": "theodore",
+  "rick": "richard",
+  "dick": "richard",
+  "rich": "richard",
+  "sam": "samuel",
+  "sammy": "samuel",
+  "ray": "raymond",
+  "charlie": "charles",
+  "chuck": "charles",
+  "jon": "jonathan",
+  "nate": "nathaniel",
+  "terry": "terrence",
+  "marv": "marvin"
+};
+
 function normalizeNameForMatch(name) {
   if (!name) return "";
   let normalized = String(name).trim().toLowerCase();
@@ -475,8 +549,19 @@ function normalizeNameForMatch(name) {
   // Remove common suffixes
   normalized = normalized.replace(/\s+(jr\.?|sr\.?|iii|ii|iv|v)$/i, "");
 
-  // Remove periods and normalize whitespace
+  // Remove periods, hyphens in first names, and normalize whitespace
   normalized = normalized.replace(/\./g, "").replace(/\s+/g, " ").trim();
+
+  // Expand nickname to canonical first name for consistent matching
+  const spaceIdx = normalized.indexOf(" ");
+  if (spaceIdx > 0) {
+    const firstName = normalized.substring(0, spaceIdx);
+    const rest = normalized.substring(spaceIdx);
+    const canonical = NICKNAME_MAP[firstName];
+    if (canonical) {
+      normalized = canonical + rest;
+    }
+  }
 
   return normalized;
 }

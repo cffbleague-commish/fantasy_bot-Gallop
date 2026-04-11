@@ -115,51 +115,35 @@ function calcRecruitScore({ draftCapitalScore, espnGrade, position, isDrafted, i
   const hasGrade = espnGrade !== null && !isNaN(espnGrade);
 
   // --- Post-draft with ADP available ---
-  // ADP is the dominant signal. Missing ADP post-draft gets defaultADPForScoring (257).
+  // ADP is the dominant signal. Missing data gets placeholder scores:
+  //   Missing ADP → defaultADPForScoring (257): just outside startup draft range
+  //   UDFA → defaultDraftPick (263): one pick worse than last NFL draft pick
   if (!isPreDraft) {
     const config = getConfig();
     const adpConfig = config.adpConfig || {};
     const effectiveADP = startupADP || adpConfig.defaultADPForScoring || 257;
     const adpScore = calcADPScore(effectiveADP, adpConfig.adpScoreDecayRate || 0.012);
 
-    // Scenario 1: ADP + Draft Capital + ESPN Grade (best case)
+    // Floor scores for missing data instead of dropping components:
+    //   UDFA → defaultDraftPick (263): one pick worse than last NFL draft pick (~0.69)
+    //   No ESPN grade → defaultESPNGrade (20): well below scoutable range
+    const effectiveDraftCapital = hasDraftCapital
+      ? draftCapitalScore
+      : calcDraftCapitalScore(config.defaultDraftPick || 263, config.draftCapitalDecayRate || 0.019);
+    const effectiveGrade = hasGrade ? espnGrade : (config.defaultESPNGrade || 20);
+
+    // Single consistent formula for all post-draft players:
     // 50% ADP, 25% Draft Capital, 15% ESPN Grade, 10% Position
-    if (hasDraftCapital && hasGrade) {
-      const raw = (adpScore * 0.50) + (draftCapitalScore * 0.25) + (espnGrade * 0.15) + (posWeight * 10);
-      return Math.min(raw, 100);
-    }
-
-    // Scenario 2: ADP + Draft Capital (no ESPN grade)
-    // 50% ADP, 40% Draft Capital, 10% Position
-    if (hasDraftCapital && !hasGrade) {
-      const raw = (adpScore * 0.50) + (draftCapitalScore * 0.40) + (posWeight * 10);
-      return Math.min(raw, 100);
-    }
-
-    // Scenario 3: ADP + ESPN Grade (UDFA with grade)
-    // 60% ADP, 30% ESPN Grade, 10% Position
-    if (!hasDraftCapital && hasGrade) {
-      const raw = (adpScore * 0.60) + (espnGrade * 0.30) + (posWeight * 10);
-      return Math.min(raw, 100);
-    }
-
-    // Scenario 4: ADP only (UDFA, no grade)
-    // 85% ADP, 15% Position
-    const raw = (adpScore * 0.85) + (posWeight * 15);
+    const raw = (adpScore * 0.50) + (effectiveDraftCapital * 0.25) + (effectiveGrade * 0.15) + (posWeight * 10);
     return Math.min(raw, 100);
   }
 
   // --- Pre-draft (no ADP available — startup drafts haven't happened) ---
-
-  // Scenario 5: ESPN grade only, pre-draft - grade is our best signal
-  if (hasGrade) {
-    const raw = (espnGrade * 0.80) + (posWeight * 10);
-    return Math.min(raw, 100);
-  }
-
-  // Scenario 6: No data at all (pre-draft, no grade)
-  // Complete unknowns - auto 1-star
-  return 3;
+  // Use floor grade (20) when ESPN hasn't evaluated the player
+  const config = getConfig();
+  const effectiveGrade = hasGrade ? espnGrade : (config.defaultESPNGrade || 20);
+  const raw = (effectiveGrade * 0.80) + (posWeight * 10);
+  return Math.min(raw, 100);
 }
 
 // ============================================================================
@@ -290,13 +274,18 @@ function buildPricingModel(config) {
   const excludeYears = config.excludeYears || [];
   const draftRounds = ["1", "2", "3", "4", "5", "6", "7"];
 
-  // Parse all rookie auctions with their overall pick
+  // Parse all rookie auctions with their overall pick.
+  // Uses the IsRookie flag (column 13) set during import to filter out non-rookie transactions.
   const rookieAuctions = [];
   rows.forEach(row => {
     const auctionYear = Number(row[0]) || 0;
     if (excludeYears.includes(auctionYear)) return;
+
+    // Use IsRookie flag from import; fall back to draftYear check for older data
+    const isRookie = String(row[12]).toUpperCase() === "TRUE";
     const draftYear = String(row[5]);
-    if (draftYear !== String(auctionYear)) return;
+    if (!isRookie && draftYear !== String(auctionYear)) return;
+
     const position = String(row[3]);
     if (!["QB", "RB", "WR", "TE"].includes(position)) return;
 

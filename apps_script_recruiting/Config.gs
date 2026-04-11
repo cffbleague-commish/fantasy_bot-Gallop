@@ -100,6 +100,14 @@ function getConfig() {
     // Higher value = steeper drop-off between picks
     draftCapitalDecayRate: 0.019,
 
+    // Default draft pick for UDFAs (one pick past last NFL draft pick)
+    // Gives UDFAs a floor draft capital score (~0.69) instead of 0
+    defaultDraftPick: 263,
+
+    // Default ESPN grade for players without an ESPN evaluation
+    // 20 = well below scoutable range, signals "not evaluated / long shot"
+    defaultESPNGrade: 20,
+
     // Startup ADP Configuration
     // DLF Rookie Startup ADP captures fantasy market consensus on rookie value.
     // ADP = overall pick position in startup drafts (rookies mixed with veterans).
