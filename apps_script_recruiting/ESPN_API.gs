@@ -11,8 +11,8 @@
  *   - College: resolved via batch fetch of college $ref endpoints
  */
 
-const ESPN_FANTASY_POSITIONS = ["QB", "RB", "WR", "TE"];
-const ESPN_CORE_URL = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl";
+var ESPN_FANTASY_POSITIONS = ["QB", "RB", "WR", "TE"];
+var ESPN_CORE_URL = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl";
 
 // ============================================================================
 // MAIN FETCH FUNCTIONS
