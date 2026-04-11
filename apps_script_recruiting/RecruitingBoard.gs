@@ -604,7 +604,7 @@ function buildPricingModel(config) {
     var sorted = bids.sort(function(a, b) { return b - a; }); // descending
     var copy1 = sorted[0];
     var copy2 = sorted[1];
-    if (copy1 <= 0) return;
+    if (copy1 <= 0 || copy2 <= 0) return;
     var ratio = copy2 / copy1;
     var avgPrice = (copy1 + copy2) / 2;
     // Assign to appropriate bin (bins are sorted by minAvgPrice descending)
@@ -1390,10 +1390,10 @@ function generateRecruitingBoardForYear(year) {
       p.adpTier || "",
       p.recruitScore.toFixed(1),
       pr ? `$${pr.predicted}` : "",
-      sp.copy1_16 ? `$${sp.copy1_16}` : "",
-      sp.copy2_16 ? `$${sp.copy2_16}` : "",
-      sp.copy1_20 ? `$${sp.copy1_20}` : "",
-      sp.copy2_20 ? `$${sp.copy2_20}` : "",
+      sp.copy1_16 != null ? `$${sp.copy1_16}` : "",
+      sp.copy2_16 != null ? `$${sp.copy2_16}` : "",
+      sp.copy1_20 != null ? `$${sp.copy1_20}` : "",
+      sp.copy2_20 != null ? `$${sp.copy2_20}` : "",
       pr ? `$${pr.p25}-$${pr.p75}` : "",
       pr ? pr.sourceType : "",
       pr ? pr.count : "",

@@ -89,7 +89,7 @@ function getConfig() {
     // Stars are position-agnostic - they reflect overall prospect evaluation.
     // Expected auction cost is calculated separately by position + draft tier.
     starThresholds: {
-      fiveStar: 80,    // ~Picks 1-12  (elite prospects)
+      fiveStar: 75,    // ~Top 15-20 prospects (elite)
       fourStar: 50,    // ~Picks 13-37 (first round / early second)
       threeStar: 25,   // ~Picks 38-73 (day 2 capital)
       twoStar: 10      // ~Picks 74-121 (developmental)
