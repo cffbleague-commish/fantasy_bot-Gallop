@@ -746,7 +746,11 @@ function predictPrice(player, pricingModel, currentYearCounts, isPreDraft) {
   // --- Scarcity adjustment ---
   const scarcity = calcScarcityFactor(pos, currentYearCounts, pricingModel.historicalPositionCounts);
 
-  const totalMultiplier = gradeMultiplier * adpMultiplier * scarcity;
+  // Cap combined multiplier to prevent grade + ADP + scarcity from compounding excessively.
+  // Without the cap, an outlier player (high grade + elite ADP in a later-round bucket)
+  // can get 1.5 * 1.5 * scarcity ≈ 2.5x, producing unrealistic price predictions.
+  const rawMultiplier = gradeMultiplier * adpMultiplier * scarcity;
+  const totalMultiplier = Math.max(0.50, Math.min(1.40, rawMultiplier));
   const predicted = Math.round(baseMedian * totalMultiplier);
   const p25 = Math.round(baseP25 * totalMultiplier);
   const p75 = Math.round(baseP75 * totalMultiplier);
