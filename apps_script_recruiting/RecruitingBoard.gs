@@ -206,7 +206,7 @@ function calcRecruitScore({ draftCapitalScore, espnGrade, position, isDrafted, i
     //   No ESPN grade → defaultESPNGrade (20): well below scoutable range
     const effectiveDraftCapital = hasDraftCapital
       ? draftCapitalScore
-      : calcDraftCapitalScore(config.defaultDraftPick || 263, config.draftCapitalDecayRate || 0.019);
+      : calcDraftCapitalScore(config.defaultDraftPick || 263, (config.draftCapitalDecayRates || {})[position] || config.draftCapitalDecayRate || 0.019);
     const effectiveGrade = hasGrade ? espnGrade : (config.defaultESPNGrade || 20);
 
     // Single consistent formula for all post-draft players:
@@ -1195,7 +1195,8 @@ function generateRecruitingBoardForYear(year) {
       processedDraftPicks.add(`${draftRound}|${draftPick}`);
     }
     const isDrafted = draftRound !== "" && draftRound !== "0";
-    const draftCapital = calcDraftCapitalScore(overallPick, config.draftCapitalDecayRate);
+    const dcRates = config.draftCapitalDecayRates || {};
+    const draftCapital = calcDraftCapitalScore(overallPick, dcRates[espn.position] || config.draftCapitalDecayRate);
 
     // Look up startup ADP for this player (needed for recruit score)
     const adpYearKey = `${normalizedName}|${yearStr}`;
@@ -1259,7 +1260,8 @@ function generateRecruitingBoardForYear(year) {
 
     const overallPick = parseOverallPick(mfl.draft_pick, mfl.draft_round);
     const isDrafted = mfl.draft_round && mfl.draft_round !== "0";
-    const draftCapital = calcDraftCapitalScore(overallPick, config.draftCapitalDecayRate);
+    const dcRatesMfl = config.draftCapitalDecayRates || {};
+    const draftCapital = calcDraftCapitalScore(overallPick, dcRatesMfl[mfl.position] || config.draftCapitalDecayRate);
 
     // Cross-reference ESPN data for grade/rank info
     const espnYearKey = `${normalizedName}|${yearStr}`;

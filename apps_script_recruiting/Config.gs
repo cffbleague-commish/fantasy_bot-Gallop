@@ -99,6 +99,11 @@ function getConfig() {
     // Draft Capital Score decay rate (controls curve steepness)
     // Higher value = steeper drop-off between picks
     draftCapitalDecayRate: 0.019,
+    // Position-specific decay rates: gentler for positions drafted later in NFL
+    // QB: unchanged (QBs go early, raw pick is already fair)
+    // RB/WR: slightly gentler (top RBs/WRs now go picks 8-15)
+    // TE: noticeably gentler (top TE often goes picks 12-20)
+    draftCapitalDecayRates: { QB: 0.019, RB: 0.016, WR: 0.016, TE: 0.012 },
 
     // Default draft pick for UDFAs (one pick past last NFL draft pick)
     // Gives UDFAs a floor draft capital score (~0.69) instead of 0
