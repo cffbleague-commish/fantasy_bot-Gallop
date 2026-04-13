@@ -176,7 +176,7 @@ function getPlayerGradesData(year) {
       bidAmount: String(row[6] || ""),
       predictedCost: String(row[7] || ""),
       leagueAvgPrice: String(row[8] || ""),
-      savingsPct: String(row[9] || ""),
+      savingsDollars: String(row[9] || ""),
       playerGrade: String(row[10] || "")
     });
   });

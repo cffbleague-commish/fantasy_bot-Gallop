@@ -15,14 +15,14 @@
 var STAR_MULTIPLIERS = { 5: 1.5, 4: 1.2, 3: 1.0, 2: 0.6, 1: 0.3 };
 
 var PLAYER_GRADE_THRESHOLDS = [
-  { grade: "A+", minSavings: 40 },
-  { grade: "A",  minSavings: 25 },
-  { grade: "B+", minSavings: 15 },
-  { grade: "B",  minSavings: 5 },
-  { grade: "C+", minSavings: -5 },
-  { grade: "C",  minSavings: -15 },
-  { grade: "D+", minSavings: -25 },
-  { grade: "D",  minSavings: -40 },
+  { grade: "A+", minSavings: 15 },
+  { grade: "A",  minSavings: 10 },
+  { grade: "B+", minSavings: 6 },
+  { grade: "B",  minSavings: 3 },
+  { grade: "C+", minSavings: -3 },
+  { grade: "C",  minSavings: -6 },
+  { grade: "D+", minSavings: -10 },
+  { grade: "D",  minSavings: -15 },
   { grade: "F",  minSavings: -Infinity }
 ];
 
@@ -85,7 +85,7 @@ function generateRecruitingGradesForYear(year) {
     var avgPrice = leagueAvgPrices[normalizeNameForMatch(m.playerName)] || null;
     m.leagueAvgPrice = avgPrice;
     m.playerGrade = calcPlayerGrade(m.bidAmount, m.predictedCost, avgPrice);
-    m.savingsPct = calcBlendedSavings(m.bidAmount, m.predictedCost, avgPrice);
+    m.savingsDollars = calcBlendedSavings(m.bidAmount, m.predictedCost, avgPrice);
   });
 
   // --- 4. Compute class scores per franchise ---
@@ -113,10 +113,10 @@ function generateRecruitingGradesForYear(year) {
     f.totalPlayers = f.players.length;
     f.totalSpent = f.players.reduce(function(s, p) { return s + p.bidAmount; }, 0);
 
-    // Average savings % (only for players with a grade)
-    var gradedPlayers = f.players.filter(function(p) { return p.savingsPct !== null; });
-    f.avgSavingsPct = gradedPlayers.length > 0
-      ? gradedPlayers.reduce(function(s, p) { return s + p.savingsPct; }, 0) / gradedPlayers.length
+    // Average dollar savings (only for players with a grade)
+    var gradedPlayers = f.players.filter(function(p) { return p.savingsDollars !== null; });
+    f.avgSavings = gradedPlayers.length > 0
+      ? gradedPlayers.reduce(function(s, p) { return s + p.savingsDollars; }, 0) / gradedPlayers.length
       : null;
 
     return f;
@@ -318,20 +318,21 @@ function matchAuctionsToBoard(auctions, boardLookup) {
       predictedCost: board ? board.predictedCost : null,
       leagueAvgPrice: null,   // filled in later
       playerGrade: null,      // filled in later
-      savingsPct: null         // filled in later
+      savingsDollars: null     // filled in later
     };
   });
 }
 
 /**
- * Calculate blended savings percentage for a player acquisition.
- * Signal A (60%): savings vs predicted cost
- * Signal B (40%): savings vs league average price
+ * Calculate blended dollar savings for a player acquisition.
+ * Signal A (60%): dollars saved vs predicted cost
+ * Signal B (40%): dollars saved vs league average price
+ * Positive = paid less than expected (good). Negative = overpaid (bad).
  *
  * @param {Number} bidAmount - What was paid
  * @param {Number|null} predictedCost - Model prediction
  * @param {Number|null} leagueAvgPrice - League-wide average for this player
- * @returns {Number|null} - Blended savings % or null if ungraded
+ * @returns {Number|null} - Blended dollar savings or null if ungraded
  */
 function calcBlendedSavings(bidAmount, predictedCost, leagueAvgPrice) {
   var hasA = predictedCost !== null && predictedCost > 0;
@@ -339,8 +340,8 @@ function calcBlendedSavings(bidAmount, predictedCost, leagueAvgPrice) {
 
   if (!hasA && !hasB) return null;
 
-  var savingsA = hasA ? ((predictedCost - bidAmount) / predictedCost) * 100 : 0;
-  var savingsB = hasB ? ((leagueAvgPrice - bidAmount) / leagueAvgPrice) * 100 : 0;
+  var savingsA = hasA ? (predictedCost - bidAmount) : 0;
+  var savingsB = hasB ? (leagueAvgPrice - bidAmount) : 0;
 
   if (hasA && hasB) return savingsA * 0.60 + savingsB * 0.40;
   if (hasA) return savingsA;
@@ -365,6 +366,17 @@ function calcPlayerGrade(bidAmount, predictedCost, leagueAvgPrice) {
     }
   }
   return "F";
+}
+
+/**
+ * Format a dollar savings value for sheet output.
+ * @param {Number} val - Dollar amount (positive = savings, negative = overpay)
+ * @returns {String} - Formatted string like "+$5.0" or "-$3.2"
+ */
+function formatDollarSavings(val) {
+  var rounded = Math.round(val * 10) / 10;
+  if (rounded >= 0) return "+$" + rounded;
+  return "-$" + Math.abs(rounded);
 }
 
 // ============================================================================
@@ -399,7 +411,7 @@ function calcClassScore(players) {
  * Calculate overall auction grades for all franchises using percentile rankings.
  * Mutates each franchise object to add: classRank, efficiencyGrade, overallGrade.
  *
- * @param {Array} franchises - Array of franchise objects with classScore and avgSavingsPct
+ * @param {Array} franchises - Array of franchise objects with classScore and avgSavings
  */
 function calcOverallGrades(franchises) {
   if (franchises.length === 0) return;
@@ -428,22 +440,22 @@ function calcOverallGrades(franchises) {
   // Efficiency percentile (higher avg savings = higher percentile)
   // Teams with no graded players get 0 percentile
   var byEfficiency = franchises.slice().sort(function(a, b) {
-    var aVal = a.avgSavingsPct !== null ? a.avgSavingsPct : -Infinity;
-    var bVal = b.avgSavingsPct !== null ? b.avgSavingsPct : -Infinity;
+    var aVal = a.avgSavings !== null ? a.avgSavings : -Infinity;
+    var bVal = b.avgSavings !== null ? b.avgSavings : -Infinity;
     return aVal - bVal;
   });
   byEfficiency.forEach(function(f, i) {
     f.efficiencyPct = ((i) / Math.max(1, n - 1)) * 100;
   });
 
-  // Assign efficiency letter grade (using same player grade thresholds on avg savings %)
+  // Assign efficiency letter grade (using same player grade thresholds on avg dollar savings)
   franchises.forEach(function(f) {
-    if (f.avgSavingsPct === null) {
+    if (f.avgSavings === null) {
       f.efficiencyGrade = "N/A";
     } else {
       f.efficiencyGrade = "F";
       for (var i = 0; i < PLAYER_GRADE_THRESHOLDS.length; i++) {
-        if (f.avgSavingsPct >= PLAYER_GRADE_THRESHOLDS[i].minSavings) {
+        if (f.avgSavings >= PLAYER_GRADE_THRESHOLDS[i].minSavings) {
           f.efficiencyGrade = PLAYER_GRADE_THRESHOLDS[i].grade;
           break;
         }
@@ -500,7 +512,7 @@ function writeRecruitingGrades(yearStr, franchises, config) {
   var teamHeaders = [
     "DraftYear", "Franchise", "Conference", "Class Score", "Class Rank", "Conf Rank",
     "5-Star", "4-Star", "3-Star", "2-Star", "1-Star",
-    "Total Players", "Total Spent", "Avg Savings %",
+    "Total Players", "Total Spent", "Avg Savings $",
     "Efficiency Grade", "Overall Grade", "Franchise Logo"
   ];
 
@@ -525,7 +537,7 @@ function writeRecruitingGrades(yearStr, franchises, config) {
       f.starBreakdown[1] || 0,
       f.totalPlayers,
       "$" + f.totalSpent,
-      f.avgSavingsPct !== null ? (Math.round(f.avgSavingsPct * 10) / 10) + "%" : "N/A",
+      f.avgSavings !== null ? formatDollarSavings(f.avgSavings) : "N/A",
       f.efficiencyGrade,
       f.overallGrade,
       f.franchiseLogo
@@ -575,7 +587,7 @@ function writeRecruitingGrades(yearStr, franchises, config) {
   var playerHeaders = [
     "DraftYear", "Franchise", "Player", "Position", "Stars",
     "Recruit Score", "Bid Amount", "Predicted Cost", "League Avg Price",
-    "Savings %", "Player Grade"
+    "Savings $", "Player Grade"
   ];
 
   if (isNewPlayerSheet) {
@@ -598,7 +610,7 @@ function writeRecruitingGrades(yearStr, franchises, config) {
         "$" + p.bidAmount,
         p.predictedCost !== null ? "$" + p.predictedCost : "",
         p.leagueAvgPrice !== null ? "$" + (Math.round(p.leagueAvgPrice * 10) / 10) : "",
-        p.savingsPct !== null ? (Math.round(p.savingsPct * 10) / 10) + "%" : "N/A",
+        p.savingsDollars !== null ? formatDollarSavings(p.savingsDollars) : "N/A",
         p.playerGrade || "N/A"
       ]);
     });

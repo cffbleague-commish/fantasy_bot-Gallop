@@ -48,15 +48,15 @@ var TOOLTIPS = {
   starBreakdown: "Number of recruits at each star level",
   totalPlayers: "Total rookie players acquired",
   totalSpent: "Total auction dollars spent on rookies",
-  avgSavings: "Average savings % vs predicted cost across all rookies acquired",
-  efficiencyGrade: "Efficiency grade based solely on avg savings vs predicted cost (percentile-based)",
+  avgSavings: "Average dollar savings per player (positive = paid less than expected, negative = overpaid)",
+  efficiencyGrade: "Efficiency grade based on avg dollar savings per player (threshold-based)",
 
   // Player Grades
-  playerGrade: "Acquisition grade from blended savings: 60% vs predicted cost + 40% vs league average price",
+  playerGrade: "Acquisition grade from blended dollar savings: 60% vs predicted cost + 40% vs league average price",
   stars: "Recruit star rating (1\u20135)",
   bidAmount: "Actual auction bid paid",
   leagueAvgPrice: "League-wide average price across all copies of this player",
-  savingsPct: "Blended savings: 60% vs predicted cost + 40% vs league avg price",
+  savingsDollars: "Blended dollar savings: 60% × (predicted \u2212 bid) + 40% × (league avg \u2212 bid). Positive = value, negative = overpay",
 
   // Budget Tool
   budgetAction: "Click to add/remove player from your draft plan"
@@ -337,7 +337,7 @@ function renderRankingsTable(data) {
     }, sortVal: function(r) { return r.star5 * 100 + r.star4 * 10 + r.star3; } },
     { key: 'totalPlayers', label: 'Players', cls: 'hide-mobile', render: function(r) { return r.totalPlayers; }, sortVal: function(r) { return r.totalPlayers; } },
     { key: 'totalSpent', label: 'Spent', cls: 'hide-mobile', render: function(r) { return esc(r.totalSpent); }, sortVal: function(r) { return parseDollar(r.totalSpent); } },
-    { key: 'avgSavings', label: 'Savings', render: function(r) { return pctDisplay(r.avgSavings); }, sortVal: function(r) { return parsePct(r.avgSavings); } },
+    { key: 'avgSavings', label: 'Savings', render: function(r) { return savingsDisplay(r.avgSavings); }, sortVal: function(r) { return parseDollar(r.avgSavings); } },
     { key: 'efficiencyGrade', label: 'Efficiency', cls: 'hide-mobile', render: function(r) { return gradeBadge(r.efficiencyGrade); }, sortVal: function(r) { return gradeSort(r.efficiencyGrade); } }
   ];
 
@@ -362,7 +362,7 @@ function renderGradesTable(data) {
     { key: 'bidAmount', label: 'Bid', render: function(r) { return esc(r.bidAmount); }, sortVal: function(r) { return parseDollar(r.bidAmount); } },
     { key: 'predictedCost', label: 'Predicted', cls: 'hide-mobile', render: function(r) { return esc(r.predictedCost); }, sortVal: function(r) { return parseDollar(r.predictedCost); } },
     { key: 'leagueAvgPrice', label: 'Avg Price', cls: 'hide-mobile', render: function(r) { return esc(r.leagueAvgPrice); }, sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
-    { key: 'savingsPct', label: 'Savings', render: function(r) { return pctDisplay(r.savingsPct); }, sortVal: function(r) { return parsePct(r.savingsPct); } }
+    { key: 'savingsDollars', label: 'Savings', render: function(r) { return savingsDisplay(r.savingsDollars); }, sortVal: function(r) { return parseDollar(r.savingsDollars); } }
   ];
 
   buildTable('gradesTable', sorted, columns, sortStates.grades, 'grades');
@@ -496,13 +496,13 @@ function getAllColumns() {
     { key: 'starBreakdown', sortVal: function(r) { return (r.star5 || 0) * 100 + (r.star4 || 0) * 10 + (r.star3 || 0); } },
     { key: 'totalPlayers', sortVal: function(r) { return r.totalPlayers || 0; } },
     { key: 'totalSpent', sortVal: function(r) { return parseDollar(r.totalSpent); } },
-    { key: 'avgSavings', sortVal: function(r) { return parsePct(r.avgSavings); } },
+    { key: 'avgSavings', sortVal: function(r) { return parseDollar(r.avgSavings); } },
     { key: 'efficiencyGrade', sortVal: function(r) { return gradeSort(r.efficiencyGrade); } },
     { key: 'playerGrade', sortVal: function(r) { return gradeSort(r.playerGrade); } },
     { key: 'stars', sortVal: function(r) { return r.stars || 0; } },
     { key: 'bidAmount', sortVal: function(r) { return parseDollar(r.bidAmount); } },
     { key: 'leagueAvgPrice', sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
-    { key: 'savingsPct', sortVal: function(r) { return parsePct(r.savingsPct); } },
+    { key: 'savingsDollars', sortVal: function(r) { return parseDollar(r.savingsDollars); } },
     { key: 'budgetAction', sortVal: function(r) { return selectedPlayers[r.player] ? 0 : 1; } }
   ];
 }
@@ -546,6 +546,13 @@ function tierBadge(tier) {
 function pctDisplay(val) {
   if (!val || val === 'N/A') return '<span style="color:var(--text-secondary)">N/A</span>';
   var num = parsePct(val);
+  var cls = num >= 0 ? 'savings-pos' : 'savings-neg';
+  return '<span class="' + cls + '">' + esc(val) + '</span>';
+}
+
+function savingsDisplay(val) {
+  if (!val || val === 'N/A') return '<span style="color:var(--text-secondary)">N/A</span>';
+  var num = parseDollar(val);
   var cls = num >= 0 ? 'savings-pos' : 'savings-neg';
   return '<span class="' + cls + '">' + esc(val) + '</span>';
 }
@@ -767,15 +774,15 @@ function drawSavingsByPosition(data) {
   var counts = {};
   data.forEach(function(r) {
     var pos = r.position || '?';
-    var sav = parsePct(r.savingsPct);
-    if (sav <= -999) return;
+    if (!r.savingsDollars || r.savingsDollars === 'N/A') return;
+    var sav = parseDollar(r.savingsDollars);
     totals[pos] = (totals[pos] || 0) + sav;
     counts[pos] = (counts[pos] || 0) + 1;
   });
 
   var dt = new google.visualization.DataTable();
   dt.addColumn('string', 'Position');
-  dt.addColumn('number', 'Avg Savings %');
+  dt.addColumn('number', 'Avg Savings ($)');
   dt.addColumn({ type: 'string', role: 'style' });
 
   ['QB', 'RB', 'WR', 'TE'].forEach(function(pos) {
@@ -788,9 +795,9 @@ function drawSavingsByPosition(data) {
 
   var chart = new google.visualization.ColumnChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Avg Savings by Position',
+    title: 'Avg Savings by Position ($)',
     legend: 'none',
-    vAxis: { title: 'Savings %', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
+    vAxis: { title: 'Savings ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     chartArea: { width: '70%', height: '70%' }
   }));
 }
