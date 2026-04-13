@@ -61,6 +61,8 @@ function getConfig() {
       auctionAnalysis: "AuctionAnalysis",    // Processed analysis output
       recruitingBoard: "RecruitingBoard",    // Star ratings and cost predictions
       recruitingGrades: "RecruitingGrades",  // Team recruiting class grades
+      playerGrades: "PlayerGrades",           // Individual player auction grades
+      franchiseLookup: "FranchiseLookup",     // Franchise identity (team name, logo, conference, etc.)
       espnProspects: "ESPNProspects",         // ESPN draft prospect data (grades, ranks, headshots)
       dlfRookieStartupADP: "DLF Rookie Startup ADP"  // DLF startup ADP data (market consensus values)
     },

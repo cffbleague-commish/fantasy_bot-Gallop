@@ -73,6 +73,9 @@ function generateRecruitingGradesForYear(year) {
   var boardLookup = loadRecruitingBoardLookup(yearStr, config);
   Logger.log("  Board lookup entries: " + Object.keys(boardLookup).length);
 
+  var franchiseLookup = loadFranchiseLookup(config);
+  Logger.log("  Franchise lookup entries: " + Object.keys(franchiseLookup).length);
+
   // --- 2. Build league-wide average price per player ---
   var leagueAvgPrices = buildLeagueAvgPrices(auctions);
 
@@ -89,10 +92,13 @@ function generateRecruitingGradesForYear(year) {
   var franchiseMap = {};
   matched.forEach(function(m) {
     if (!franchiseMap[m.franchiseId]) {
+      // Enrich with FranchiseLookup data (authoritative name, logo)
+      var fl = franchiseLookup[m.franchiseId] || {};
       franchiseMap[m.franchiseId] = {
         franchiseId: m.franchiseId,
-        franchiseName: m.franchiseName,
-        conference: m.conference,
+        franchiseName: fl.teamName || m.franchiseName,
+        conference: fl.conference || m.conference,
+        franchiseLogo: fl.logo || "",
         players: []
       };
     }
@@ -214,6 +220,46 @@ function loadRecruitingBoardLookup(yearStr, config) {
       predictedCost: predictedCost,
       position: String(row[4])
     };
+  });
+
+  return lookup;
+}
+
+/**
+ * Build a lookup map from the local FranchiseLookup tab.
+ * Columns: Franchise ID(0), Team Name(1), Conference(2), Abbreviation(3),
+ *          Owner Discord ID(4), Coach Name(5), Coach Email(6), Emoji(7), Franchise Logo(8)
+ *
+ * @param {Object} config - From getConfig()
+ * @returns {Object} - franchiseId → { teamName, conference, abbreviation, logo }
+ */
+function loadFranchiseLookup(config) {
+  var ss = SpreadsheetApp.getActive();
+  var sheet = ss.getSheetByName(config.sheets.franchiseLookup);
+  if (!sheet) return {};
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return {};
+
+  var lookup = {};
+  data.slice(1).forEach(function(row) {
+    var fid = String(row[0] || "").trim();
+    if (!fid) return;
+    var entry = {
+      teamName: String(row[1] || ""),
+      conference: String(row[2] || ""),
+      abbreviation: String(row[3] || ""),
+      logo: String(row[8] || "")
+    };
+    // Store by multiple key formats to handle padding differences
+    // (MFL uses "0001", League Sheet uses "001", raw could be "1")
+    lookup[fid] = entry;
+    var num = Number(fid);
+    if (!isNaN(num)) {
+      lookup[String(num)] = entry;
+      lookup[String(num).padStart(3, "0")] = entry;
+      lookup[String(num).padStart(4, "0")] = entry;
+    }
   });
 
   return lookup;
@@ -360,9 +406,19 @@ function calcOverallGrades(franchises) {
 
   var n = franchises.length;
 
-  // Rank by class score (desc)
+  // Rank by class score (desc) — overall and per conference
   var byScore = franchises.slice().sort(function(a, b) { return b.classScore - a.classScore; });
   byScore.forEach(function(f, i) { f.classRank = i + 1; });
+
+  // Conference rank: rank each team within their conference by class score
+  var confGroups = {};
+  byScore.forEach(function(f) {
+    if (!confGroups[f.conference]) confGroups[f.conference] = [];
+    confGroups[f.conference].push(f);
+  });
+  Object.keys(confGroups).forEach(function(conf) {
+    confGroups[conf].forEach(function(f, i) { f.confRank = i + 1; });
+  });
 
   // Talent percentile (higher class score = higher percentile)
   byScore.forEach(function(f, i) {
@@ -413,8 +469,11 @@ function calcOverallGrades(franchises) {
 // ============================================================================
 
 /**
- * Write recruiting grades to the RecruitingGrades sheet.
- * Two sections: Team Summary then Player Detail.
+ * Write recruiting grades to two separate sheets:
+ *   - RecruitingGrades: Team summary (one row per franchise per year)
+ *   - PlayerGrades: Individual player grades (one row per acquisition per year)
+ *
+ * Both use year-based replace for clean re-runs.
  *
  * @param {String} yearStr - Draft year
  * @param {Array} franchises - Graded franchise objects (sorted by classScore desc)
@@ -422,34 +481,33 @@ function calcOverallGrades(franchises) {
  */
 function writeRecruitingGrades(yearStr, franchises, config) {
   var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName(config.sheets.recruitingGrades);
-  var isNewSheet = !sheet;
 
-  if (isNewSheet) {
-    sheet = ss.insertSheet(config.sheets.recruitingGrades);
+  // --- 1. Team Summary → RecruitingGrades sheet ---
+  var teamSheet = ss.getSheetByName(config.sheets.recruitingGrades);
+  var isNewTeamSheet = !teamSheet;
+
+  if (isNewTeamSheet) {
+    teamSheet = ss.insertSheet(config.sheets.recruitingGrades);
   } else {
-    // Remove existing rows for this year
-    var existingData = sheet.getDataRange().getValues();
-    for (var i = existingData.length - 1; i >= 1; i--) {
-      if (String(existingData[i][0]) === yearStr) {
-        sheet.deleteRow(i + 1);
+    var existingTeam = teamSheet.getDataRange().getValues();
+    for (var i = existingTeam.length - 1; i >= 1; i--) {
+      if (String(existingTeam[i][0]) === yearStr) {
+        teamSheet.deleteRow(i + 1);
       }
     }
   }
 
-  // --- Team Summary Section ---
   var teamHeaders = [
-    "DraftYear", "Franchise", "Conference", "Class Score", "Class Rank",
+    "DraftYear", "Franchise", "Conference", "Class Score", "Class Rank", "Conf Rank",
     "5-Star", "4-Star", "3-Star", "2-Star", "1-Star",
     "Total Players", "Total Spent", "Avg Savings %",
-    "Efficiency Grade", "Overall Grade"
+    "Efficiency Grade", "Overall Grade", "Franchise Logo"
   ];
 
-  // Write team header if new sheet
-  if (isNewSheet) {
-    sheet.appendRow(teamHeaders);
-    sheet.getRange(1, 1, 1, teamHeaders.length).setFontWeight("bold");
-    sheet.setFrozenRows(1);
+  if (isNewTeamSheet) {
+    teamSheet.appendRow(teamHeaders);
+    teamSheet.getRange(1, 1, 1, teamHeaders.length).setFontWeight("bold");
+    teamSheet.setFrozenRows(1);
   }
 
   var teamRows = franchises.map(function(f) {
@@ -459,6 +517,7 @@ function writeRecruitingGrades(yearStr, franchises, config) {
       f.conference,
       Math.round(f.classScore * 10) / 10,
       f.classRank,
+      f.confRank,
       f.starBreakdown[5] || 0,
       f.starBreakdown[4] || 0,
       f.starBreakdown[3] || 0,
@@ -468,36 +527,68 @@ function writeRecruitingGrades(yearStr, franchises, config) {
       "$" + f.totalSpent,
       f.avgSavingsPct !== null ? (Math.round(f.avgSavingsPct * 10) / 10) + "%" : "N/A",
       f.efficiencyGrade,
-      f.overallGrade
+      f.overallGrade,
+      f.franchiseLogo
     ];
   });
 
   if (teamRows.length > 0) {
-    var startRow = sheet.getLastRow() + 1;
-    sheet.getRange(startRow, 1, teamRows.length, teamHeaders.length).setValues(teamRows);
+    var teamStart = teamSheet.getLastRow() + 1;
+    teamSheet.getRange(teamStart, 1, teamRows.length, teamHeaders.length).setValues(teamRows);
   }
 
-  // --- Blank separator + Player Detail header ---
-  var blankRow = new Array(teamHeaders.length).fill("");
-  sheet.appendRow(blankRow);
+  if (isNewTeamSheet) {
+    teamSheet.setColumnWidth(1, 75);    // DraftYear
+    teamSheet.setColumnWidth(2, 180);   // Franchise
+    teamSheet.setColumnWidth(3, 80);    // Conference
+    teamSheet.setColumnWidth(4, 90);    // Class Score
+    teamSheet.setColumnWidth(5, 80);    // Class Rank
+    teamSheet.setColumnWidth(6, 75);    // Conf Rank
+    teamSheet.setColumnWidth(7, 60);    // 5-Star
+    teamSheet.setColumnWidth(8, 60);    // 4-Star
+    teamSheet.setColumnWidth(9, 60);    // 3-Star
+    teamSheet.setColumnWidth(10, 60);   // 2-Star
+    teamSheet.setColumnWidth(11, 60);   // 1-Star
+    teamSheet.setColumnWidth(12, 90);   // Total Players
+    teamSheet.setColumnWidth(13, 80);   // Total Spent
+    teamSheet.setColumnWidth(14, 95);   // Avg Savings %
+    teamSheet.setColumnWidth(15, 110);  // Efficiency Grade
+    teamSheet.setColumnWidth(16, 100);  // Overall Grade
+    teamSheet.setColumnWidth(17, 200);  // Franchise Logo
+  }
 
-  var detailHeaders = [
+  // --- 2. Player Detail → PlayerGrades sheet ---
+  var playerSheet = ss.getSheetByName(config.sheets.playerGrades);
+  var isNewPlayerSheet = !playerSheet;
+
+  if (isNewPlayerSheet) {
+    playerSheet = ss.insertSheet(config.sheets.playerGrades);
+  } else {
+    var existingPlayer = playerSheet.getDataRange().getValues();
+    for (var j = existingPlayer.length - 1; j >= 1; j--) {
+      if (String(existingPlayer[j][0]) === yearStr) {
+        playerSheet.deleteRow(j + 1);
+      }
+    }
+  }
+
+  var playerHeaders = [
     "DraftYear", "Franchise", "Player", "Position", "Stars",
     "Recruit Score", "Bid Amount", "Predicted Cost", "League Avg Price",
     "Savings %", "Player Grade"
   ];
-  // Pad to match team header width
-  while (detailHeaders.length < teamHeaders.length) detailHeaders.push("");
-  sheet.appendRow(detailHeaders);
-  var detailHeaderRow = sheet.getLastRow();
-  sheet.getRange(detailHeaderRow, 1, 1, teamHeaders.length).setFontWeight("bold");
 
-  // --- Player Detail rows (sorted by franchise, then recruit score desc) ---
+  if (isNewPlayerSheet) {
+    playerSheet.appendRow(playerHeaders);
+    playerSheet.getRange(1, 1, 1, playerHeaders.length).setFontWeight("bold");
+    playerSheet.setFrozenRows(1);
+  }
+
   var allPlayerRows = [];
   franchises.forEach(function(f) {
     var sorted = f.players.slice().sort(function(a, b) { return b.recruitScore - a.recruitScore; });
     sorted.forEach(function(p) {
-      var row = [
+      allPlayerRows.push([
         Number(yearStr),
         f.franchiseName,
         p.playerName,
@@ -509,38 +600,31 @@ function writeRecruitingGrades(yearStr, franchises, config) {
         p.leagueAvgPrice !== null ? "$" + (Math.round(p.leagueAvgPrice * 10) / 10) : "",
         p.savingsPct !== null ? (Math.round(p.savingsPct * 10) / 10) + "%" : "N/A",
         p.playerGrade || "N/A"
-      ];
-      while (row.length < teamHeaders.length) row.push("");
-      allPlayerRows.push(row);
+      ]);
     });
   });
 
   if (allPlayerRows.length > 0) {
-    var playerStartRow = sheet.getLastRow() + 1;
-    sheet.getRange(playerStartRow, 1, allPlayerRows.length, teamHeaders.length).setValues(allPlayerRows);
+    var playerStart = playerSheet.getLastRow() + 1;
+    playerSheet.getRange(playerStart, 1, allPlayerRows.length, playerHeaders.length).setValues(allPlayerRows);
   }
 
-  // Set column widths on new sheet
-  if (isNewSheet) {
-    sheet.setColumnWidth(1, 75);    // DraftYear
-    sheet.setColumnWidth(2, 180);   // Franchise
-    sheet.setColumnWidth(3, 80);    // Conference
-    sheet.setColumnWidth(4, 90);    // Class Score
-    sheet.setColumnWidth(5, 80);    // Class Rank
-    sheet.setColumnWidth(6, 60);    // 5-Star
-    sheet.setColumnWidth(7, 60);    // 4-Star
-    sheet.setColumnWidth(8, 60);    // 3-Star
-    sheet.setColumnWidth(9, 60);    // 2-Star
-    sheet.setColumnWidth(10, 60);   // 1-Star
-    sheet.setColumnWidth(11, 90);   // Total Players
-    sheet.setColumnWidth(12, 80);   // Total Spent
-    sheet.setColumnWidth(13, 95);   // Avg Savings %
-    sheet.setColumnWidth(14, 110);  // Efficiency Grade
-    sheet.setColumnWidth(15, 100);  // Overall Grade
+  if (isNewPlayerSheet) {
+    playerSheet.setColumnWidth(1, 75);    // DraftYear
+    playerSheet.setColumnWidth(2, 180);   // Franchise
+    playerSheet.setColumnWidth(3, 180);   // Player
+    playerSheet.setColumnWidth(4, 65);    // Position
+    playerSheet.setColumnWidth(5, 50);    // Stars
+    playerSheet.setColumnWidth(6, 90);    // Recruit Score
+    playerSheet.setColumnWidth(7, 80);    // Bid Amount
+    playerSheet.setColumnWidth(8, 95);    // Predicted Cost
+    playerSheet.setColumnWidth(9, 105);   // League Avg Price
+    playerSheet.setColumnWidth(10, 80);   // Savings %
+    playerSheet.setColumnWidth(11, 90);   // Player Grade
   }
 
-  Logger.log("  Wrote " + teamRows.length + " team summaries and " +
-    allPlayerRows.length + " player details to " + config.sheets.recruitingGrades);
+  Logger.log("  Wrote " + teamRows.length + " team summaries to " + config.sheets.recruitingGrades);
+  Logger.log("  Wrote " + allPlayerRows.length + " player grades to " + config.sheets.playerGrades);
 }
 
 // ============================================================================
