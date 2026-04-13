@@ -1,17 +1,19 @@
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+
 /* ============================================================================
-   CSS VARIABLES
+   CSS VARIABLES — College Football Theme
    ============================================================================ */
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #0f3460;
-  --bg-row-alt: #1e2a4a;
-  --accent: #e94560;
+  --bg-primary: #0d1a12;
+  --bg-secondary: #142a1a;
+  --bg-card: #1c3a26;
+  --bg-row-alt: #17301e;
+  --accent: #d4a843;
   --accent-gold: #f5c518;
-  --text-primary: #eaeaea;
-  --text-secondary: #a0a0b0;
-  --border: #2a2a4a;
+  --text-primary: #f0f0ed;
+  --text-secondary: #8aaa90;
+  --border: #2a4a32;
 
   --pos-qb: #e74c3c;
   --pos-rb: #3498db;
@@ -46,13 +48,17 @@ body {
   justify-content: space-between;
   padding: 16px 24px;
   background: var(--bg-secondary);
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 3px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .dashboard-header h1 {
-  font-size: 1.4em;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.5em;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .year-picker {
@@ -84,11 +90,12 @@ body {
   gap: 0;
   background: var(--bg-secondary);
   padding: 0 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px dashed rgba(255,255,255,0.15);
   overflow-x: auto;
 }
 
 .tab-btn {
+  font-family: 'Oswald', sans-serif;
   padding: 12px 20px;
   background: none;
   border: none;
@@ -96,6 +103,8 @@ body {
   color: var(--text-secondary);
   font-size: 0.95em;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.2s, border-color 0.2s;
@@ -103,8 +112,8 @@ body {
 
 .tab-btn:hover { color: var(--text-primary); }
 .tab-btn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold);
 }
 
 /* ============================================================================
@@ -187,7 +196,7 @@ body {
 }
 
 .search-item-name mark {
-  background: rgba(233, 69, 96, 0.3);
+  background: rgba(212, 168, 67, 0.35);
   color: var(--text-primary);
   border-radius: 2px;
   padding: 0 1px;
@@ -226,6 +235,7 @@ body {
 }
 
 .data-table th {
+  font-family: 'Oswald', sans-serif;
   background: var(--bg-card);
   color: var(--text-secondary);
   font-weight: 600;
@@ -237,7 +247,7 @@ body {
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 2px solid var(--accent);
   position: sticky;
   top: 0;
 }
@@ -423,6 +433,7 @@ body {
   padding: 14px 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 8px;
   margin-bottom: 16px;
   position: sticky;
@@ -589,9 +600,9 @@ body {
 .error-msg {
   text-align: center;
   padding: 24px;
-  color: var(--accent);
-  background: rgba(233, 69, 96, 0.1);
-  border: 1px solid var(--accent);
+  color: var(--grade-d);
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid var(--grade-d);
   border-radius: 8px;
   margin: 16px 0;
 }
