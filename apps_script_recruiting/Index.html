@@ -27,7 +27,10 @@
 
   <!-- Filter Bar -->
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="Search player or team...">
+    <div class="search-wrapper">
+      <input type="text" id="searchInput" placeholder="Search player or team..." autocomplete="off">
+      <div id="searchDropdown" class="search-dropdown"></div>
+    </div>
     <select id="positionFilter">
       <option value="">All Positions</option>
       <option value="QB">QB</option>

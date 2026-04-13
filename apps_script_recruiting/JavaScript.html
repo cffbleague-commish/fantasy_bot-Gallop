@@ -9,6 +9,9 @@ var sortStates = { board: { col: 'recruitScore', asc: false }, rankings: { col: 
 var searchTerm = '';
 var positionFilter = '';
 var conferenceFilter = '';
+var gradeFilter = '';
+var ALL_YEARS = 'all';
+var availableYears = [];
 
 // Budget Tool State
 var selectedPlayers = {};
@@ -119,9 +122,41 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Filters
-  document.getElementById('searchInput').addEventListener('input', function() {
+  var searchInput = document.getElementById('searchInput');
+  var searchDropdown = document.getElementById('searchDropdown');
+  var highlightedIdx = -1;
+
+  searchInput.addEventListener('input', function() {
     searchTerm = this.value.toLowerCase();
     renderCurrentTab();
+    showSuggestions(this.value);
+  });
+
+  searchInput.addEventListener('keydown', function(e) {
+    var items = searchDropdown.querySelectorAll('.search-item');
+    if (!items.length || !searchDropdown.classList.contains('open')) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+      updateHighlight(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightedIdx = Math.max(highlightedIdx - 1, 0);
+      updateHighlight(items);
+    } else if (e.key === 'Enter' && highlightedIdx >= 0) {
+      e.preventDefault();
+      items[highlightedIdx].click();
+    } else if (e.key === 'Escape') {
+      closeSuggestions();
+    }
+  });
+
+  searchInput.addEventListener('focus', function() {
+    if (this.value.length >= 1) showSuggestions(this.value);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-wrapper')) closeSuggestions();
   });
   document.getElementById('positionFilter').addEventListener('change', function() {
     positionFilter = this.value;
@@ -161,6 +196,14 @@ function onYearsLoaded(years) {
     select.innerHTML = '<option value="">No data</option>';
     return;
   }
+  availableYears = years;
+
+  // Add "All Years" option
+  var allOpt = document.createElement('option');
+  allOpt.value = ALL_YEARS;
+  allOpt.textContent = 'All Years';
+  select.appendChild(allOpt);
+
   years.forEach(function(y) {
     var opt = document.createElement('option');
     opt.value = y;
@@ -168,6 +211,7 @@ function onYearsLoaded(years) {
     select.appendChild(opt);
   });
   currentYear = years[0];
+  select.value = currentYear;
   loadTabData(currentTab);
 }
 
@@ -176,6 +220,7 @@ function onYearsLoaded(years) {
 // ============================================================================
 function switchTab(tab) {
   currentTab = tab;
+  gradeFilter = '';
 
   // Update active button
   document.querySelectorAll('.tab-btn').forEach(function(btn) {
@@ -199,9 +244,28 @@ function switchTab(tab) {
 // ============================================================================
 function onYearChange(year) {
   currentYear = year;
-  dataCache = {};
+  // Only clear all-years merged cache; keep per-year cache intact
+  Object.keys(dataCache).forEach(function(key) {
+    if (key.indexOf(ALL_YEARS) === 0) delete dataCache[key];
+  });
   selectedPlayers = {};
   budgetDefaultLoaded = false;
+  gradeFilter = '';
+
+  // Hide/show Budget tab in all-years mode
+  var budgetBtn = document.querySelector('.tab-btn[data-tab="budget"]');
+  if (year === ALL_YEARS) {
+    budgetBtn.style.display = 'none';
+    if (currentTab === 'budget') switchTab('board');
+  } else {
+    budgetBtn.style.display = '';
+  }
+
+  // Reset conference filter (options differ by year combination)
+  var confSelect = document.getElementById('conferenceFilter');
+  confSelect.innerHTML = '<option value="">All Conferences</option>';
+  conferenceFilter = '';
+
   loadTabData(currentTab);
 }
 
@@ -217,6 +281,12 @@ function loadTabData(tab) {
     return;
   }
 
+  // Budget tab not available in all-years mode
+  if (tab === 'budget' && currentYear === ALL_YEARS) {
+    switchTab('board');
+    return;
+  }
+
   // Budget tab reuses board data
   var dataTab = (tab === 'budget') ? 'board' : tab;
   var cacheKey = currentYear + '|' + dataTab;
@@ -226,6 +296,14 @@ function loadTabData(tab) {
   }
 
   showLoading(tab);
+
+  if (currentYear === ALL_YEARS) {
+    loadAllYearsData(dataTab, function(mergedData) {
+      dataCache[cacheKey] = mergedData;
+      renderTab(tab, mergedData);
+    });
+    return;
+  }
 
   var fns = {
     board: 'getRecruitingBoardData',
@@ -240,6 +318,43 @@ function loadTabData(tab) {
     })
     .withFailureHandler(onError)
     [fns[dataTab]](currentYear);
+}
+
+// Load and merge data from all years
+function loadAllYearsData(dataTab, callback) {
+  var fns = {
+    board: 'getRecruitingBoardData',
+    rankings: 'getTeamRankingsData',
+    grades: 'getPlayerGradesData'
+  };
+  var fnName = fns[dataTab];
+  var pending = availableYears.length;
+  var allData = [];
+  var hadError = false;
+
+  if (pending === 0) { callback([]); return; }
+
+  availableYears.forEach(function(year) {
+    var perYearKey = year + '|' + dataTab;
+    if (dataCache[perYearKey]) {
+      allData = allData.concat(annotateYear(dataCache[perYearKey], year));
+      pending--;
+      if (pending === 0 && !hadError) callback(allData);
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(data) {
+        dataCache[perYearKey] = data;
+        allData = allData.concat(annotateYear(data, year));
+        pending--;
+        if (pending === 0 && !hadError) callback(allData);
+      })
+      .withFailureHandler(function(err) {
+        if (!hadError) { hadError = true; onError(err); }
+      })
+      [fnName](year);
+  });
 }
 
 // ============================================================================
@@ -270,7 +385,11 @@ function renderBoardTable(data) {
   var filtered = filterData(data, 'board');
   var sorted = sortData(filtered, sortStates.board);
 
-  var columns = [
+  var columns = [];
+  var yc = yearColumn();
+  if (yc) columns.push(yc);
+
+  columns.push(
     { key: 'rating', label: 'Stars', render: function(r) { return '<span class="stars">' + r.stars + '</span>'; }, sortVal: function(r) { return r.rating; } },
     { key: 'player', label: 'Player', render: function(r) {
       var img = r.headshotUrl ? '<img class="headshot" src="' + esc(r.headshotUrl) + '" onerror="this.style.display=\'none\'">' : '';
@@ -290,7 +409,7 @@ function renderBoardTable(data) {
     { key: 'copy1_16', label: 'Copy1 16T', cls: 'hide-mobile', render: function(r) { return esc(r.copy1_16); }, sortVal: function(r) { return parseDollar(r.copy1_16); } },
     { key: 'copy2_16', label: 'Copy2 16T', cls: 'hide-mobile', render: function(r) { return esc(r.copy2_16); }, sortVal: function(r) { return parseDollar(r.copy2_16); } },
     { key: 'confidence', label: 'Conf', cls: 'hide-mobile', render: function(r) { return esc(r.confidence); }, sortVal: function(r) { return r.confidence || ''; } }
-  ];
+  );
 
   buildTable('boardTable', sorted, columns, sortStates.board, 'board');
 }
@@ -316,7 +435,11 @@ function renderRankingsTable(data) {
   var filtered = filterData(data, 'rankings');
   var sorted = sortData(filtered, sortStates.rankings);
 
-  var columns = [
+  var columns = [];
+  var yc = yearColumn();
+  if (yc) columns.push(yc);
+
+  columns.push(
     { key: 'classRank', label: 'Rank', render: function(r) { return '<strong>' + r.classRank + '</strong>'; }, sortVal: function(r) { return r.classRank; } },
     { key: 'franchise', label: 'Team', render: function(r) {
       var logo = r.franchiseLogo ? '<img class="franchise-logo" src="' + esc(r.franchiseLogo) + '" onerror="this.style.display=\'none\'">' : '<span class="logo-placeholder">' + esc(r.franchise.charAt(0)) + '</span>';
@@ -339,7 +462,7 @@ function renderRankingsTable(data) {
     { key: 'totalSpent', label: 'Spent', cls: 'hide-mobile', render: function(r) { return esc(r.totalSpent); }, sortVal: function(r) { return parseDollar(r.totalSpent); } },
     { key: 'avgSavings', label: 'Savings', render: function(r) { return savingsDisplay(r.avgSavings); }, sortVal: function(r) { return parseDollar(r.avgSavings); } },
     { key: 'efficiencyGrade', label: 'Efficiency', cls: 'hide-mobile', render: function(r) { return gradeBadge(r.efficiencyGrade); }, sortVal: function(r) { return gradeSort(r.efficiencyGrade); } }
-  ];
+  );
 
   buildTable('rankingsTable', sorted, columns, sortStates.rankings, 'rankings');
   drawRankingsChart(data);
@@ -352,7 +475,11 @@ function renderGradesTable(data) {
   var filtered = filterData(data, 'grades');
   var sorted = sortData(filtered, sortStates.grades);
 
-  var columns = [
+  var columns = [];
+  var yc = yearColumn();
+  if (yc) columns.push(yc);
+
+  columns.push(
     { key: 'playerGrade', label: 'Grade', render: function(r) { return gradeBadge(r.playerGrade); }, sortVal: function(r) { return gradeSort(r.playerGrade); } },
     { key: 'player', label: 'Player', render: function(r) { return esc(r.player); }, sortVal: function(r) { return r.player.toLowerCase(); } },
     { key: 'position', label: 'Pos', render: function(r) { return posBadge(r.position); }, sortVal: function(r) { return r.position; } },
@@ -363,7 +490,7 @@ function renderGradesTable(data) {
     { key: 'predictedCost', label: 'Predicted', cls: 'hide-mobile', render: function(r) { return esc(r.predictedCost); }, sortVal: function(r) { return parseDollar(r.predictedCost); } },
     { key: 'leagueAvgPrice', label: 'Avg Price', cls: 'hide-mobile', render: function(r) { return esc(r.leagueAvgPrice); }, sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
     { key: 'savingsDollars', label: 'Savings', render: function(r) { return savingsDisplay(r.savingsDollars); }, sortVal: function(r) { return parseDollar(r.savingsDollars); } }
-  ];
+  );
 
   buildTable('gradesTable', sorted, columns, sortStates.grades, 'grades');
   drawGradesDonut(data);
@@ -433,9 +560,15 @@ function filterData(data, tab) {
       if (row.conference !== conferenceFilter) return false;
     }
 
+    // Grade filter (grades tab only)
+    if (gradeFilter && tab === 'grades') {
+      if ((row.playerGrade || '') !== gradeFilter) return false;
+    }
+
     // Search
     if (searchTerm) {
       var haystack = '';
+      if (row.year) haystack += row.year + ' ';
       if (row.player) haystack += row.player.toLowerCase() + ' ';
       if (row.franchise) haystack += row.franchise.toLowerCase() + ' ';
       if (row.college) haystack += row.college.toLowerCase() + ' ';
@@ -474,6 +607,7 @@ function sortData(data, sortState) {
 // Master column registry for sort lookup
 function getAllColumns() {
   return [
+    { key: 'year', sortVal: function(r) { return r.year || ''; } },
     { key: 'rating', sortVal: function(r) { return r.rating || 0; } },
     { key: 'player', sortVal: function(r) { return (r.player || '').toLowerCase(); } },
     { key: 'position', sortVal: function(r) { return r.position || ''; } },
@@ -528,6 +662,24 @@ function renderStars(rating) {
 
 function posBadge(pos) {
   return '<span class="pos-badge pos-' + esc(pos) + '">' + esc(pos) + '</span>';
+}
+
+function yearColumn() {
+  if (currentYear !== ALL_YEARS) return null;
+  return {
+    key: 'year', label: 'Year',
+    render: function(r) { return '<span class="year-badge">' + esc(r.year) + '</span>'; },
+    sortVal: function(r) { return r.year || ''; }
+  };
+}
+
+function annotateYear(data, year) {
+  return data.map(function(row) {
+    var copy = {};
+    for (var k in row) copy[k] = row[k];
+    copy.year = String(year);
+    return copy;
+  });
 }
 
 function gradeBadge(grade) {
@@ -607,29 +759,81 @@ function drawRankingsChart(data) {
   var el = document.getElementById('rankingsChart');
   if (!el) return;
 
-  // Top 15 teams by class score
-  var sorted = data.slice().sort(function(a, b) { return b.classScore - a.classScore; }).slice(0, 15).reverse();
+  // Apply conference filter to chart data
+  var chartData = data;
+  if (conferenceFilter) {
+    chartData = data.filter(function(r) { return r.conference === conferenceFilter; });
+  }
+
+  var sorted, title, scoreLabel;
+
+  if (currentYear === ALL_YEARS) {
+    // Aggregate: sum classScore per team across years
+    var teamMap = {};
+    chartData.forEach(function(r) {
+      if (!teamMap[r.franchise]) {
+        teamMap[r.franchise] = { franchise: r.franchise, conference: r.conference, totalScore: 0, years: 0 };
+      }
+      teamMap[r.franchise].totalScore += r.classScore;
+      teamMap[r.franchise].years++;
+    });
+    var teams = [];
+    for (var k in teamMap) teams.push(teamMap[k]);
+    teams.sort(function(a, b) { return b.totalScore - a.totalScore; });
+    sorted = teams.slice(0, 15).reverse();
+    scoreLabel = 'Cumulative Class Score';
+    var confLabel = conferenceFilter ? conferenceFilter + ' ' : '';
+    title = 'Top 15 ' + confLabel + 'Teams by Cumulative Class Score (All Years)';
+  } else {
+    sorted = chartData.slice().sort(function(a, b) { return b.classScore - a.classScore; }).slice(0, 15).reverse();
+    scoreLabel = 'Class Score';
+    title = conferenceFilter
+      ? 'Top ' + sorted.length + ' ' + conferenceFilter + ' Teams by Class Score'
+      : 'Top 15 Teams by Class Score';
+  }
+
+  if (sorted.length === 0) { el.innerHTML = ''; return; }
 
   var dt = new google.visualization.DataTable();
   dt.addColumn('string', 'Team');
-  dt.addColumn('number', 'Class Score');
+  dt.addColumn('number', scoreLabel);
   dt.addColumn({ type: 'string', role: 'style' });
   dt.addColumn({ type: 'string', role: 'tooltip' });
 
   sorted.forEach(function(r) {
     var color = CONF_COLORS[r.conference] || '#a0a0b0';
-    var tip = r.franchise + ' (' + r.conference + ')\nScore: ' + r.classScore.toFixed(1) + '\nGrade: ' + r.overallGrade + '\nRank: #' + r.classRank;
-    dt.addRow([r.franchise, r.classScore, 'color: ' + color, tip]);
+    var score = currentYear === ALL_YEARS ? r.totalScore : r.classScore;
+    var tip;
+    if (currentYear === ALL_YEARS) {
+      tip = r.franchise + ' (' + r.conference + ')\nTotal Score: ' + r.totalScore.toFixed(1) +
+        '\nYears: ' + r.years + '\nAvg: ' + (r.totalScore / r.years).toFixed(1);
+    } else {
+      tip = r.franchise + ' (' + r.conference + ')\nScore: ' + r.classScore.toFixed(1) +
+        '\nGrade: ' + r.overallGrade + '\nRank: #' + r.classRank;
+    }
+    dt.addRow([r.franchise, score, 'color: ' + color, tip]);
   });
 
   var chart = new google.visualization.BarChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Top 15 Teams by Class Score',
+    title: title,
     legend: 'none',
-    hAxis: { title: 'Class Score', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
+    hAxis: { title: scoreLabel, textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     vAxis: { textStyle: { color: '#eaeaea', fontSize: 10 } },
     chartArea: { width: '65%', height: '80%' }
   }));
+
+  // Click bar → search for that team
+  google.visualization.events.addListener(chart, 'select', function() {
+    var sel = chart.getSelection();
+    if (sel.length > 0 && sel[0].row != null) {
+      var team = sorted[sel[0].row].franchise;
+      document.getElementById('searchInput').value = team;
+      searchTerm = team.toLowerCase();
+      closeSuggestions();
+      renderRankingsTable(data);
+    }
+  });
 }
 
 function drawGradesDonut(data) {
@@ -650,24 +854,53 @@ function drawGradesDonut(data) {
   var gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F'];
   var gradeColors = ['#1abc9c', '#2ecc71', '#d4ac0d', '#f1c40f', '#e67e22', '#d35400', '#e74c3c', '#c0392b', '#7f1d1d'];
   var usedColors = [];
+  var sliceOpts = {};
+  var activeRow = -1;
 
   gradeOrder.forEach(function(g, i) {
     if (counts[g]) {
+      var rowIdx = dt.getNumberOfRows();
       dt.addRow([g, counts[g]]);
       usedColors.push(gradeColors[i]);
+      if (gradeFilter && g === gradeFilter) {
+        sliceOpts[rowIdx] = { offset: 0.12 };
+        activeRow = rowIdx;
+      }
     }
   });
 
   if (dt.getNumberOfRows() === 0) return;
 
+  var title;
+  if (gradeFilter) {
+    title = 'Showing: ' + gradeFilter + ' grades (click to clear)';
+  } else if (currentYear === ALL_YEARS) {
+    title = 'Player Grade Distribution \u2014 All Years (click to filter)';
+  } else {
+    title = 'Player Grade Distribution (click to filter)';
+  }
+
   var chart = new google.visualization.PieChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Player Grade Distribution',
+    title: title,
     pieHole: 0.4,
     colors: usedColors,
+    slices: sliceOpts,
     pieSliceTextStyle: { color: '#fff', fontSize: 11 },
     chartArea: { width: '90%', height: '80%' }
   }));
+
+  // Click slice → filter table by grade
+  google.visualization.events.addListener(chart, 'select', function() {
+    var sel = chart.getSelection();
+    if (sel.length > 0 && sel[0].row != null) {
+      var grade = dt.getValue(sel[0].row, 0);
+      gradeFilter = (gradeFilter === grade) ? '' : grade;
+    } else {
+      gradeFilter = '';
+    }
+    renderGradesTable(data);
+  });
 }
 
 // ============================================================================
@@ -676,7 +909,6 @@ function drawGradesDonut(data) {
 function loadAnalyticsData() {
   var rankingsKey = currentYear + '|rankings';
   var gradesKey = currentYear + '|grades';
-  var pending = 0;
 
   function tryRender() {
     if (dataCache[rankingsKey] && dataCache[gradesKey]) {
@@ -693,18 +925,26 @@ function loadAnalyticsData() {
 
   showLoading('analytics');
 
-  if (!dataCache[rankingsKey]) {
-    google.script.run
-      .withSuccessHandler(function(data) { dataCache[rankingsKey] = data; tryRender(); })
-      .withFailureHandler(onError)
-      .getTeamRankingsData(currentYear);
-  }
-
-  if (!dataCache[gradesKey]) {
-    google.script.run
-      .withSuccessHandler(function(data) { dataCache[gradesKey] = data; tryRender(); })
-      .withFailureHandler(onError)
-      .getPlayerGradesData(currentYear);
+  if (currentYear === ALL_YEARS) {
+    if (!dataCache[rankingsKey]) {
+      loadAllYearsData('rankings', function(data) { dataCache[rankingsKey] = data; tryRender(); });
+    }
+    if (!dataCache[gradesKey]) {
+      loadAllYearsData('grades', function(data) { dataCache[gradesKey] = data; tryRender(); });
+    }
+  } else {
+    if (!dataCache[rankingsKey]) {
+      google.script.run
+        .withSuccessHandler(function(data) { dataCache[rankingsKey] = data; tryRender(); })
+        .withFailureHandler(onError)
+        .getTeamRankingsData(currentYear);
+    }
+    if (!dataCache[gradesKey]) {
+      google.script.run
+        .withSuccessHandler(function(data) { dataCache[gradesKey] = data; tryRender(); })
+        .withFailureHandler(onError)
+        .getPlayerGradesData(currentYear);
+    }
   }
 }
 
@@ -744,7 +984,8 @@ function drawSpendingVsTalent(data) {
     confNames.forEach(function(c) {
       if (r.conference === c) {
         row.push(r.classScore);
-        row.push(r.franchise + '\nSpent: ' + r.totalSpent + '\nScore: ' + r.classScore.toFixed(1));
+        var yearTag = r.year ? ' [' + r.year + ']' : '';
+        row.push(r.franchise + yearTag + '\nSpent: ' + r.totalSpent + '\nScore: ' + r.classScore.toFixed(1));
       } else {
         row.push(null);
         row.push(null);
@@ -757,7 +998,7 @@ function drawSpendingVsTalent(data) {
 
   var chart = new google.visualization.ScatterChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Spending vs Talent',
+    title: currentYear === ALL_YEARS ? 'Spending vs Talent (All Years)' : 'Spending vs Talent',
     hAxis: { title: 'Total Spent ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     vAxis: { title: 'Class Score', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     colors: colors,
@@ -795,7 +1036,7 @@ function drawSavingsByPosition(data) {
 
   var chart = new google.visualization.ColumnChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Avg Savings by Position ($)',
+    title: currentYear === ALL_YEARS ? 'Avg Savings by Position — All Years ($)' : 'Avg Savings by Position ($)',
     legend: 'none',
     vAxis: { title: 'Savings ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     chartArea: { width: '70%', height: '70%' }
@@ -806,8 +1047,27 @@ function drawStarDistribution(data) {
   var el = document.getElementById('starDistChart');
   if (!el || data.length === 0) return;
 
-  // Top 20 teams by class score
-  var sorted = data.slice().sort(function(a, b) { return b.classScore - a.classScore; }).slice(0, 20).reverse();
+  var sorted;
+  if (currentYear === ALL_YEARS) {
+    // Aggregate star counts per team across years
+    var teamMap = {};
+    data.forEach(function(r) {
+      if (!teamMap[r.franchise]) {
+        teamMap[r.franchise] = { franchise: r.franchise, classScore: 0, star5: 0, star4: 0, star3: 0, star2: 0, star1: 0 };
+      }
+      teamMap[r.franchise].classScore += r.classScore;
+      teamMap[r.franchise].star5 += r.star5;
+      teamMap[r.franchise].star4 += r.star4;
+      teamMap[r.franchise].star3 += r.star3;
+      teamMap[r.franchise].star2 += r.star2;
+      teamMap[r.franchise].star1 += r.star1;
+    });
+    var teams = [];
+    for (var k in teamMap) teams.push(teamMap[k]);
+    sorted = teams.sort(function(a, b) { return b.classScore - a.classScore; }).slice(0, 20).reverse();
+  } else {
+    sorted = data.slice().sort(function(a, b) { return b.classScore - a.classScore; }).slice(0, 20).reverse();
+  }
 
   var dt = new google.visualization.DataTable();
   dt.addColumn('string', 'Team');
@@ -823,7 +1083,7 @@ function drawStarDistribution(data) {
 
   var chart = new google.visualization.BarChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Star Distribution — Top 20 Teams',
+    title: currentYear === ALL_YEARS ? 'Star Distribution \u2014 Top 20 Teams (All Years)' : 'Star Distribution \u2014 Top 20 Teams',
     isStacked: true,
     colors: STAR_COLORS.slice().reverse(),
     hAxis: { title: 'Number of Players', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
@@ -864,7 +1124,8 @@ function drawBidVsPredicted(data) {
     posOrder.forEach(function(p) {
       if (r.position === p) {
         row.push(bid);
-        row.push(r.player + ' (' + p + ')\nPredicted: $' + pred + '\nBid: $' + bid);
+        var yearTag = r.year ? ' [' + r.year + ']' : '';
+        row.push(r.player + ' (' + p + ')' + yearTag + '\nPredicted: $' + pred + '\nBid: $' + bid);
       } else {
         row.push(null);
         row.push(null);
@@ -886,7 +1147,7 @@ function drawBidVsPredicted(data) {
 
   var chart = new google.visualization.ScatterChart(el);
   chart.draw(dt, mergeOpts({
-    title: 'Bid vs Predicted Cost (below line = value)',
+    title: currentYear === ALL_YEARS ? 'Bid vs Predicted Cost \u2014 All Years (below line = value)' : 'Bid vs Predicted Cost (below line = value)',
     hAxis: { title: 'Predicted Cost ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     vAxis: { title: 'Actual Bid ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
     colors: colors,
@@ -1100,7 +1361,8 @@ function applyDefaultBudget(rankings) {
 // ============================================================================
 function showLoading(tab) {
   document.getElementById(tab + 'Loading').style.display = '';
-  document.getElementById(tab + 'Table').innerHTML = '';
+  var tableEl = document.getElementById(tab + 'Table');
+  if (tableEl) tableEl.innerHTML = '';
 }
 
 function hideLoading(tab) {
@@ -1112,5 +1374,129 @@ function onError(error) {
   var panel = document.getElementById(currentTab + 'Table');
   panel.innerHTML = '<div class="error-msg">' + esc(msg) + '</div>';
   hideLoading(currentTab);
+}
+
+// ============================================================================
+// AUTOCOMPLETE SEARCH
+// ============================================================================
+function getSuggestions(query) {
+  if (!query || query.length < 1) return [];
+  var q = query.toLowerCase();
+  var seen = {};
+  var results = [];
+
+  // Gather data from all cached tabs
+  var sources = [];
+  var boardKey = currentYear + '|board';
+  var rankingsKey = currentYear + '|rankings';
+  var gradesKey = currentYear + '|grades';
+
+  if (dataCache[boardKey]) {
+    dataCache[boardKey].forEach(function(r) {
+      if (r.player && !seen['p:' + r.player]) {
+        if (r.player.toLowerCase().indexOf(q) !== -1) {
+          seen['p:' + r.player] = true;
+          results.push({ type: 'Player', name: r.player, pos: r.position });
+        }
+      }
+      if (r.college && !seen['c:' + r.college]) {
+        if (r.college.toLowerCase().indexOf(q) !== -1) {
+          seen['c:' + r.college] = true;
+          results.push({ type: 'College', name: r.college });
+        }
+      }
+    });
+  }
+
+  if (dataCache[rankingsKey]) {
+    dataCache[rankingsKey].forEach(function(r) {
+      if (r.franchise && !seen['t:' + r.franchise]) {
+        if (r.franchise.toLowerCase().indexOf(q) !== -1) {
+          seen['t:' + r.franchise] = true;
+          results.push({ type: 'Team', name: r.franchise, conf: r.conference });
+        }
+      }
+    });
+  }
+
+  if (dataCache[gradesKey]) {
+    dataCache[gradesKey].forEach(function(r) {
+      if (r.player && !seen['p:' + r.player]) {
+        if (r.player.toLowerCase().indexOf(q) !== -1) {
+          seen['p:' + r.player] = true;
+          results.push({ type: 'Player', name: r.player, pos: r.position });
+        }
+      }
+      if (r.franchise && !seen['t:' + r.franchise]) {
+        if (r.franchise.toLowerCase().indexOf(q) !== -1) {
+          seen['t:' + r.franchise] = true;
+          results.push({ type: 'Team', name: r.franchise });
+        }
+      }
+    });
+  }
+
+  // Sort: exact start match first, then alphabetical
+  results.sort(function(a, b) {
+    var aStarts = a.name.toLowerCase().indexOf(q) === 0 ? 0 : 1;
+    var bStarts = b.name.toLowerCase().indexOf(q) === 0 ? 0 : 1;
+    if (aStarts !== bStarts) return aStarts - bStarts;
+    return a.name.localeCompare(b.name);
+  });
+
+  return results.slice(0, 10);
+}
+
+function highlightMatch(text, query) {
+  if (!query) return esc(text);
+  var idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return esc(text);
+  return esc(text.substring(0, idx)) + '<mark>' + esc(text.substring(idx, idx + query.length)) + '</mark>' + esc(text.substring(idx + query.length));
+}
+
+function showSuggestions(query) {
+  var dropdown = document.getElementById('searchDropdown');
+  highlightedIdx = -1;
+  if (!query || query.length < 1) { closeSuggestions(); return; }
+
+  var suggestions = getSuggestions(query);
+  if (suggestions.length === 0) { closeSuggestions(); return; }
+
+  var html = '';
+  suggestions.forEach(function(s) {
+    var extra = '';
+    if (s.pos) extra = ' <span class="pos-badge pos-' + esc(s.pos) + '" style="font-size:0.75em;padding:1px 5px;">' + esc(s.pos) + '</span>';
+    if (s.conf) extra = ' <span class="conf-badge" style="font-size:0.75em;padding:1px 5px;">' + esc(s.conf) + '</span>';
+    html += '<div class="search-item" data-value="' + escAttr(s.name) + '">' +
+      '<span class="search-item-type">' + s.type + '</span>' +
+      '<span class="search-item-name">' + highlightMatch(s.name, query) + extra + '</span>' +
+      '</div>';
+  });
+
+  dropdown.innerHTML = html;
+  dropdown.classList.add('open');
+
+  dropdown.querySelectorAll('.search-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var val = item.getAttribute('data-value');
+      document.getElementById('searchInput').value = val;
+      searchTerm = val.toLowerCase();
+      closeSuggestions();
+      renderCurrentTab();
+    });
+  });
+}
+
+function closeSuggestions() {
+  var dropdown = document.getElementById('searchDropdown');
+  dropdown.classList.remove('open');
+  highlightedIdx = -1;
+}
+
+function updateHighlight(items) {
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === highlightedIdx);
+  });
+  if (highlightedIdx >= 0) items[highlightedIdx].scrollIntoView({ block: 'nearest' });
 }
 </script>

@@ -129,9 +129,68 @@ body {
   font-size: 0.9em;
 }
 
-.filter-bar input {
+.search-wrapper {
   flex: 1;
   min-width: 200px;
+  position: relative;
+}
+
+.search-wrapper input {
+  width: 100%;
+}
+
+.search-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+.search-dropdown.open { display: block; }
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.88em;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.search-item:last-child { border-bottom: none; }
+.search-item:hover, .search-item.highlighted { background: var(--bg-card); }
+
+.search-item-type {
+  font-size: 0.72em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 46px;
+}
+
+.search-item-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-item-name mark {
+  background: rgba(233, 69, 96, 0.3);
+  color: var(--text-primary);
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 .filter-bar input::placeholder { color: var(--text-secondary); }
@@ -238,6 +297,18 @@ body {
 .tier-Starter { background: var(--pos-rb); color: #fff; }
 .tier-Depth { background: #7f8c8d; color: #fff; }
 .tier-Flier { background: var(--border); color: var(--text-secondary); }
+
+.year-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 600;
+  background: var(--bg-card);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  letter-spacing: 0.5px;
+}
 
 .conf-badge {
   display: inline-block;
@@ -540,7 +611,7 @@ body {
     padding: 8px 12px;
     gap: 8px;
   }
-  .filter-bar input { min-width: 100%; }
+  .search-wrapper { min-width: 100%; }
   .filter-bar select { width: 100%; }
   .tab-btn { padding: 10px 14px; font-size: 0.85em; }
   .tab-panel { padding: 8px 4px; }
