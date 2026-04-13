@@ -5,10 +5,106 @@
 var currentYear = null;
 var currentTab = 'board';
 var dataCache = {};
-var sortStates = { board: { col: 'recruitScore', asc: false }, rankings: { col: 'classRank', asc: true }, grades: { col: 'recruitScore', asc: false } };
+var sortStates = { board: { col: 'recruitScore', asc: false }, rankings: { col: 'classRank', asc: true }, grades: { col: 'recruitScore', asc: false }, budget: { col: 'recruitScore', asc: false } };
 var searchTerm = '';
 var positionFilter = '';
 var conferenceFilter = '';
+
+// Budget Tool State
+var selectedPlayers = {};
+var budgetAmount = 100;
+var haulOpen = false;
+var budgetDefaultLoaded = false;
+
+// ============================================================================
+// TOOLTIPS
+// ============================================================================
+var TOOLTIPS = {
+  // Recruiting Board
+  rating: "Star rating (1\u20135) based on ESPN grade thresholds",
+  player: "Player name",
+  position: "Player position",
+  college: "College program",
+  espnGrade: "ESPN draft prospect grade \u2014 higher = better NFL prospect evaluation",
+  draftRd: "NFL Draft round and overall pick number",
+  startupADP: "Average Draft Position in DLF rookie startup drafts \u2014 lower = drafted earlier",
+  adpTier: "Position-specific tier based on ADP range (Elite, Premium, Starter, Depth, Flier)",
+  recruitScore: "Composite score: star rating + ESPN grade + draft capital (with yearly decay) + startup ADP",
+  predictedCost: "Predicted auction price from exponential ADP regression, fit per position",
+  copy1_16: "Scarcity-adjusted price for 1st copy in 16-team conferences (cross-position budget allocation)",
+  copy2_16: "Scarcity-adjusted price for 2nd copy in 16-team conferences (empirical copy discount applied)",
+  confidence: "Prediction confidence based on data availability",
+
+  // Team Rankings
+  classRank: "Overall class ranking across all 100 teams",
+  franchise: "Franchise team name",
+  conference: "Conference assignment",
+  confRank: "Ranking within the team\u2019s conference",
+  overallGrade: "Overall grade = 60% talent (class score percentile) + 40% efficiency (savings percentile)",
+  classScore: "Star-weighted class score: \u03A3(stars \u00D7 weight). Weights: 5\u2605=1.5, 4\u2605=1.2, 3\u2605=1.0, 2\u2605=0.6, 1\u2605=0.3",
+  starBreakdown: "Number of recruits at each star level",
+  totalPlayers: "Total rookie players acquired",
+  totalSpent: "Total auction dollars spent on rookies",
+  avgSavings: "Average savings % vs predicted cost across all rookies acquired",
+  efficiencyGrade: "Efficiency grade based solely on avg savings vs predicted cost (percentile-based)",
+
+  // Player Grades
+  playerGrade: "Acquisition grade from blended savings: 60% vs predicted cost + 40% vs league average price",
+  stars: "Recruit star rating (1\u20135)",
+  bidAmount: "Actual auction bid paid",
+  leagueAvgPrice: "League-wide average price across all copies of this player",
+  savingsPct: "Blended savings: 60% vs predicted cost + 40% vs league avg price",
+
+  // Budget Tool
+  budgetAction: "Click to add/remove player from your draft plan"
+};
+
+var tooltipEl = null;
+var tooltipTimeout = null;
+
+function initTooltip() {
+  tooltipEl = document.createElement('div');
+  tooltipEl.className = 'tooltip-popup';
+  document.body.appendChild(tooltipEl);
+
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) showTooltip(el);
+  });
+  document.addEventListener('mouseout', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) hideTooltip();
+  });
+  // Mobile: show on tap, hide on tap elsewhere
+  document.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) showTooltip(el);
+    else hideTooltip();
+  });
+  document.addEventListener('scroll', hideTooltip, true);
+}
+
+function showTooltip(el) {
+  if (tooltipTimeout) clearTimeout(tooltipTimeout);
+  tooltipEl.textContent = el.getAttribute('data-tip');
+  tooltipEl.style.display = 'block';
+  var rect = el.getBoundingClientRect();
+  var top = rect.top + window.scrollY - tooltipEl.offsetHeight - 8;
+  if (rect.top - tooltipEl.offsetHeight - 8 < 0) {
+    top = rect.bottom + window.scrollY + 8;
+  }
+  var left = rect.left + rect.width / 2 - tooltipEl.offsetWidth / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - tooltipEl.offsetWidth - 8));
+  tooltipEl.style.top = top + 'px';
+  tooltipEl.style.left = left + 'px';
+  // Auto-hide after 3s (useful on mobile)
+  tooltipTimeout = setTimeout(hideTooltip, 3000);
+}
+
+function hideTooltip() {
+  if (tooltipEl) tooltipEl.style.display = 'none';
+  if (tooltipTimeout) { clearTimeout(tooltipTimeout); tooltipTimeout = null; }
+}
 
 // ============================================================================
 // INITIALIZATION
@@ -34,6 +130,14 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.getElementById('yearSelect').addEventListener('change', function() {
     onYearChange(this.value);
+  });
+
+  initTooltip();
+
+  // Budget input handler
+  document.getElementById('budgetInput').addEventListener('input', function() {
+    budgetAmount = parseInt(this.value) || 0;
+    updateBudgetSummary();
   });
 
   // Load available years
@@ -89,6 +193,8 @@ function switchTab(tab) {
 function onYearChange(year) {
   currentYear = year;
   dataCache = {};
+  selectedPlayers = {};
+  budgetDefaultLoaded = false;
   loadTabData(currentTab);
 }
 
@@ -98,7 +204,9 @@ function onYearChange(year) {
 function loadTabData(tab) {
   if (!currentYear) return;
 
-  var cacheKey = currentYear + '|' + tab;
+  // Budget tab reuses board data
+  var dataTab = (tab === 'budget') ? 'board' : tab;
+  var cacheKey = currentYear + '|' + dataTab;
   if (dataCache[cacheKey]) {
     renderTab(tab, dataCache[cacheKey]);
     return;
@@ -114,18 +222,19 @@ function loadTabData(tab) {
 
   google.script.run
     .withSuccessHandler(function(data) {
-      dataCache[currentYear + '|' + tab] = data;
+      dataCache[currentYear + '|' + dataTab] = data;
       renderTab(tab, data);
     })
     .withFailureHandler(onError)
-    [fns[tab]](currentYear);
+    [fns[dataTab]](currentYear);
 }
 
 // ============================================================================
 // RENDERING DISPATCH
 // ============================================================================
 function renderCurrentTab() {
-  var cacheKey = currentYear + '|' + currentTab;
+  var dataTab = (currentTab === 'budget') ? 'board' : currentTab;
+  var cacheKey = currentYear + '|' + dataTab;
   if (dataCache[cacheKey]) {
     renderTab(currentTab, dataCache[cacheKey]);
   }
@@ -136,6 +245,7 @@ function renderTab(tab, data) {
   if (tab === 'board') renderBoardTable(data);
   else if (tab === 'rankings') renderRankingsTable(data);
   else if (tab === 'grades') renderGradesTable(data);
+  else if (tab === 'budget') renderBudgetTable(data);
 }
 
 // ============================================================================
@@ -198,10 +308,10 @@ function renderRankingsTable(data) {
       return logo + esc(r.franchise);
     }, sortVal: function(r) { return r.franchise.toLowerCase(); } },
     { key: 'conference', label: 'Conf', render: function(r) { return '<span class="conf-badge">' + esc(r.conference) + '</span>'; }, sortVal: function(r) { return r.conference; } },
-    { key: 'confRank', label: 'Conf Rank', render: function(r) { return r.confRank; }, sortVal: function(r) { return r.confRank; } },
+    { key: 'confRank', label: 'Conf Rank', cls: 'hide-mobile', render: function(r) { return r.confRank; }, sortVal: function(r) { return r.confRank; } },
     { key: 'overallGrade', label: 'Grade', render: function(r) { return gradeBadge(r.overallGrade); }, sortVal: function(r) { return gradeSort(r.overallGrade); } },
     { key: 'classScore', label: 'Score', render: function(r) { return '<strong>' + r.classScore.toFixed(1) + '</strong>'; }, sortVal: function(r) { return r.classScore; } },
-    { key: 'starBreakdown', label: 'Stars', render: function(r) {
+    { key: 'starBreakdown', label: 'Stars', cls: 'hide-mobile', render: function(r) {
       return '<span class="star-breakdown">' +
         (r.star5 ? '<span title="5-star">' + r.star5 + '\u2605</span>' : '') +
         (r.star4 ? '<span title="4-star">' + r.star4 + '\u2605</span>' : '') +
@@ -210,8 +320,8 @@ function renderRankingsTable(data) {
         (r.star1 ? '<span title="1-star">' + r.star1 + '\u2605</span>' : '') +
         '</span>';
     }, sortVal: function(r) { return r.star5 * 100 + r.star4 * 10 + r.star3; } },
-    { key: 'totalPlayers', label: 'Players', render: function(r) { return r.totalPlayers; }, sortVal: function(r) { return r.totalPlayers; } },
-    { key: 'totalSpent', label: 'Spent', render: function(r) { return esc(r.totalSpent); }, sortVal: function(r) { return parseDollar(r.totalSpent); } },
+    { key: 'totalPlayers', label: 'Players', cls: 'hide-mobile', render: function(r) { return r.totalPlayers; }, sortVal: function(r) { return r.totalPlayers; } },
+    { key: 'totalSpent', label: 'Spent', cls: 'hide-mobile', render: function(r) { return esc(r.totalSpent); }, sortVal: function(r) { return parseDollar(r.totalSpent); } },
     { key: 'avgSavings', label: 'Savings', render: function(r) { return pctDisplay(r.avgSavings); }, sortVal: function(r) { return parsePct(r.avgSavings); } },
     { key: 'efficiencyGrade', label: 'Efficiency', cls: 'hide-mobile', render: function(r) { return gradeBadge(r.efficiencyGrade); }, sortVal: function(r) { return gradeSort(r.efficiencyGrade); } }
   ];
@@ -231,10 +341,10 @@ function renderGradesTable(data) {
     { key: 'player', label: 'Player', render: function(r) { return esc(r.player); }, sortVal: function(r) { return r.player.toLowerCase(); } },
     { key: 'position', label: 'Pos', render: function(r) { return posBadge(r.position); }, sortVal: function(r) { return r.position; } },
     { key: 'franchise', label: 'Team', render: function(r) { return esc(r.franchise); }, sortVal: function(r) { return r.franchise.toLowerCase(); } },
-    { key: 'stars', label: 'Stars', render: function(r) { return '<span class="stars">' + renderStars(r.stars) + '</span>'; }, sortVal: function(r) { return r.stars; } },
-    { key: 'recruitScore', label: 'Score', render: function(r) { return r.recruitScore.toFixed(1); }, sortVal: function(r) { return r.recruitScore; } },
+    { key: 'stars', label: 'Stars', cls: 'hide-mobile', render: function(r) { return '<span class="stars">' + renderStars(r.stars) + '</span>'; }, sortVal: function(r) { return r.stars; } },
+    { key: 'recruitScore', label: 'Score', cls: 'hide-mobile', render: function(r) { return r.recruitScore.toFixed(1); }, sortVal: function(r) { return r.recruitScore; } },
     { key: 'bidAmount', label: 'Bid', render: function(r) { return esc(r.bidAmount); }, sortVal: function(r) { return parseDollar(r.bidAmount); } },
-    { key: 'predictedCost', label: 'Predicted', render: function(r) { return esc(r.predictedCost); }, sortVal: function(r) { return parseDollar(r.predictedCost); } },
+    { key: 'predictedCost', label: 'Predicted', cls: 'hide-mobile', render: function(r) { return esc(r.predictedCost); }, sortVal: function(r) { return parseDollar(r.predictedCost); } },
     { key: 'leagueAvgPrice', label: 'Avg Price', cls: 'hide-mobile', render: function(r) { return esc(r.leagueAvgPrice); }, sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
     { key: 'savingsPct', label: 'Savings', render: function(r) { return pctDisplay(r.savingsPct); }, sortVal: function(r) { return parsePct(r.savingsPct); } }
   ];
@@ -257,7 +367,8 @@ function buildTable(containerId, data, columns, sortState, tabKey) {
     var sorted = sortState && sortState.col === col.key;
     var arrow = sorted ? (sortState.asc ? ' <span class="sort-arrow">\u25B2</span>' : ' <span class="sort-arrow">\u25BC</span>') : '';
     var cls = (sorted ? 'sorted' : '') + (col.cls ? ' ' + col.cls : '');
-    html += '<th class="' + cls + '" data-col="' + col.key + '">' + col.label + arrow + '</th>';
+    var tip = TOOLTIPS[col.key] ? ' data-tip="' + esc(TOOLTIPS[col.key]) + '"' : '';
+    html += '<th class="' + cls + '" data-col="' + col.key + '"' + tip + '>' + col.label + arrow + '</th>';
   });
   html += '</tr></thead><tbody>';
 
@@ -374,7 +485,8 @@ function getAllColumns() {
     { key: 'stars', sortVal: function(r) { return r.stars || 0; } },
     { key: 'bidAmount', sortVal: function(r) { return parseDollar(r.bidAmount); } },
     { key: 'leagueAvgPrice', sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
-    { key: 'savingsPct', sortVal: function(r) { return parsePct(r.savingsPct); } }
+    { key: 'savingsPct', sortVal: function(r) { return parsePct(r.savingsPct); } },
+    { key: 'budgetAction', sortVal: function(r) { return selectedPlayers[r.player] ? 0 : 1; } }
   ];
 }
 
@@ -386,6 +498,10 @@ function esc(s) {
   var div = document.createElement('div');
   div.textContent = String(s);
   return div.innerHTML;
+}
+
+function escAttr(s) {
+  return esc(s).replace(/"/g, '&quot;');
 }
 
 function renderStars(rating) {
@@ -432,6 +548,185 @@ function parsePct(val) {
 function gradeSort(grade) {
   var order = { 'A+': 1, 'A': 2, 'B+': 3, 'B': 4, 'C+': 5, 'C': 6, 'D+': 7, 'D': 8, 'F': 9, 'N/A': 10 };
   return order[grade] || 10;
+}
+
+// ============================================================================
+// BUDGET TOOL
+// ============================================================================
+var STAR_WEIGHTS = { 5: 1.5, 4: 1.2, 3: 1.0, 2: 0.6, 1: 0.3 };
+
+function renderBudgetTable(data) {
+  var filtered = filterData(data, 'budget');
+  var sorted = sortData(filtered, sortStates.budget);
+
+  var columns = [
+    { key: 'budgetAction', label: '', render: function(r) {
+      var isSelected = !!selectedPlayers[r.player];
+      var cls = isSelected ? ' selected' : '';
+      var sym = isSelected ? '\u2713' : '+';
+      return '<button class="btn-toggle-player' + cls + '" data-player="' + escAttr(r.player) + '">' + sym + '</button>';
+    }, sortVal: function(r) { return selectedPlayers[r.player] ? 0 : 1; } },
+    { key: 'rating', label: 'Stars', render: function(r) { return '<span class="stars">' + r.stars + '</span>'; }, sortVal: function(r) { return r.rating; } },
+    { key: 'player', label: 'Player', render: function(r) {
+      var img = r.headshotUrl ? '<img class="headshot" src="' + esc(r.headshotUrl) + '" onerror="this.style.display=\'none\'">' : '';
+      return img + esc(r.player);
+    }, sortVal: function(r) { return r.player.toLowerCase(); } },
+    { key: 'position', label: 'Pos', render: function(r) { return posBadge(r.position); }, sortVal: function(r) { return r.position; } },
+    { key: 'college', label: 'College', cls: 'hide-mobile', render: function(r) { return esc(r.college); }, sortVal: function(r) { return r.college.toLowerCase(); } },
+    { key: 'recruitScore', label: 'Score', render: function(r) { return '<strong>' + r.recruitScore.toFixed(1) + '</strong>'; }, sortVal: function(r) { return r.recruitScore; } },
+    { key: 'predictedCost', label: 'Cost', render: function(r) { return esc(r.predictedCost) || '$0'; }, sortVal: function(r) { return parseDollar(r.predictedCost); } }
+  ];
+
+  buildTable('budgetTable', sorted, columns, sortStates.budget, 'budget');
+
+  // Mark selected rows and attach toggle handlers
+  var container = document.getElementById('budgetTable');
+  container.querySelectorAll('tbody tr').forEach(function(tr) {
+    var btn = tr.querySelector('.btn-toggle-player');
+    if (btn) {
+      if (selectedPlayers[btn.getAttribute('data-player')]) {
+        tr.classList.add('player-selected');
+      }
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        togglePlayer(btn.getAttribute('data-player'));
+      });
+    }
+  });
+
+  updateBudgetSummary();
+  renderHaulPanel(data);
+  loadDefaultBudget();
+}
+
+function togglePlayer(playerName) {
+  if (selectedPlayers[playerName]) {
+    delete selectedPlayers[playerName];
+  } else {
+    selectedPlayers[playerName] = true;
+  }
+  renderCurrentTab();
+}
+
+function updateBudgetSummary() {
+  var cacheKey = currentYear + '|board';
+  var data = dataCache[cacheKey];
+  if (!data) return;
+
+  var totalCost = 0;
+  var totalPlayers = 0;
+  var starCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  var posCounts = {};
+  var classScore = 0;
+
+  data.forEach(function(r) {
+    if (!selectedPlayers[r.player]) return;
+    totalPlayers++;
+    totalCost += parseDollar(r.predictedCost);
+    var stars = r.rating || 0;
+    if (stars >= 1 && stars <= 5) starCounts[stars]++;
+    classScore += (STAR_WEIGHTS[stars] || 0.3);
+    var pos = r.position || '?';
+    posCounts[pos] = (posCounts[pos] || 0) + 1;
+  });
+
+  var remaining = budgetAmount - totalCost;
+  var remainingEl = document.getElementById('budgetRemaining');
+  remainingEl.textContent = '$' + Math.round(remaining);
+  remainingEl.className = 'budget-value' + (remaining < 0 ? ' budget-warning' : '');
+
+  document.getElementById('budgetPlayers').textContent = totalPlayers;
+  document.getElementById('budgetClassScore').textContent = classScore.toFixed(1);
+
+  // Star breakdown
+  var starParts = [];
+  [5, 4, 3, 2, 1].forEach(function(s) {
+    if (starCounts[s] > 0) starParts.push(starCounts[s] + '\u00D7' + s + '\u2605');
+  });
+  document.getElementById('budgetStars').textContent = starParts.length ? starParts.join('  ') : '--';
+
+  // Position mix
+  var posParts = [];
+  ['QB', 'RB', 'WR', 'TE'].forEach(function(p) {
+    if (posCounts[p]) posParts.push(posCounts[p] + ' ' + p);
+  });
+  document.getElementById('budgetPositions').textContent = posParts.length ? posParts.join(', ') : '--';
+}
+
+function renderHaulPanel(allData) {
+  var content = document.getElementById('haulContent');
+  var toggle = document.getElementById('haulToggle');
+  var names = Object.keys(selectedPlayers);
+  toggle.innerHTML = 'Your Haul (' + names.length + ' player' + (names.length !== 1 ? 's' : '') + ') ' + (haulOpen ? '&#9660;' : '&#9650;');
+
+  if (names.length === 0) {
+    content.innerHTML = '<p style="color:var(--text-secondary);padding:12px 0;">Select players from the table above to build your draft class.</p>';
+    return;
+  }
+
+  var totalCost = 0;
+  var html = '';
+  allData.forEach(function(r) {
+    if (!selectedPlayers[r.player]) return;
+    var cost = parseDollar(r.predictedCost);
+    totalCost += cost;
+    html += '<div class="haul-item">' +
+      '<button class="btn-toggle-player selected" data-player="' + escAttr(r.player) + '" style="width:24px;height:24px;font-size:0.8em;">\u2715</button>' +
+      ' <span class="haul-name">' + esc(r.player) + '</span> ' +
+      posBadge(r.position) +
+      ' <span class="stars">' + renderStars(r.rating) + '</span>' +
+      ' <strong>' + (r.predictedCost || '$0') + '</strong>' +
+      '</div>';
+  });
+
+  html += '<div class="haul-total"><span>Total Cost</span><span>$' + Math.round(totalCost) + '</span></div>';
+  content.innerHTML = html;
+
+  // Attach remove handlers in haul
+  content.querySelectorAll('.btn-toggle-player').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      togglePlayer(btn.getAttribute('data-player'));
+    });
+  });
+}
+
+function toggleHaul() {
+  haulOpen = !haulOpen;
+  var content = document.getElementById('haulContent');
+  content.classList.toggle('open', haulOpen);
+  var count = Object.keys(selectedPlayers).length;
+  document.getElementById('haulToggle').innerHTML = 'Your Haul (' + count + ' player' + (count !== 1 ? 's' : '') + ') ' + (haulOpen ? '&#9660;' : '&#9650;');
+}
+
+function loadDefaultBudget() {
+  if (budgetDefaultLoaded) return;
+  var cacheKey = currentYear + '|rankings';
+  if (dataCache[cacheKey]) {
+    applyDefaultBudget(dataCache[cacheKey]);
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(function(data) {
+      dataCache[currentYear + '|rankings'] = data;
+      applyDefaultBudget(data);
+    })
+    .withFailureHandler(function() {})
+    .getTeamRankingsData(currentYear);
+}
+
+function applyDefaultBudget(rankings) {
+  if (budgetDefaultLoaded) return;
+  budgetDefaultLoaded = true;
+  var total = 0, count = 0;
+  rankings.forEach(function(r) {
+    var spent = parseDollar(r.totalSpent);
+    if (spent > 0) { total += spent; count++; }
+  });
+  if (count > 0) {
+    budgetAmount = Math.round(total / count);
+    document.getElementById('budgetInput').value = budgetAmount;
+    updateBudgetSummary();
+  }
 }
 
 // ============================================================================

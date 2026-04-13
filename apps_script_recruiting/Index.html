@@ -2,6 +2,7 @@
 <html>
 <head>
   <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <?!= include('Stylesheet') ?>
 </head>
 <body>
@@ -19,6 +20,7 @@
     <button class="tab-btn active" data-tab="board">Recruiting Board</button>
     <button class="tab-btn" data-tab="rankings">Team Rankings</button>
     <button class="tab-btn" data-tab="grades">Player Grades</button>
+    <button class="tab-btn" data-tab="budget">Budget Tool</button>
   </nav>
 
   <!-- Filter Bar -->
@@ -50,6 +52,45 @@
   <div id="gradesPanel" class="tab-panel">
     <div id="gradesLoading" class="loading">Loading player grades...</div>
     <div id="gradesTable" class="table-container"></div>
+  </div>
+
+  <div id="budgetPanel" class="tab-panel">
+    <!-- Budget Summary Bar -->
+    <div class="budget-summary" id="budgetSummary">
+      <div class="budget-field">
+        <label for="budgetInput">Budget:</label>
+        <span class="budget-dollar">$</span><input type="number" id="budgetInput" class="budget-input" value="100" min="0" step="1">
+      </div>
+      <div class="budget-field">
+        <span class="budget-label">Remaining:</span>
+        <span id="budgetRemaining" class="budget-value">$100</span>
+      </div>
+      <div class="budget-field">
+        <span class="budget-label">Players:</span>
+        <span id="budgetPlayers" class="budget-value">0</span>
+      </div>
+      <div class="budget-field">
+        <span class="budget-label">Class Score:</span>
+        <span id="budgetClassScore" class="budget-value">0.0</span>
+      </div>
+      <div class="budget-field">
+        <span class="budget-label">Stars:</span>
+        <span id="budgetStars" class="budget-value">--</span>
+      </div>
+      <div class="budget-field">
+        <span class="budget-label">Positions:</span>
+        <span id="budgetPositions" class="budget-value">--</span>
+      </div>
+    </div>
+
+    <div id="budgetLoading" class="loading">Loading recruiting board...</div>
+    <div id="budgetTable" class="table-container"></div>
+
+    <!-- Your Haul Panel -->
+    <div class="haul-panel" id="haulPanel">
+      <button class="haul-toggle" id="haulToggle" onclick="toggleHaul()">Your Haul (0 players) &#9650;</button>
+      <div class="haul-content" id="haulContent"></div>
+    </div>
   </div>
 
   <!-- Footer -->
