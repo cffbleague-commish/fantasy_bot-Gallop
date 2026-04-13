@@ -4,6 +4,7 @@
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <?!= include('Stylesheet') ?>
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
   <!-- Header -->
@@ -21,6 +22,7 @@
     <button class="tab-btn" data-tab="rankings">Team Rankings</button>
     <button class="tab-btn" data-tab="grades">Player Grades</button>
     <button class="tab-btn" data-tab="budget">Budget Tool</button>
+    <button class="tab-btn" data-tab="analytics">Analytics</button>
   </nav>
 
   <!-- Filter Bar -->
@@ -46,11 +48,13 @@
 
   <div id="rankingsPanel" class="tab-panel">
     <div id="rankingsLoading" class="loading">Loading team rankings...</div>
+    <div id="rankingsChart" class="chart-container"></div>
     <div id="rankingsTable" class="table-container"></div>
   </div>
 
   <div id="gradesPanel" class="tab-panel">
     <div id="gradesLoading" class="loading">Loading player grades...</div>
+    <div id="gradesChart" class="chart-container"></div>
     <div id="gradesTable" class="table-container"></div>
   </div>
 
@@ -91,6 +95,16 @@
       <button class="haul-toggle" id="haulToggle" onclick="toggleHaul()">Your Haul (0 players) &#9650;</button>
       <div class="haul-content" id="haulContent"></div>
     </div>
+  </div>
+
+  <div id="analyticsPanel" class="tab-panel">
+    <div id="analyticsLoading" class="loading">Loading analytics...</div>
+    <div class="chart-row">
+      <div id="spendVsTalentChart" class="chart-container chart-half"></div>
+      <div id="savingsByPosChart" class="chart-container chart-half"></div>
+    </div>
+    <div id="starDistChart" class="chart-container"></div>
+    <div id="bidVsPredictedChart" class="chart-container"></div>
   </div>
 
   <!-- Footer -->
