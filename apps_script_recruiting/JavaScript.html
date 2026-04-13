@@ -1,0 +1,455 @@
+<script>
+// ============================================================================
+// STATE
+// ============================================================================
+var currentYear = null;
+var currentTab = 'board';
+var dataCache = {};
+var sortStates = { board: { col: 'recruitScore', asc: false }, rankings: { col: 'classRank', asc: true }, grades: { col: 'recruitScore', asc: false } };
+var searchTerm = '';
+var positionFilter = '';
+var conferenceFilter = '';
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+document.addEventListener('DOMContentLoaded', function() {
+  // Tab buttons
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { switchTab(btn.getAttribute('data-tab')); });
+  });
+
+  // Filters
+  document.getElementById('searchInput').addEventListener('input', function() {
+    searchTerm = this.value.toLowerCase();
+    renderCurrentTab();
+  });
+  document.getElementById('positionFilter').addEventListener('change', function() {
+    positionFilter = this.value;
+    renderCurrentTab();
+  });
+  document.getElementById('conferenceFilter').addEventListener('change', function() {
+    conferenceFilter = this.value;
+    renderCurrentTab();
+  });
+  document.getElementById('yearSelect').addEventListener('change', function() {
+    onYearChange(this.value);
+  });
+
+  // Load available years
+  google.script.run
+    .withSuccessHandler(onYearsLoaded)
+    .withFailureHandler(onError)
+    .getAvailableYears();
+});
+
+function onYearsLoaded(years) {
+  var select = document.getElementById('yearSelect');
+  select.innerHTML = '';
+  if (years.length === 0) {
+    select.innerHTML = '<option value="">No data</option>';
+    return;
+  }
+  years.forEach(function(y) {
+    var opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    select.appendChild(opt);
+  });
+  currentYear = years[0];
+  loadTabData(currentTab);
+}
+
+// ============================================================================
+// TAB SWITCHING
+// ============================================================================
+function switchTab(tab) {
+  currentTab = tab;
+
+  // Update active button
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+
+  // Show/hide panels
+  document.querySelectorAll('.tab-panel').forEach(function(panel) {
+    panel.classList.remove('active');
+  });
+  document.getElementById(tab + 'Panel').classList.add('active');
+
+  // Show/hide conference filter (only for rankings)
+  document.getElementById('conferenceFilter').style.display = (tab === 'rankings') ? '' : 'none';
+
+  loadTabData(tab);
+}
+
+// ============================================================================
+// YEAR PICKER
+// ============================================================================
+function onYearChange(year) {
+  currentYear = year;
+  dataCache = {};
+  loadTabData(currentTab);
+}
+
+// ============================================================================
+// DATA LOADING
+// ============================================================================
+function loadTabData(tab) {
+  if (!currentYear) return;
+
+  var cacheKey = currentYear + '|' + tab;
+  if (dataCache[cacheKey]) {
+    renderTab(tab, dataCache[cacheKey]);
+    return;
+  }
+
+  showLoading(tab);
+
+  var fns = {
+    board: 'getRecruitingBoardData',
+    rankings: 'getTeamRankingsData',
+    grades: 'getPlayerGradesData'
+  };
+
+  google.script.run
+    .withSuccessHandler(function(data) {
+      dataCache[currentYear + '|' + tab] = data;
+      renderTab(tab, data);
+    })
+    .withFailureHandler(onError)
+    [fns[tab]](currentYear);
+}
+
+// ============================================================================
+// RENDERING DISPATCH
+// ============================================================================
+function renderCurrentTab() {
+  var cacheKey = currentYear + '|' + currentTab;
+  if (dataCache[cacheKey]) {
+    renderTab(currentTab, dataCache[cacheKey]);
+  }
+}
+
+function renderTab(tab, data) {
+  hideLoading(tab);
+  if (tab === 'board') renderBoardTable(data);
+  else if (tab === 'rankings') renderRankingsTable(data);
+  else if (tab === 'grades') renderGradesTable(data);
+}
+
+// ============================================================================
+// RECRUITING BOARD TABLE
+// ============================================================================
+function renderBoardTable(data) {
+  var filtered = filterData(data, 'board');
+  var sorted = sortData(filtered, sortStates.board);
+
+  var columns = [
+    { key: 'rating', label: 'Stars', render: function(r) { return '<span class="stars">' + r.stars + '</span>'; }, sortVal: function(r) { return r.rating; } },
+    { key: 'player', label: 'Player', render: function(r) {
+      var img = r.headshotUrl ? '<img class="headshot" src="' + esc(r.headshotUrl) + '" onerror="this.style.display=\'none\'">' : '';
+      return img + esc(r.player);
+    }, sortVal: function(r) { return r.player.toLowerCase(); } },
+    { key: 'position', label: 'Pos', render: function(r) { return posBadge(r.position); }, sortVal: function(r) { return r.position; } },
+    { key: 'college', label: 'College', cls: 'hide-mobile', render: function(r) { return esc(r.college); }, sortVal: function(r) { return r.college.toLowerCase(); } },
+    { key: 'espnGrade', label: 'ESPN', render: function(r) { return r.espnGrade !== null ? r.espnGrade : ''; }, sortVal: function(r) { return r.espnGrade || 0; } },
+    { key: 'draftRd', label: 'Draft', render: function(r) {
+      if (!r.draftRd || r.draftRd === '0') return '<span style="color:var(--text-secondary)">UDFA</span>';
+      return 'Rd ' + r.draftRd + (r.draftPick ? ', #' + r.draftPick : '');
+    }, sortVal: function(r) { return r.draftPick || 999; } },
+    { key: 'startupADP', label: 'ADP', render: function(r) { return r.startupADP || ''; }, sortVal: function(r) { return r.startupADP || 999; } },
+    { key: 'adpTier', label: 'Tier', cls: 'hide-mobile', render: function(r) { return r.adpTier ? tierBadge(r.adpTier) : ''; }, sortVal: function(r) { return r.adpTier || 'zzz'; } },
+    { key: 'recruitScore', label: 'Score', render: function(r) { return '<strong>' + r.recruitScore.toFixed(1) + '</strong>'; }, sortVal: function(r) { return r.recruitScore; } },
+    { key: 'predictedCost', label: 'Predicted', render: function(r) { return esc(r.predictedCost); }, sortVal: function(r) { return parseDollar(r.predictedCost); } },
+    { key: 'copy1_16', label: 'Copy1 16T', cls: 'hide-mobile', render: function(r) { return esc(r.copy1_16); }, sortVal: function(r) { return parseDollar(r.copy1_16); } },
+    { key: 'copy2_16', label: 'Copy2 16T', cls: 'hide-mobile', render: function(r) { return esc(r.copy2_16); }, sortVal: function(r) { return parseDollar(r.copy2_16); } },
+    { key: 'confidence', label: 'Conf', cls: 'hide-mobile', render: function(r) { return esc(r.confidence); }, sortVal: function(r) { return r.confidence || ''; } }
+  ];
+
+  buildTable('boardTable', sorted, columns, sortStates.board, 'board');
+}
+
+// ============================================================================
+// TEAM RANKINGS TABLE
+// ============================================================================
+function renderRankingsTable(data) {
+  // Populate conference filter
+  var confSelect = document.getElementById('conferenceFilter');
+  var confs = {};
+  data.forEach(function(r) { if (r.conference) confs[r.conference] = true; });
+  var currentOptions = confSelect.options.length;
+  if (currentOptions <= 1) {
+    Object.keys(confs).sort().forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      confSelect.appendChild(opt);
+    });
+  }
+
+  var filtered = filterData(data, 'rankings');
+  var sorted = sortData(filtered, sortStates.rankings);
+
+  var columns = [
+    { key: 'classRank', label: 'Rank', render: function(r) { return '<strong>' + r.classRank + '</strong>'; }, sortVal: function(r) { return r.classRank; } },
+    { key: 'franchise', label: 'Team', render: function(r) {
+      var logo = r.franchiseLogo ? '<img class="franchise-logo" src="' + esc(r.franchiseLogo) + '" onerror="this.style.display=\'none\'">' : '<span class="logo-placeholder">' + esc(r.franchise.charAt(0)) + '</span>';
+      return logo + esc(r.franchise);
+    }, sortVal: function(r) { return r.franchise.toLowerCase(); } },
+    { key: 'conference', label: 'Conf', render: function(r) { return '<span class="conf-badge">' + esc(r.conference) + '</span>'; }, sortVal: function(r) { return r.conference; } },
+    { key: 'confRank', label: 'Conf Rank', render: function(r) { return r.confRank; }, sortVal: function(r) { return r.confRank; } },
+    { key: 'overallGrade', label: 'Grade', render: function(r) { return gradeBadge(r.overallGrade); }, sortVal: function(r) { return gradeSort(r.overallGrade); } },
+    { key: 'classScore', label: 'Score', render: function(r) { return '<strong>' + r.classScore.toFixed(1) + '</strong>'; }, sortVal: function(r) { return r.classScore; } },
+    { key: 'starBreakdown', label: 'Stars', render: function(r) {
+      return '<span class="star-breakdown">' +
+        (r.star5 ? '<span title="5-star">' + r.star5 + '\u2605</span>' : '') +
+        (r.star4 ? '<span title="4-star">' + r.star4 + '\u2605</span>' : '') +
+        (r.star3 ? '<span title="3-star">' + r.star3 + '\u2605</span>' : '') +
+        (r.star2 ? '<span title="2-star">' + r.star2 + '\u2605</span>' : '') +
+        (r.star1 ? '<span title="1-star">' + r.star1 + '\u2605</span>' : '') +
+        '</span>';
+    }, sortVal: function(r) { return r.star5 * 100 + r.star4 * 10 + r.star3; } },
+    { key: 'totalPlayers', label: 'Players', render: function(r) { return r.totalPlayers; }, sortVal: function(r) { return r.totalPlayers; } },
+    { key: 'totalSpent', label: 'Spent', render: function(r) { return esc(r.totalSpent); }, sortVal: function(r) { return parseDollar(r.totalSpent); } },
+    { key: 'avgSavings', label: 'Savings', render: function(r) { return pctDisplay(r.avgSavings); }, sortVal: function(r) { return parsePct(r.avgSavings); } },
+    { key: 'efficiencyGrade', label: 'Efficiency', cls: 'hide-mobile', render: function(r) { return gradeBadge(r.efficiencyGrade); }, sortVal: function(r) { return gradeSort(r.efficiencyGrade); } }
+  ];
+
+  buildTable('rankingsTable', sorted, columns, sortStates.rankings, 'rankings');
+}
+
+// ============================================================================
+// PLAYER GRADES TABLE
+// ============================================================================
+function renderGradesTable(data) {
+  var filtered = filterData(data, 'grades');
+  var sorted = sortData(filtered, sortStates.grades);
+
+  var columns = [
+    { key: 'playerGrade', label: 'Grade', render: function(r) { return gradeBadge(r.playerGrade); }, sortVal: function(r) { return gradeSort(r.playerGrade); } },
+    { key: 'player', label: 'Player', render: function(r) { return esc(r.player); }, sortVal: function(r) { return r.player.toLowerCase(); } },
+    { key: 'position', label: 'Pos', render: function(r) { return posBadge(r.position); }, sortVal: function(r) { return r.position; } },
+    { key: 'franchise', label: 'Team', render: function(r) { return esc(r.franchise); }, sortVal: function(r) { return r.franchise.toLowerCase(); } },
+    { key: 'stars', label: 'Stars', render: function(r) { return '<span class="stars">' + renderStars(r.stars) + '</span>'; }, sortVal: function(r) { return r.stars; } },
+    { key: 'recruitScore', label: 'Score', render: function(r) { return r.recruitScore.toFixed(1); }, sortVal: function(r) { return r.recruitScore; } },
+    { key: 'bidAmount', label: 'Bid', render: function(r) { return esc(r.bidAmount); }, sortVal: function(r) { return parseDollar(r.bidAmount); } },
+    { key: 'predictedCost', label: 'Predicted', render: function(r) { return esc(r.predictedCost); }, sortVal: function(r) { return parseDollar(r.predictedCost); } },
+    { key: 'leagueAvgPrice', label: 'Avg Price', cls: 'hide-mobile', render: function(r) { return esc(r.leagueAvgPrice); }, sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
+    { key: 'savingsPct', label: 'Savings', render: function(r) { return pctDisplay(r.savingsPct); }, sortVal: function(r) { return parsePct(r.savingsPct); } }
+  ];
+
+  buildTable('gradesTable', sorted, columns, sortStates.grades, 'grades');
+}
+
+// ============================================================================
+// GENERIC TABLE BUILDER
+// ============================================================================
+function buildTable(containerId, data, columns, sortState, tabKey) {
+  var container = document.getElementById(containerId);
+  if (!data || data.length === 0) {
+    container.innerHTML = '<p class="no-data">No data available for this year.</p>';
+    return;
+  }
+
+  var html = '<table class="data-table"><thead><tr>';
+  columns.forEach(function(col) {
+    var sorted = sortState && sortState.col === col.key;
+    var arrow = sorted ? (sortState.asc ? ' <span class="sort-arrow">\u25B2</span>' : ' <span class="sort-arrow">\u25BC</span>') : '';
+    var cls = (sorted ? 'sorted' : '') + (col.cls ? ' ' + col.cls : '');
+    html += '<th class="' + cls + '" data-col="' + col.key + '">' + col.label + arrow + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  data.forEach(function(row) {
+    html += '<tr>';
+    columns.forEach(function(col) {
+      html += '<td' + (col.cls ? ' class="' + col.cls + '"' : '') + '>' + col.render(row) + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  // Sort click handlers
+  container.querySelectorAll('th').forEach(function(th) {
+    th.addEventListener('click', function() {
+      var colKey = th.getAttribute('data-col');
+      if (!colKey) return;
+      var state = sortStates[tabKey];
+      if (state.col === colKey) {
+        state.asc = !state.asc;
+      } else {
+        state.col = colKey;
+        state.asc = true;
+      }
+      renderCurrentTab();
+    });
+  });
+}
+
+// ============================================================================
+// FILTERING
+// ============================================================================
+function filterData(data, tab) {
+  return data.filter(function(row) {
+    // Position filter
+    if (positionFilter) {
+      var pos = row.position || '';
+      if (pos !== positionFilter) return false;
+    }
+
+    // Conference filter (rankings only)
+    if (conferenceFilter && tab === 'rankings') {
+      if (row.conference !== conferenceFilter) return false;
+    }
+
+    // Search
+    if (searchTerm) {
+      var haystack = '';
+      if (row.player) haystack += row.player.toLowerCase() + ' ';
+      if (row.franchise) haystack += row.franchise.toLowerCase() + ' ';
+      if (row.college) haystack += row.college.toLowerCase() + ' ';
+      if (haystack.indexOf(searchTerm) === -1) return false;
+    }
+
+    return true;
+  });
+}
+
+// ============================================================================
+// SORTING
+// ============================================================================
+function sortData(data, sortState) {
+  if (!sortState || !sortState.col) return data;
+
+  // Find the column definition to get its sortVal function
+  var allCols = getAllColumns();
+  var colDef = null;
+  for (var i = 0; i < allCols.length; i++) {
+    if (allCols[i].key === sortState.col) { colDef = allCols[i]; break; }
+  }
+  if (!colDef) return data;
+
+  var sorted = data.slice();
+  sorted.sort(function(a, b) {
+    var va = colDef.sortVal(a);
+    var vb = colDef.sortVal(b);
+    if (va < vb) return sortState.asc ? -1 : 1;
+    if (va > vb) return sortState.asc ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}
+
+// Master column registry for sort lookup
+function getAllColumns() {
+  return [
+    { key: 'rating', sortVal: function(r) { return r.rating || 0; } },
+    { key: 'player', sortVal: function(r) { return (r.player || '').toLowerCase(); } },
+    { key: 'position', sortVal: function(r) { return r.position || ''; } },
+    { key: 'college', sortVal: function(r) { return (r.college || '').toLowerCase(); } },
+    { key: 'espnGrade', sortVal: function(r) { return r.espnGrade || 0; } },
+    { key: 'draftRd', sortVal: function(r) { return r.draftPick || 999; } },
+    { key: 'startupADP', sortVal: function(r) { return r.startupADP || 999; } },
+    { key: 'adpTier', sortVal: function(r) { return r.adpTier || 'zzz'; } },
+    { key: 'recruitScore', sortVal: function(r) { return r.recruitScore || 0; } },
+    { key: 'predictedCost', sortVal: function(r) { return parseDollar(r.predictedCost); } },
+    { key: 'copy1_16', sortVal: function(r) { return parseDollar(r.copy1_16); } },
+    { key: 'copy2_16', sortVal: function(r) { return parseDollar(r.copy2_16); } },
+    { key: 'confidence', sortVal: function(r) { return r.confidence || ''; } },
+    { key: 'classRank', sortVal: function(r) { return r.classRank || 0; } },
+    { key: 'franchise', sortVal: function(r) { return (r.franchise || '').toLowerCase(); } },
+    { key: 'conference', sortVal: function(r) { return r.conference || ''; } },
+    { key: 'confRank', sortVal: function(r) { return r.confRank || 0; } },
+    { key: 'overallGrade', sortVal: function(r) { return gradeSort(r.overallGrade); } },
+    { key: 'classScore', sortVal: function(r) { return r.classScore || 0; } },
+    { key: 'starBreakdown', sortVal: function(r) { return (r.star5 || 0) * 100 + (r.star4 || 0) * 10 + (r.star3 || 0); } },
+    { key: 'totalPlayers', sortVal: function(r) { return r.totalPlayers || 0; } },
+    { key: 'totalSpent', sortVal: function(r) { return parseDollar(r.totalSpent); } },
+    { key: 'avgSavings', sortVal: function(r) { return parsePct(r.avgSavings); } },
+    { key: 'efficiencyGrade', sortVal: function(r) { return gradeSort(r.efficiencyGrade); } },
+    { key: 'playerGrade', sortVal: function(r) { return gradeSort(r.playerGrade); } },
+    { key: 'stars', sortVal: function(r) { return r.stars || 0; } },
+    { key: 'bidAmount', sortVal: function(r) { return parseDollar(r.bidAmount); } },
+    { key: 'leagueAvgPrice', sortVal: function(r) { return parseDollar(r.leagueAvgPrice); } },
+    { key: 'savingsPct', sortVal: function(r) { return parsePct(r.savingsPct); } }
+  ];
+}
+
+// ============================================================================
+// RENDER HELPERS
+// ============================================================================
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  var div = document.createElement('div');
+  div.textContent = String(s);
+  return div.innerHTML;
+}
+
+function renderStars(rating) {
+  var n = Number(rating) || 0;
+  return '\u2605'.repeat(n) + '\u2606'.repeat(5 - n);
+}
+
+function posBadge(pos) {
+  return '<span class="pos-badge pos-' + esc(pos) + '">' + esc(pos) + '</span>';
+}
+
+function gradeBadge(grade) {
+  if (!grade || grade === 'N/A') return '<span style="color:var(--text-secondary)">N/A</span>';
+  var cls = 'grade-d';
+  if (grade.charAt(0) === 'A') cls = 'grade-a';
+  else if (grade.charAt(0) === 'B') cls = 'grade-b';
+  else if (grade.charAt(0) === 'C') cls = 'grade-c';
+  return '<span class="grade-badge ' + cls + '">' + esc(grade) + '</span>';
+}
+
+function tierBadge(tier) {
+  return '<span class="tier-badge tier-' + esc(tier) + '">' + esc(tier) + '</span>';
+}
+
+function pctDisplay(val) {
+  if (!val || val === 'N/A') return '<span style="color:var(--text-secondary)">N/A</span>';
+  var num = parsePct(val);
+  var cls = num >= 0 ? 'savings-pos' : 'savings-neg';
+  return '<span class="' + cls + '">' + esc(val) + '</span>';
+}
+
+function parseDollar(val) {
+  if (!val) return 0;
+  var num = parseFloat(String(val).replace(/[$,]/g, ''));
+  return isNaN(num) ? 0 : num;
+}
+
+function parsePct(val) {
+  if (!val || val === 'N/A') return -999;
+  var num = parseFloat(String(val).replace('%', ''));
+  return isNaN(num) ? -999 : num;
+}
+
+function gradeSort(grade) {
+  var order = { 'A+': 1, 'A': 2, 'B+': 3, 'B': 4, 'C+': 5, 'C': 6, 'D+': 7, 'D': 8, 'F': 9, 'N/A': 10 };
+  return order[grade] || 10;
+}
+
+// ============================================================================
+// LOADING & ERRORS
+// ============================================================================
+function showLoading(tab) {
+  document.getElementById(tab + 'Loading').style.display = '';
+  document.getElementById(tab + 'Table').innerHTML = '';
+}
+
+function hideLoading(tab) {
+  document.getElementById(tab + 'Loading').style.display = 'none';
+}
+
+function onError(error) {
+  var msg = error && error.message ? error.message : 'An error occurred loading data.';
+  var panel = document.getElementById(currentTab + 'Table');
+  panel.innerHTML = '<div class="error-msg">' + esc(msg) + '</div>';
+  hideLoading(currentTab);
+}
+</script>

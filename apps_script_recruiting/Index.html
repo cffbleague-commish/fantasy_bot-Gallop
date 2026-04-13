@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('Stylesheet') ?>
+</head>
+<body>
+  <!-- Header -->
+  <header class="dashboard-header">
+    <h1>Recruiting Analytics</h1>
+    <div class="year-picker">
+      <label for="yearSelect">Draft Year:</label>
+      <select id="yearSelect"></select>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="board">Recruiting Board</button>
+    <button class="tab-btn" data-tab="rankings">Team Rankings</button>
+    <button class="tab-btn" data-tab="grades">Player Grades</button>
+  </nav>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="Search player or team...">
+    <select id="positionFilter">
+      <option value="">All Positions</option>
+      <option value="QB">QB</option>
+      <option value="RB">RB</option>
+      <option value="WR">WR</option>
+      <option value="TE">TE</option>
+    </select>
+    <select id="conferenceFilter" style="display:none;">
+      <option value="">All Conferences</option>
+    </select>
+  </div>
+
+  <!-- Tab Panels -->
+  <div id="boardPanel" class="tab-panel active">
+    <div id="boardLoading" class="loading">Loading recruiting board...</div>
+    <div id="boardTable" class="table-container"></div>
+  </div>
+
+  <div id="rankingsPanel" class="tab-panel">
+    <div id="rankingsLoading" class="loading">Loading team rankings...</div>
+    <div id="rankingsTable" class="table-container"></div>
+  </div>
+
+  <div id="gradesPanel" class="tab-panel">
+    <div id="gradesLoading" class="loading">Loading player grades...</div>
+    <div id="gradesTable" class="table-container"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="dashboard-footer">
+    Data refreshed when board is regenerated in Google Sheets
+  </footer>
+
+  <?!= include('JavaScript') ?>
+</body>
+</html>

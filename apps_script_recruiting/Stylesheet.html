@@ -1,0 +1,343 @@
+<style>
+/* ============================================================================
+   CSS VARIABLES
+   ============================================================================ */
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --bg-row-alt: #1e2a4a;
+  --accent: #e94560;
+  --accent-gold: #f5c518;
+  --text-primary: #eaeaea;
+  --text-secondary: #a0a0b0;
+  --border: #2a2a4a;
+
+  --pos-qb: #e74c3c;
+  --pos-rb: #3498db;
+  --pos-wr: #2ecc71;
+  --pos-te: #e67e22;
+
+  --grade-a: #2ecc71;
+  --grade-b: #f1c40f;
+  --grade-c: #e67e22;
+  --grade-d: #e74c3c;
+}
+
+/* ============================================================================
+   BASE
+   ============================================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent);
+}
+
+.dashboard-header h1 {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.year-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.year-picker label {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+.year-picker select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.95em;
+  cursor: pointer;
+}
+
+/* ============================================================================
+   TAB NAVIGATION
+   ============================================================================ */
+.tab-nav {
+  display: flex;
+  gap: 0;
+  background: var(--bg-secondary);
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ============================================================================
+   FILTER BAR
+   ============================================================================ */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.filter-bar input,
+.filter-bar select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9em;
+}
+
+.filter-bar input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-bar input::placeholder { color: var(--text-secondary); }
+
+/* ============================================================================
+   TAB PANELS
+   ============================================================================ */
+.tab-panel { display: none; padding: 16px 24px; }
+.tab-panel.active { display: block; }
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-secondary);
+  font-size: 1.1em;
+}
+
+.no-data {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-secondary);
+}
+
+/* ============================================================================
+   TABLES
+   ============================================================================ */
+.table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+}
+
+.data-table th {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+
+.data-table th:hover { color: var(--text-primary); }
+.data-table th.sorted { color: var(--accent); }
+.data-table th .sort-arrow { font-size: 0.75em; margin-left: 4px; }
+
+.data-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table tbody tr:nth-child(even) { background: var(--bg-row-alt); }
+.data-table tbody tr:hover { background: var(--bg-card); }
+
+/* ============================================================================
+   BADGES & DISPLAY ELEMENTS
+   ============================================================================ */
+.stars { color: var(--accent-gold); letter-spacing: 1px; }
+
+.pos-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: #fff;
+}
+.pos-QB { background: var(--pos-qb); }
+.pos-RB { background: var(--pos-rb); }
+.pos-WR { background: var(--pos-wr); }
+.pos-TE { background: var(--pos-te); }
+
+.grade-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.9em;
+}
+.grade-a { background: var(--grade-a); color: #fff; }
+.grade-b { background: var(--grade-b); color: #333; }
+.grade-c { background: var(--grade-c); color: #fff; }
+.grade-d { background: var(--grade-d); color: #fff; }
+
+.tier-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+.tier-Elite { background: var(--accent-gold); color: #333; }
+.tier-Premium { background: #9b59b6; color: #fff; }
+.tier-Starter { background: var(--pos-rb); color: #fff; }
+.tier-Depth { background: #7f8c8d; color: #fff; }
+.tier-Flier { background: var(--border); color: var(--text-secondary); }
+
+.conf-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 600;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.franchise-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.logo-placeholder {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 28px;
+  font-size: 0.8em;
+  font-weight: 600;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.headshot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.savings-pos { color: var(--grade-a); }
+.savings-neg { color: var(--grade-d); }
+
+.star-breakdown {
+  display: inline-flex;
+  gap: 4px;
+  font-size: 0.85em;
+}
+.star-breakdown span {
+  background: var(--bg-primary);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+.dashboard-footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 0.8em;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+/* ============================================================================
+   ERROR
+   ============================================================================ */
+.error-msg {
+  text-align: center;
+  padding: 24px;
+  color: var(--accent);
+  background: rgba(233, 69, 96, 0.1);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .filter-bar {
+    flex-direction: column;
+    padding: 8px 16px;
+  }
+  .filter-bar input { min-width: 100%; }
+  .tab-panel { padding: 12px 8px; }
+  .hide-mobile { display: none !important; }
+}
+</style>
