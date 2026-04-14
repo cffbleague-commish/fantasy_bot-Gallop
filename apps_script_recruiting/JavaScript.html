@@ -475,6 +475,19 @@ function renderGradesTable(data) {
   var filtered = filterData(data, 'grades');
   var sorted = sortData(filtered, sortStates.grades);
 
+  // Build franchise → logo lookup from cached rankings data
+  var logoMap = {};
+  var rankingsKey = currentYear + '|rankings';
+  if (currentYear === ALL_YEARS) {
+    availableYears.forEach(function(y) {
+      var d = dataCache[y + '|rankings'];
+      if (d) d.forEach(function(r) { if (r.franchiseLogo && !logoMap[r.franchise]) logoMap[r.franchise] = r.franchiseLogo; });
+    });
+  } else {
+    var rd = dataCache[rankingsKey];
+    if (rd) rd.forEach(function(r) { if (r.franchiseLogo) logoMap[r.franchise] = r.franchiseLogo; });
+  }
+
   var columns = [];
   var yc = yearColumn();
   if (yc) columns.push(yc);
@@ -483,7 +496,11 @@ function renderGradesTable(data) {
     { key: 'playerGrade', label: 'Grade', render: function(r) { return gradeBadge(r.playerGrade); }, sortVal: function(r) { return gradeSort(r.playerGrade); } },
     { key: 'player', label: 'Player', render: function(r) { return esc(r.player); }, sortVal: function(r) { return r.player.toLowerCase(); } },
     { key: 'position', label: 'Pos', render: function(r) { return posBadge(r.position); }, sortVal: function(r) { return r.position; } },
-    { key: 'franchise', label: 'Team', render: function(r) { return esc(r.franchise); }, sortVal: function(r) { return r.franchise.toLowerCase(); } },
+    { key: 'franchise', label: 'Team', render: function(r) {
+      var logo = logoMap[r.franchise];
+      if (logo) return '<img class="franchise-logo" src="' + esc(logo) + '" title="' + esc(r.franchise) + '" onerror="this.style.display=\'none\'">';
+      return '<span class="logo-placeholder" title="' + esc(r.franchise) + '">' + esc(r.franchise.charAt(0)) + '</span>';
+    }, sortVal: function(r) { return r.franchise.toLowerCase(); } },
     { key: 'stars', label: 'Stars', cls: 'hide-mobile', render: function(r) { return '<span class="stars">' + renderStars(r.stars) + '</span>'; }, sortVal: function(r) { return r.stars; } },
     { key: 'recruitScore', label: 'Score', cls: 'hide-mobile', render: function(r) { return r.recruitScore.toFixed(1); }, sortVal: function(r) { return r.recruitScore; } },
     { key: 'bidAmount', label: 'Bid', render: function(r) { return esc(r.bidAmount); }, sortVal: function(r) { return parseDollar(r.bidAmount); } },
@@ -730,19 +747,19 @@ function gradeSort(grade) {
 // CHARTS — THEME & HELPERS
 // ============================================================================
 var CHART_THEME = {
-  backgroundColor: '#1a1a2e',
-  legend: { textStyle: { color: '#a0a0b0', fontSize: 11 } },
-  titleTextStyle: { color: '#eaeaea', fontSize: 14, bold: true },
-  hAxis: { textStyle: { color: '#a0a0b0', fontSize: 11 }, gridlines: { color: '#2a2a4a' }, baselineColor: '#2a2a4a' },
-  vAxis: { textStyle: { color: '#a0a0b0', fontSize: 11 }, gridlines: { color: '#2a2a4a' }, baselineColor: '#2a2a4a' },
+  backgroundColor: '#121212',
+  legend: { textStyle: { color: '#8a8a8a', fontSize: 11 } },
+  titleTextStyle: { color: '#f0f0ed', fontSize: 14, bold: true, fontName: 'Oswald' },
+  hAxis: { textStyle: { color: '#8a8a8a', fontSize: 11 }, gridlines: { color: '#333333' }, baselineColor: '#333333' },
+  vAxis: { textStyle: { color: '#8a8a8a', fontSize: 11 }, gridlines: { color: '#333333' }, baselineColor: '#333333' },
   chartArea: { width: '78%', height: '72%' },
   tooltip: { textStyle: { fontSize: 12 } },
   fontName: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
 };
 
-var CONF_COLORS = { ACC: '#e94560', B10: '#3498db', B12: '#2ecc71', P12: '#9b59b6', SEC: '#f5c518', AAC: '#e67e22' };
+var CONF_COLORS = { ACC: '#d4a843', B10: '#3498db', B12: '#2ecc71', P12: '#9b59b6', SEC: '#f5c518', AAC: '#e67e22' };
 var POS_COLORS = { QB: '#e74c3c', RB: '#3498db', WR: '#2ecc71', TE: '#e67e22' };
-var STAR_COLORS = ['#2a2a4a', '#7f8c8d', '#3498db', '#9b59b6', '#f5c518'];
+var STAR_COLORS = ['#333333', '#7f8c8d', '#3498db', '#9b59b6', '#f5c518'];
 
 function mergeOpts(extra) {
   var opts = {};
@@ -801,7 +818,7 @@ function drawRankingsChart(data) {
   dt.addColumn({ type: 'string', role: 'tooltip' });
 
   sorted.forEach(function(r) {
-    var color = CONF_COLORS[r.conference] || '#a0a0b0';
+    var color = CONF_COLORS[r.conference] || '#8a8a8a';
     var score = currentYear === ALL_YEARS ? r.totalScore : r.classScore;
     var tip;
     if (currentYear === ALL_YEARS) {
@@ -818,8 +835,8 @@ function drawRankingsChart(data) {
   chart.draw(dt, mergeOpts({
     title: title,
     legend: 'none',
-    hAxis: { title: scoreLabel, textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
-    vAxis: { textStyle: { color: '#eaeaea', fontSize: 10 } },
+    hAxis: { title: scoreLabel, textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
+    vAxis: { textStyle: { color: '#f0f0ed', fontSize: 10 } },
     chartArea: { width: '65%', height: '80%' }
   }));
 
@@ -994,13 +1011,13 @@ function drawSpendingVsTalent(data) {
     dt.addRow(row);
   });
 
-  var colors = confNames.map(function(c) { return CONF_COLORS[c] || '#a0a0b0'; });
+  var colors = confNames.map(function(c) { return CONF_COLORS[c] || '#8a8a8a'; });
 
   var chart = new google.visualization.ScatterChart(el);
   chart.draw(dt, mergeOpts({
     title: currentYear === ALL_YEARS ? 'Spending vs Talent (All Years)' : 'Spending vs Talent',
-    hAxis: { title: 'Total Spent ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
-    vAxis: { title: 'Class Score', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
+    hAxis: { title: 'Total Spent ($)', textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
+    vAxis: { title: 'Class Score', textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
     colors: colors,
     pointSize: 7,
     chartArea: { width: '72%', height: '70%' }
@@ -1038,7 +1055,7 @@ function drawSavingsByPosition(data) {
   chart.draw(dt, mergeOpts({
     title: currentYear === ALL_YEARS ? 'Avg Savings by Position — All Years ($)' : 'Avg Savings by Position ($)',
     legend: 'none',
-    vAxis: { title: 'Savings ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
+    vAxis: { title: 'Savings ($)', textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
     chartArea: { width: '70%', height: '70%' }
   }));
 }
@@ -1086,8 +1103,8 @@ function drawStarDistribution(data) {
     title: currentYear === ALL_YEARS ? 'Star Distribution \u2014 Top 20 Teams (All Years)' : 'Star Distribution \u2014 Top 20 Teams',
     isStacked: true,
     colors: STAR_COLORS.slice().reverse(),
-    hAxis: { title: 'Number of Players', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
-    vAxis: { textStyle: { color: '#eaeaea', fontSize: 10 } },
+    hAxis: { title: 'Number of Players', textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
+    vAxis: { textStyle: { color: '#f0f0ed', fontSize: 10 } },
     chartArea: { width: '65%', height: '80%' }
   }));
 }
@@ -1148,8 +1165,8 @@ function drawBidVsPredicted(data) {
   var chart = new google.visualization.ScatterChart(el);
   chart.draw(dt, mergeOpts({
     title: currentYear === ALL_YEARS ? 'Bid vs Predicted Cost \u2014 All Years (below line = value)' : 'Bid vs Predicted Cost (below line = value)',
-    hAxis: { title: 'Predicted Cost ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
-    vAxis: { title: 'Actual Bid ($)', textStyle: { color: '#a0a0b0' }, titleTextStyle: { color: '#a0a0b0' } },
+    hAxis: { title: 'Predicted Cost ($)', textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
+    vAxis: { title: 'Actual Bid ($)', textStyle: { color: '#8a8a8a' }, titleTextStyle: { color: '#8a8a8a' } },
     colors: colors,
     pointSize: 6,
     series: { 4: { pointSize: 0, lineWidth: 1, lineDashStyle: [4, 4], visibleInLegend: true } },
