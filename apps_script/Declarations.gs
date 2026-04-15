@@ -422,6 +422,9 @@ function syncAllHistoricalAwards(startYear, endYear) {
  */
 function checkDeclarationEligibility(row) {
   const eligibilityYearsUsed = Number(row[PC_COLS.eligibilityYearsUsed]) || 0;
+  const traditionalRedshirt = row[PC_COLS.traditionalRedshirtUsed] === true || row[PC_COLS.traditionalRedshirtUsed] === "TRUE";
+  const medicalRedshirt = row[PC_COLS.medicalRedshirtUsed] === true || row[PC_COLS.medicalRedshirtUsed] === "TRUE";
+  const totalProgramYears = eligibilityYearsUsed + (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
   const nationalAwards = Number(row[PC_COLS.nationalAwards]) || 0;
   const allConfAwards = Number(row[PC_COLS.allConferenceAwards]) || 0;
   const active = row[PC_COLS.active];
@@ -437,9 +440,9 @@ function checkDeclarationEligibility(row) {
     return { eligible: false, reason: "Already declared early" };
   }
 
-  // Must have completed 3rd year (years used >= 3)
-  if (eligibilityYearsUsed < 3) {
-    return { eligible: false, reason: `Only ${eligibilityYearsUsed} years used, need 3+` };
+  // Must have 3+ total program years (playing years + redshirt years)
+  if (totalProgramYears < 3) {
+    return { eligible: false, reason: `Only ${totalProgramYears} program years (${eligibilityYearsUsed} playing + redshirts), need 3+` };
   }
 
   // Check award requirements
@@ -680,13 +683,15 @@ function processEarlyDeclarations(year) {
   const data = pcSheet.getDataRange().getValues();
 
   if (data.length <= 1) {
-    return { released: 0, retained: 0, autoRetained: 0 };
+    return { released: 0, retained: 0, autoRetained: 0, skipped: 0 };
   }
 
+  const processedMarker = `PROCESSED-${year}`;
   const rows = data.slice(1);
   let released = 0;
   let retained = 0;
   let autoRetained = 0;
+  let skipped = 0;
 
   rows.forEach((row, idx) => {
     const rowNum = idx + 2;
@@ -697,6 +702,16 @@ function processEarlyDeclarations(year) {
     const decision = String(row[PC_COLS.retentionDecision] || "").toUpperCase().trim();
     const playerName = row[PC_COLS.playerName];
     const copyId = row[PC_COLS.copyId];
+    const existingDecisionDate = String(row[PC_COLS.retentionDecisionDate] || "");
+
+    // Idempotency guard: skip if already processed for this year
+    // After RETAIN/auto-retain processing, retentionDecisionDate is set to "PROCESSED-{year}"
+    // RELEASE is already idempotent (released players become inactive and fail eligibility check)
+    if (existingDecisionDate === processedMarker) {
+      Logger.log(`  SKIPPED (already processed): ${playerName} (${copyId})`);
+      skipped++;
+      return;
+    }
 
     // Get current retention count and path for cost tracking
     const nationalAwards = Number(row[PC_COLS.nationalAwards]) || 0;
@@ -717,7 +732,7 @@ function processEarlyDeclarations(year) {
       // Increment retention count and record the path
       const newRetentionCount = currentRetentionCount + 1;
       pcSheet.getRange(rowNum, PC_COLS.retentionDecision + 1).setValue("");
-      pcSheet.getRange(rowNum, PC_COLS.retentionDecisionDate + 1).setValue("");
+      pcSheet.getRange(rowNum, PC_COLS.retentionDecisionDate + 1).setValue(processedMarker);
       pcSheet.getRange(rowNum, PC_COLS.retentionPath + 1).setValue(retentionPath);
       pcSheet.getRange(rowNum, PC_COLS.retentionCount + 1).setValue(newRetentionCount);
       pcSheet.getRange(rowNum, PC_COLS.lastUpdated + 1).setValue(new Date());
@@ -728,6 +743,7 @@ function processEarlyDeclarations(year) {
     } else {
       // No decision = auto-retain (same as explicit retain)
       const newRetentionCount = currentRetentionCount + 1;
+      pcSheet.getRange(rowNum, PC_COLS.retentionDecisionDate + 1).setValue(processedMarker);
       pcSheet.getRange(rowNum, PC_COLS.retentionPath + 1).setValue(retentionPath);
       pcSheet.getRange(rowNum, PC_COLS.retentionCount + 1).setValue(newRetentionCount);
       pcSheet.getRange(rowNum, PC_COLS.lastUpdated + 1).setValue(new Date());
@@ -742,6 +758,9 @@ function processEarlyDeclarations(year) {
   Logger.log(`  Released: ${released}`);
   Logger.log(`  Retained: ${retained}`);
   Logger.log(`  Auto-Retained: ${autoRetained}`);
+  if (skipped > 0) {
+    Logger.log(`  Skipped (already processed): ${skipped}`);
+  }
 
   return {
     year: year,

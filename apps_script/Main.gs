@@ -220,6 +220,8 @@ function onOpen() {
     .addItem('📅 Set League Year', 'promptSetLeagueYear')
     .addSeparator()
     .addSubMenu(ui.createMenu('📋 Season Checklist')
+      .addItem('📊 Open Dashboard (Sidebar)', 'showOperationsDashboard')
+      .addSeparator()
       .addItem('1. End of Season Processing', 'wizardEndOfSeason')
       .addItem('2. Declarations & Redshirts', 'wizardDeclarationsAndRedshirts')
       .addItem('3. Year Rollover', 'wizardYearRollover')
@@ -317,7 +319,7 @@ function onOpen() {
       .addItem('Export for MFL Import', 'promptExportForMFL')
       .addItem('Export All for MFL Import', 'promptExportAllForMFL'))
     .addSeparator()
-    .addItem('📖 Open Commissioner Guide', 'generateOperationsGuide')
+    .addItem('📊 Open Operations Dashboard', 'showOperationsDashboard')
     .addItem('⚙️ Initialize Settings', 'initializeScriptProperties')
     .addToUi();
 }
@@ -2172,7 +2174,10 @@ function wizardDeclarationsAndRedshirts() {
       const row = data[i];
       if (row[colMap["Active"]] !== true) continue;
       const yearsUsed = Number(row[colMap["EligibilityYearsUsed"]] || 0);
-      if (yearsUsed < config.declarations.minYearsForDeclaration) continue;
+      const tradRS = row[colMap["TraditionalRedshirtUsed"]] === true || row[colMap["TraditionalRedshirtUsed"]] === "TRUE";
+      const medRS = row[colMap["MedicalRedshirtUsed"]] === true || row[colMap["MedicalRedshirtUsed"]] === "TRUE";
+      const programYears = yearsUsed + (tradRS ? 1 : 0) + (medRS ? 1 : 0);
+      if (programYears < config.declarations.minYearsForDeclaration) continue;
       const natAwards = Number(row[colMap["NationalAwards"]] || 0);
       const acAwards = Number(row[colMap["AllConferenceAwards"]] || 0);
       if (natAwards >= config.declarations.nationalAwardsRequired ||
@@ -2465,7 +2470,7 @@ function generateOperationsGuide() {
   rows.push(["", "Wizard shortcut: Season Checklist → 2. Declarations & Redshirts", "", "", ""]);
   rows.push(["", "", "", "", ""]);
   rows.push(["", "Step", "Description", "Menu Path", "Notes"]);
-  rows.push(["7", "View Eligible Players", "See who qualifies to declare early", "Declarations → View Eligible Players", "3+ years used AND (1 nat'l award OR 2 all-conf)"]);
+  rows.push(["7", "View Eligible Players", "See who qualifies to declare early", "Declarations → View Eligible Players", "3+ program years (playing + redshirt) AND (1 nat'l award OR 2 all-conf)"]);
   rows.push(["8", "Collect Decisions", "Get RETAIN/RELEASE from each coach", "Manual / Discord bot", "Set a deadline — default is RETAIN"]);
   rows.push(["9", "Process Declarations", "Apply RETAIN/RELEASE, mark released players inactive", "Declarations → Process Early Declarations", "⚠️ IRREVERSIBLE — double-check decisions"]);
   rows.push(["10", "Process Redshirts", "Scan TransactionLog for end-of-season taxi/IR status", "Season Management → End Season", "Last move rule: must be ON taxi/IR at season end"]);
@@ -2539,7 +2544,7 @@ function generateOperationsGuide() {
   rows.push(["═══", "TROUBLESHOOTING", "", "", ""]);
   rows.push(["", "", "", "", ""]);
   rows.push(["", "Problem", "Cause", "Solution", ""]);
-  rows.push(["?", "No draft-eligible players found", "EligibilityYearsUsed not incremented", "Run 'Diagnose Eligibility Data' then check if rollover was run"]);
+  rows.push(["?", "No draft-eligible players found", "Program years not met (playing + redshirt years)", "Check EligibilityYearsUsed + redshirts >= 3. Run 'Diagnose Eligibility Data'"]);
   rows.push(["?", "Awards not on PlayerCopies", "Awards calculated but not synced", "Run 'Sync Roster Ownership'"]);
   rows.push(["?", "Wrong ownership after transactions", "TransactionLog out of sync", "Run 'Process Current Year Transactions' then 'Sync Roster'"]);
   rows.push(["?", "Franchise IDs missing leading zeros", "Google Sheets number formatting", "Run 'Recalculate Active Status' (includes fix)"]);

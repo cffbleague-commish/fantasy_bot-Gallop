@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Google Sans', Roboto, Arial, sans-serif;
+      font-size: 13px;
+      color: #202124;
+      background: #f8f9fa;
+      padding: 12px;
+    }
+    .header {
+      text-align: center;
+      padding: 12px 0;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #1a73e8;
+    }
+    .header h1 {
+      font-size: 16px;
+      color: #1a73e8;
+      margin-bottom: 4px;
+    }
+    .year-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .year-selector select {
+      padding: 4px 8px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .progress-bar {
+      background: #e8eaed;
+      border-radius: 8px;
+      height: 8px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: #1a73e8;
+      height: 100%;
+      border-radius: 8px;
+      transition: width 0.3s ease;
+    }
+    .progress-text {
+      text-align: center;
+      font-size: 11px;
+      color: #5f6368;
+      margin-bottom: 12px;
+    }
+    .phase {
+      margin-bottom: 12px;
+    }
+    .phase-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: #1a73e8;
+      color: white;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 12px;
+    }
+    .phase-header:hover { background: #1557b0; }
+    .phase-header .arrow { transition: transform 0.2s; }
+    .phase-header .arrow.collapsed { transform: rotate(-90deg); }
+    .phase-body { border: 1px solid #dadce0; border-top: none; border-radius: 0 0 6px 6px; }
+    .phase-body.collapsed { display: none; }
+    .step {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f3f4;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .step:last-child { border-bottom: none; }
+    .step.completed { background: #e6f4ea; }
+    .step-checkbox {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      cursor: pointer;
+      accent-color: #1a73e8;
+    }
+    .step-content { flex: 1; min-width: 0; }
+    .step-name {
+      font-weight: 500;
+      font-size: 12px;
+      color: #202124;
+    }
+    .step.completed .step-name {
+      color: #1e8e3e;
+      text-decoration: line-through;
+    }
+    .step-desc {
+      font-size: 11px;
+      color: #5f6368;
+      margin-top: 2px;
+    }
+    .step-meta {
+      font-size: 10px;
+      color: #80868b;
+      margin-top: 2px;
+    }
+    .step-actions {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .btn-run {
+      padding: 3px 8px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-run:hover { background: #1557b0; }
+    .btn-run:disabled {
+      background: #dadce0;
+      color: #80868b;
+      cursor: not-allowed;
+    }
+    .btn-run.running {
+      background: #f9ab00;
+      color: #202124;
+    }
+    .prereq-warning {
+      font-size: 10px;
+      color: #d93025;
+      margin-top: 2px;
+    }
+    .status-msg {
+      padding: 8px;
+      margin: 8px 0;
+      border-radius: 4px;
+      font-size: 12px;
+      display: none;
+    }
+    .status-msg.success { display: block; background: #e6f4ea; color: #1e8e3e; }
+    .status-msg.error { display: block; background: #fce8e6; color: #d93025; }
+    .footer {
+      text-align: center;
+      padding: 8px 0;
+      font-size: 10px;
+      color: #80868b;
+      border-top: 1px solid #dadce0;
+      margin-top: 12px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #5f6368;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Operations Dashboard</h1>
+    <div class="year-selector">
+      <label>Season:</label>
+      <select id="yearSelect" onchange="loadChecklist()"></select>
+    </div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">Loading...</div>
+
+  <div id="statusMsg" class="status-msg"></div>
+  <div id="dashboard" class="loading">Loading dashboard...</div>
+
+  <div class="footer">
+    Operations Dashboard v1.0<br>
+    Checklist state is saved automatically
+  </div>
+
+  <script>
+    let steps = [];
+    let checklistStatus = {};
+    let currentYear = null;
+    let phases = {};
+
+    // Initialize
+    google.script.run
+      .withSuccessHandler(function(stepsData) {
+        steps = stepsData;
+        // Group by phase
+        phases = {};
+        steps.forEach(function(s) {
+          if (!phases[s.phase]) phases[s.phase] = [];
+          phases[s.phase].push(s);
+        });
+        loadYears();
+      })
+      .getDashboardSteps();
+
+    function loadYears() {
+      google.script.run
+        .withSuccessHandler(function(years) {
+          var select = document.getElementById('yearSelect');
+          select.innerHTML = '';
+          years.forEach(function(y) {
+            var opt = document.createElement('option');
+            opt.value = y;
+            opt.text = y;
+            select.appendChild(opt);
+          });
+          // Get current league year to select
+          google.script.run
+            .withSuccessHandler(function(leagueYear) {
+              // Select previous year by default (most likely doing end-of-season for it)
+              var prevYear = Number(leagueYear) - 1;
+              if (select.querySelector('option[value="' + prevYear + '"]')) {
+                select.value = prevYear;
+              }
+              loadChecklist();
+            })
+            .getDashboardLeagueYear();
+        })
+        .getAvailableYears();
+    }
+
+    function loadChecklist() {
+      currentYear = document.getElementById('yearSelect').value;
+      google.script.run
+        .withSuccessHandler(function(status) {
+          checklistStatus = status;
+          render();
+        })
+        .getChecklistStatus(currentYear);
+    }
+
+    function render() {
+      var html = '';
+      var totalSteps = steps.length;
+      var completedSteps = 0;
+
+      Object.keys(phases).forEach(function(phaseName, phaseIdx) {
+        var phaseSteps = phases[phaseName];
+        var phaseCompleted = phaseSteps.filter(function(s) {
+          return checklistStatus[s.step] && checklistStatus[s.step].status === 'completed';
+        }).length;
+        completedSteps += phaseCompleted;
+
+        var phaseIcon = phaseIdx === 0 ? '1' : phaseIdx === 1 ? '2' : '3';
+
+        html += '<div class="phase">';
+        html += '<div class="phase-header" onclick="togglePhase(this)">';
+        html += '<span>Phase ' + phaseIcon + ': ' + phaseName + ' (' + phaseCompleted + '/' + phaseSteps.length + ')</span>';
+        html += '<span class="arrow">▼</span>';
+        html += '</div>';
+        html += '<div class="phase-body">';
+
+        phaseSteps.forEach(function(step) {
+          var isComplete = checklistStatus[step.step] && checklistStatus[step.step].status === 'completed';
+          var completedAt = isComplete ? checklistStatus[step.step].completedAt : '';
+          var notes = isComplete ? checklistStatus[step.step].notes : '';
+
+          // Check prerequisites (all prior steps in same or earlier phases should be complete)
+          var missingPrereqs = [];
+          steps.forEach(function(s) {
+            if (s.step < step.step) {
+              if (!checklistStatus[s.step] || checklistStatus[s.step].status !== 'completed') {
+                missingPrereqs.push('Step ' + s.step);
+              }
+            }
+          });
+
+          html += '<div class="step ' + (isComplete ? 'completed' : '') + '" id="step-' + step.step + '">';
+          html += '<input type="checkbox" class="step-checkbox" ' + (isComplete ? 'checked' : '') +
+                  ' onchange="toggleStep(' + step.step + ', this.checked)">';
+          html += '<div class="step-content">';
+          html += '<div class="step-name">Step ' + step.step + ': ' + step.name + '</div>';
+          html += '<div class="step-desc">' + step.description + '</div>';
+          if (completedAt) {
+            html += '<div class="step-meta">Completed: ' + completedAt + '</div>';
+          }
+          if (notes && notes !== 'undefined') {
+            html += '<div class="step-meta">Notes: ' + truncate(notes, 80) + '</div>';
+          }
+          if (!isComplete && missingPrereqs.length > 0) {
+            html += '<div class="prereq-warning">Prerequisites: ' + missingPrereqs.join(', ') + '</div>';
+          }
+          html += '</div>';
+
+          if (step.runnable) {
+            html += '<div class="step-actions">';
+            html += '<button class="btn-run" id="btn-' + step.step + '" onclick="runStep(' + step.step + ')" ' +
+                    (isComplete ? 'disabled' : '') + '>Run</button>';
+            html += '</div>';
+          }
+
+          html += '</div>';
+        });
+
+        html += '</div></div>';
+      });
+
+      document.getElementById('dashboard').innerHTML = html;
+
+      // Update progress
+      var pct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressText').textContent = completedSteps + ' of ' + totalSteps + ' steps completed (' + pct + '%)';
+    }
+
+    function togglePhase(header) {
+      var body = header.nextElementSibling;
+      var arrow = header.querySelector('.arrow');
+      body.classList.toggle('collapsed');
+      arrow.classList.toggle('collapsed');
+    }
+
+    function toggleStep(stepNumber, checked) {
+      if (checked) {
+        google.script.run
+          .withSuccessHandler(function() { loadChecklist(); })
+          .markStepComplete(currentYear, stepNumber, '');
+      } else {
+        google.script.run
+          .withSuccessHandler(function() { loadChecklist(); })
+          .markStepIncomplete(currentYear, stepNumber);
+      }
+    }
+
+    function runStep(stepNumber) {
+      var btn = document.getElementById('btn-' + stepNumber);
+      btn.textContent = 'Running...';
+      btn.classList.add('running');
+      btn.disabled = true;
+
+      showStatus('Running Step ' + stepNumber + '...', 'success');
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btn.classList.remove('running');
+          if (result.success) {
+            btn.textContent = 'Done';
+            showStatus('Step ' + stepNumber + ': ' + result.message, 'success');
+          } else {
+            btn.textContent = 'Run';
+            btn.disabled = false;
+            showStatus('Step ' + stepNumber + ' failed: ' + result.message, 'error');
+          }
+          loadChecklist();
+        })
+        .withFailureHandler(function(err) {
+          btn.textContent = 'Run';
+          btn.classList.remove('running');
+          btn.disabled = false;
+          showStatus('Step ' + stepNumber + ' error: ' + err.message, 'error');
+        })
+        .runDashboardStep(currentYear, stepNumber);
+    }
+
+    function showStatus(msg, type) {
+      var el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.className = 'status-msg ' + type;
+      if (type === 'success') {
+        setTimeout(function() {
+          el.className = 'status-msg';
+        }, 5000);
+      }
+    }
+
+    function truncate(str, len) {
+      return str.length > len ? str.substring(0, len) + '...' : str;
+    }
+  </script>
+</body>
+</html>

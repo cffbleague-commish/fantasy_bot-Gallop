@@ -2586,10 +2586,10 @@ def get_retention_cost_label(retention_path: str, retention_count: int) -> str:
 def get_eligible_players_for_retention(conference: str = None, franchise_id: str = None):
     """
     Get all players eligible for early declaration (COULD_DECLARE).
-    Eligible = In 3rd year or later (years_used + 1 >= 3) AND (1+ national awards OR 2+ all-conf awards)
+    Eligible = 3+ total program years (playing + redshirt) AND (1+ national awards OR 2+ all-conf awards)
 
-    This matches the COULD_DECLARE logic in TheoreticalDraft.gs - players who are IN their 3rd year
-    (eligibilityYearsUsed = 2) will have completed 3 years at end of season and can declare early.
+    Total program years includes redshirt years because eligibility for early declaration
+    is based on time in the program, not just playing years.
     """
     if player_copies_ws is None:
         return []
@@ -2607,6 +2607,9 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
         active = str(row[PC_COLS['active']]).upper() == 'TRUE'
         declared_early = str(row[PC_COLS['declaredEarly']]).upper() == 'TRUE'
         years_used = int(row[PC_COLS['eligibilityYearsUsed']] or 0)
+        trad_redshirt = str(row[PC_COLS['traditionalRedshirtUsed']]).upper() == 'TRUE'
+        med_redshirt = str(row[PC_COLS['medicalRedshirtUsed']]).upper() == 'TRUE'
+        program_years = years_used + (1 if trad_redshirt else 0) + (1 if med_redshirt else 0)
         national_awards = int(row[PC_COLS['nationalAwards']] or 0)
         allconf_awards = int(row[PC_COLS['allConferenceAwards']] or 0)
 
@@ -2614,8 +2617,8 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
         if not active or declared_early:
             continue
 
-        # Must have completed 3rd year (years used >= 3) - matches Apps Script threshold
-        if years_used < 3:
+        # Must have 3+ total program years (playing years + redshirt years)
+        if program_years < 3:
             continue
 
         # Must have 1+ national OR 2+ all-conf
@@ -2635,6 +2638,7 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
             'conference': row[PC_COLS['conference']],
             'franchise_id': row[PC_COLS['currentFranchiseId']],
             'years_used': years_used,
+            'program_years': program_years,
             'national_awards': national_awards,
             'allconf_awards': allconf_awards,
             'retention_decision': row[PC_COLS['retentionDecision']] if len(row) > PC_COLS['retentionDecision'] else '',
@@ -2721,7 +2725,7 @@ async def retention_eligible(interaction: discord.Interaction, conference: str =
 
     embed = discord.Embed(
         title="Players Eligible for Early Declaration",
-        description="Players with 3+ years used AND (1+ National Award OR 2+ All-Conference selections)",
+        description="Players with 3+ program years (playing + redshirt) AND (1+ National Award OR 2+ All-Conference selections)",
         color=discord.Color.orange()
     )
 

@@ -63,8 +63,9 @@ function generateCopyInfo(ownerFranchiseId, eligibilityYearsUsed, traditionalRed
       // Player has declared early (released)
       statusSuffix = "_D";
     } else {
-      // Check if eligible for declaration (3+ years used and has awards)
-      const isEligible = eligibilityYearsUsed >= 3 && (nationalAwards >= 1 || allConfAwards >= 2);
+      // Check if eligible for declaration (3+ program years and has awards)
+      const totalProgramYears = eligibilityYearsUsed + (traditionalRedshirtUsed ? 1 : 0) + (medicalRedshirtUsed ? 1 : 0);
+      const isEligible = totalProgramYears >= 3 && (nationalAwards >= 1 || allConfAwards >= 2);
 
       if (isEligible && retentionDecision === "") {
         // Eligible but no decision yet

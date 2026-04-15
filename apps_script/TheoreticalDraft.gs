@@ -329,16 +329,19 @@ function getDraftEligibleCopies(year) {
       draftReason = "GRADUATING";
       stats.graduating++;
     }
-    // Option 4: Could declare early (has awards and will have 3+ years after this season)
-    // Meets: 3+ years completed (after current season) AND (1+ national award OR 2+ all-conf)
-    // Using +1 to include players IN their 3rd year who will be eligible at end of season
-    else if (eligibilityYearsUsed + 1 >= minYearsForDeclaration) {
-      const hasNationalAward = nationalAwards >= 1;
-      const hasTwoAllConf = allConfAwards >= 2;
+    // Option 4: Could declare early (has awards and 3+ total program years after this season)
+    // Total program years = playing years + redshirt years (includes time sitting out)
+    // Using +1 to project completion of current season
+    else {
+      const totalProgramYears = eligibilityYearsUsed + (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
+      if (totalProgramYears + 1 >= minYearsForDeclaration) {
+        const hasNationalAward = nationalAwards >= 1;
+        const hasTwoAllConf = allConfAwards >= 2;
 
-      if (hasNationalAward || hasTwoAllConf) {
-        draftReason = "COULD_DECLARE";
-        stats.couldDeclare++;
+        if (hasNationalAward || hasTwoAllConf) {
+          draftReason = "COULD_DECLARE";
+          stats.couldDeclare++;
+        }
       }
     }
 
@@ -1320,25 +1323,29 @@ function diagnoseSpecificPlayers(copyIds) {
           draftReason = "RELEASING";
         } else if (eligibilityYearsUsed + 1 >= maxYears) {
           draftReason = "GRADUATING";
-        } else if (eligibilityYearsUsed + 1 >= minYearsForDeclaration) {
-          const hasNationalAward = nationalAwards >= 1;
-          const hasTwoAllConf = allConfAwards >= 2;
-          if (hasNationalAward || hasTwoAllConf) {
-            draftReason = "COULD_DECLARE";
+        } else {
+          const totalProgramYears = eligibilityYearsUsed + (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
+          if (totalProgramYears + 1 >= minYearsForDeclaration) {
+            const hasNationalAward = nationalAwards >= 1;
+            const hasTwoAllConf = allConfAwards >= 2;
+            if (hasNationalAward || hasTwoAllConf) {
+              draftReason = "COULD_DECLARE";
+            }
           }
         }
 
         if (draftReason) {
           Logger.log(`    ✓ Draft reason: ${draftReason}`);
         } else {
+          const totalProgramYears = eligibilityYearsUsed + (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
           Logger.log(`    ❌ NO DRAFT REASON - Not eligible`);
           Logger.log(`      - Not early declared this year`);
           Logger.log(`      - Not releasing (retentionDecision = "${retentionDecision}")`);
           Logger.log(`      - Not graduating (${eligibilityYearsUsed + 1} < ${maxYears} playing years)`);
-          if (eligibilityYearsUsed + 1 >= minYearsForDeclaration) {
-            Logger.log(`      - Will have 3+ years but no qualifying awards (nat: ${nationalAwards}, allConf: ${allConfAwards})`);
+          if (totalProgramYears + 1 >= minYearsForDeclaration) {
+            Logger.log(`      - Will have 3+ program years but no qualifying awards (nat: ${nationalAwards}, allConf: ${allConfAwards})`);
           } else {
-            Logger.log(`      - Only ${eligibilityYearsUsed} years used (${eligibilityYearsUsed + 1} after this season), need ${minYearsForDeclaration}+ for early declaration`);
+            Logger.log(`      - Only ${totalProgramYears} program years (${eligibilityYearsUsed} playing + redshirts, ${totalProgramYears + 1} after this season), need ${minYearsForDeclaration}+ for early declaration`);
           }
         }
 
