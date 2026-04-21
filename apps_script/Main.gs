@@ -272,6 +272,7 @@ function onOpen() {
       .addItem('Process Early Declarations', 'menuProcessDeclarations')
       .addSeparator()
       .addItem('Find Players Needing Retention Backfill', 'menuFindPlayersNeedingBackfill')
+      .addItem('Backfill Retention History', 'menuBackfillRetentionHistory')
       .addItem('Migrate PlayerCopies Schema', 'migratePlayerCopiesToNewSchema'))
     .addSubMenu(ui.createMenu('🔧 Maintenance')
       .addItem('Recalculate Active Status', 'runRecalculateActiveStatus')
