@@ -282,8 +282,15 @@ function getDraftEligibleCopies(year) {
   // If league year matches target but rollover happened, it's 1
   const yearsRolled = isHistorical ? Math.max(1, currentLeagueYear - year) : 0;
 
+  // In historical mode, build ownership map from TransactionLog
+  // because roster sync only restores ownership for ACTIVE copies,
+  // leaving graduated (inactive) players with franchiseId "000"
+  let historicalOwnershipMap = null;
   if (isHistorical) {
     Logger.log(`  HISTORICAL MODE: Reconstructing ${year} eligibility (${yearsRolled} rollover(s) since)`);
+    Logger.log(`  Building ownership map from TransactionLog...`);
+    historicalOwnershipMap = buildOwnershipMapFromTransactionLog_();
+    Logger.log(`  Ownership map has ${Object.keys(historicalOwnershipMap).length} entries`);
   }
 
   // Diagnostic counters
@@ -294,7 +301,8 @@ function getDraftEligibleCopies(year) {
     graduating: 0,
     earlyDeclare: 0,
     releasing: 0,
-    couldDeclare: 0
+    couldDeclare: 0,
+    ownershipResolved: 0
   };
 
   // Use PC_COLS from Declarations.gs
@@ -305,7 +313,7 @@ function getDraftEligibleCopies(year) {
     const playerId = row[PC_COLS.playerId];
     const playerName = row[PC_COLS.playerName];
     const conference = row[PC_COLS.conference];
-    const franchiseId = String(row[PC_COLS.currentFranchiseId] || "").padStart(3, "0");
+    let franchiseId = String(row[PC_COLS.currentFranchiseId] || "").padStart(3, "0");
     const eligibilityYearsUsed = Number(row[PC_COLS.eligibilityYearsUsed]) || 0;
     const traditionalRedshirt = row[PC_COLS.traditionalRedshirtUsed] === true || row[PC_COLS.traditionalRedshirtUsed] === "TRUE";
     const medicalRedshirt = row[PC_COLS.medicalRedshirtUsed] === true || row[PC_COLS.medicalRedshirtUsed] === "TRUE";
@@ -316,6 +324,16 @@ function getDraftEligibleCopies(year) {
     const allConfAwards = Number(row[PC_COLS.allConferenceAwards]) || 0;
     const retentionDecision = String(row[PC_COLS.retentionDecision] || "").toUpperCase().trim();
     const createdSeason = Number(row[PC_COLS.createdSeason]) || 0;
+
+    // In historical mode, resolve ownership from TransactionLog for inactive players
+    // whose franchiseId was cleared by roster sync after graduation
+    if (isHistorical && (!franchiseId || franchiseId === "000") && historicalOwnershipMap) {
+      const resolvedOwner = historicalOwnershipMap[copyId];
+      if (resolvedOwner) {
+        franchiseId = resolvedOwner;
+        stats.ownershipResolved++;
+      }
+    }
 
     // Skip if no owner (not on a roster)
     if (!franchiseId || franchiseId === "000") {
@@ -463,6 +481,9 @@ function getDraftEligibleCopies(year) {
   Logger.log(`\n  Diagnostic Stats:`);
   Logger.log(`    Total rows: ${stats.total}`);
   Logger.log(`    No owner (000): ${stats.noOwner}`);
+  if (stats.ownershipResolved > 0) {
+    Logger.log(`    Ownership resolved from TransactionLog: ${stats.ownershipResolved}`);
+  }
   Logger.log(`    Not active: ${stats.notActive}`);
   Logger.log(`    GRADUATING (final year): ${stats.graduating}`);
   Logger.log(`    EARLY_DECLARE (already declared): ${stats.earlyDeclare}`);
@@ -1162,6 +1183,81 @@ function menuViewDraftEligible() {
     '\n\nSee Logs for full details with points and rankings.',
     ui.ButtonSet.OK
   );
+}
+
+// ============================================================================
+// HISTORICAL OWNERSHIP RESOLUTION
+// ============================================================================
+
+/**
+ * Build ownership map from TransactionLog for ALL copies (including inactive).
+ * Used by historical mode in getDraftEligibleCopies when roster sync has cleared
+ * ownership for graduated (inactive) players.
+ *
+ * Returns the most recent non-DROP ownership for each copy.
+ * @returns {Object} - Map of copyId -> franchiseId (padded to 3 digits)
+ * @private
+ */
+function buildOwnershipMapFromTransactionLog_() {
+  const tlSheet = SpreadsheetApp.getActive().getSheetByName("TransactionLog");
+  if (!tlSheet) {
+    Logger.log(`    WARNING: TransactionLog sheet not found`);
+    return {};
+  }
+
+  const tlData = tlSheet.getDataRange().getValues();
+  if (tlData.length <= 1) return {};
+
+  const tlHeaders = tlData[0];
+  const tlColMap = {};
+  tlHeaders.forEach((h, i) => { tlColMap[h] = i; });
+
+  const timestampCol = tlColMap["Timestamp"];
+  const copyCol = tlColMap["CopyAssigned"];
+  const franchiseCol = tlColMap["FranchiseID"];
+  const actionCol = tlColMap["Action"];
+
+  if (copyCol === undefined || franchiseCol === undefined) {
+    Logger.log(`    WARNING: TransactionLog missing CopyAssigned or FranchiseID columns`);
+    return {};
+  }
+
+  // Build ownership map: copyId -> { franchiseId, timestamp }
+  const ownershipMap = {};
+
+  tlData.slice(1).forEach(row => {
+    const copyId = row[copyCol];
+    if (!copyId) return;
+
+    const timestamp = row[timestampCol];
+    const franchiseId = String(row[franchiseCol] || "").trim();
+    const action = String(row[actionCol] || "").toUpperCase();
+    const txnTime = timestamp ? new Date(timestamp).getTime() : 0;
+
+    // Skip if we have a more recent transaction
+    const existing = ownershipMap[copyId];
+    if (existing && existing.timestamp >= txnTime) return;
+
+    const normalizedFranchise = franchiseId ? String(Number(franchiseId) || 0).padStart(3, "0") : "";
+
+    if (action.includes("DROP") || action.includes("RELEASE") || action.includes("WAIVER_RELEASE")) {
+      ownershipMap[copyId] = { franchiseId: "", timestamp: txnTime };
+    } else if (action.includes("ADD") || action.includes("AUCTION") || action.includes("TRADE") ||
+               action.includes("CLAIM") || action.includes("PICKUP") || action.includes("PROMOTE") ||
+               action.includes("ASSIGNED")) {
+      ownershipMap[copyId] = { franchiseId: normalizedFranchise, timestamp: txnTime };
+    }
+  });
+
+  // Convert to simple copyId -> franchiseId map (only non-empty owners)
+  const result = {};
+  for (const [copyId, entry] of Object.entries(ownershipMap)) {
+    if (entry.franchiseId && entry.franchiseId !== "000") {
+      result[copyId] = entry.franchiseId;
+    }
+  }
+
+  return result;
 }
 
 // ============================================================================
