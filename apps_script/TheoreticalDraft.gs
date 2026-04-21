@@ -258,6 +258,15 @@ function getDraftEligibleCopies(year) {
   const maxYears = config.eligibility.maxYears;  // 4
   const minYearsForDeclaration = config.declarations.minYearsForDeclaration;  // 3
 
+  // Detect historical mode: if year < current league year, PlayerCopies has been rolled over
+  const currentLeagueYear = Number(getLeagueYear());
+  const isHistorical = year < currentLeagueYear;
+  const yearsRolled = currentLeagueYear - year; // How many rollovers have occurred since target year
+
+  if (isHistorical) {
+    Logger.log(`  HISTORICAL MODE: Reconstructing ${year} eligibility (${yearsRolled} rollover(s) since)`);
+  }
+
   // Diagnostic counters
   let stats = {
     total: 0,
@@ -287,12 +296,86 @@ function getDraftEligibleCopies(year) {
     const nationalAwards = Number(row[PC_COLS.nationalAwards]) || 0;
     const allConfAwards = Number(row[PC_COLS.allConferenceAwards]) || 0;
     const retentionDecision = String(row[PC_COLS.retentionDecision] || "").toUpperCase().trim();
+    const createdSeason = Number(row[PC_COLS.createdSeason]) || 0;
 
     // Skip if no owner (not on a roster)
     if (!franchiseId || franchiseId === "000") {
       stats.noOwner++;
       return;
     }
+
+    // === HISTORICAL MODE ===
+    // After rollover, graduated players are inactive and years are incremented.
+    // Reconstruct who was draft-eligible in the target year.
+    if (isHistorical) {
+      let draftReason = null;
+
+      // Check 1: Early declared in target year (preserved with declarationYear)
+      if (declaredEarly && declarationYear === year) {
+        draftReason = "EARLY_DECLARE";
+        stats.earlyDeclare++;
+      }
+      // Check 2: Graduated in target year
+      // Graduation year = createdSeason + eligibilityYearsUsed + redshirt_years - 1
+      // (eligibilityYearsUsed is post-rollover value for graduated players)
+      else if (!active && !declaredEarly && eligibilityYearsUsed >= maxYears) {
+        const numRedshirts = (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
+        const graduationYear = createdSeason + eligibilityYearsUsed + numRedshirts - 1;
+        if (graduationYear === year) {
+          draftReason = "GRADUATING";
+          stats.graduating++;
+        }
+      }
+      // Check 3: COULD_DECLARE players who were retained (still active, years incremented)
+      // These show up as COULD_DECLARE but with PROCESSED marker or in RetentionHistory
+      // They are included here so getDraftBonusesByTeam can exclude them via retainedCopyIds
+      else if (active) {
+        // Reverse the rollover to get pre-rollover years
+        const preRolloverYears = eligibilityYearsUsed - yearsRolled;
+        if (preRolloverYears < 0) return; // Shouldn't happen
+
+        // Check if they would have been COULD_DECLARE in target year
+        const totalProgramYears = preRolloverYears + (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
+        if (totalProgramYears + 1 >= minYearsForDeclaration) {
+          const hasNationalAward = nationalAwards >= 1;
+          const hasTwoAllConf = allConfAwards >= 2;
+          if (hasNationalAward || hasTwoAllConf) {
+            // Check if they have a PROCESSED marker for the target year's class
+            const retentionDecisionDate = String(row[PC_COLS.retentionDecisionDate] || "").trim();
+            const processedMarker = `PROCESSED-${year + 1}`; // processEarlyDeclarations uses class year
+            if (retentionDecisionDate === processedMarker || retentionDecision === "RELEASE") {
+              draftReason = "COULD_DECLARE";
+              stats.couldDeclare++;
+            }
+          }
+        }
+      }
+
+      if (draftReason) {
+        let maxEligibility = maxYears;
+        if (traditionalRedshirt) maxEligibility++;
+        if (medicalRedshirt) maxEligibility++;
+
+        // Use pre-rollover years for display
+        const displayYears = active ? (eligibilityYearsUsed - yearsRolled) : eligibilityYearsUsed;
+
+        eligible.push({
+          copyId: copyId,
+          playerId: playerId,
+          playerName: playerName,
+          conference: conference,
+          franchiseId: franchiseId,
+          eligibilityYearsUsed: displayYears,
+          maxEligibility: maxEligibility,
+          nationalAwards: nationalAwards,
+          allConfAwards: allConfAwards,
+          draftReason: draftReason
+        });
+      }
+      return; // Skip normal mode processing
+    }
+
+    // === NORMAL MODE (current year) ===
 
     // Skip if not active (not on roster at end of season)
     // Exception: Early declares may have been marked inactive when they declared
