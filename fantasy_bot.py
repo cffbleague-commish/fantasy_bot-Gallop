@@ -442,6 +442,12 @@ try:
 except gspread.exceptions.WorksheetNotFound:
     recruiting_dollars_ws = None
 
+# ----------------- RetentionHistory Sheet Setup -----------------
+try:
+    retention_history_ws = league_sheet.worksheet("RetentionHistory")
+except gspread.exceptions.WorksheetNotFound:
+    retention_history_ws = None
+
 # ----------------- TheoreticalDraft Sheet Setup -----------------
 try:
     theoretical_draft_ws = league_sheet.worksheet("TheoreticalDraft")
@@ -1814,6 +1820,22 @@ async def recruiting_dollars(interaction: discord.Interaction):
                 inline=True
             )
 
+    # Retention Cost (deducted for retained players)
+    retention_count = user_data.get('RetentionCount', 0)
+    retention_cost = user_data.get('RetentionCostDollars', 0)
+    if retention_count > 0 or retention_cost > 0:
+        embed.add_field(
+            name="Retention Cost",
+            value=f"{retention_count} retained = **-${retention_cost}**",
+            inline=True
+        )
+    elif status == "FINAL":
+        embed.add_field(
+            name="Retention Cost",
+            value="No retentions",
+            inline=True
+        )
+
     # Total
     total_dollars = user_data.get('TotalBonusDollars', 0)
     total_sign = "+" if total_dollars >= 0 else ""
@@ -2598,10 +2620,13 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
     if len(data) <= 1:
         return []
 
+    # Load decisions from RetentionHistory for current year
+    history_decisions = get_retention_decisions_from_history()
+
     eligible = []
     for idx, row in enumerate(data[1:], start=2):  # Start at row 2 (1-indexed)
         # Skip if not enough columns
-        if len(row) <= PC_COLS['retentionDecision']:
+        if len(row) <= PC_COLS['nationalAwards']:
             continue
 
         active = str(row[PC_COLS['active']]).upper() == 'TRUE'
@@ -2625,15 +2650,21 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
         if national_awards < 1 and allconf_awards < 2:
             continue
 
-        # Get retention count and calculate cost
-        retention_count = int(row[PC_COLS['retentionCount']] or 0) if len(row) > PC_COLS['retentionCount'] else 0
+        # Look up decision and prior retain count from RetentionHistory
+        copy_id = row[PC_COLS['copyId']]
+        hist_entry = history_decisions.get(copy_id, {})
+        retention_decision = hist_entry.get('decision', '')
+        prior_retain_count = hist_entry.get('prior_retain_count', 0)
+        retention_history = hist_entry.get('history', [])
+
+        # Derive retention count from history (prior retentions before this year)
         retention_path = determine_retention_path(national_awards, allconf_awards)
-        retention_cost = calculate_retention_cost(retention_path, retention_count)
-        retention_cost_label = get_retention_cost_label(retention_path, retention_count)
+        retention_cost = calculate_retention_cost(retention_path, prior_retain_count)
+        retention_cost_label = get_retention_cost_label(retention_path, prior_retain_count)
 
         player = {
             'row_num': idx,
-            'copy_id': row[PC_COLS['copyId']],
+            'copy_id': copy_id,
             'player_name': row[PC_COLS['playerName']],
             'conference': row[PC_COLS['conference']],
             'franchise_id': row[PC_COLS['currentFranchiseId']],
@@ -2641,11 +2672,12 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
             'program_years': program_years,
             'national_awards': national_awards,
             'allconf_awards': allconf_awards,
-            'retention_decision': row[PC_COLS['retentionDecision']] if len(row) > PC_COLS['retentionDecision'] else '',
+            'retention_decision': retention_decision,
             'retention_path': retention_path,
-            'retention_count': retention_count,
+            'retention_count': prior_retain_count,
             'retention_cost': retention_cost,
-            'retention_cost_label': retention_cost_label
+            'retention_cost_label': retention_cost_label,
+            'retention_history': retention_history
         }
 
         # Apply filters
@@ -2662,23 +2694,160 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
 
     return eligible
 
+def get_all_retention_history():
+    """
+    Load ALL retention history records from RetentionHistory sheet.
+    Returns list of dicts, one per row.
+    """
+    if retention_history_ws is None:
+        return []
+
+    try:
+        data = retention_history_ws.get_all_records(expected_headers=[])
+        return data if data else []
+    except Exception as e:
+        print(f"Warning: Failed to read RetentionHistory: {e}")
+        return []
+
+def get_retention_decisions_from_history(year=None):
+    """
+    Load retention decisions from RetentionHistory sheet for a given year.
+    Also computes cumulative prior_retain_count from all previous years.
+    Returns dict: copy_id -> { decision, retention_path, retention_cost, prior_retain_count, history, timestamp }
+    """
+    all_records = get_all_retention_history()
+    if not all_records:
+        return {}
+
+    if year is None:
+        year = get_current_year()
+
+    # Build full history per copy_id and count prior retentions
+    history_by_copy = defaultdict(list)  # copy_id -> [{ year, decision, cost, path, timestamp }, ...]
+    for row in all_records:
+        copy_id = row.get('CopyId', '')
+        if not copy_id:
+            continue
+        history_by_copy[copy_id].append({
+            'year': str(row.get('Year', '')),
+            'decision': row.get('Decision', ''),
+            'retention_path': row.get('RetentionPath', ''),
+            'retention_cost': int(row.get('RetentionCost', 0) or 0),
+            'timestamp': row.get('Timestamp', '')
+        })
+
+    decisions = {}
+    for copy_id, records in history_by_copy.items():
+        # Sort by year
+        records.sort(key=lambda r: r['year'])
+
+        # Find current year's decision
+        current_entry = None
+        for r in records:
+            if r['year'] == str(year):
+                current_entry = r
+                break
+
+        # Count prior retentions (RETAIN or AUTO_RETAIN in years before this one)
+        prior_retain_count = sum(
+            1 for r in records
+            if r['year'] < str(year) and r['decision'] in ('RETAIN', 'AUTO_RETAIN')
+        )
+
+        if current_entry:
+            decisions[copy_id] = {
+                'decision': current_entry['decision'],
+                'retention_path': current_entry['retention_path'],
+                'retention_cost': current_entry['retention_cost'],
+                'prior_retain_count': prior_retain_count,
+                'timestamp': current_entry['timestamp'],
+                'history': records
+            }
+        elif prior_retain_count > 0:
+            # No decision this year but has prior history — include for count/history
+            decisions[copy_id] = {
+                'decision': '',
+                'retention_path': '',
+                'retention_cost': 0,
+                'prior_retain_count': prior_retain_count,
+                'timestamp': '',
+                'history': records
+            }
+
+    return decisions
+
 def record_retention_decision_in_sheet(copy_id: str, decision: str):
-    """Record a retention decision in the PlayerCopies sheet"""
+    """Record a retention decision in the RetentionHistory sheet"""
+    if retention_history_ws is None:
+        raise Exception("RetentionHistory sheet not found")
     if player_copies_ws is None:
         raise Exception("PlayerCopies sheet not found")
 
     data = player_copies_ws.get_all_values()
 
+    # Load full history to derive prior retain count
+    history_decisions = get_retention_decisions_from_history()
+
     for idx, row in enumerate(data[1:], start=2):
         if row[PC_COLS['copyId']] == copy_id:
-            # Update RetentionDecision and RetentionDecisionDate columns
-            player_copies_ws.update_cell(idx, PC_COLS['retentionDecision'] + 1, decision)
-            player_copies_ws.update_cell(idx, PC_COLS['retentionDecisionDate'] + 1, datetime.now().isoformat())
+            year = get_current_year()
+            timestamp = datetime.now().isoformat()
+            national_awards = int(row[PC_COLS['nationalAwards']] or 0)
+            allconf_awards = int(row[PC_COLS['allConferenceAwards']] or 0)
+            retention_path = determine_retention_path(national_awards, allconf_awards)
+
+            # Derive prior retain count from history
+            hist_entry = history_decisions.get(copy_id, {})
+            prior_retain_count = hist_entry.get('prior_retain_count', 0)
+            cost = calculate_retention_cost(retention_path, prior_retain_count) if decision == 'RETAIN' else 0
+
+            franchise_id = str(row[PC_COLS['currentFranchiseId']] or '').strip()
+            if franchise_id:
+                try:
+                    franchise_id = str(int(franchise_id)).zfill(3)
+                except ValueError:
+                    pass
+            team_name_map = get_team_name_map()
+            team_name = team_name_map.get(franchise_id, '')
+
+            # Check if a decision already exists for this copy/year and update it
+            hist_data = retention_history_ws.get_all_values()
+            existing_row = None
+            for hist_idx, hist_row in enumerate(hist_data[1:], start=2):
+                if str(hist_row[0]) == str(year) and hist_row[1] == copy_id:
+                    existing_row = hist_idx
+                    break
+
+            new_row = [
+                year,
+                copy_id,
+                row[PC_COLS['playerId']],
+                row[PC_COLS['playerName']],
+                row[PC_COLS['conference']],
+                franchise_id,
+                team_name,
+                decision,
+                retention_path or '',
+                cost,
+                prior_retain_count + 1 if decision == 'RETAIN' else 0,
+                national_awards,
+                allconf_awards,
+                timestamp
+            ]
+
+            if existing_row:
+                # Update existing row (coach changed their mind)
+                retention_history_ws.update(f'A{existing_row}:N{existing_row}', [new_row])
+            else:
+                retention_history_ws.append_row(new_row)
+
             return {
                 'success': True,
                 'player_name': row[PC_COLS['playerName']],
                 'copy_id': copy_id,
-                'decision': decision
+                'decision': decision,
+                'retention_cost': cost,
+                'retention_cost_label': get_retention_cost_label(retention_path, prior_retain_count) if decision == 'RETAIN' else '$0'
             }
 
     raise Exception(f"Player copy {copy_id} not found")
@@ -2857,7 +3026,6 @@ async def retention_my_team(interaction: discord.Interaction):
         color=discord.Color.blue()
     )
 
-    lines = []
     total_cost = 0
     for p in sorted(eligible, key=lambda x: x['player_name']):
         decision = p['retention_decision'] or 'PENDING'
@@ -2868,12 +3036,39 @@ async def retention_my_team(interaction: discord.Interaction):
             awards_info.append(f"{p['allconf_awards']} All-Conf")
         awards_str = " | ".join(awards_info)
         status = "" if decision == 'PENDING' else f" [{decision}]"
-        cost_str = f"\n💰 **Retention Cost: {p['retention_cost_label']}**"
-        lines.append(f"**{p['player_name']}** - {awards_str}{status}{cost_str}\n`{p['copy_id']}`")
+
+        # Build player info lines
+        player_lines = [f"Awards: {awards_str}{status}"]
+        player_lines.append(f"Cost: **{p['retention_cost_label']}**")
+
+        # Add retention history timeline
+        history = p.get('retention_history', [])
+        if history:
+            timeline_parts = []
+            for h in history:
+                h_decision = h.get('decision', '')
+                h_year = h.get('year', '')
+                h_cost = h.get('retention_cost', 0)
+                if h_decision == 'RETAIN':
+                    timeline_parts.append(f"{h_year}: RETAIN (${h_cost})")
+                elif h_decision == 'AUTO_RETAIN':
+                    timeline_parts.append(f"{h_year}: AUTO-RETAIN (${h_cost})")
+                elif h_decision == 'RELEASE':
+                    timeline_parts.append(f"{h_year}: RELEASE")
+            if timeline_parts:
+                player_lines.append("History: " + " → ".join(timeline_parts))
+        elif p['retention_count'] > 0:
+            player_lines.append(f"Prior retentions: {p['retention_count']}")
+
+        field_value = "\n".join(player_lines) + f"\n`{p['copy_id']}`"
+        if len(field_value) > 1024:
+            field_value = field_value[:1021] + "..."
+
+        embed.add_field(name=p['player_name'], value=field_value, inline=False)
+
         if decision != 'RELEASE':
             total_cost += p['retention_cost']
 
-    embed.add_field(name="Players", value="\n\n".join(lines), inline=False)
     embed.add_field(
         name="💰 Total Retention Cost",
         value=f"**${total_cost}** from recruiting budget if all players are retained",
@@ -2881,7 +3076,96 @@ async def retention_my_team(interaction: discord.Interaction):
     )
     embed.set_footer(text="Use /retention retain <player_name> or /retention release <player_name>")
 
-    await interaction.followup.send(embed=embed, ephemeral=True)
+    # Split into multiple messages if too many fields (Discord limit: 25)
+    if len(embed.fields) > 25:
+        # Send first embed with first 24 players + total
+        embeds = []
+        fields = list(embed.fields)
+        total_field = fields[-1]  # Total cost field is last
+        player_fields = fields[:-1]
+
+        for i in range(0, len(player_fields), 24):
+            chunk = player_fields[i:i+24]
+            chunk_embed = discord.Embed(
+                title=f"Eligible Players - {team['name']}" if i == 0 else f"Eligible Players (cont.)",
+                color=discord.Color.blue()
+            )
+            if i == 0:
+                chunk_embed.description = "Players eligible for early declaration (3+ years, has awards)"
+            for f in chunk:
+                chunk_embed.add_field(name=f.name, value=f.value, inline=f.inline)
+            embeds.append(chunk_embed)
+
+        # Add total to last embed
+        embeds[-1].add_field(name=total_field.name, value=total_field.value, inline=total_field.inline)
+        embeds[-1].set_footer(text="Use /retention retain <player_name> or /retention release <player_name>")
+
+        for e in embeds:
+            await interaction.followup.send(embed=e, ephemeral=True)
+    else:
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+async def retention_player_autocomplete(interaction: discord.Interaction, current: str):
+    """Shared autocomplete for /retention retain and /retention release - shows eligible players on user's team."""
+    if player_copies_ws is None:
+        return []
+
+    team = get_team_by_discord_id(interaction.user.id)
+    if not team:
+        return []
+
+    franchise_id = str(team['id']).zfill(3) if team['id'] else ''
+    eligible = get_eligible_players_for_retention(franchise_id=franchise_id)
+
+    if not eligible:
+        return []
+
+    term = current.lower().strip()
+    matches = []
+    for p in eligible:
+        # Build display: "Player Name (2 All-Conf) [PENDING]"
+        awards_parts = []
+        if p['national_awards']:
+            awards_parts.append(f"{p['national_awards']} Natl")
+        if p['allconf_awards']:
+            awards_parts.append(f"{p['allconf_awards']} All-Conf")
+        awards_str = ", ".join(awards_parts)
+        decision = p['retention_decision'] or 'PENDING'
+        display = f"{p['player_name']} ({awards_str}) [{decision}]"
+
+        if not term or term in p['player_name'].lower() or term in p['copy_id'].lower():
+            matches.append(
+                app_commands.Choice(
+                    name=display[:100],
+                    value=p['copy_id']
+                )
+            )
+
+        if len(matches) >= 25:
+            break
+
+    return matches
+
+def find_retention_player(eligible, player_name):
+    """Find a player from eligible list by copy_id (from autocomplete) or name (manual input)."""
+    # First try exact copy_id match (from autocomplete selection)
+    for p in eligible:
+        if p['copy_id'] == player_name:
+            return p, None
+
+    # Fall back to name search (manual text input)
+    search = player_name.lower().strip()
+    matches = [p for p in eligible if search in p['player_name'].lower() or search == p['copy_id'].lower()]
+
+    if len(matches) == 0:
+        names = [p['player_name'] for p in eligible]
+        return None, f"Player not found. Eligible players on your team: {', '.join(names)}"
+
+    if len(matches) > 1:
+        names = [p['player_name'] for p in matches]
+        return None, f"Multiple matches found: {', '.join(names)}. Please be more specific."
+
+    return matches[0], None
 
 @retention.command(name="retain", description="Record a RETAIN decision for a player")
 @app_commands.describe(player_name="Player name (or copy ID)")
@@ -2905,21 +3189,10 @@ async def retention_retain(interaction: discord.Interaction, player_name: str):
         await interaction.followup.send(f"No players on **{team['name']}** are eligible for early declaration.")
         return
 
-    # Find matching player
-    search = player_name.lower().strip()
-    matches = [p for p in eligible if search in p['player_name'].lower() or search == p['copy_id'].lower()]
-
-    if len(matches) == 0:
-        names = [p['player_name'] for p in eligible]
-        await interaction.followup.send(f"Player not found. Eligible players on your team: {', '.join(names)}")
+    player, error = find_retention_player(eligible, player_name)
+    if error:
+        await interaction.followup.send(error)
         return
-
-    if len(matches) > 1:
-        names = [p['player_name'] for p in matches]
-        await interaction.followup.send(f"Multiple matches found: {', '.join(names)}. Please be more specific.")
-        return
-
-    player = matches[0]
 
     try:
         result = record_retention_decision_in_sheet(player['copy_id'], 'RETAIN')
@@ -2932,6 +3205,10 @@ async def retention_retain(interaction: discord.Interaction, player_name: str):
         )
     except Exception as e:
         await interaction.followup.send(f"Error recording decision: {str(e)}")
+
+@retention_retain.autocomplete('player_name')
+async def retention_retain_autocomplete(interaction: discord.Interaction, current: str):
+    return await retention_player_autocomplete(interaction, current)
 
 @retention.command(name="release", description="Record a RELEASE decision for a player (early declaration)")
 @app_commands.describe(player_name="Player name (or copy ID)")
@@ -2955,21 +3232,10 @@ async def retention_release(interaction: discord.Interaction, player_name: str):
         await interaction.followup.send(f"No players on **{team['name']}** are eligible for early declaration.")
         return
 
-    # Find matching player
-    search = player_name.lower().strip()
-    matches = [p for p in eligible if search in p['player_name'].lower() or search == p['copy_id'].lower()]
-
-    if len(matches) == 0:
-        names = [p['player_name'] for p in eligible]
-        await interaction.followup.send(f"Player not found. Eligible players on your team: {', '.join(names)}")
+    player, error = find_retention_player(eligible, player_name)
+    if error:
+        await interaction.followup.send(error)
         return
-
-    if len(matches) > 1:
-        names = [p['player_name'] for p in matches]
-        await interaction.followup.send(f"Multiple matches found: {', '.join(names)}. Please be more specific.")
-        return
-
-    player = matches[0]
 
     try:
         result = record_retention_decision_in_sheet(player['copy_id'], 'RELEASE')
@@ -2981,6 +3247,10 @@ async def retention_release(interaction: discord.Interaction, player_name: str):
         )
     except Exception as e:
         await interaction.followup.send(f"Error recording decision: {str(e)}")
+
+@retention_release.autocomplete('player_name')
+async def retention_release_autocomplete(interaction: discord.Interaction, current: str):
+    return await retention_player_autocomplete(interaction, current)
 
 @retention.command(name="pending", description="View all players with pending retention decisions (Commissioner only)")
 async def retention_pending(interaction: discord.Interaction):
@@ -3006,27 +3276,47 @@ async def retention_pending(interaction: discord.Interaction):
     emoji_map = get_team_emoji_map()
     name_map = get_team_name_map()
 
-    embed = discord.Embed(
-        title="Pending Retention Decisions",
-        description=f"{len(pending)} players awaiting decisions",
-        color=discord.Color.red()
-    )
-
     # Group by team
     by_team = defaultdict(list)
     for p in pending:
         fid = str(int(p['franchise_id'])).zfill(3) if p['franchise_id'] else 'FA'
         by_team[fid].append(p)
 
+    # Build embeds, splitting across multiple if needed (Discord limit: 6000 chars / 25 fields per embed)
+    embeds = []
+    current_embed = discord.Embed(
+        title="Pending Retention Decisions",
+        description=f"{len(pending)} players awaiting decisions",
+        color=discord.Color.red()
+    )
+    field_count = 0
+
     for fid in sorted(by_team.keys()):
         players = by_team[fid]
         team_name = name_map.get(fid, 'Free Agent')
         team_emoji = emoji_map.get(fid, '')
         lines = [f"**{p['player_name']}** ({p['conference']})" for p in players]
-        embed.add_field(name=f"{team_emoji} {team_name}", value="\n".join(lines), inline=True)
+        value = "\n".join(lines)
+        if len(value) > 1024:
+            value = value[:1021] + "..."
 
-    embed.set_footer(text="Players with no decision will be auto-retained at season end")
-    await interaction.followup.send(embed=embed)
+        # Start a new embed if we'd exceed 25 fields
+        if field_count >= 25:
+            embeds.append(current_embed)
+            current_embed = discord.Embed(
+                title="Pending Retention Decisions (cont.)",
+                color=discord.Color.red()
+            )
+            field_count = 0
+
+        current_embed.add_field(name=f"{team_emoji} {team_name}", value=value, inline=True)
+        field_count += 1
+
+    current_embed.set_footer(text="Players with no decision will be auto-retained at season end")
+    embeds.append(current_embed)
+
+    for embed in embeds:
+        await interaction.followup.send(embed=embed)
 
 def get_franchise_owner_discord_ids():
     """
@@ -3116,22 +3406,22 @@ async def retention_notify(interaction: discord.Interaction):
             player_lines.append(f"• **{p['player_name']}** ({p['conference']})\n  {awards_str}{cost_str}")
             total_cost += p['retention_cost']
 
-        dm_embed = discord.Embed(
-            title=f"⚠️ Retention Decisions Needed - {team_name}",
-            description=(
-                f"The following player{'s' if len(players) > 1 else ''} on your team "
-                f"{'are' if len(players) > 1 else 'is'} eligible for early declaration and "
-                f"need{'s' if len(players) == 1 else ''} a retention decision:\n\n"
-                + "\n\n".join(player_lines)
-            ),
+        # Split player lines across multiple embeds if needed (Discord description limit: 4096 chars)
+        header_text = (
+            f"The following player{'s' if len(players) > 1 else ''} on your team "
+            f"{'are' if len(players) > 1 else 'is'} eligible for early declaration and "
+            f"need{'s' if len(players) == 1 else ''} a retention decision:\n\n"
+        )
+        instructions_embed = discord.Embed(
+            title=f"💰 Retention Summary - {team_name}",
             color=discord.Color.orange()
         )
-        dm_embed.add_field(
+        instructions_embed.add_field(
             name="💰 Total Retention Cost",
             value=f"**${total_cost}** from recruiting budget if all players are retained",
             inline=False
         )
-        dm_embed.add_field(
+        instructions_embed.add_field(
             name="How to Respond",
             value=(
                 "Use the following commands in Discord:\n"
@@ -3141,11 +3431,38 @@ async def retention_notify(interaction: discord.Interaction):
             ),
             inline=False
         )
-        dm_embed.set_footer(text="Contact a commissioner if you have questions.")
+        instructions_embed.set_footer(text="Contact a commissioner if you have questions.")
+
+        # Build DM embeds, chunking player lines to stay under 4096-char description limit
+        dm_embeds = []
+        current_lines = []
+        current_len = len(header_text)
+        for line in player_lines:
+            line_len = len(line) + 2  # +2 for "\n\n" separator
+            if current_len + line_len > 4000 and current_lines:
+                dm_embeds.append(discord.Embed(
+                    title=f"⚠️ Retention Decisions Needed - {team_name}" if not dm_embeds else f"⚠️ (cont.) - {team_name}",
+                    description=header_text + "\n\n".join(current_lines) if not dm_embeds else "\n\n".join(current_lines),
+                    color=discord.Color.orange()
+                ))
+                current_lines = []
+                current_len = 0
+            current_lines.append(line)
+            current_len += line_len
+
+        if current_lines:
+            dm_embeds.append(discord.Embed(
+                title=f"⚠️ Retention Decisions Needed - {team_name}" if not dm_embeds else f"⚠️ (cont.) - {team_name}",
+                description=header_text + "\n\n".join(current_lines) if not dm_embeds else "\n\n".join(current_lines),
+                color=discord.Color.orange()
+            ))
+
+        dm_embeds.append(instructions_embed)
 
         try:
             user = await bot.fetch_user(int(discord_id))
-            await user.send(embed=dm_embed)
+            for dm_embed in dm_embeds:
+                await user.send(embed=dm_embed)
             dm_sent += 1
             coaches_to_notify.append((fid, discord_id, team_name, len(players)))
         except Exception as e:
@@ -3176,11 +3493,27 @@ async def retention_notify(interaction: discord.Interaction):
                 fa_names = [p['player_name'] for p in fa_players]
                 mention_lines.append(f"⚪ **Free Agents**: {', '.join(fa_names)}")
 
-            summary_embed.add_field(
-                name="Teams Needing Decisions",
-                value="\n".join(mention_lines) if mention_lines else "None",
-                inline=False
-            )
+            # Split mention lines across fields if they exceed 1024 chars
+            chunk_lines = []
+            chunk_len = 0
+            field_num = 0
+            for line in mention_lines:
+                line_len = len(line) + 1  # +1 for newline
+                if chunk_len + line_len > 1024 and chunk_lines:
+                    field_num += 1
+                    field_name = "Teams Needing Decisions" if field_num == 1 else f"Teams (cont.)"
+                    summary_embed.add_field(name=field_name, value="\n".join(chunk_lines), inline=False)
+                    chunk_lines = []
+                    chunk_len = 0
+                chunk_lines.append(line)
+                chunk_len += line_len
+
+            if chunk_lines:
+                field_num += 1
+                field_name = "Teams Needing Decisions" if field_num == 1 else f"Teams (cont.)"
+                summary_embed.add_field(name=field_name, value="\n".join(chunk_lines), inline=False)
+            elif field_num == 0:
+                summary_embed.add_field(name="Teams Needing Decisions", value="None", inline=False)
 
             summary_embed.add_field(
                 name="Commands",

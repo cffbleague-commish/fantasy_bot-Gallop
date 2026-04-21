@@ -542,14 +542,18 @@ function writeTheoreticalDraftToSheet(year, results) {
  * This function is called from RecruitingDollars.gs
  *
  * @param {Number} year - Season year
+ * @param {Set} [excludeCopyIds] - Optional set of CopyIDs to exclude (retained players)
  * @returns {Object} - Map of franchiseId -> { count, dollars }
  */
-function getDraftBonusesByTeam(year) {
+function getDraftBonusesByTeam(year, excludeCopyIds) {
   const sheet = getTheoreticalDraftSheet();
   const data = sheet.getDataRange().getValues();
 
   Logger.log(`  [getDraftBonusesByTeam] Reading TheoreticalDraft for year ${year}`);
   Logger.log(`    Total rows in sheet: ${data.length - 1}`);
+  if (excludeCopyIds && excludeCopyIds.size > 0) {
+    Logger.log(`    Excluding ${excludeCopyIds.size} retained copyIds from draft bonuses`);
+  }
 
   const bonuses = {};
 
@@ -573,7 +577,8 @@ function getDraftBonusesByTeam(year) {
   const yearCol = colMap["Year"];
   const franchiseCol = colMap["FranchiseID"];
   const dollarCol = colMap["DollarValue"];
-  Logger.log(`    Column indices: Year=${yearCol}, FranchiseID=${franchiseCol}, DollarValue=${dollarCol}`);
+  const copyIdCol = colMap["CopyID"];
+  Logger.log(`    Column indices: Year=${yearCol}, FranchiseID=${franchiseCol}, DollarValue=${dollarCol}, CopyID=${copyIdCol}`);
 
   if (yearCol === undefined || franchiseCol === undefined || dollarCol === undefined) {
     Logger.log(`    ERROR: Missing required columns!`);
@@ -585,12 +590,23 @@ function getDraftBonusesByTeam(year) {
   let matchedRows = 0;
   let totalDollars = 0;
   let skippedNoFranchise = 0;
+  let skippedRetained = 0;
 
   data.slice(1).forEach((row, idx) => {
     const rowYear = Number(row[yearCol]);
     if (rowYear !== Number(year)) return;
 
     matchedRows++;
+
+    // Skip retained players (their draft bonus is cancelled)
+    if (excludeCopyIds && excludeCopyIds.size > 0 && copyIdCol !== undefined) {
+      const copyId = String(row[copyIdCol] || "");
+      if (copyId && excludeCopyIds.has(copyId)) {
+        skippedRetained++;
+        return;
+      }
+    }
+
     const franchiseId = String(row[franchiseCol] || "").padStart(3, "0");
     const dollarValue = Number(row[dollarCol]) || 0;
 
@@ -607,6 +623,7 @@ function getDraftBonusesByTeam(year) {
   });
 
   Logger.log(`    Rows matching year ${year}: ${matchedRows}`);
+  Logger.log(`    Skipped (retained): ${skippedRetained}`);
   Logger.log(`    Skipped (no valid franchise): ${skippedNoFranchise}`);
   Logger.log(`    Total draft bonus dollars: $${totalDollars}`);
 

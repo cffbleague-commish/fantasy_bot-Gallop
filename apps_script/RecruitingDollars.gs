@@ -12,6 +12,10 @@
  * - 3rd Team All-Conference: $3 per player
  * - Rivalry Wagers: Winner takes wager amount from loser (+$X / -$X)
  * - Draft Bonus: Bonus $ for graduating/declaring players based on MFL position rank
+ * - Retention Costs: Subtracted when a team retains a draft-eligible player instead of releasing
+ *   - National award path: $20 first retention, $30 subsequent
+ *   - All-Conference path: $10 first retention, $20 subsequent
+ *   - Retained players lose their draft bonus; released players keep theirs
  *
  * Note: NationalPosition columns track National Player Awards (National_QB, National_RB, National_WR_TE rank 1).
  *
@@ -70,26 +74,39 @@ function calculateRecruitingDollars(year, throughWeek) {
   const teamsWithWagers = Object.keys(wagerOutcomes).filter(k => wagerOutcomes[k].net !== 0).length;
   Logger.log(`  Calculated wager outcomes for ${teamsWithWagers} teams with non-zero results`);
 
-  // Step 7: Get draft bonuses (only for final rankings, Week 17+)
-  Logger.log("\n--- Step 7: Getting Draft Bonuses ---");
+  // Step 7: Get draft bonuses and retention data (only for final rankings, Week 17+)
+  Logger.log("\n--- Step 7: Getting Draft Bonuses & Retention Data ---");
   let draftBonuses = {};
+  let retentionData = { byTeam: {}, allRetainedCopyIds: new Set() };
+
   if (throughWeek >= 17) {
     // Initialize draft bonuses for all franchises
     Object.keys(franchiseData).forEach(fId => {
       draftBonuses[fId] = { count: 0, dollars: 0 };
     });
 
-    // Try to get draft bonuses from TheoreticalDraft sheet
+    // Load retention data first (to get exclusion list for draft bonuses)
     try {
-      draftBonuses = getDraftBonusesByTeam(year);
+      retentionData = getRetentionDataByTeam(year);
+      const teamsWithRetention = Object.entries(retentionData.byTeam)
+        .filter(([_, d]) => d.retentionCost > 0).length;
+      Logger.log(`  Loaded retention data: ${teamsWithRetention} teams with costs, ` +
+                 `${retentionData.allRetainedCopyIds.size} retained copyIds`);
+    } catch (error) {
+      Logger.log(`  Retention data not available: ${error.message}`);
+    }
+
+    // Get draft bonuses, excluding retained players
+    try {
+      draftBonuses = getDraftBonusesByTeam(year, retentionData.allRetainedCopyIds);
       const teamsWithDraftBonus = Object.entries(draftBonuses).filter(([_, d]) => d.dollars > 0).length;
-      Logger.log(`  Loaded draft bonuses for ${teamsWithDraftBonus} teams`);
+      Logger.log(`  Loaded draft bonuses for ${teamsWithDraftBonus} teams (after retention exclusions)`);
     } catch (error) {
       Logger.log(`  Draft bonuses not available: ${error.message}`);
       Logger.log(`  Run calculateTheoreticalDraft(${year}) to calculate draft bonuses`);
     }
   } else {
-    Logger.log(`  Draft bonuses only calculated for final rankings (Week 17+)`);
+    Logger.log(`  Draft bonuses and retention only calculated for final rankings (Week 17+)`);
     // Initialize empty draft bonuses
     Object.keys(franchiseData).forEach(fId => {
       draftBonuses[fId] = { count: 0, dollars: 0 };
@@ -107,6 +124,7 @@ function calculateRecruitingDollars(year, throughWeek) {
     const awards = awardCounts[franchiseId] || {};
     const wagers = wagerOutcomes[franchiseId] || { won: 0, lost: 0, net: 0 };
     const draft = draftBonuses[franchiseId] || { count: 0, dollars: 0 };
+    const retention = retentionData.byTeam[franchiseId] || { retentionCount: 0, retentionCost: 0 };
 
     // Calculate dollar amounts
     const regSeasonDollars = regWins * dollarsConfig.regularSeasonWinValue;
@@ -133,14 +151,18 @@ function calculateRecruitingDollars(year, throughWeek) {
     const wagerLost = wagers.lost;
     const wagerNet = wagers.net;
 
-    // Draft bonus (graduating/declaring players)
+    // Draft bonus (graduating/declaring players - excludes retained)
     const draftBonusCount = draft.count;
     const draftBonusDollars = draft.dollars;
 
-    // Total (includes wager net which can be negative)
+    // Retention costs (retained players pay cost instead of earning draft bonus)
+    const retentionCount = retention.retentionCount;
+    const retentionCostDollars = retention.retentionCost;
+
+    // Total = bonuses + adjusted draft bonuses - retention costs
     const totalDollars = regSeasonDollars + postseasonDollars + ncDollars +
                          heismanDollars + firstTeamDollars + secondTeamDollars + thirdTeamDollars +
-                         wagerNet + draftBonusDollars;
+                         wagerNet + draftBonusDollars - retentionCostDollars;
 
     rows.push([
       year,
@@ -166,6 +188,8 @@ function calculateRecruitingDollars(year, throughWeek) {
       wagerNet,
       draftBonusCount,
       draftBonusDollars,
+      retentionCount,
+      retentionCostDollars,
       totalDollars,
       now,
       status
@@ -348,6 +372,94 @@ function countAwardsByTeam(year) {
 }
 
 // ============================================================================
+// RETENTION DATA FUNCTIONS
+// ============================================================================
+
+/**
+ * Get retention data from RetentionHistory sheet for recruiting dollars integration
+ * Returns retention costs per team and set of copyIds to exclude from draft bonuses
+ *
+ * For RETAIN/AUTO_RETAIN: player loses draft bonus, retention cost applied
+ * For RELEASE: player keeps draft bonus, no retention cost
+ *
+ * @param {String|Number} year - Season year
+ * @returns {Object} - {
+ *   byTeam: Map of franchiseId -> { retentionCount, retentionCost, retainedCopyIds: Set },
+ *   allRetainedCopyIds: Set of all retained copyIds
+ * }
+ */
+function getRetentionDataByTeam(year) {
+  const result = {
+    byTeam: {},
+    allRetainedCopyIds: new Set()
+  };
+
+  // Initialize all franchises
+  const franchiseMap = getFranchiseConferenceMap();
+  Object.keys(franchiseMap).forEach(fId => {
+    result.byTeam[fId] = { retentionCount: 0, retentionCost: 0, retainedCopyIds: new Set() };
+  });
+
+  // Load RetentionHistory sheet
+  let sheet;
+  try {
+    sheet = getRetentionHistorySheet();
+  } catch (e) {
+    Logger.log(`  RetentionHistory sheet not available: ${e.message}`);
+    return result;
+  }
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) {
+    Logger.log("  RetentionHistory sheet is empty");
+    return result;
+  }
+
+  const headers = data[0];
+  const colMap = {};
+  headers.forEach((h, i) => { colMap[h] = i; });
+
+  const yearCol = colMap["Year"];
+  const copyIdCol = colMap["CopyId"];
+  const franchiseCol = colMap["FranchiseId"];
+  const decisionCol = colMap["Decision"];
+  const costCol = colMap["RetentionCost"];
+
+  if (yearCol === undefined || copyIdCol === undefined || decisionCol === undefined) {
+    Logger.log("  RetentionHistory missing required columns");
+    return result;
+  }
+
+  let retainCount = 0;
+  let releaseCount = 0;
+
+  data.slice(1).forEach(row => {
+    const rowYear = Number(row[yearCol]);
+    if (rowYear !== Number(year)) return;
+
+    const decision = String(row[decisionCol] || "").toUpperCase().trim();
+    const franchiseId = String(row[franchiseCol] || "").padStart(3, "0");
+    const copyId = String(row[copyIdCol] || "");
+    const cost = Number(row[costCol]) || 0;
+
+    if (decision === "RETAIN" || decision === "AUTO_RETAIN") {
+      if (result.byTeam[franchiseId]) {
+        result.byTeam[franchiseId].retentionCount++;
+        result.byTeam[franchiseId].retentionCost += cost;
+        result.byTeam[franchiseId].retainedCopyIds.add(copyId);
+      }
+      result.allRetainedCopyIds.add(copyId);
+      retainCount++;
+    } else if (decision === "RELEASE") {
+      releaseCount++;
+    }
+  });
+
+  Logger.log(`  RetentionHistory for ${year}: ${retainCount} retained, ${releaseCount} released`);
+  return result;
+}
+
+// ============================================================================
 // RIVALRY WAGER FUNCTIONS
 // ============================================================================
 
@@ -371,7 +483,8 @@ function calculateRivalryWagerOutcomes(year, throughWeek) {
   });
 
   // Load rivalries from Rivalries sheet (should be IMPORTRANGE from scheduler)
-  const rivalries = loadRivalriesFromLeagueSheet();
+  // Only include rivalries confirmed in this year or earlier
+  const rivalries = loadRivalriesFromLeagueSheet(year);
   if (rivalries.length === 0) {
     Logger.log("  No rivalries found (Rivalries sheet may not exist or be empty)");
     return outcomes;
@@ -430,12 +543,14 @@ function calculateRivalryWagerOutcomes(year, throughWeek) {
 /**
  * Load confirmed rivalries from the Rivalries sheet in the league workbook
  * This sheet should be populated via IMPORTRANGE from the scheduler workbook
+ * Only includes rivalries confirmed in the specified year or earlier
  *
- * Expected columns: Team A | Team A Name | Team B | Team B Name | Rivalry Name | Wager | Type | Status
+ * Expected columns: Team A | Team A Name | Team B | Team B Name | Rivalry Name | Wager | Type | Status | ... | Confirmed At
  *
- * @returns {Array} - Array of { teamA, teamB, wager } objects (confirmed only)
+ * @param {String|Number} [year] - Only include rivalries confirmed in this year or earlier
+ * @returns {Array} - Array of { teamA, teamB, wager } objects (confirmed, year-filtered)
  */
-function loadRivalriesFromLeagueSheet() {
+function loadRivalriesFromLeagueSheet(year) {
   const ss = SpreadsheetApp.getActive();
   const sheet = ss.getSheetByName("Rivalries");
 
@@ -456,6 +571,7 @@ function loadRivalriesFromLeagueSheet() {
   const teamBCol = colMap["Team B"] ?? colMap["TeamB"] ?? 2;
   const wagerCol = colMap["Wager"] ?? colMap["Wager Amount"] ?? -1;
   const statusCol = colMap["Status"] ?? -1;
+  const confirmedAtCol = colMap["Confirmed At"] ?? colMap["ConfirmedAt"] ?? -1;
 
   return data.slice(1)
     .filter(row => {
@@ -463,6 +579,16 @@ function loadRivalriesFromLeagueSheet() {
       if (!row[teamACol] || !row[teamBCol]) return false;
       // Must be confirmed (if status column exists)
       if (statusCol !== -1 && String(row[statusCol]).toUpperCase() !== "CONFIRMED") return false;
+      // Must be confirmed in the calculation year or earlier
+      if (confirmedAtCol !== -1 && year) {
+        const confirmedAt = String(row[confirmedAtCol] || "").trim();
+        if (confirmedAt) {
+          const confirmedYear = Number(confirmedAt.substring(0, 4));
+          if (!isNaN(confirmedYear) && confirmedYear > Number(year)) {
+            return false;
+          }
+        }
+      }
       return true;
     })
     .map(row => ({
@@ -570,6 +696,8 @@ function getRecruitingDollarsSheet() {
     "WagerNet",
     "DraftBonusCount",
     "DraftBonusDollars",
+    "RetentionCount",
+    "RetentionCostDollars",
     "TotalBonusDollars",
     "LastCalculated",
     "Status"
@@ -591,10 +719,26 @@ function writeRecruitingDollarsToSheet(year, rows) {
   // Get existing data
   const existingData = sheet.getDataRange().getValues();
 
-  // Keep rows from other years
-  const rowsToKeep = existingData.slice(1).filter(row =>
-    Number(row[0]) !== Number(year)
-  );
+  // Keep rows from other years, padding old rows to match new header length
+  const expectedCols = headers.length;
+  const rowsToKeep = existingData.slice(1)
+    .filter(row => Number(row[0]) !== Number(year))
+    .map(row => {
+      if (row.length < expectedCols) {
+        // Old rows missing RetentionCount/RetentionCostDollars columns (added at index 23-24)
+        // Insert 0, 0 before TotalBonusDollars (which was at index 23 in old layout)
+        const padded = [...row];
+        if (padded.length === 26) {
+          // Old 26-col layout: insert retention columns before TotalBonusDollars (index 23)
+          padded.splice(23, 0, 0, 0);
+        } else {
+          // Unknown old layout: pad with empty values
+          while (padded.length < expectedCols) padded.push("");
+        }
+        return padded;
+      }
+      return row;
+    });
 
   // Clear sheet (except header)
   if (existingData.length > 1) {

@@ -114,6 +114,267 @@ function getRetentionCostInfo(player) {
 }
 
 // ============================================================================
+// RETENTION HISTORY SHEET
+// ============================================================================
+
+const RETENTION_HISTORY_HEADERS = [
+  "Year",
+  "CopyId",
+  "PlayerId",
+  "PlayerName",
+  "Conference",
+  "FranchiseId",
+  "TeamName",
+  "Decision",        // RETAIN, RELEASE, or AUTO_RETAIN
+  "RetentionPath",   // NATIONAL or ALL_CONFERENCE
+  "RetentionCost",   // Dollar cost (0 for RELEASE)
+  "RetentionCount",  // How many times retained (including this one; 0 for RELEASE)
+  "NationalAwards",
+  "AllConfAwards",
+  "Timestamp"
+];
+
+/**
+ * Get or create the RetentionHistory sheet
+ * This is the durable, append-only log of all retention decisions.
+ * PlayerCopies is the working state; this sheet is the source of truth.
+ *
+ * @returns {Sheet} - The RetentionHistory sheet
+ */
+function getRetentionHistorySheet() {
+  const config = getConfig();
+  return getOrCreateSheet(config.sheets.retentionHistory, RETENTION_HISTORY_HEADERS);
+}
+
+/**
+ * Write a retention decision to the RetentionHistory sheet
+ *
+ * @param {Object} entry - Retention history entry
+ * @param {Number|String} entry.year - Season year
+ * @param {String} entry.copyId - PlayerCopyID
+ * @param {String} entry.playerId - PlayerID
+ * @param {String} entry.playerName - Player name
+ * @param {String} entry.conference - Conference
+ * @param {String} entry.franchiseId - FranchiseID of the owner
+ * @param {String} entry.teamName - Team name (optional, resolved from franchise lookup)
+ * @param {String} entry.decision - RETAIN, RELEASE, or AUTO_RETAIN
+ * @param {String} entry.retentionPath - NATIONAL or ALL_CONFERENCE
+ * @param {Number} entry.retentionCost - Dollar cost
+ * @param {Number} entry.retentionCount - Times retained (including this one)
+ * @param {Number} entry.nationalAwards - National award count at time of decision
+ * @param {Number} entry.allConfAwards - All-conference award count at time of decision
+ */
+function writeRetentionHistoryEntry(entry) {
+  const sheet = getRetentionHistorySheet();
+
+  const row = [
+    entry.year,
+    entry.copyId,
+    entry.playerId,
+    entry.playerName,
+    entry.conference,
+    entry.franchiseId,
+    entry.teamName || "",
+    entry.decision,
+    entry.retentionPath || "",
+    entry.retentionCost || 0,
+    entry.retentionCount || 0,
+    entry.nationalAwards || 0,
+    entry.allConfAwards || 0,
+    new Date()
+  ];
+
+  sheet.appendRow(row);
+}
+
+/**
+ * Backfill RetentionHistory from existing PlayerCopies retention data.
+ * Migrates any decisions already recorded on PlayerCopies into the
+ * durable RetentionHistory sheet. Safe to run multiple times — checks
+ * for existing entries before writing.
+ *
+ * @returns {Object} - { migrated, skippedDuplicate, skippedNoDecision }
+ */
+function backfillRetentionHistory() {
+  Logger.log("=== BACKFILLING RETENTION HISTORY FROM PLAYERCOPIES ===");
+
+  const pcSheet = getPlayerCopiesSheet();
+  const pcData = pcSheet.getDataRange().getValues();
+
+  if (pcData.length <= 1) {
+    Logger.log("  No player copies found");
+    return { migrated: 0, skippedDuplicate: 0, skippedNoDecision: 0 };
+  }
+
+  // Load existing retention history to avoid duplicates
+  const histSheet = getRetentionHistorySheet();
+  const histData = histSheet.getDataRange().getValues();
+  const existingKeys = new Set();
+  if (histData.length > 1) {
+    const yearCol = 0;
+    const copyIdCol = 1;
+    histData.slice(1).forEach(row => {
+      existingKeys.add(`${row[yearCol]}-${row[copyIdCol]}`);
+    });
+  }
+  Logger.log(`  Found ${existingKeys.size} existing retention history entries`);
+
+  // Load team name lookup
+  const franchiseData = {};
+  try {
+    const ss = SpreadsheetApp.getActive();
+    const config = getConfig();
+    const flSheet = ss.getSheetByName(config.sheets.franchiseLookup);
+    if (flSheet) {
+      const flData = flSheet.getDataRange().getValues();
+      const flHeaders = flData[0];
+      const idIdx = flHeaders.indexOf("Franchise ID");
+      const nameIdx = flHeaders.indexOf("Team Name");
+      flData.slice(1).forEach(row => {
+        const fId = String(Number(row[idIdx] || 0)).padStart(3, "0");
+        franchiseData[fId] = String(row[nameIdx] || "");
+      });
+    }
+  } catch (e) {
+    Logger.log(`  Warning: Could not load franchise lookup: ${e.message}`);
+  }
+
+  let migrated = 0;
+  let skippedDuplicate = 0;
+  let skippedNoDecision = 0;
+  const rowsToAppend = [];
+
+  const rows = pcData.slice(1);
+  rows.forEach(row => {
+    const decision = String(row[PC_COLS.retentionDecision] || "").toUpperCase().trim();
+    const decisionDate = String(row[PC_COLS.retentionDecisionDate] || "").trim();
+
+    // Skip if no decision recorded
+    if (!decision && !decisionDate) {
+      return;
+    }
+
+    // Determine the year from the decision date
+    // Format is either ISO date string or "PROCESSED-{year}"
+    let year = "";
+    if (decisionDate.startsWith("PROCESSED-")) {
+      year = decisionDate.replace("PROCESSED-", "");
+    } else if (decisionDate) {
+      // Try to extract year from ISO date
+      try {
+        year = String(new Date(decisionDate).getFullYear());
+      } catch (e) {
+        year = getLeagueYear();
+      }
+    } else {
+      year = getLeagueYear();
+    }
+
+    const copyId = row[PC_COLS.copyId];
+    const key = `${year}-${copyId}`;
+
+    // Skip if already in history
+    if (existingKeys.has(key)) {
+      skippedDuplicate++;
+      return;
+    }
+
+    // Skip if decision column is empty and it wasn't processed (auto-retain)
+    if (!decision && !decisionDate.startsWith("PROCESSED-")) {
+      skippedNoDecision++;
+      return;
+    }
+
+    const nationalAwards = Number(row[PC_COLS.nationalAwards]) || 0;
+    const allConfAwards = Number(row[PC_COLS.allConferenceAwards]) || 0;
+    const retentionCount = Number(row[PC_COLS.retentionCount]) || 0;
+    const retentionPath = row[PC_COLS.retentionPath] || determineRetentionPath(nationalAwards, allConfAwards);
+
+    // Determine effective decision
+    let effectiveDecision = decision;
+    if (!decision && decisionDate.startsWith("PROCESSED-")) {
+      effectiveDecision = "AUTO_RETAIN";
+    }
+
+    // Calculate cost (for RELEASE, cost is 0)
+    let cost = 0;
+    if (effectiveDecision === "RETAIN" || effectiveDecision === "AUTO_RETAIN") {
+      // retentionCount was already incremented by processEarlyDeclarations,
+      // so use retentionCount - 1 for the cost at the time of the decision
+      cost = calculateRetentionCost(retentionPath, Math.max(0, retentionCount - 1));
+    }
+
+    const franchiseId = String(row[PC_COLS.currentFranchiseId] || "").trim();
+    const paddedFId = franchiseId ? String(Number(franchiseId) || franchiseId).padStart(3, "0") : "";
+    const teamName = franchiseData[paddedFId] || "";
+
+    rowsToAppend.push([
+      year,
+      copyId,
+      row[PC_COLS.playerId],
+      row[PC_COLS.playerName],
+      row[PC_COLS.conference],
+      paddedFId,
+      teamName,
+      effectiveDecision,
+      retentionPath || "",
+      cost,
+      retentionCount,
+      nationalAwards,
+      allConfAwards,
+      decisionDate.startsWith("PROCESSED-") ? decisionDate : (decisionDate || new Date().toISOString())
+    ]);
+
+    migrated++;
+    Logger.log(`  Migrating: ${row[PC_COLS.playerName]} (${copyId}) - ${effectiveDecision} for ${year}`);
+  });
+
+  // Batch write
+  if (rowsToAppend.length > 0) {
+    const startRow = histSheet.getLastRow() + 1;
+    histSheet.getRange(startRow, 1, rowsToAppend.length, RETENTION_HISTORY_HEADERS.length)
+      .setValues(rowsToAppend);
+  }
+
+  Logger.log(`\n=== BACKFILL COMPLETE ===`);
+  Logger.log(`  Migrated: ${migrated}`);
+  Logger.log(`  Skipped (already in history): ${skippedDuplicate}`);
+  Logger.log(`  Skipped (no decision): ${skippedNoDecision}`);
+
+  return { migrated, skippedDuplicate, skippedNoDecision };
+}
+
+/**
+ * Menu function to backfill retention history
+ */
+function menuBackfillRetentionHistory() {
+  const ui = SpreadsheetApp.getUi();
+
+  const confirm = ui.alert(
+    'Backfill Retention History',
+    'This will migrate existing retention decisions from PlayerCopies into the ' +
+    'RetentionHistory sheet.\n\n' +
+    'This is safe to run multiple times — duplicates are skipped.\n\n' +
+    'Continue?',
+    ui.ButtonSet.YES_NO
+  );
+
+  if (confirm !== ui.Button.YES) return;
+
+  const result = backfillRetentionHistory();
+
+  ui.alert(
+    'Backfill Complete',
+    `Results:\n\n` +
+    `Migrated: ${result.migrated}\n` +
+    `Skipped (already exists): ${result.skippedDuplicate}\n` +
+    `Skipped (no decision): ${result.skippedNoDecision}\n\n` +
+    'See Logs for details.',
+    ui.ButtonSet.OK
+  );
+}
+
+// ============================================================================
 // AWARD SYNC FUNCTIONS
 // ============================================================================
 

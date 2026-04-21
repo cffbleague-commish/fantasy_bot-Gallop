@@ -67,7 +67,8 @@ function getConfig() {
       awards: "Awards",
       weeklyResults: "WeeklyResults",
       recruitingDollars: "RecruitingDollars",
-      theoreticalDraft: "TheoreticalDraft"
+      theoreticalDraft: "TheoreticalDraft",
+      retentionHistory: "RetentionHistory"
     },
 
     // MFL Roster Slot Types
