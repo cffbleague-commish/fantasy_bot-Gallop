@@ -573,6 +573,9 @@ function loadRivalriesFromLeagueSheet(year) {
   const statusCol = colMap["Status"] ?? -1;
   const confirmedAtCol = colMap["Confirmed At"] ?? colMap["ConfirmedAt"] ?? -1;
 
+  // Deduplicate reciprocal entries (challenge row + confirmation row = same rivalry)
+  const seen = new Set();
+
   return data.slice(1)
     .filter(row => {
       // Must have both teams
@@ -589,6 +592,12 @@ function loadRivalriesFromLeagueSheet(year) {
           }
         }
       }
+      // Deduplicate: normalize matchup key so A-B and B-A are the same rivalry
+      const a = String(Number(row[teamACol]) || row[teamACol]).padStart(3, "0");
+      const b = String(Number(row[teamBCol]) || row[teamBCol]).padStart(3, "0");
+      const matchupKey = [a, b].sort().join("-");
+      if (seen.has(matchupKey)) return false;
+      seen.add(matchupKey);
       return true;
     })
     .map(row => ({

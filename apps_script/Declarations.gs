@@ -255,14 +255,22 @@ function backfillRetentionHistory() {
     }
 
     // Determine the year from the decision date
-    // Format is either ISO date string or "PROCESSED-{year}"
+    // Year = earning year (the season awards were earned in)
+    // "PROCESSED-{X}" means processed for class X, so earning year = X - 1
+    // ISO dates represent when the decision was made (during/after earning season)
     let year = "";
     if (decisionDate.startsWith("PROCESSED-")) {
-      year = decisionDate.replace("PROCESSED-", "");
+      const classYear = Number(decisionDate.replace("PROCESSED-", ""));
+      year = String(classYear - 1);
     } else if (decisionDate) {
-      // Try to extract year from ISO date
+      // ISO date: decision made after season ended, so year = date's year - 1
+      // (decisions happen in Jan/Feb after the earning season)
       try {
-        year = String(new Date(decisionDate).getFullYear());
+        const dateYear = new Date(decisionDate).getFullYear();
+        const month = new Date(decisionDate).getMonth(); // 0-indexed
+        // If decision in Jan-Jun, earning year = dateYear - 1
+        // If decision in Jul-Dec, earning year = dateYear (mid-season unlikely but safe)
+        year = month < 6 ? String(dateYear - 1) : String(dateYear);
       } catch (e) {
         year = getLeagueYear();
       }

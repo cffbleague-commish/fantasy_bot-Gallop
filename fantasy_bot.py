@@ -2657,6 +2657,20 @@ def get_eligible_players_for_retention(conference: str = None, franchise_id: str
         prior_retain_count = hist_entry.get('prior_retain_count', 0)
         retention_history = hist_entry.get('history', [])
 
+        # Skip if previously retained and no new awards earned since last retention
+        # Retention only re-triggers when a player wins additional awards
+        if prior_retain_count > 0 and not retention_decision:
+            last_retention = None
+            for r in reversed(retention_history):
+                if r.get('decision') in ('RETAIN', 'AUTO_RETAIN'):
+                    last_retention = r
+                    break
+            if last_retention:
+                last_national = last_retention.get('national_awards', 0)
+                last_allconf = last_retention.get('allconf_awards', 0)
+                if national_awards <= last_national and allconf_awards <= last_allconf:
+                    continue
+
         # Derive retention count from history (prior retentions before this year)
         retention_path = determine_retention_path(national_awards, allconf_awards)
         retention_cost = calculate_retention_cost(retention_path, prior_retain_count)
@@ -2733,6 +2747,8 @@ def get_retention_decisions_from_history(year=None):
             'decision': row.get('Decision', ''),
             'retention_path': row.get('RetentionPath', ''),
             'retention_cost': int(row.get('RetentionCost', 0) or 0),
+            'national_awards': int(row.get('NationalAwards', 0) or 0),
+            'allconf_awards': int(row.get('AllConfAwards', 0) or 0),
             'timestamp': row.get('Timestamp', '')
         })
 
