@@ -258,10 +258,39 @@ function getDraftEligibleCopies(year) {
   const maxYears = config.eligibility.maxYears;  // 4
   const minYearsForDeclaration = config.declarations.minYearsForDeclaration;  // 3
 
-  // Detect historical mode: if year < current league year, PlayerCopies has been rolled over
+  // Detect historical mode: check if rollover has already occurred for the target year
+  // Two signals: (1) league year property advanced past target, OR
+  // (2) there are inactive graduated players whose graduation year matches target
+  //     (meaning rollover already deactivated them)
   const currentLeagueYear = Number(getLeagueYear());
-  const isHistorical = year < currentLeagueYear;
-  const yearsRolled = currentLeagueYear - year; // How many rollovers have occurred since target year
+  let isHistorical = year < currentLeagueYear;
+
+  // If league year hasn't been updated yet but rollover has run,
+  // detect by checking for inactive players who graduated in the target year
+  if (!isHistorical) {
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const active = row[PC_COLS.active] === true || row[PC_COLS.active] === "TRUE";
+      const declaredEarly = row[PC_COLS.declaredEarly] === true || row[PC_COLS.declaredEarly] === "TRUE";
+      const yearsUsed = Number(row[PC_COLS.eligibilityYearsUsed]) || 0;
+      if (!active && !declaredEarly && yearsUsed >= maxYears) {
+        const createdSeason = Number(row[PC_COLS.createdSeason]) || 0;
+        const tradRS = row[PC_COLS.traditionalRedshirtUsed] === true || row[PC_COLS.traditionalRedshirtUsed] === "TRUE";
+        const medRS = row[PC_COLS.medicalRedshirtUsed] === true || row[PC_COLS.medicalRedshirtUsed] === "TRUE";
+        const numRedshirts = (tradRS ? 1 : 0) + (medRS ? 1 : 0);
+        const graduationYear = createdSeason + yearsUsed + numRedshirts - 1;
+        if (graduationYear === year) {
+          isHistorical = true;
+          Logger.log(`  Detected rollover: found graduated player from ${year} (league year property still ${currentLeagueYear})`);
+          break;
+        }
+      }
+    }
+  }
+
+  // Calculate how many rollovers have occurred
+  // If league year matches target but rollover happened, it's 1
+  const yearsRolled = isHistorical ? Math.max(1, currentLeagueYear - year) : 0;
 
   if (isHistorical) {
     Logger.log(`  HISTORICAL MODE: Reconstructing ${year} eligibility (${yearsRolled} rollover(s) since)`);
