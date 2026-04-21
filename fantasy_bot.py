@@ -3121,6 +3121,10 @@ async def retention_my_team(interaction: discord.Interaction):
     else:
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+# Cache for retention autocomplete (avoids 3+ API calls per keystroke)
+_retention_autocomplete_cache = {}  # franchise_id -> { 'data': [...], 'expires': timestamp }
+_RETENTION_CACHE_TTL = 60  # seconds
+
 async def retention_player_autocomplete(interaction: discord.Interaction, current: str):
     """Shared autocomplete for /retention retain and /retention release - shows eligible players on user's team."""
     if player_copies_ws is None:
@@ -3131,7 +3135,16 @@ async def retention_player_autocomplete(interaction: discord.Interaction, curren
         return []
 
     franchise_id = str(team['id']).zfill(3) if team['id'] else ''
-    eligible = get_eligible_players_for_retention(franchise_id=franchise_id)
+
+    # Use cached eligible list if fresh (avoids timeout on repeated keystrokes)
+    import time
+    now = time.time()
+    cached = _retention_autocomplete_cache.get(franchise_id)
+    if cached and cached['expires'] > now:
+        eligible = cached['data']
+    else:
+        eligible = get_eligible_players_for_retention(franchise_id=franchise_id)
+        _retention_autocomplete_cache[franchise_id] = {'data': eligible, 'expires': now + _RETENTION_CACHE_TTL}
 
     if not eligible:
         return []
@@ -3212,6 +3225,7 @@ async def retention_retain(interaction: discord.Interaction, player_name: str):
 
     try:
         result = record_retention_decision_in_sheet(player['copy_id'], 'RETAIN')
+        _retention_autocomplete_cache.pop(franchise_id, None)  # Invalidate cache
         await interaction.followup.send(
             f"✅ **RETAINED** {result['player_name']}\n"
             f"Copy ID: `{result['copy_id']}`\n\n"
@@ -3255,6 +3269,7 @@ async def retention_release(interaction: discord.Interaction, player_name: str):
 
     try:
         result = record_retention_decision_in_sheet(player['copy_id'], 'RELEASE')
+        _retention_autocomplete_cache.pop(franchise_id, None)  # Invalidate cache
         await interaction.followup.send(
             f"📤 **RELEASED** {result['player_name']} (Early Declaration)\n"
             f"Copy ID: `{result['copy_id']}`\n\n"
