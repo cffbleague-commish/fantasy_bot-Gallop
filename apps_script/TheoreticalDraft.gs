@@ -260,30 +260,20 @@ function getDraftEligibleCopies(year) {
 
   // Detect historical mode: check if rollover has already occurred for the target year
   // Two signals: (1) league year property advanced past target, OR
-  // (2) there are inactive graduated players whose graduation year matches target
-  //     (meaning rollover already deactivated them)
+  // (2) PROCESSED-{year+1} markers exist on any player (meaning early declarations processed)
   const currentLeagueYear = Number(getLeagueYear());
   let isHistorical = year < currentLeagueYear;
 
   // If league year hasn't been updated yet but rollover has run,
-  // detect by checking for inactive players who graduated in the target year
+  // detect by looking for PROCESSED markers for the target year's class
   if (!isHistorical) {
+    const processedMarker = `PROCESSED-${year + 1}`;
     for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const active = row[PC_COLS.active] === true || row[PC_COLS.active] === "TRUE";
-      const declaredEarly = row[PC_COLS.declaredEarly] === true || row[PC_COLS.declaredEarly] === "TRUE";
-      const yearsUsed = Number(row[PC_COLS.eligibilityYearsUsed]) || 0;
-      if (!active && !declaredEarly && yearsUsed >= maxYears) {
-        const createdSeason = Number(row[PC_COLS.createdSeason]) || 0;
-        const tradRS = row[PC_COLS.traditionalRedshirtUsed] === true || row[PC_COLS.traditionalRedshirtUsed] === "TRUE";
-        const medRS = row[PC_COLS.medicalRedshirtUsed] === true || row[PC_COLS.medicalRedshirtUsed] === "TRUE";
-        const numRedshirts = (tradRS ? 1 : 0) + (medRS ? 1 : 0);
-        const graduationYear = createdSeason + yearsUsed + numRedshirts - 1;
-        if (graduationYear === year) {
-          isHistorical = true;
-          Logger.log(`  Detected rollover: found graduated player from ${year} (league year property still ${currentLeagueYear})`);
-          break;
-        }
+      const retDecDate = String(data[i][PC_COLS.retentionDecisionDate] || "").trim();
+      if (retDecDate === processedMarker) {
+        isHistorical = true;
+        Logger.log(`  Detected rollover: found PROCESSED-${year + 1} marker (league year property still ${currentLeagueYear})`);
+        break;
       }
     }
   }
@@ -344,16 +334,12 @@ function getDraftEligibleCopies(year) {
         draftReason = "EARLY_DECLARE";
         stats.earlyDeclare++;
       }
-      // Check 2: Graduated in target year
-      // Graduation year = createdSeason + eligibilityYearsUsed + redshirt_years - 1
-      // (eligibilityYearsUsed is post-rollover value for graduated players)
+      // Check 2: Graduated (inactive, non-declared, exhausted eligibility)
+      // Include ALL such players — MFL rankings for the target year will naturally
+      // filter out prior-year graduates (they won't have rankings → $0 value)
       else if (!active && !declaredEarly && eligibilityYearsUsed >= maxYears) {
-        const numRedshirts = (traditionalRedshirt ? 1 : 0) + (medicalRedshirt ? 1 : 0);
-        const graduationYear = createdSeason + eligibilityYearsUsed + numRedshirts - 1;
-        if (graduationYear === year) {
-          draftReason = "GRADUATING";
-          stats.graduating++;
-        }
+        draftReason = "GRADUATING";
+        stats.graduating++;
       }
       // Check 3: COULD_DECLARE players who were retained (still active, years incremented)
       // These show up as COULD_DECLARE but with PROCESSED marker or in RetentionHistory
