@@ -536,7 +536,7 @@ print(f"[DEBUG] Fallback DRAFT_CHANNEL_ID: {DRAFT_CHANNEL_ID}")
 last_posted_heisman = None
 
 # Toggle for scheduled auto-posts (awards & rankings) - controlled via /toggle_autoposts (Commish only)
-auto_posts_enabled = True
+auto_posts_enabled = False
 
 # ----------------- Slash Command: toggle_autoposts -----------------
 @bot.tree.command(
