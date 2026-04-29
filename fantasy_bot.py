@@ -3015,6 +3015,169 @@ async def commish_retention_decide(
     except Exception as e:
         await interaction.followup.send(f"Error recording decision: {str(e)}")
 
+@commish.command(name="budget", description="Look up any team's recruiting bonus dollars")
+@app_commands.describe(
+    team_owner="@ mention the team owner to look up"
+)
+async def commish_budget(
+    interaction: discord.Interaction,
+    team_owner: discord.Member
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if not has_commish_role(interaction):
+        await interaction.followup.send(
+            "You must have the **Commish** role to use this command.",
+            ephemeral=True
+        )
+        return
+
+    if recruiting_dollars_ws is None:
+        await interaction.followup.send("RecruitingDollars sheet not found. Please wait for rankings to update.")
+        return
+
+    # Look up team owner's team
+    team = await asyncio.to_thread(get_team_by_discord_id, team_owner.id)
+    if not team:
+        await interaction.followup.send(f"{team_owner.mention} is not registered as a team owner.")
+        return
+
+    franchise_id = str(team['id']).zfill(3) if team['id'] else ''
+    year = get_current_year()
+
+    # Get all recruiting dollars data
+    try:
+        data = recruiting_dollars_ws.get_all_records(expected_headers=[])
+    except Exception as e:
+        await interaction.followup.send(f"Error reading recruiting dollars data: {e}")
+        return
+
+    if not data:
+        await interaction.followup.send(f"No recruiting dollars data found.")
+        return
+
+    # Filter to current year
+    year_data = [r for r in data if str(r.get("Year")) == str(year)]
+
+    if not year_data:
+        await interaction.followup.send(f"No recruiting dollars data found for {year}.")
+        return
+
+    # Find team data
+    user_data = None
+    for r in year_data:
+        if str(r.get("FranchiseID", "")).zfill(3) == franchise_id:
+            user_data = r
+            break
+
+    if not user_data:
+        await interaction.followup.send(f"No data found for **{team['name']}**.")
+        return
+
+    # Build detailed breakdown embed
+    status = user_data.get("Status", "PROJECTED")
+    status_text = "(Season In Progress)" if status == "PROJECTED" else f"(Final - {year} Season)"
+    color = discord.Color.green() if status == "FINAL" else discord.Color.gold()
+
+    embed = discord.Embed(
+        title=f"Recruiting Bonus Dollars {status_text}",
+        description=f"**{team['name']}** - {team['conference']} Conference",
+        color=color
+    )
+
+    # Breakdown fields
+    reg_wins = user_data.get('RegularSeasonWins', 0)
+    reg_dollars = user_data.get('RegSeasonDollars', 0)
+    embed.add_field(name="Regular Season Wins", value=f"{reg_wins} wins x $1 = **${reg_dollars}**", inline=True)
+
+    post_wins = user_data.get('PostseasonWins', 0)
+    post_dollars = user_data.get('PostseasonDollars', 0)
+    embed.add_field(name="Postseason Wins", value=f"{post_wins} wins x $2 = **${post_dollars}**", inline=True)
+
+    nc_count = user_data.get('NationalPositionCount', user_data.get('NationalChampCount', 0))
+    nc_dollars = user_data.get('NationalPositionDollars', user_data.get('NationalChampDollars', 0))
+    embed.add_field(name="National Position Awards", value=f"{nc_count} players x $5 = **${nc_dollars}**", inline=True)
+
+    heisman_count = user_data.get('HeismanCount', 0)
+    heisman_dollars = user_data.get('HeismanDollars', 0)
+    embed.add_field(name="Heisman Award", value=f"{heisman_count} players x $5 = **${heisman_dollars}**", inline=True)
+
+    first_count = user_data.get('FirstTeamCount', 0)
+    first_dollars = user_data.get('FirstTeamDollars', 0)
+    embed.add_field(name="1st Team All-Conference", value=f"{first_count} players x $5 = **${first_dollars}**", inline=True)
+
+    second_count = user_data.get('SecondTeamCount', 0)
+    second_dollars = user_data.get('SecondTeamDollars', 0)
+    embed.add_field(name="2nd Team All-Conference", value=f"{second_count} players x $4 = **${second_dollars}**", inline=True)
+
+    third_count = user_data.get('ThirdTeamCount', 0)
+    third_dollars = user_data.get('ThirdTeamDollars', 0)
+    embed.add_field(name="3rd Team All-Conference", value=f"{third_count} players x $3 = **${third_dollars}**", inline=True)
+
+    # Rivalry Wagers
+    wager_won = user_data.get('WagerWon', 0)
+    wager_lost = user_data.get('WagerLost', 0)
+    wager_net = user_data.get('WagerNet', 0)
+    wager_sign = "+" if wager_net >= 0 else ""
+    embed.add_field(name="Rivalry Wagers", value=f"Won: +${wager_won} | Lost: -${wager_lost}\nNet: **{wager_sign}${wager_net}**", inline=True)
+
+    # Draft Bonus
+    draft_count = user_data.get('DraftBonusCount', 0)
+    draft_dollars = user_data.get('DraftBonusDollars', 0)
+    if draft_count > 0 or draft_dollars > 0:
+        embed.add_field(name="Draft Bonus", value=f"{draft_count} players drafted = **${draft_dollars}**", inline=True)
+    elif status == "FINAL":
+        embed.add_field(name="Draft Bonus", value="No players drafted", inline=True)
+    else:
+        embed.add_field(name="Draft Bonus", value="*Calculated at season end*", inline=True)
+
+    # Retention Cost
+    retention_count = user_data.get('RetentionCount', 0)
+    retention_cost = user_data.get('RetentionCostDollars', 0)
+    if retention_count > 0 or retention_cost > 0:
+        embed.add_field(name="Retention Cost", value=f"{retention_count} retained = **-${retention_cost}**", inline=True)
+    elif status == "FINAL":
+        embed.add_field(name="Retention Cost", value="No retentions", inline=True)
+
+    # Total
+    total_dollars = user_data.get('TotalBonusDollars', 0)
+    total_sign = "+" if total_dollars >= 0 else ""
+    embed.add_field(name="TOTAL BONUS DOLLARS", value=f"**{total_sign}${total_dollars}**", inline=False)
+
+    # Conference comparison
+    conf_data = [r for r in year_data if r.get("Conference") == team['conference']]
+    conf_data.sort(key=lambda x: x.get('TotalBonusDollars', 0), reverse=True)
+
+    conf_lines = []
+    team_rank = 0
+    for i, t in enumerate(conf_data, 1):
+        fid = str(t.get("FranchiseID", "")).zfill(3)
+        is_target = fid == franchise_id
+        if is_target:
+            team_rank = i
+        marker = "**>>** " if is_target else ""
+        end_marker = " **<<**" if is_target else ""
+        t_name = t.get("TeamName", "Unknown")
+        total = t.get("TotalBonusDollars", 0)
+        conf_lines.append(f"{marker}#{i}. {t_name}: **${total}**{end_marker}")
+
+    display_lines = conf_lines[:15] if len(conf_lines) > 15 else conf_lines
+    if len(conf_lines) > 15 and team_rank > 15:
+        display_lines.append("...")
+        display_lines.append(conf_lines[team_rank - 1])
+
+    embed.add_field(
+        name=f"{team['conference']} Conference Rankings ({team['name']}: #{team_rank})",
+        value="\n".join(display_lines),
+        inline=False
+    )
+
+    # Footer
+    last_calc = str(user_data.get('LastCalculated', 'Unknown'))[:16]
+    embed.set_footer(text=f"Last calculated: {last_calc} | Looked up by {interaction.user.display_name}")
+
+    await interaction.followup.send(embed=embed)
+
 @retention.command(name="my_team", description="View eligible players on your team")
 async def retention_my_team(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
