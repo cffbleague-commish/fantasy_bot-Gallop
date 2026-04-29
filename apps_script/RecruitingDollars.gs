@@ -545,7 +545,7 @@ function calculateRivalryWagerOutcomes(year, throughWeek) {
  * This sheet should be populated via IMPORTRANGE from the scheduler workbook
  * Only includes rivalries confirmed in the specified year or earlier
  *
- * Expected columns: Team A | Team A Name | Team B | Team B Name | Rivalry Name | Wager | Type | Status | ... | Confirmed At
+ * Expected columns: Team A | Team A Name | Team B | Team B Name | Rivalry Name | Wager | Type | Status | Submitted
  *
  * @param {String|Number} [year] - Only include rivalries confirmed in this year or earlier
  * @returns {Array} - Array of { teamA, teamB, wager } objects (confirmed, year-filtered)
@@ -566,19 +566,20 @@ function loadRivalriesFromLeagueSheet(year) {
   const colMap = {};
   headers.forEach((h, i) => { colMap[h] = i; });
 
-  Logger.log(`  Rivalries headers: ${JSON.stringify(headers)}`);
-
   // Find columns (flexible naming)
   const teamACol = colMap["Team A"] ?? colMap["TeamA"] ?? 0;
   const teamBCol = colMap["Team B"] ?? colMap["TeamB"] ?? 2;
   const wagerCol = colMap["Wager"] ?? colMap["Wager Amount"] ?? -1;
   const statusCol = colMap["Status"] ?? -1;
-  const confirmedAtCol = colMap["Confirmed At"] ?? colMap["ConfirmedAt"] ?? -1;
+  const submittedCol = colMap["Submitted"] ?? -1;
 
-  Logger.log(`  Column indices - Status: ${statusCol}, Confirmed At: ${confirmedAtCol}, Wager: ${wagerCol}`);
+  if (submittedCol === -1) {
+    Logger.log(`  WARNING: "Submitted" column not found in Rivalries sheet - year filter disabled`);
+  }
 
   // Deduplicate reciprocal entries (challenge row + confirmation row = same rivalry)
   const seen = new Set();
+  let skippedByYear = 0;
 
   return data.slice(1)
     .filter(row => {
@@ -586,20 +587,16 @@ function loadRivalriesFromLeagueSheet(year) {
       if (!row[teamACol] || !row[teamBCol]) return false;
       // Must be confirmed (if status column exists)
       if (statusCol !== -1 && String(row[statusCol]).toUpperCase() !== "CONFIRMED") return false;
-      // Must be confirmed in the calculation year or earlier
-      if (confirmedAtCol !== -1 && year) {
-        const confirmedAt = String(row[confirmedAtCol] || "").trim();
-        if (confirmedAt) {
-          const confirmedYear = Number(confirmedAt.substring(0, 4));
-          Logger.log(`  Rivalry ${row[teamACol]} vs ${row[teamBCol]}: Confirmed At raw="${row[confirmedAtCol]}", parsed year=${confirmedYear}, calc year=${year}, filtering=${confirmedYear > Number(year)}`);
-          if (!isNaN(confirmedYear) && confirmedYear > Number(year)) {
+      // Must be confirmed in the calculation year or earlier (Submitted is overwritten with confirmation time)
+      if (submittedCol !== -1 && year) {
+        const submitted = String(row[submittedCol] || "").trim();
+        if (submitted) {
+          const submittedYear = Number(submitted.substring(0, 4));
+          if (!isNaN(submittedYear) && submittedYear > Number(year)) {
+            skippedByYear++;
             return false;
           }
-        } else {
-          Logger.log(`  Rivalry ${row[teamACol]} vs ${row[teamBCol]}: Confirmed At is EMPTY - no year filter applied`);
         }
-      } else if (confirmedAtCol === -1) {
-        Logger.log(`  WARNING: "Confirmed At" column not found in Rivalries sheet - year filter disabled`);
       }
       // Deduplicate: normalize matchup key so A-B and B-A are the same rivalry
       const a = String(Number(row[teamACol]) || row[teamACol]).padStart(3, "0");

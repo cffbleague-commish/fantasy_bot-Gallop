@@ -49,7 +49,7 @@ function loadTeams() {
  * Load CONFIRMED rivalries from the Rivalries sheet
  * Only returns rivalries with Status = "CONFIRMED"
  *
- * Expected columns: Team A | Team B | Rivalry Name | Wager | Status | Type | Confirmed At
+ * Expected columns: Team A | Team B | Rivalry Name | Wager | Status | Type | Submitted
  *
  * @returns {Array} Array of confirmed rivalry objects
  */
@@ -246,9 +246,7 @@ function getRivalriesSheet() {
     "Wager",            // Wager amount ($0-5)
     "Type",             // CONF or NC (same or different conference)
     "Status",           // PENDING or CONFIRMED
-    "Team A Submitted", // Timestamp of Team A's submission
-    "Team B Submitted", // Timestamp of Team B's submission
-    "Confirmed At"      // Timestamp when both confirmed
+    "Submitted"         // Timestamp (overwritten with confirmation time on confirm)
   ];
 
   return getOrCreateSheet(RIVALRIES_SHEET, headers);

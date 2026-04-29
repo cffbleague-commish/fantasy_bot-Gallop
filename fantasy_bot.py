@@ -38,10 +38,10 @@ manual_games_ws = scheduler_sheet.worksheet("ManualGames")
 try:
     rivalries_ws = scheduler_sheet.worksheet("Rivalries")
 except gspread.exceptions.WorksheetNotFound:
-    rivalries_ws = scheduler_sheet.add_worksheet(title="Rivalries", rows=200, cols=11)
+    rivalries_ws = scheduler_sheet.add_worksheet(title="Rivalries", rows=200, cols=9)
     rivalries_ws.append_row([
         "Team A", "Team A Name", "Team B", "Team B Name", "Rivalry Name",
-        "Wager", "Type", "Status", "Team A Submitted", "Team B Submitted", "Confirmed At"
+        "Wager", "Type", "Status", "Submitted"
     ])
 
 # Settings worksheet - stores submission open/close status
@@ -187,6 +187,7 @@ def find_pending_rivalry(team_a: str, team_b: str) -> dict:
 def try_confirm_rivalry(submitter_id: str, opponent_id: str, name: str, wager: int) -> dict:
     """
     Check if opponent already submitted matching rivalry details.
+    If matched, updates the sheet row: Status=CONFIRMED, overwrites Submitted with confirmation time.
     Returns: {"matched": bool, "row": int if matched, "existing": dict if found but not matching}
     """
     pending = find_pending_rivalry(submitter_id, opponent_id)
@@ -208,7 +209,12 @@ def try_confirm_rivalry(submitter_id: str, opponent_id: str, name: str, wager: i
     existing_wager = int(pending.get("Wager", 0))
 
     if existing_name.lower() == name.lower() and existing_wager == wager:
-        return {"matched": True, "row": pending["row"], "existing": pending}
+        # Match confirmed - update the sheet row
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        row_idx = pending["row"]
+        rivalries_ws.update_cell(row_idx, 8, "CONFIRMED")       # Status (col 8)
+        rivalries_ws.update_cell(row_idx, 9, now)                # Submitted (overwrite with confirmation time)
+        return {"matched": True, "row": row_idx, "existing": pending}
     else:
         return {"matched": False, "existing": pending, "mismatch": True}
 
@@ -1008,24 +1014,45 @@ async def rival_submit(
                 )
                 return
             else:
-                # PENDING - tell them it's already in the system
-                # Check who submitted it
-                row_a = str(rec.get("Team A", "")).zfill(3)
-                if row_a == submitter_id:
+                # PENDING - try to confirm by matching details
+                confirm_result = await asyncio.to_thread(
+                    try_confirm_rivalry, submitter_id, opponent_id, name, wager
+                )
+                if confirm_result["matched"]:
+                    await interaction.followup.send(
+                        f"**Rivalry Confirmed!**\n\n"
+                        f"**{rec.get('Rivalry Name')}**\n"
+                        f"{submitter_name} vs {opponent_name}\n"
+                        f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
+                        f"Both teams submitted matching details. Good luck!"
+                    )
+                    # DM the original submitter that the rivalry is confirmed
+                    row_a = str(rec.get("Team A", "")).zfill(3)
+                    original_submitter_id = row_a
+                    dm_embed = discord.Embed(
+                        title="Rivalry Confirmed!",
+                        description=f"Your rivalry **{rec.get('Rivalry Name')}** has been confirmed.",
+                        color=discord.Color.green()
+                    )
+                    dm_embed.add_field(name="Opponent", value=opponent_name if original_submitter_id == submitter_id else submitter_name, inline=True)
+                    dm_embed.add_field(name="Wager", value=f"${rec.get('Wager')}", inline=True)
+                    dm_embed.add_field(name="Type", value=rec.get('Type'), inline=True)
+                    await notify_opponent_dm(original_submitter_id, "Rivalry Confirmed", "", embed=dm_embed)
+                elif confirm_result.get("already_submitted"):
                     await interaction.followup.send(
                         f"You already have a **pending** rivalry request to **{opponent_name}**.\n\n"
                         f"**{rec.get('Rivalry Name')}**\n"
                         f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n"
-                        f"Submitted: {rec.get('Team A Submitted')}\n\n"
+                        f"Submitted: {rec.get('Submitted', '')}\n\n"
                         f"Waiting for **{opponent_name}** to submit matching details to confirm."
                     )
-                else:
+                elif confirm_result.get("mismatch"):
+                    existing = confirm_result["existing"]
                     await interaction.followup.send(
-                        f"**{opponent_name}** already submitted a rivalry request to you.\n\n"
-                        f"**{rec.get('Rivalry Name')}**\n"
-                        f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
-                        f"To confirm, submit with **matching** details:\n"
-                        f"`/rival submit opponent:@{opponent_name} name:{rec.get('Rivalry Name')} wager:{rec.get('Wager')}`"
+                        f"**{opponent_name}** has a pending rivalry request, but the details don't match.\n\n"
+                        f"Their submission: **{existing.get('Rivalry Name')}** | Wager: ${existing.get('Wager')}\n"
+                        f"Your submission: **{name}** | Wager: ${wager}\n\n"
+                        f"Both teams must submit **identical** name and wager to confirm."
                     )
                 return
 
@@ -1059,9 +1086,7 @@ async def rival_submit(
             wager,              # Wager
             rivalry_type,       # Type (CONF or NC)
             "PENDING",          # Status
-            now,                # Team A Submitted
-            "",                 # Team B Submitted
-            ""                  # Confirmed At
+            now                 # Submitted
         ]
 
         status_msg = await interaction.followup.send(
@@ -1306,13 +1331,33 @@ async def rival_submit_for(
                 )
                 return
             else:
-                await interaction.followup.send(
-                    f"A **pending** rivalry already exists between **{submitter_name}** and **{opponent_name}**.\n\n"
-                    f"**{rec.get('Rivalry Name')}**\n"
-                    f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n"
-                    f"Submitted: {rec.get('Team A Submitted')}\n\n"
-                    f"Waiting for the other team to submit matching details to confirm."
+                # PENDING - try to confirm by matching details
+                confirm_result = await asyncio.to_thread(
+                    try_confirm_rivalry, submitter_id, opponent_id, name, wager
                 )
+                if confirm_result["matched"]:
+                    await interaction.followup.send(
+                        f"**Rivalry Confirmed!** (by Commissioner)\n\n"
+                        f"**{rec.get('Rivalry Name')}**\n"
+                        f"{submitter_name} vs {opponent_name}\n"
+                        f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
+                        f"Both teams' details matched. Rivalry is now active."
+                    )
+                elif confirm_result.get("already_submitted"):
+                    await interaction.followup.send(
+                        f"**{submitter_name}** already submitted this rivalry request.\n\n"
+                        f"**{rec.get('Rivalry Name')}**\n"
+                        f"Type: {rec.get('Type')} | Wager: ${rec.get('Wager')}\n\n"
+                        f"Waiting for **{opponent_name}** to submit matching details to confirm."
+                    )
+                elif confirm_result.get("mismatch"):
+                    existing = confirm_result["existing"]
+                    await interaction.followup.send(
+                        f"A pending rivalry exists but details don't match.\n\n"
+                        f"Existing: **{existing.get('Rivalry Name')}** | Wager: ${existing.get('Wager')}\n"
+                        f"Submitted: **{name}** | Wager: ${wager}\n\n"
+                        f"Both teams must submit identical name and wager to confirm."
+                    )
                 return
 
         # Check submitter's rivalry count
@@ -1345,9 +1390,7 @@ async def rival_submit_for(
             wager,              # Wager
             rivalry_type,       # Type (CONF or NC)
             "PENDING",          # Status
-            now,                # Team A Submitted
-            "",                 # Team B Submitted
-            ""                  # Confirmed At
+            now                 # Submitted
         ]
 
         status_msg = await interaction.followup.send(
@@ -1463,7 +1506,7 @@ async def pending_submissions(interaction: discord.Interaction):
             name = r.get("Rivalry Name", "Unnamed")
             wager = r.get("Wager", 0)
             rtype = r.get("Type", "?")
-            submitted = r.get("Team A Submitted", "?")
+            submitted = r.get("Submitted", "?")
             rivalry_lines.append(
                 f"**{name}** ({rtype}, ${wager})\n"
                 f"  {team_a_name} → {team_b_name}\n"

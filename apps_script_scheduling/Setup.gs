@@ -71,7 +71,7 @@ function createInstructionsSheet() {
     ["Teams submit rivalries via Discord, and both teams must confirm.", "", ""],
     ["", "", ""],
     ["Columns:", "", ""],
-    ["Team A | Team A Name | Team B | Team B Name | Rivalry Name | Wager | Type | Status | Team A Submitted | Team B Submitted | Confirmed At", "", ""],
+    ["Team A | Team A Name | Team B | Team B Name | Rivalry Name | Wager | Type | Status | Submitted", "", ""],
     ["", "", ""],
     ["RIVALRY RULES:", "", ""],
     ["• Maximum 2 rivalries per team", "", ""],
@@ -443,11 +443,9 @@ function initializeSheets() {
       "Wager",            // Wager amount ($0-5)
       "Type",             // CONF or NC (same or different conference)
       "Status",           // PENDING or CONFIRMED
-      "Team A Submitted", // Timestamp of Team A's submission
-      "Team B Submitted", // Timestamp of Team B's submission (confirms)
-      "Confirmed At"      // Timestamp when both confirmed
+      "Submitted"         // Timestamp (overwritten with confirmation time on confirm)
     ]);
-    rivalries.getRange(1, 1, 1, 11).setFontWeight("bold");
+    rivalries.getRange(1, 1, 1, 9).setFontWeight("bold");
     rivalries.setFrozenRows(1);
   }
 
