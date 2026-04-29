@@ -1786,9 +1786,9 @@ async def recruiting_dollars(interaction: discord.Interaction):
     )
 
     # Rivalry Wagers
-    wager_won = int(user_data.get('WagerWon', 0) or 0)
-    wager_lost = int(user_data.get('WagerLost', 0) or 0)
-    wager_net = int(user_data.get('WagerNet', 0) or 0)
+    wager_won = parse_dollar_value(user_data.get('WagerWon', 0))
+    wager_lost = parse_dollar_value(user_data.get('WagerLost', 0))
+    wager_net = parse_dollar_value(user_data.get('WagerNet', 0))
     wager_sign = "+" if wager_net >= 0 else ""
     embed.add_field(
         name="Rivalry Wagers",
@@ -1797,8 +1797,8 @@ async def recruiting_dollars(interaction: discord.Interaction):
     )
 
     # Draft Bonus (graduating/declaring players)
-    draft_count = int(user_data.get('DraftBonusCount', 0) or 0)
-    draft_dollars = int(user_data.get('DraftBonusDollars', 0) or 0)
+    draft_count = parse_dollar_value(user_data.get('DraftBonusCount', 0))
+    draft_dollars = parse_dollar_value(user_data.get('DraftBonusDollars', 0))
     if draft_count > 0 or draft_dollars > 0:
         embed.add_field(
             name="Draft Bonus",
@@ -1821,8 +1821,8 @@ async def recruiting_dollars(interaction: discord.Interaction):
             )
 
     # Retention Cost (deducted for retained players)
-    retention_count = int(user_data.get('RetentionCount', 0) or 0)
-    retention_cost = int(user_data.get('RetentionCostDollars', 0) or 0)
+    retention_count = parse_dollar_value(user_data.get('RetentionCount', 0))
+    retention_cost = parse_dollar_value(user_data.get('RetentionCostDollars', 0))
     if retention_count > 0 or retention_cost > 0:
         embed.add_field(
             name="Retention Cost",
@@ -1837,7 +1837,7 @@ async def recruiting_dollars(interaction: discord.Interaction):
         )
 
     # Total
-    total_dollars = int(user_data.get('TotalBonusDollars', 0) or 0)
+    total_dollars = parse_dollar_value(user_data.get('TotalBonusDollars', 0))
     total_sign = "+" if total_dollars >= 0 else ""
     embed.add_field(
         name="TOTAL BONUS DOLLARS",
@@ -1847,7 +1847,7 @@ async def recruiting_dollars(interaction: discord.Interaction):
 
     # Conference comparison
     conf_data = [r for r in year_data if r.get("Conference") == team['conference']]
-    conf_data.sort(key=lambda x: int(x.get('TotalBonusDollars', 0) or 0), reverse=True)
+    conf_data.sort(key=lambda x: parse_dollar_value(x.get('TotalBonusDollars', 0)), reverse=True)
 
     conf_lines = []
     user_rank = 0
@@ -1859,7 +1859,7 @@ async def recruiting_dollars(interaction: discord.Interaction):
         marker = "**>>** " if is_user else ""
         end_marker = " **<<**" if is_user else ""
         team_name = t.get("TeamName", "Unknown")
-        total = int(t.get("TotalBonusDollars", 0) or 0)
+        total = parse_dollar_value(t.get("TotalBonusDollars", 0))
         conf_lines.append(f"{marker}#{i}. {team_name}: **${total}**{end_marker}")
 
     # Show top 15 or all if conference is smaller
@@ -3115,15 +3115,15 @@ async def commish_budget(
     embed.add_field(name="3rd Team All-Conference", value=f"{third_count} players x $3 = **${third_dollars}**", inline=True)
 
     # Rivalry Wagers
-    wager_won = int(user_data.get('WagerWon', 0) or 0)
-    wager_lost = int(user_data.get('WagerLost', 0) or 0)
-    wager_net = int(user_data.get('WagerNet', 0) or 0)
+    wager_won = parse_dollar_value(user_data.get('WagerWon', 0))
+    wager_lost = parse_dollar_value(user_data.get('WagerLost', 0))
+    wager_net = parse_dollar_value(user_data.get('WagerNet', 0))
     wager_sign = "+" if wager_net >= 0 else ""
     embed.add_field(name="Rivalry Wagers", value=f"Won: +${wager_won} | Lost: -${wager_lost}\nNet: **{wager_sign}${wager_net}**", inline=True)
 
     # Draft Bonus
-    draft_count = int(user_data.get('DraftBonusCount', 0) or 0)
-    draft_dollars = int(user_data.get('DraftBonusDollars', 0) or 0)
+    draft_count = parse_dollar_value(user_data.get('DraftBonusCount', 0))
+    draft_dollars = parse_dollar_value(user_data.get('DraftBonusDollars', 0))
     if draft_count > 0 or draft_dollars > 0:
         embed.add_field(name="Draft Bonus", value=f"{draft_count} players drafted = **${draft_dollars}**", inline=True)
     elif status == "FINAL":
@@ -3132,21 +3132,21 @@ async def commish_budget(
         embed.add_field(name="Draft Bonus", value="*Calculated at season end*", inline=True)
 
     # Retention Cost
-    retention_count = int(user_data.get('RetentionCount', 0) or 0)
-    retention_cost = int(user_data.get('RetentionCostDollars', 0) or 0)
+    retention_count = parse_dollar_value(user_data.get('RetentionCount', 0))
+    retention_cost = parse_dollar_value(user_data.get('RetentionCostDollars', 0))
     if retention_count > 0 or retention_cost > 0:
         embed.add_field(name="Retention Cost", value=f"{retention_count} retained = **-${retention_cost}**", inline=True)
     elif status == "FINAL":
         embed.add_field(name="Retention Cost", value="No retentions", inline=True)
 
     # Total
-    total_dollars = int(user_data.get('TotalBonusDollars', 0) or 0)
+    total_dollars = parse_dollar_value(user_data.get('TotalBonusDollars', 0))
     total_sign = "+" if total_dollars >= 0 else ""
     embed.add_field(name="TOTAL BONUS DOLLARS", value=f"**{total_sign}${total_dollars}**", inline=False)
 
     # Conference comparison
     conf_data = [r for r in year_data if r.get("Conference") == team['conference']]
-    conf_data.sort(key=lambda x: int(x.get('TotalBonusDollars', 0) or 0), reverse=True)
+    conf_data.sort(key=lambda x: parse_dollar_value(x.get('TotalBonusDollars', 0)), reverse=True)
 
     conf_lines = []
     team_rank = 0
@@ -3158,7 +3158,7 @@ async def commish_budget(
         marker = "**>>** " if is_target else ""
         end_marker = " **<<**" if is_target else ""
         t_name = t.get("TeamName", "Unknown")
-        total = int(t.get("TotalBonusDollars", 0) or 0)
+        total = parse_dollar_value(t.get("TotalBonusDollars", 0))
         conf_lines.append(f"{marker}#{i}. {t_name}: **${total}**{end_marker}")
 
     display_lines = conf_lines[:15] if len(conf_lines) > 15 else conf_lines
