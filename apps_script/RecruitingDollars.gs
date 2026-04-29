@@ -589,9 +589,11 @@ function loadRivalriesFromLeagueSheet(year) {
       if (statusCol !== -1 && String(row[statusCol]).toUpperCase() !== "CONFIRMED") return false;
       // Must be confirmed in the calculation year or earlier (Submitted is overwritten with confirmation time)
       if (submittedCol !== -1 && year) {
-        const submitted = String(row[submittedCol] || "").trim();
-        if (submitted) {
-          const submittedYear = Number(submitted.substring(0, 4));
+        const raw = row[submittedCol];
+        if (raw) {
+          const submittedYear = raw instanceof Date
+            ? raw.getFullYear()
+            : Number(String(raw).trim().substring(0, 4));
           if (!isNaN(submittedYear) && submittedYear > Number(year)) {
             skippedByYear++;
             return false;
