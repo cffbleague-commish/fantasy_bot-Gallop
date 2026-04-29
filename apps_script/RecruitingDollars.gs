@@ -566,12 +566,16 @@ function loadRivalriesFromLeagueSheet(year) {
   const colMap = {};
   headers.forEach((h, i) => { colMap[h] = i; });
 
+  Logger.log(`  Rivalries headers: ${JSON.stringify(headers)}`);
+
   // Find columns (flexible naming)
   const teamACol = colMap["Team A"] ?? colMap["TeamA"] ?? 0;
   const teamBCol = colMap["Team B"] ?? colMap["TeamB"] ?? 2;
   const wagerCol = colMap["Wager"] ?? colMap["Wager Amount"] ?? -1;
   const statusCol = colMap["Status"] ?? -1;
   const confirmedAtCol = colMap["Confirmed At"] ?? colMap["ConfirmedAt"] ?? -1;
+
+  Logger.log(`  Column indices - Status: ${statusCol}, Confirmed At: ${confirmedAtCol}, Wager: ${wagerCol}`);
 
   // Deduplicate reciprocal entries (challenge row + confirmation row = same rivalry)
   const seen = new Set();
@@ -587,10 +591,15 @@ function loadRivalriesFromLeagueSheet(year) {
         const confirmedAt = String(row[confirmedAtCol] || "").trim();
         if (confirmedAt) {
           const confirmedYear = Number(confirmedAt.substring(0, 4));
+          Logger.log(`  Rivalry ${row[teamACol]} vs ${row[teamBCol]}: Confirmed At raw="${row[confirmedAtCol]}", parsed year=${confirmedYear}, calc year=${year}, filtering=${confirmedYear > Number(year)}`);
           if (!isNaN(confirmedYear) && confirmedYear > Number(year)) {
             return false;
           }
+        } else {
+          Logger.log(`  Rivalry ${row[teamACol]} vs ${row[teamBCol]}: Confirmed At is EMPTY - no year filter applied`);
         }
+      } else if (confirmedAtCol === -1) {
+        Logger.log(`  WARNING: "Confirmed At" column not found in Rivalries sheet - year filter disabled`);
       }
       // Deduplicate: normalize matchup key so A-B and B-A are the same rivalry
       const a = String(Number(row[teamACol]) || row[teamACol]).padStart(3, "0");

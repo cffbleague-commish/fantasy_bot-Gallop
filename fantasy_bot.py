@@ -1729,56 +1729,56 @@ async def recruiting_dollars(interaction: discord.Interaction):
     )
 
     # Breakdown fields
-    reg_wins = user_data.get('RegularSeasonWins', 0)
-    reg_dollars = user_data.get('RegSeasonDollars', 0)
+    reg_wins = parse_dollar_value(user_data.get('RegularSeasonWins', 0))
+    reg_dollars = parse_dollar_value(user_data.get('RegSeasonDollars', 0))
     embed.add_field(
         name="Regular Season Wins",
         value=f"{reg_wins} wins x $1 = **${reg_dollars}**",
         inline=True
     )
 
-    post_wins = user_data.get('PostseasonWins', 0)
-    post_dollars = user_data.get('PostseasonDollars', 0)
+    post_wins = parse_dollar_value(user_data.get('PostseasonWins', 0))
+    post_dollars = parse_dollar_value(user_data.get('PostseasonDollars', 0))
     embed.add_field(
         name="Postseason Wins",
         value=f"{post_wins} wins x $2 = **${post_dollars}**",
         inline=True
     )
 
-    nc_count = user_data.get('NationalPositionCount', user_data.get('NationalChampCount', 0))
-    nc_dollars = user_data.get('NationalPositionDollars', user_data.get('NationalChampDollars', 0))
+    nc_count = parse_dollar_value(user_data.get('NationalPositionCount', user_data.get('NationalChampCount', 0)))
+    nc_dollars = parse_dollar_value(user_data.get('NationalPositionDollars', user_data.get('NationalChampDollars', 0)))
     embed.add_field(
         name="National Position Awards",
         value=f"{nc_count} players x $5 = **${nc_dollars}**",
         inline=True
     )
 
-    heisman_count = user_data.get('HeismanCount', 0)
-    heisman_dollars = user_data.get('HeismanDollars', 0)
+    heisman_count = parse_dollar_value(user_data.get('HeismanCount', 0))
+    heisman_dollars = parse_dollar_value(user_data.get('HeismanDollars', 0))
     embed.add_field(
         name="Heisman Award",
         value=f"{heisman_count} players x $5 = **${heisman_dollars}**",
         inline=True
     )
 
-    first_count = user_data.get('FirstTeamCount', 0)
-    first_dollars = user_data.get('FirstTeamDollars', 0)
+    first_count = parse_dollar_value(user_data.get('FirstTeamCount', 0))
+    first_dollars = parse_dollar_value(user_data.get('FirstTeamDollars', 0))
     embed.add_field(
         name="1st Team All-Conference",
         value=f"{first_count} players x $5 = **${first_dollars}**",
         inline=True
     )
 
-    second_count = user_data.get('SecondTeamCount', 0)
-    second_dollars = user_data.get('SecondTeamDollars', 0)
+    second_count = parse_dollar_value(user_data.get('SecondTeamCount', 0))
+    second_dollars = parse_dollar_value(user_data.get('SecondTeamDollars', 0))
     embed.add_field(
         name="2nd Team All-Conference",
         value=f"{second_count} players x $4 = **${second_dollars}**",
         inline=True
     )
 
-    third_count = user_data.get('ThirdTeamCount', 0)
-    third_dollars = user_data.get('ThirdTeamDollars', 0)
+    third_count = parse_dollar_value(user_data.get('ThirdTeamCount', 0))
+    third_dollars = parse_dollar_value(user_data.get('ThirdTeamDollars', 0))
     embed.add_field(
         name="3rd Team All-Conference",
         value=f"{third_count} players x $3 = **${third_dollars}**",
@@ -3086,32 +3086,32 @@ async def commish_budget(
     )
 
     # Breakdown fields
-    reg_wins = user_data.get('RegularSeasonWins', 0)
-    reg_dollars = user_data.get('RegSeasonDollars', 0)
+    reg_wins = parse_dollar_value(user_data.get('RegularSeasonWins', 0))
+    reg_dollars = parse_dollar_value(user_data.get('RegSeasonDollars', 0))
     embed.add_field(name="Regular Season Wins", value=f"{reg_wins} wins x $1 = **${reg_dollars}**", inline=True)
 
-    post_wins = user_data.get('PostseasonWins', 0)
-    post_dollars = user_data.get('PostseasonDollars', 0)
+    post_wins = parse_dollar_value(user_data.get('PostseasonWins', 0))
+    post_dollars = parse_dollar_value(user_data.get('PostseasonDollars', 0))
     embed.add_field(name="Postseason Wins", value=f"{post_wins} wins x $2 = **${post_dollars}**", inline=True)
 
-    nc_count = user_data.get('NationalPositionCount', user_data.get('NationalChampCount', 0))
-    nc_dollars = user_data.get('NationalPositionDollars', user_data.get('NationalChampDollars', 0))
+    nc_count = parse_dollar_value(user_data.get('NationalPositionCount', user_data.get('NationalChampCount', 0)))
+    nc_dollars = parse_dollar_value(user_data.get('NationalPositionDollars', user_data.get('NationalChampDollars', 0)))
     embed.add_field(name="National Position Awards", value=f"{nc_count} players x $5 = **${nc_dollars}**", inline=True)
 
-    heisman_count = user_data.get('HeismanCount', 0)
-    heisman_dollars = user_data.get('HeismanDollars', 0)
+    heisman_count = parse_dollar_value(user_data.get('HeismanCount', 0))
+    heisman_dollars = parse_dollar_value(user_data.get('HeismanDollars', 0))
     embed.add_field(name="Heisman Award", value=f"{heisman_count} players x $5 = **${heisman_dollars}**", inline=True)
 
-    first_count = user_data.get('FirstTeamCount', 0)
-    first_dollars = user_data.get('FirstTeamDollars', 0)
+    first_count = parse_dollar_value(user_data.get('FirstTeamCount', 0))
+    first_dollars = parse_dollar_value(user_data.get('FirstTeamDollars', 0))
     embed.add_field(name="1st Team All-Conference", value=f"{first_count} players x $5 = **${first_dollars}**", inline=True)
 
-    second_count = user_data.get('SecondTeamCount', 0)
-    second_dollars = user_data.get('SecondTeamDollars', 0)
+    second_count = parse_dollar_value(user_data.get('SecondTeamCount', 0))
+    second_dollars = parse_dollar_value(user_data.get('SecondTeamDollars', 0))
     embed.add_field(name="2nd Team All-Conference", value=f"{second_count} players x $4 = **${second_dollars}**", inline=True)
 
-    third_count = user_data.get('ThirdTeamCount', 0)
-    third_dollars = user_data.get('ThirdTeamDollars', 0)
+    third_count = parse_dollar_value(user_data.get('ThirdTeamCount', 0))
+    third_dollars = parse_dollar_value(user_data.get('ThirdTeamDollars', 0))
     embed.add_field(name="3rd Team All-Conference", value=f"{third_count} players x $3 = **${third_dollars}**", inline=True)
 
     # Rivalry Wagers
