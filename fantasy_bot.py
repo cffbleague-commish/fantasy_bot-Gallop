@@ -498,6 +498,24 @@ try:
 except gspread.exceptions.WorksheetNotFound:
     devy_retention_history_ws = None
 
+# ----------------- TransactionLog Sheet Setup -----------------
+try:
+    transaction_log_ws = league_sheet.worksheet("TransactionLog")
+except gspread.exceptions.WorksheetNotFound:
+    transaction_log_ws = None
+
+# ----------------- WeeklyResults Sheet Setup -----------------
+try:
+    weekly_results_ws = league_sheet.worksheet("WeeklyResults")
+except gspread.exceptions.WorksheetNotFound:
+    weekly_results_ws = None
+
+# ----------------- RookieLedger Sheet Setup -----------------
+try:
+    rookie_ledger_ws = league_sheet.worksheet("RookieLedger")
+except gspread.exceptions.WorksheetNotFound:
+    rookie_ledger_ws = None
+
 # Discord Configuration from environment variables
 TEAM_LIST_CHANNEL_ID = int(os.getenv("TEAM_LIST_CHANNEL_ID", "0"))
 GUILD_ID = int(os.getenv("DISCORD_GUILD_ID", "0"))
@@ -1781,10 +1799,11 @@ async def recruiting_dollars(interaction: discord.Interaction):
     )
 
     post_wins = parse_dollar_value(user_data.get('PostseasonWins', 0))
+    post_losses = parse_dollar_value(user_data.get('PostseasonLosses', 0))
     post_dollars = parse_dollar_value(user_data.get('PostseasonDollars', 0))
     embed.add_field(
-        name="Postseason Wins",
-        value=f"{post_wins} wins x $2 = **${post_dollars}**",
+        name="Postseason",
+        value=f"{post_wins}W x $2 + {post_losses}L x $1 = **${post_dollars}**",
         inline=True
     )
 
@@ -1801,6 +1820,14 @@ async def recruiting_dollars(interaction: discord.Interaction):
     embed.add_field(
         name="Heisman Award",
         value=f"{heisman_count} players x $5 = **${heisman_dollars}**",
+        inline=True
+    )
+
+    coty_count = parse_dollar_value(user_data.get('CoachOfYearCount', 0))
+    coty_dollars = parse_dollar_value(user_data.get('CoachOfYearDollars', 0))
+    embed.add_field(
+        name="Coach of the Year",
+        value=f"{coty_count} x $5 = **${coty_dollars}**",
         inline=True
     )
 
@@ -2125,6 +2152,171 @@ async def recruiting_draft(interaction: discord.Interaction):
     await interaction.followup.send(result_msg)
 
 
+@recruiting.command(name="transfers", description="View transfer portal for your conference")
+@app_commands.describe(
+    position="Filter by position (optional)",
+    year="Transfer year (default: current league year)"
+)
+@app_commands.choices(position=[
+    app_commands.Choice(name="QB", value="QB"),
+    app_commands.Choice(name="RB", value="RB"),
+    app_commands.Choice(name="WR", value="WR"),
+    app_commands.Choice(name="TE", value="TE"),
+])
+async def recruiting_transfers(
+    interaction: discord.Interaction,
+    position: str = None,
+    year: int = None
+):
+    await interaction.response.defer(ephemeral=True)
+
+    # Check required sheets
+    if transaction_log_ws is None:
+        await interaction.followup.send("TransactionLog sheet not found.")
+        return
+
+    # Get user's team and conference
+    team = get_team_by_discord_id(interaction.user.id)
+    if not team:
+        await interaction.followup.send("You are not registered as a team owner in the league.")
+        return
+
+    user_conference = team['conference']
+    year = year or get_current_year()
+    prior_year = year - 1
+
+    # Read TransactionLog and filter to transfer-eligible players in user's conference
+    try:
+        txn_data = await asyncio.to_thread(transaction_log_ws.get_all_records, expected_headers=[])
+    except Exception as e:
+        await interaction.followup.send(f"Error reading TransactionLog: {e}")
+        return
+
+    transfers = [
+        r for r in txn_data
+        if str(r.get("TransferEligible", "")).strip().upper() == "YES"
+        and str(r.get("Conference", "")) == user_conference
+        and int(r.get("Year", 0)) == year
+    ]
+
+    if not transfers:
+        await interaction.followup.send(f"No transfer-eligible players in **{user_conference}** for {year}.")
+        return
+
+    # Build player position map from RookieLedger
+    position_map = {}
+    if rookie_ledger_ws is not None:
+        try:
+            rl_data = await asyncio.to_thread(rookie_ledger_ws.get_all_records, expected_headers=[])
+            for row in rl_data:
+                pid = str(row.get("MFL_Player_ID", ""))
+                pos = row.get("Position", "")
+                if pid and pos:
+                    position_map[pid] = pos
+        except Exception:
+            pass  # Position data is nice-to-have, not critical
+
+    # Apply position filter if specified
+    if position:
+        transfers = [
+            t for t in transfers
+            if position_map.get(str(t.get("PlayerID", "")), "") == position
+        ]
+        if not transfers:
+            await interaction.followup.send(f"No transfer-eligible **{position}** players in **{user_conference}** for {year}.")
+            return
+
+    # Build prior year points map from WeeklyResults
+    points_map = {}
+    if weekly_results_ws is not None:
+        try:
+            wr_data = await asyncio.to_thread(weekly_results_ws.get_all_records, expected_headers=[])
+            for row in wr_data:
+                if int(row.get("Year", 0)) == prior_year:
+                    pid = str(row.get("PlayerID", ""))
+                    pts = float(row.get("PlayerScore", 0) or 0)
+                    if pid:
+                        points_map[pid] = points_map.get(pid, 0) + pts
+        except Exception:
+            pass  # Points data is nice-to-have for sorting
+
+    # Build eligibility map from PlayerCopies
+    elig_map = {}
+    if player_copies_ws is not None:
+        try:
+            pc_data = await asyncio.to_thread(player_copies_ws.get_all_records, expected_headers=[])
+            for row in pc_data:
+                copy_id = str(row.get("PlayerCopyID", ""))
+                if copy_id:
+                    years_used = int(row.get("EligibilityYearsUsed", 0) or 0)
+                    trad_rs = str(row.get("TraditionalRedshirtUsed", "")).upper() in ("TRUE", "YES", "1")
+                    med_rs = str(row.get("MedicalRedshirtUsed", "")).upper() in ("TRUE", "YES", "1")
+                    elig_map[copy_id] = {
+                        "years_used": years_used,
+                        "trad_rs": trad_rs,
+                        "med_rs": med_rs
+                    }
+        except Exception:
+            pass
+
+    # Load team emoji map
+    emoji_map = get_team_emoji_map()
+
+    # Enrich and sort transfers
+    enriched = []
+    for t in transfers:
+        pid = str(t.get("PlayerID", ""))
+        copy_id = str(t.get("CopyAssigned", ""))
+        prior_pts = points_map.get(pid, 0)
+        pos = position_map.get(pid, "?")
+        elig = elig_map.get(copy_id, {})
+        years_remaining = 4 - elig.get("years_used", 0)
+
+        rs_parts = []
+        if elig.get("trad_rs"):
+            rs_parts.append("Trad")
+        if elig.get("med_rs"):
+            rs_parts.append("Med")
+        rs_display = ", ".join(rs_parts) if rs_parts else "None"
+
+        enriched.append({
+            "player_name": t.get("PlayerName", "Unknown"),
+            "position": pos,
+            "prior_pts": round(prior_pts, 1),
+            "dropped_by": t.get("FranchiseName", "Unknown"),
+            "dropped_by_id": str(t.get("FranchiseID", "")).zfill(3),
+            "years_remaining": max(years_remaining, 0),
+            "rs_display": rs_display
+        })
+
+    # Sort by prior year points descending
+    enriched.sort(key=lambda x: x["prior_pts"], reverse=True)
+    display = enriched[:25]
+
+    # Build embed
+    pos_label = f" ({position})" if position else ""
+    embed = discord.Embed(
+        title=f"Transfer Portal - {user_conference}{pos_label} ({year})",
+        description=f"Sorted by {prior_year} season points | Showing top {len(display)} of {len(enriched)}",
+        color=discord.Color.blue()
+    )
+
+    lines = []
+    for i, p in enumerate(display, 1):
+        drop_emoji = emoji_map.get(p["dropped_by_id"], "")
+        if drop_emoji:
+            drop_emoji = f"{drop_emoji} "
+        lines.append(
+            f"**{i}.** **{p['player_name']}** ({p['position']}) — {p['prior_pts']} pts\n"
+            f"   Dropped by: {drop_emoji}{p['dropped_by']} | "
+            f"Elig: {p['years_remaining']}yr left | RS: {p['rs_display']}"
+        )
+
+    embed.description += "\n\n" + "\n\n".join(lines)
+
+    await interaction.followup.send(embed=embed)
+
+
 # ----------------- Awards Helper Functions -----------------
 
 # Custom Award Emojis - will be populated after bot is ready
@@ -2138,6 +2330,7 @@ AWARD_EMOJIS = {
     "first_team": os.getenv("EMOJI_FIRST_TEAM", "🥇"),
     "second_team": os.getenv("EMOJI_SECOND_TEAM", "🥈"),
     "third_team": os.getenv("EMOJI_THIRD_TEAM", "🥉"),
+    "coach_of_year": os.getenv("EMOJI_COACH_OF_YEAR", "📋"),
     "nfl_draft": os.getenv("EMOJI_NFL_DRAFT", "🏈"),
     # Conference emojis
     "conf_ACC": os.getenv("EMOJI_CONF_ACC", "🔴"),
@@ -2586,6 +2779,73 @@ async def awards_leaders(interaction: discord.Interaction, year: int = None):
             team_emoji = format_player_with_team(r, emoji_map, name_map)
             nat_lines.append(f"{pos_emoji} **{pos}:** {team_emoji}{r.get('PlayerName')}")
         embed.add_field(name=f"{AWARD_EMOJIS['all_conference']} National Awards", value="\n".join(nat_lines), inline=False)
+
+    # Coach of the Year
+    coty = next((r for r in leaders if r.get("AwardType") == "CoachOfYear"), None)
+    if coty:
+        franchise_id = str(coty.get("FranchiseID", "")).zfill(3)
+        team_emoji_str = emoji_map.get(franchise_id, "")
+        if team_emoji_str:
+            team_emoji_str = f"{team_emoji_str} "
+        embed.add_field(
+            name=f"{AWARD_EMOJIS['coach_of_year']} Coach of the Year",
+            value=f"{team_emoji_str}**{coty.get('PlayerName')}** ({coty.get('Conference', '')})\nScore: {coty.get('AwardScore', 0):.2f}",
+            inline=False
+        )
+
+    await interaction.followup.send(embed=embed)
+
+@awards.command(name="coachofyear", description="Show Coach of the Year race")
+@app_commands.describe(year="Season year (default: current)")
+async def awards_coachofyear(interaction: discord.Interaction, year: int = None):
+    is_commish = has_commish_role(interaction)
+    await interaction.response.defer(ephemeral=not is_commish)
+
+    if awards_ws is None:
+        await interaction.followup.send("Awards sheet not found.")
+        return
+
+    year = year or get_current_year()
+    data = get_awards_data(year)
+
+    if not data:
+        await interaction.followup.send(f"No awards data found for {year}.")
+        return
+
+    # Filter to CoachOfYear entries
+    coty = [r for r in data if r.get("AwardType") == "CoachOfYear"]
+    coty.sort(key=lambda x: int(x.get("Rank", 999)))
+
+    if not coty:
+        await interaction.followup.send(f"No Coach of the Year data found for {year}.")
+        return
+
+    # Load team emoji and name maps
+    emoji_map = get_team_emoji_map()
+    name_map = get_team_name_map()
+
+    # Build embed
+    embed = discord.Embed(
+        title=f"{AWARD_EMOJIS['coach_of_year']} Coach of the Year Race - {year}",
+        color=discord.Color.dark_green()
+    )
+
+    lines = []
+    for i, entry in enumerate(coty[:10]):
+        medal = [AWARD_EMOJIS['first_team'], AWARD_EMOJIS['second_team'], AWARD_EMOJIS['third_team']][i] if i < 3 else f"**{i+1}.**"
+        team_name = entry.get("PlayerName", "Unknown")
+        conf = entry.get("Conference", "")
+        score = entry.get("AwardScore", 0)
+        wins = entry.get("TeamWins", 0)
+        pf = entry.get("StarterPoints", 0)
+        franchise_id = str(entry.get("FranchiseID", "")).zfill(3)
+        team_emoji_str = emoji_map.get(franchise_id, "")
+        if team_emoji_str:
+            team_emoji_str = f"{team_emoji_str} "
+        lines.append(f"{medal} {team_emoji_str}**{team_name}** ({conf})\n   Score: {score:.2f} | Wins: {wins} | PF: {pf}")
+
+    embed.description = "\n\n".join(lines)
+    embed.set_footer(text=f"Formula: (Wins+1) x PF x (PF/PP) | Last calculated: {coty[0].get('LastCalculated', 'Unknown')[:10] if coty else ''}")
 
     await interaction.followup.send(embed=embed)
 
@@ -3134,8 +3394,9 @@ async def commish_budget(
     embed.add_field(name="Regular Season Wins", value=f"{reg_wins} wins x $1 = **${reg_dollars}**", inline=True)
 
     post_wins = parse_dollar_value(user_data.get('PostseasonWins', 0))
+    post_losses = parse_dollar_value(user_data.get('PostseasonLosses', 0))
     post_dollars = parse_dollar_value(user_data.get('PostseasonDollars', 0))
-    embed.add_field(name="Postseason Wins", value=f"{post_wins} wins x $2 = **${post_dollars}**", inline=True)
+    embed.add_field(name="Postseason", value=f"{post_wins}W x $2 + {post_losses}L x $1 = **${post_dollars}**", inline=True)
 
     nc_count = parse_dollar_value(user_data.get('NationalPositionCount', user_data.get('NationalChampCount', 0)))
     nc_dollars = parse_dollar_value(user_data.get('NationalPositionDollars', user_data.get('NationalChampDollars', 0)))
@@ -3144,6 +3405,10 @@ async def commish_budget(
     heisman_count = parse_dollar_value(user_data.get('HeismanCount', 0))
     heisman_dollars = parse_dollar_value(user_data.get('HeismanDollars', 0))
     embed.add_field(name="Heisman Award", value=f"{heisman_count} players x $5 = **${heisman_dollars}**", inline=True)
+
+    coty_count = parse_dollar_value(user_data.get('CoachOfYearCount', 0))
+    coty_dollars = parse_dollar_value(user_data.get('CoachOfYearDollars', 0))
+    embed.add_field(name="Coach of the Year", value=f"{coty_count} x $5 = **${coty_dollars}**", inline=True)
 
     first_count = parse_dollar_value(user_data.get('FirstTeamCount', 0))
     first_dollars = parse_dollar_value(user_data.get('FirstTeamDollars', 0))
@@ -3220,6 +3485,114 @@ async def commish_budget(
     embed.set_footer(text=f"Last calculated: {last_calc} | Looked up by {interaction.user.display_name}")
 
     await interaction.followup.send(embed=embed)
+
+@commish.command(name="conf_budget", description="Post a conference's recruiting budgets to its channel")
+@app_commands.describe(conference="Conference to post budgets for")
+@app_commands.choices(conference=[
+    app_commands.Choice(name="ACC", value="ACC"),
+    app_commands.Choice(name="Big Ten", value="B10"),
+    app_commands.Choice(name="Big 12", value="B12"),
+    app_commands.Choice(name="SEC", value="SEC"),
+    app_commands.Choice(name="Pac-12", value="P12"),
+    app_commands.Choice(name="AAC", value="AAC"),
+])
+async def commish_conf_budget(interaction: discord.Interaction, conference: str):
+    await interaction.response.defer(ephemeral=True)
+
+    if not has_commish_role(interaction):
+        await interaction.followup.send("You must have the **Commish** role to use this command.", ephemeral=True)
+        return
+
+    if recruiting_dollars_ws is None:
+        await interaction.followup.send("RecruitingDollars sheet not found.")
+        return
+
+    # Look up conference channel
+    channel_id = CONF_CHANNEL_IDS.get(conference, 0)
+    if channel_id == 0:
+        await interaction.followup.send(f"No channel configured for {conference}. Set {conference}_CHANNEL_ID in environment.")
+        return
+
+    channel = bot.get_channel(channel_id)
+    if channel is None:
+        await interaction.followup.send(f"Could not find channel for {conference} (ID: {channel_id}).")
+        return
+
+    year = get_current_year()
+
+    try:
+        data = recruiting_dollars_ws.get_all_records(expected_headers=[])
+    except Exception as e:
+        await interaction.followup.send(f"Error reading recruiting dollars data: {e}")
+        return
+
+    # Filter to current year and selected conference
+    conf_data = [r for r in data if str(r.get("Year")) == str(year) and r.get("Conference") == conference]
+
+    if not conf_data:
+        await interaction.followup.send(f"No recruiting dollars data found for {conference} in {year}.")
+        return
+
+    # Sort by total dollars descending
+    conf_data.sort(key=lambda x: parse_dollar_value(x.get('TotalBonusDollars', 0)), reverse=True)
+
+    emoji_map = get_team_emoji_map()
+
+    # Determine status from first row
+    status = conf_data[0].get("Status", "PROJECTED")
+    status_text = "(Season In Progress)" if status == "PROJECTED" else f"(Final - {year} Season)"
+    color = discord.Color.green() if status == "FINAL" else discord.Color.gold()
+
+    embed = discord.Embed(
+        title=f"Recruiting Bonus Dollars - {conference} {status_text}",
+        color=color
+    )
+
+    lines = []
+    for i, team in enumerate(conf_data, 1):
+        fid = str(team.get("FranchiseID", "")).zfill(3)
+        team_emoji = emoji_map.get(fid, "")
+        if team_emoji:
+            team_emoji = f"{team_emoji} "
+        team_name = team.get("TeamName", "Unknown")
+        total = parse_dollar_value(team.get('TotalBonusDollars', 0))
+
+        # Compact breakdown
+        reg = parse_dollar_value(team.get('RegSeasonDollars', 0))
+        post = parse_dollar_value(team.get('PostseasonDollars', 0))
+
+        # Sum all award dollars
+        award_dollars = (
+            parse_dollar_value(team.get('NationalPositionDollars', team.get('NationalChampDollars', 0)))
+            + parse_dollar_value(team.get('HeismanDollars', 0))
+            + parse_dollar_value(team.get('CoachOfYearDollars', 0))
+            + parse_dollar_value(team.get('FirstTeamDollars', 0))
+            + parse_dollar_value(team.get('SecondTeamDollars', 0))
+            + parse_dollar_value(team.get('ThirdTeamDollars', 0))
+        )
+
+        wager_net = parse_dollar_value(team.get('WagerNet', 0))
+        wager_str = f"+${wager_net}" if wager_net >= 0 else f"-${abs(wager_net)}"
+
+        draft = parse_dollar_value(team.get('DraftBonusDollars', 0))
+        retention = parse_dollar_value(team.get('RetentionCostDollars', 0))
+
+        total_sign = "+" if total >= 0 else ""
+        line = f"**{i}.** {team_emoji}**{team_name}** — **{total_sign}${total}**"
+        breakdown = f"   Wins: ${reg} | Post: ${post} | Awards: ${award_dollars} | Wagers: {wager_str}"
+        if draft > 0:
+            breakdown += f" | Draft: ${draft}"
+        if retention > 0:
+            breakdown += f" | Retained: -${retention}"
+        lines.append(f"{line}\n{breakdown}")
+
+    embed.description = "\n".join(lines)
+
+    last_calc = str(conf_data[0].get('LastCalculated', 'Unknown'))[:16]
+    embed.set_footer(text=f"Last calculated: {last_calc}")
+
+    await channel.send(embed=embed)
+    await interaction.followup.send(f"Recruiting budgets for **{conference}** posted to {channel.mention}.")
 
 @retention.command(name="my_team", description="View eligible players on your team")
 async def retention_my_team(interaction: discord.Interaction):
@@ -4519,6 +4892,20 @@ async def post_weekly_awards_update():
             nat_lines.append(f"{pos_emoji} **{pos}:** {team_emoji}{r.get('PlayerName')} ({r.get('AwardScore', 0):.2f})")
         embed.add_field(name=f"{AWARD_EMOJIS['all_conference']} National Award Leaders", value="\n".join(nat_lines), inline=False)
 
+    # Coach of the Year race (top 3)
+    coty = [r for r in data if r.get("AwardType") == "CoachOfYear"]
+    coty.sort(key=lambda x: int(x.get("Rank", 999)))
+    if coty:
+        coty_lines = []
+        for i, entry in enumerate(coty[:3]):
+            medal = [AWARD_EMOJIS['first_team'], AWARD_EMOJIS['second_team'], AWARD_EMOJIS['third_team']][i] if i < 3 else f"**{i+1}.**"
+            franchise_id = str(entry.get("FranchiseID", "")).zfill(3)
+            team_emoji_str = emoji_map.get(franchise_id, "")
+            if team_emoji_str:
+                team_emoji_str = f"{team_emoji_str} "
+            coty_lines.append(f"{medal} {team_emoji_str}**{entry.get('PlayerName', '?')}** ({entry.get('Conference', '')}) - {entry.get('AwardScore', 0):.2f}")
+        embed.add_field(name=f"{AWARD_EMOJIS['coach_of_year']} Coach of the Year Race", value="\n".join(coty_lines), inline=False)
+
     embed.set_footer(text=f"Updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     await channel.send(embed=embed)
@@ -4595,6 +4982,20 @@ async def post_awards_update(interaction: discord.Interaction):
             team_emoji = format_player_with_team(r, emoji_map, name_map)
             nat_lines.append(f"{pos_emoji} **{pos}:** {team_emoji}{r.get('PlayerName')} ({r.get('AwardScore', 0):.2f})")
         embed.add_field(name=f"{AWARD_EMOJIS['all_conference']} National Award Leaders", value="\n".join(nat_lines), inline=False)
+
+    # Coach of the Year race (top 3)
+    coty = [r for r in data if r.get("AwardType") == "CoachOfYear"]
+    coty.sort(key=lambda x: int(x.get("Rank", 999)))
+    if coty:
+        coty_lines = []
+        for i, entry in enumerate(coty[:3]):
+            medal = [AWARD_EMOJIS['first_team'], AWARD_EMOJIS['second_team'], AWARD_EMOJIS['third_team']][i] if i < 3 else f"**{i+1}.**"
+            franchise_id = str(entry.get("FranchiseID", "")).zfill(3)
+            team_emoji_str = emoji_map.get(franchise_id, "")
+            if team_emoji_str:
+                team_emoji_str = f"{team_emoji_str} "
+            coty_lines.append(f"{medal} {team_emoji_str}**{entry.get('PlayerName', '?')}** ({entry.get('Conference', '')}) - {entry.get('AwardScore', 0):.2f}")
+        embed.add_field(name=f"{AWARD_EMOJIS['coach_of_year']} Coach of the Year Race", value="\n".join(coty_lines), inline=False)
 
     embed.set_footer(text=f"Updated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 

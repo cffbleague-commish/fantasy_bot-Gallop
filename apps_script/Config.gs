@@ -92,8 +92,10 @@ function getConfig() {
     recruitingDollars: {
       regularSeasonWinValue: 1,      // $1 per regular season win
       postseasonWinValue: 2,         // $2 per postseason win (Week 13+)
+      postseasonAppearanceValue: 1,  // $1 per postseason loss (appearance bonus)
       nationalChampionshipValue: 5,  // $5 per player on NC-winning team
       heismanValue: 5,               // $5 per Heisman winner
+      coachOfYearValue: 5,           // $5 for Coach of the Year
       firstTeamAllConfValue: 5,      // $5 per 1st Team All-Conference
       secondTeamAllConfValue: 4,     // $4 per 2nd Team All-Conference
       thirdTeamAllConfValue: 3       // $3 per 3rd Team All-Conference

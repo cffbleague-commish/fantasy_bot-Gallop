@@ -63,6 +63,10 @@ function calculateAwards(year, throughWeek = 12) {
     conferencePotentialPoints = calculateConferencePotentialPointsFromCache(weeklyResultsCache, schedule, config);
   }
 
+  // Step 2c: Calculate regular season potential points (for Coach of Year)
+  Logger.log(`  Calculating regular season potential points (Coach of Year)...`);
+  const regularSeasonPP = calculateRegularSeasonPotentialPointsFromCache(weeklyResultsCache, config);
+
   // Step 3: Calculate award scores
   Logger.log("\n--- Step 3: Calculating Award Scores ---");
 
@@ -86,16 +90,22 @@ function calculateAwards(year, throughWeek = 12) {
   );
   Logger.log(`  Conference award scores: ${conferenceAwardScores.length} entries (${useNewAllConfFormula ? '2025+ PP formula' : '2021-2024 PF formula'})`);
 
+  // Coach of the Year scores (team-level award)
+  const cotyScores = calculateCoachOfYearScores(standings, regularSeasonPP);
+  Logger.log(`  Coach of Year scores: ${cotyScores.length} franchises`);
+
   // Step 4: Determine rankings
   Logger.log("\n--- Step 4: Ranking Players ---");
 
   const rankings = {
     heisman: rankForHeisman(allGameAwardScores),
     national: rankForNationalAwards(allGameAwardScores, config.awards.positionGroups),
-    allConference: rankForAllConference(conferenceAwardScores, config)
+    allConference: rankForAllConference(conferenceAwardScores, config),
+    coachOfYear: rankForCoachOfYear(cotyScores)
   };
 
   Logger.log(`  Heisman: Top player is ${rankings.heisman[0]?.playerName || "N/A"}`);
+  Logger.log(`  Coach of Year: ${rankings.coachOfYear[0]?.playerName || "N/A"}`);
   Logger.log(`  National awards: ${Object.keys(config.awards.positionGroups).length} positions`);
   Logger.log(`  All-Conference: ${rankings.allConference.length} total selections`);
 
@@ -340,6 +350,41 @@ function calculateConferencePotentialPointsFromCache(weeklyResultsCache, schedul
       // Calculate optimal lineup for this week
       const optimalPoints = calculateOptimalLineupPointsWithPositions(franchise.players, playerPositions, config);
 
+      potentialPoints[franchise.franchiseId] += optimalPoints;
+    });
+  });
+
+  return potentialPoints;
+}
+
+/**
+ * Calculate regular season potential points (optimal lineup) for ALL games
+ * Used for Coach of the Year formula: (Wins+1) * PF * (PF/PP)
+ *
+ * Similar to calculateConferencePotentialPointsFromCache but without conference game filtering
+ *
+ * @param {Object} weeklyResultsCache - Map of week -> array of franchise results
+ * @param {Object} config - Config object with roster rules
+ * @returns {Object} - Map of franchiseId -> total potential points
+ */
+function calculateRegularSeasonPotentialPointsFromCache(weeklyResultsCache, config) {
+  const potentialPoints = {}; // franchiseId -> total potential points
+
+  // Initialize all franchises
+  const franchiseMap = getFranchiseConferenceMap();
+  Object.keys(franchiseMap).forEach(fId => {
+    potentialPoints[fId] = 0;
+  });
+
+  // Pre-load player positions once
+  const playerPositions = getPlayerPositions();
+
+  Object.entries(weeklyResultsCache).forEach(([weekStr, weeklyResults]) => {
+    weeklyResults.forEach(franchise => {
+      // Calculate optimal lineup for this week (all games, no conference filter)
+      const optimalPoints = calculateOptimalLineupPointsWithPositions(
+        franchise.players, playerPositions, config
+      );
       potentialPoints[franchise.franchiseId] += optimalPoints;
     });
   });
@@ -1091,6 +1136,73 @@ function getOrdinal(n) {
 }
 
 // ============================================================================
+// COACH OF THE YEAR FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate Coach of the Year scores for all franchises
+ * Formula: (Regular Season Wins + 1) * PF * (PF / PP)
+ *
+ * @param {Object} standings - Map of franchiseId -> { wins, pointsFor, ... }
+ * @param {Object} regularSeasonPP - Map of franchiseId -> total potential points
+ * @returns {Array} - Array of score objects
+ */
+function calculateCoachOfYearScores(standings, regularSeasonPP) {
+  const scores = [];
+  const franchiseNames = getTeamNameMap();
+  const franchiseConferenceMap = getFranchiseConferenceMap();
+
+  Object.entries(standings).forEach(([franchiseId, teamStats]) => {
+    const pp = regularSeasonPP[franchiseId] || 0;
+    if (pp === 0) return; // Avoid division by zero
+
+    const pf = teamStats.pointsFor;
+    const wins = teamStats.wins;
+
+    // Formula: (Wins + 1) * PF * (PF / PP)
+    const cotyScore = (wins + 1) * pf * (pf / pp);
+
+    scores.push({
+      franchiseId: franchiseId,
+      teamName: franchiseNames[franchiseId] || "Unknown",
+      conference: franchiseConferenceMap[franchiseId] || "Unknown",
+      teamPF: pf,
+      teamPP: pp,
+      teamWins: wins,
+      awardScore: Math.round(cotyScore * 100) / 100
+    });
+  });
+
+  return scores;
+}
+
+/**
+ * Rank franchises for Coach of the Year (top 20)
+ * Maps team-level data into the standard award row format
+ *
+ * @param {Array} cotyScores - Array from calculateCoachOfYearScores
+ * @returns {Array} - Ranked award entries (top 20)
+ */
+function rankForCoachOfYear(cotyScores) {
+  const sorted = [...cotyScores].sort((a, b) => b.awardScore - a.awardScore);
+
+  return sorted.slice(0, 20).map((entry, idx) => ({
+    awardType: "CoachOfYear",
+    copyId: `COTY_${entry.franchiseId}`,
+    playerId: entry.franchiseId,
+    playerName: entry.teamName,
+    position: "COACH",
+    conference: entry.conference,
+    franchiseId: entry.franchiseId,
+    starterPoints: entry.teamPF,
+    teamPF: entry.teamPF,
+    teamWins: entry.teamWins,
+    awardScore: entry.awardScore,
+    rank: idx + 1
+  }));
+}
+
+// ============================================================================
 // SHEET MANAGEMENT
 // ============================================================================
 
@@ -1135,7 +1247,8 @@ function writeAwardsToSheet(year, throughWeek, rankings) {
   const allRankings = [
     ...rankings.heisman,
     ...rankings.national,
-    ...rankings.allConference
+    ...rankings.allConference,
+    ...(rankings.coachOfYear || [])
   ];
 
   allRankings.forEach(award => {
@@ -1198,7 +1311,7 @@ function backfillHistoricalAwards(startYear, endYear) {
         year: year,
         success: true,
         heismanLeader: rankings.heisman[0]?.playerName || 'N/A',
-        totalEntries: rankings.heisman.length + rankings.national.length + rankings.allConference.length
+        totalEntries: rankings.heisman.length + rankings.national.length + rankings.allConference.length + (rankings.coachOfYear || []).length
       });
 
       Logger.log(`  ${year}: Awards calculated successfully`);

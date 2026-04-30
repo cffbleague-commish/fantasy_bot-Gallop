@@ -5,6 +5,7 @@
  * Bonus Sources:
  * - Regular Season Wins: $1 per win (max 12)
  * - Postseason Wins: $2 per win (any game Week 13+)
+ * - Postseason Appearances: $1 per loss (appearance bonus, Week 13+)
  * - National Position Awards: $5 per player winning National_QB/RB/WR_TE (rank 1)
  * - Heisman Award: $5 per player winning Heisman
  * - 1st Team All-Conference: $5 per player
@@ -121,6 +122,7 @@ function calculateRecruitingDollars(year, throughWeek) {
   Object.entries(franchiseData).forEach(([franchiseId, franchise]) => {
     const regWins = regularSeasonWins[franchiseId] || 0;
     const postWins = postseasonRecords[franchiseId]?.wins || 0;
+    const postLosses = postseasonRecords[franchiseId]?.losses || 0;
     const awards = awardCounts[franchiseId] || {};
     const wagers = wagerOutcomes[franchiseId] || { won: 0, lost: 0, net: 0 };
     const draft = draftBonuses[franchiseId] || { count: 0, dollars: 0 };
@@ -128,7 +130,8 @@ function calculateRecruitingDollars(year, throughWeek) {
 
     // Calculate dollar amounts
     const regSeasonDollars = regWins * dollarsConfig.regularSeasonWinValue;
-    const postseasonDollars = postWins * dollarsConfig.postseasonWinValue;
+    const postseasonDollars = (postWins * dollarsConfig.postseasonWinValue) +
+                              (postLosses * dollarsConfig.postseasonAppearanceValue);
 
     // National Position Awards (National_QB, National_RB, National_WR_TE rank 1)
     const ncCount = awards.nationalPosition || 0;
@@ -136,12 +139,14 @@ function calculateRecruitingDollars(year, throughWeek) {
 
     // Award counts
     const heismanCount = awards.heisman || 0;
+    const cotyCount = awards.coachOfYear || 0;
     const firstTeamCount = awards.firstTeam || 0;
     const secondTeamCount = awards.secondTeam || 0;
     const thirdTeamCount = awards.thirdTeam || 0;
 
     // Award dollars
     const heismanDollars = heismanCount * dollarsConfig.heismanValue;
+    const cotyDollars = cotyCount * dollarsConfig.coachOfYearValue;
     const firstTeamDollars = firstTeamCount * dollarsConfig.firstTeamAllConfValue;
     const secondTeamDollars = secondTeamCount * dollarsConfig.secondTeamAllConfValue;
     const thirdTeamDollars = thirdTeamCount * dollarsConfig.thirdTeamAllConfValue;
@@ -161,7 +166,8 @@ function calculateRecruitingDollars(year, throughWeek) {
 
     // Total = bonuses + adjusted draft bonuses - retention costs
     const totalDollars = regSeasonDollars + postseasonDollars + ncDollars +
-                         heismanDollars + firstTeamDollars + secondTeamDollars + thirdTeamDollars +
+                         heismanDollars + cotyDollars +
+                         firstTeamDollars + secondTeamDollars + thirdTeamDollars +
                          wagerNet + draftBonusDollars - retentionCostDollars;
 
     rows.push([
@@ -172,11 +178,14 @@ function calculateRecruitingDollars(year, throughWeek) {
       regWins,
       regSeasonDollars,
       postWins,
+      postLosses,
       postseasonDollars,
       ncCount,
       ncDollars,
       heismanCount,
       heismanDollars,
+      cotyCount,
+      cotyDollars,
       firstTeamCount,
       firstTeamDollars,
       secondTeamCount,
@@ -340,6 +349,7 @@ function countAwardsByTeam(year) {
       counts[franchiseId] = {
         heisman: 0,
         nationalPosition: 0,  // National_QB, National_RB, National_WR_TE (rank 1 only)
+        coachOfYear: 0,
         firstTeam: 0,
         secondTeam: 0,
         thirdTeam: 0
@@ -354,6 +364,11 @@ function countAwardsByTeam(year) {
     // National positional awards (National_QB, National_RB, National_WR_TE) - rank 1 only
     if (awardType.startsWith("National_") && rank === 1) {
       counts[franchiseId].nationalPosition++;
+    }
+
+    // Coach of the Year (rank 1 only)
+    if (awardType === "CoachOfYear" && rank === 1) {
+      counts[franchiseId].coachOfYear++;
     }
 
     // All-Conference awards (pattern: AllConf_{Conference}_{Team})
@@ -697,11 +712,14 @@ function getRecruitingDollarsSheet() {
     "RegularSeasonWins",
     "RegSeasonDollars",
     "PostseasonWins",
+    "PostseasonLosses",
     "PostseasonDollars",
     "NationalPositionCount",
     "NationalPositionDollars",
     "HeismanCount",
     "HeismanDollars",
+    "CoachOfYearCount",
+    "CoachOfYearDollars",
     "FirstTeamCount",
     "FirstTeamDollars",
     "SecondTeamCount",
@@ -742,14 +760,23 @@ function writeRecruitingDollarsToSheet(year, rows) {
     .filter(row => Number(row[0]) !== Number(year))
     .map(row => {
       if (row.length < expectedCols) {
-        // Old rows missing RetentionCount/RetentionCostDollars columns (added at index 23-24)
-        // Insert 0, 0 before TotalBonusDollars (which was at index 23 in old layout)
         const padded = [...row];
-        if (padded.length === 26) {
+        if (padded.length === 29) {
+          // 29-col layout (before CoachOfYear): insert 0,0 at index 13 (after HeismanDollars)
+          padded.splice(13, 0, 0, 0);
+        } else if (padded.length === 28) {
+          // 28-col layout (before PostseasonLosses): insert 0 at index 7
+          padded.splice(7, 0, 0);
+          // Also insert CoachOfYear at index 13
+          padded.splice(13, 0, 0, 0);
+        } else if (padded.length === 26) {
           // Old 26-col layout: insert retention columns before TotalBonusDollars (index 23)
           padded.splice(23, 0, 0, 0);
+          // Insert PostseasonLosses at index 7
+          padded.splice(7, 0, 0);
+          // Insert CoachOfYear at index 13
+          padded.splice(13, 0, 0, 0);
         } else {
-          // Unknown old layout: pad with empty values
           while (padded.length < expectedCols) padded.push("");
         }
         return padded;
