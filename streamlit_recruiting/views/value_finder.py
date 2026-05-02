@@ -89,7 +89,6 @@ def render_value_finder_tab(year: int, position_filter: str):
             avg_price = prices[0] if prices else 0
 
         rows.append({
-            "HeadshotURL": player.get("HeadshotURL", ""),
             "Player": name,
             "Pos": pos,
             "Stars": player.get("Rating"),
@@ -110,14 +109,10 @@ def render_value_finder_tab(year: int, position_filter: str):
     st.caption("Players sorted by model disagreement — larger gaps suggest potential mispricings.")
 
     # Display table
-    display_cols = ["HeadshotURL", "Player", "Pos", "Stars", "ADP",
+    display_cols = ["Player", "Pos", "Stars", "ADP",
                     "Current", "Multi-Feature", "Replacement", "Divergence"]
     display = results_df[display_cols].copy()
     display["Divergence"] = display["Divergence"].apply(lambda x: f"${x:.0f}" if x > 0 else "")
-
-    column_config = {
-        "HeadshotURL": st.column_config.ImageColumn("Photo", width="small"),
-    }
 
     st.dataframe(
         display, column_config=column_config,

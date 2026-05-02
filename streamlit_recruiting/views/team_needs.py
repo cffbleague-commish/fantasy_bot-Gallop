@@ -191,7 +191,7 @@ def _render_team_detail(
 
     recs = board_df[board_df["Position"].isin(need_positions)].head(15)
 
-    display_cols = ["HeadshotURL", "Player", "Position", "College",
+    display_cols = ["Player", "Position", "College",
                     "Rating", "RecruitScore", "PredictedCost", "Copy1_16"]
     available = [c for c in display_cols if c in recs.columns]
     display = recs[available].copy()
@@ -201,8 +201,4 @@ def _render_team_detail(
         if col in display.columns:
             display[col] = display[col].apply(lambda x: f"${x:.0f}" if pd.notna(x) else "")
 
-    column_config = {}
-    if "HeadshotURL" in display.columns:
-        column_config["HeadshotURL"] = st.column_config.ImageColumn("Photo", width="small")
-
-    st.dataframe(display, column_config=column_config, hide_index=True, use_container_width=True)
+    st.dataframe(display, hide_index=True, use_container_width=True)

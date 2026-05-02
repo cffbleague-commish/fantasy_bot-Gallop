@@ -42,7 +42,6 @@ def render_board_tab(year: int, position_filter: str, conference_filter: str):
 
     # Build display dataframe
     display_cols = {
-        "HeadshotURL": "Photo",
         "StarsDisplay": "Stars",
         "Player": "Player",
         "Position": "Pos",
@@ -84,17 +83,8 @@ def render_board_tab(year: int, position_filter: str, conference_filter: str):
             lambda x: f"{x:.0f}" if pd.notna(x) else ""
         )
 
-    # Column configuration for st.dataframe
-    column_config = {}
-    if "Photo" in display_df.columns:
-        column_config["Photo"] = st.column_config.ImageColumn(
-            "Photo", width="small",
-            help="Player headshot from ESPN",
-        )
-
     st.dataframe(
         display_df,
-        column_config=column_config,
         hide_index=True,
         use_container_width=True,
         height=min(len(display_df) * 35 + 38, 800),

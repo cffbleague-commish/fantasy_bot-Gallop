@@ -83,7 +83,7 @@ def fetch_rosters(year: int) -> pd.DataFrame:
 
     rows = []
     for f in franchises:
-        fid = f.get("id", "")
+        fid = f.get("id", "").lstrip("0") or "0"  # Normalize "0001" -> "1"
         players = f.get("player", [])
         if isinstance(players, dict):
             players = [players]
