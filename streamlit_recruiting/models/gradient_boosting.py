@@ -180,13 +180,16 @@ def predict_gb(
     if model is None:
         return 0.0
 
-    adp = startup_adp if startup_adp else DEFAULT_ADP
+    def _is_valid(val):
+        return val is not None and not (isinstance(val, float) and math.isnan(val))
+
+    adp = startup_adp if _is_valid(startup_adp) else DEFAULT_ADP
     adp_score = calc_adp_score(adp, ADP_SCORE_DECAY_RATE)
 
-    grade = espn_grade if (espn_grade is not None and not math.isnan(espn_grade)) else DEFAULT_ESPN_GRADE
+    grade = espn_grade if _is_valid(espn_grade) else DEFAULT_ESPN_GRADE
 
     dc_rate = DRAFT_CAPITAL_DECAY_RATES.get(position, DRAFT_CAPITAL_DECAY_RATE)
-    dc_score = calc_draft_capital_score(overall_pick, dc_rate) if overall_pick else 0
+    dc_score = calc_draft_capital_score(overall_pick, dc_rate) if _is_valid(overall_pick) else 0
 
     features = pd.DataFrame([{
         "adp_score": adp_score,
