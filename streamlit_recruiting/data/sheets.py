@@ -27,8 +27,11 @@ SCOPES = [
 @st.cache_resource
 def _get_gspread_client() -> gspread.Client:
     """Authenticate via service account from Streamlit secrets."""
-    creds_info = st.secrets["gcp_service_account"]
-    creds = Credentials.from_service_account_info(dict(creds_info), scopes=SCOPES)
+    creds_info = dict(st.secrets["gcp_service_account"])
+    # Single-quoted TOML keeps \n as literal text; the auth library needs real newlines
+    if "private_key" in creds_info:
+        creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+    creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
     return gspread.authorize(creds)
 
 
