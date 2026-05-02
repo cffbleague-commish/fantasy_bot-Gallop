@@ -44,5 +44,8 @@ env/
 .DS_Store
 Thumbs.db
 
+# Streamlit secrets (local dev credentials)
+streamlit_recruiting/.streamlit/secrets.toml
+
 # Logs
 *.log
