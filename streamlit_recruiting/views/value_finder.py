@@ -49,6 +49,18 @@ def render_value_finder_tab(year: int, position_filter: str):
     pricing_model = build_pricing_model(auction_df, adp_df, espn_df)
     gb_model, gb_metrics = train_gradient_boosting(auction_df, adp_df, espn_df)
 
+    # Compute replacement prices for ALL players at once (budget is split across pool)
+    repl_lookup = {}
+    if pricing_model:
+        repl_df = calc_replacement_prices(
+            board_df,
+            pricing_model["conference_budgets"],
+            pricing_model.get("copy_discount_curve", {}),
+        )
+        if not repl_df.empty:
+            for _, r in repl_df.iterrows():
+                repl_lookup[r["Player"]] = r.get("copy1_16", 0)
+
     # Generate predictions
     rows = []
     for _, player in board_df.iterrows():
@@ -57,7 +69,6 @@ def render_value_finder_tab(year: int, position_filter: str):
 
         current = player.get("PredictedCost")
         gb_price = None
-        repl_price = None
 
         if gb_model is not None:
             gb_price = predict_gb(
@@ -66,15 +77,7 @@ def render_value_finder_tab(year: int, position_filter: str):
                 player.get("OverallPick"), copy_number=1,
             )
 
-        # Replacement price from Copy1 16-tm
-        if pricing_model:
-            repl_df = calc_replacement_prices(
-                board_df[board_df["Player"] == name],
-                pricing_model["conference_budgets"],
-                pricing_model.get("copy_discount_curve", {}),
-            )
-            if not repl_df.empty:
-                repl_price = repl_df.iloc[0].get("copy1_16", 0)
+        repl_price = repl_lookup.get(name)
 
         # Calculate value divergence
         prices = [p for p in [current, gb_price, repl_price] if p is not None and p > 0]
