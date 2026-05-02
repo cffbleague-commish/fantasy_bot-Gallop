@@ -31,7 +31,10 @@ def render_comparison_tab(year: int, position_filter: str):
         st.warning("No auction data available — models cannot be trained.")
         return
 
-    # Apply position filter
+    # Keep full board for replacement model (budget must be split across all positions)
+    full_board_df = board_df.copy()
+
+    # Apply position filter for display
     if position_filter != "All":
         board_df = board_df[board_df["Position"] == position_filter]
 
@@ -73,11 +76,11 @@ def render_comparison_tab(year: int, position_filter: str):
                 row.get("OverallPick"), copy_number=1,
             )
 
-    # Replacement-level predictions
+    # Replacement-level predictions (use FULL board so budget splits correctly)
     repl_df = pd.DataFrame()
     if pricing_model:
         repl_df = calc_replacement_prices(
-            board_df, pricing_model["conference_budgets"],
+            full_board_df, pricing_model["conference_budgets"],
             pricing_model.get("copy_discount_curve", {}),
             replacement_adps,
         )

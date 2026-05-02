@@ -25,7 +25,10 @@ def render_value_finder_tab(year: int, position_filter: str):
         st.info(f"No board data for {year}.")
         return
 
-    # Apply position filter
+    # Keep full board for replacement model (budget must be split across all positions)
+    full_board_df = board_df.copy()
+
+    # Apply position filter for display
     if position_filter != "All":
         board_df = board_df[board_df["Position"] == position_filter]
 
@@ -49,11 +52,11 @@ def render_value_finder_tab(year: int, position_filter: str):
     pricing_model = build_pricing_model(auction_df, adp_df, espn_df)
     gb_model, gb_metrics = train_gradient_boosting(auction_df, adp_df, espn_df)
 
-    # Compute replacement prices for ALL players at once (budget is split across pool)
+    # Compute replacement prices on FULL board (budget splits across all positions)
     repl_lookup = {}
     if pricing_model:
         repl_df = calc_replacement_prices(
-            board_df,
+            full_board_df,
             pricing_model["conference_budgets"],
             pricing_model.get("copy_discount_curve", {}),
         )
@@ -115,7 +118,7 @@ def render_value_finder_tab(year: int, position_filter: str):
     display["Divergence"] = display["Divergence"].apply(lambda x: f"${x:.0f}" if x > 0 else "")
 
     st.dataframe(
-        display, column_config=column_config,
+        display,
         hide_index=True, use_container_width=True,
         height=min(len(display) * 35 + 38, 700),
     )
