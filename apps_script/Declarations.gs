@@ -1023,7 +1023,15 @@ function processEarlyDeclarations(year) {
       Logger.log(`  RETAINED: ${playerName} (${copyId}) - Path: ${retentionPath}, Cost: $${cost}, Count: ${newRetentionCount}`);
       retained++;
     } else {
-      // No decision = auto-retain (same as explicit retain)
+      // No decision in RetentionHistory or PlayerCopies for this year
+      // If player was already processed in a prior year, skip — requires a new explicit decision
+      if (existingDecisionDate.startsWith("PROCESSED-")) {
+        Logger.log(`  SKIPPED (previously processed ${existingDecisionDate}, no decision in RetentionHistory for ${year}): ${playerName} (${copyId})`);
+        skipped++;
+        return;
+      }
+
+      // First-time eligible with no decision anywhere = auto-retain
       const newRetentionCount = currentRetentionCount + 1;
       pcSheet.getRange(rowNum, PC_COLS.retentionDecisionDate + 1).setValue(processedMarker);
       pcSheet.getRange(rowNum, PC_COLS.retentionPath + 1).setValue(retentionPath);
@@ -1031,7 +1039,7 @@ function processEarlyDeclarations(year) {
       pcSheet.getRange(rowNum, PC_COLS.lastUpdated + 1).setValue(new Date());
 
       const cost = calculateRetentionCost(retentionPath, currentRetentionCount);
-      Logger.log(`  AUTO-RETAINED: ${playerName} (${copyId}) - no decision made, Path: ${retentionPath}, Cost: $${cost}`);
+      Logger.log(`  AUTO-RETAINED: ${playerName} (${copyId}) - first-time eligible, no decision made, Path: ${retentionPath}, Cost: $${cost}`);
       autoRetained++;
     }
   });
@@ -1102,9 +1110,20 @@ function loadRetentionDecisionsForYear_(year) {
 function getPendingRetentionDecisions() {
   const eligible = getDeclarationEligibleCopies();
 
+  // Load RetentionHistory for current year to cross-reference bot-recorded decisions
+  const year = Number(getLeagueYear());
+  const historyDecisions = loadRetentionDecisionsForYear_(year);
+
   return eligible.filter(copy => {
-    const decision = String(copy.retentionDecision || "").trim();
-    return decision === "";
+    // Has decision on PlayerCopies → not pending
+    const pcDecision = String(copy.retentionDecision || "").trim();
+    if (pcDecision) return false;
+
+    // Has decision in RetentionHistory → not pending
+    const histDecision = historyDecisions[copy.copyId] || "";
+    if (histDecision) return false;
+
+    return true;
   });
 }
 
