@@ -41,20 +41,17 @@ function fetchLiveAuctionTransactions(yearOverride) {
       var timestamp = txn.timestamp || "";
       var transStr = txn.transaction || "";
 
-      // MFL format: "playerID,bidAmount|playerID,bidAmount"
-      var entries = transStr.split("|");
-      entries.forEach(function(entry) {
-        var parts = entry.split(",");
-        if (parts.length >= 2) {
-          allResults.push({
-            playerId: String(parts[0]).trim(),
-            bidAmount: Number(parts[1]) || 0,
-            franchiseId: franchiseId,
-            timestamp: timestamp,
-            transactionType: transType
-          });
-        }
-      });
+      // MFL auction format: "playerID|bidAmount|optionalNote"
+      var parts = transStr.split("|");
+      if (parts.length >= 2 && parts[0].trim()) {
+        allResults.push({
+          playerId: String(parts[0]).trim(),
+          bidAmount: Number(parts[1]) || 0,
+          franchiseId: franchiseId,
+          timestamp: timestamp,
+          transactionType: transType
+        });
+      }
     });
 
     Logger.log("  " + transType + ": found " + txns.length + " transactions");
