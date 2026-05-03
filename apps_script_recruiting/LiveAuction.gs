@@ -238,3 +238,33 @@ function testLiveAuctionWith2025() {
   importLiveAuction("2025");
   Logger.log("=== TEST COMPLETE — Check LiveAuction sheet for results ===");
 }
+
+
+/**
+ * Debug: dump raw MFL transaction objects for each auction type.
+ * Run this to see the actual JSON structure MFL returns,
+ * so we can fix the parser if the format differs from expected.
+ */
+function debugAuctionTransactionFormat() {
+  var config = getConfig();
+  var year = "2025";
+
+  ["AUCTION_INIT", "AUCTION_BID", "AUCTION_WON"].forEach(function(transType) {
+    Logger.log("\n=== " + transType + " ===");
+    var data = mflFetch(year, "transactions", { TRANS_TYPE: transType });
+
+    if (!data || !data.transactions || !data.transactions.transaction) {
+      Logger.log("  No data returned.");
+      return;
+    }
+
+    var txns = data.transactions.transaction;
+    if (!Array.isArray(txns)) txns = [txns];
+
+    Logger.log("  Total: " + txns.length);
+    // Log first 3 raw objects
+    for (var i = 0; i < Math.min(3, txns.length); i++) {
+      Logger.log("  Sample " + i + ": " + JSON.stringify(txns[i]));
+    }
+  });
+}
