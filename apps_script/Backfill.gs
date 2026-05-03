@@ -365,11 +365,11 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
                   //       yearsPassed = 2022-2018 = 4, redshirts = 1, eligUsed = 3 (still has 1 year left)
                   const eligibilityAtDropTime = Math.max(0, yearsPassedSinceRookie - redshirtYearsEarned);
                   const hasRemainingEligibility = eligibilityAtDropTime < maxEligibilityYears;
-                  const transferEligible = isBeforeFirstAuction && hasRemainingEligibility ? "Yes" : "";
+                  const transferEligible = isBeforeFirstAuction && hasRemainingEligibility && !copy.declaredEarly ? "Yes" : "";
 
                   // DEBUG: Log transfer eligibility calculation for troubleshooting
                   // Always log for drops to help diagnose issues
-                  Logger.log(`    DROP: ${playerName} (${playerId}) - rookieYear=${copy.createdSeason}, yearsPassed=${yearsPassedSinceRookie}, redshirts=${redshirtYearsEarned}, eligAtDrop=${eligibilityAtDropTime}/${maxEligibilityYears}, beforeAuction=${isBeforeFirstAuction} (dropTS=${dropTimestamp}, auctionTS=${firstAuctionTimestamp}), transferEligible=${transferEligible || 'No'}`)
+                  Logger.log(`    DROP: ${playerName} (${playerId}) - rookieYear=${copy.createdSeason}, yearsPassed=${yearsPassedSinceRookie}, redshirts=${redshirtYearsEarned}, eligAtDrop=${eligibilityAtDropTime}/${maxEligibilityYears}, beforeAuction=${isBeforeFirstAuction} (dropTS=${dropTimestamp}, auctionTS=${firstAuctionTimestamp}), declaredEarly=${copy.declaredEarly}, transferEligible=${transferEligible || 'No'}`)
 
                   transactionLogs.push({
                     year: year,
