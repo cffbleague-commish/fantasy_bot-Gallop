@@ -31,6 +31,7 @@ function onOpen() {
     .addItem("Start Live Auction Sync (Hourly)", "startLiveAuctionSync")
     .addItem("Stop Live Auction Sync", "stopLiveAuctionSync")
     .addItem("Import Live Auction (Once)", "importLiveAuction")
+    .addItem("Test Live Auction (2025 Data)", "testLiveAuctionWith2025")
     .addSeparator()
     .addItem("Set League Year...", "promptSetLeagueYear")
     .addToUi();

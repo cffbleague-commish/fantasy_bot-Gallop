@@ -15,13 +15,14 @@ var AUCTION_TRANS_TYPES = ["AUCTION_INIT", "AUCTION_BID", "AUCTION_WON"];
 
 
 /**
- * Fetch auction transactions from MFL API for the current year.
+ * Fetch auction transactions from MFL API.
  * Pulls all three types: AUCTION_INIT (nominations), AUCTION_BID (bids), AUCTION_WON (completed).
+ * @param {string} [yearOverride] - Optional year to fetch (defaults to current league year)
  * @returns {Array} Array of { playerId, franchiseId, bidAmount, timestamp, transactionType }
  */
-function fetchLiveAuctionTransactions() {
+function fetchLiveAuctionTransactions(yearOverride) {
   var config = getConfig();
-  var year = config.mfl.currentYear;
+  var year = yearOverride || config.mfl.currentYear;
   var allResults = [];
 
   AUCTION_TRANS_TYPES.forEach(function(transType) {
@@ -67,16 +68,17 @@ function fetchLiveAuctionTransactions() {
  * Import live auction data to the LiveAuction sheet.
  * Enriches with player data and franchise names.
  * Uses full-replace strategy (clears and rewrites all data).
+ * @param {string} [yearOverride] - Optional year to import (defaults to current league year)
  */
-function importLiveAuction() {
+function importLiveAuction(yearOverride) {
   var config = getConfig();
-  var yearStr = config.mfl.currentYear;
+  var yearStr = yearOverride || config.mfl.currentYear;
 
   Logger.log("=== IMPORTING LIVE AUCTION DATA ===");
   Logger.log("  Year: " + yearStr);
 
   // Fetch transactions
-  var transactions = fetchLiveAuctionTransactions();
+  var transactions = fetchLiveAuctionTransactions(yearStr);
   Logger.log("  Raw transactions: " + transactions.length);
 
   if (transactions.length === 0) {
@@ -222,4 +224,17 @@ function stopLiveAuctionSync() {
     Logger.log("  Deleted " + deleted + " existing importLiveAuction trigger(s).");
   }
   Logger.log("Live auction sync stopped.");
+}
+
+
+/**
+ * Test the live auction pipeline using 2025 data.
+ * Pulls real auction transactions from last year's MFL site to verify
+ * the full import pipeline works (API fetch → enrich → write to sheet).
+ * Safe to run anytime — does not affect triggers or league year config.
+ */
+function testLiveAuctionWith2025() {
+  Logger.log("=== TEST: Importing 2025 auction data ===");
+  importLiveAuction("2025");
+  Logger.log("=== TEST COMPLETE — Check LiveAuction sheet for results ===");
 }
