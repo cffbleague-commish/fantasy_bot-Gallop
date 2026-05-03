@@ -1,6 +1,7 @@
 /**
  * RECRUITING ANALYTICS - LIVE AUCTION
  * Pulls live auction transactions directly from MFL API.
+ * Captures all auction activity: nominations, bids, and completed auctions.
  * Designed to run on a timed trigger during the auction window.
  *
  * Usage:
@@ -9,47 +10,56 @@
  *   - Run importLiveAuction() for a one-time manual import
  */
 
+// All auction-related transaction types from MFL
+var AUCTION_TRANS_TYPES = ["AUCTION_INIT", "AUCTION_BID", "AUCTION_WON"];
+
 
 /**
- * Fetch AUCTION_WON transactions from MFL API for the current year.
- * @returns {Array} Array of { playerId, franchiseId, bidAmount, timestamp }
+ * Fetch auction transactions from MFL API for the current year.
+ * Pulls all three types: AUCTION_INIT (nominations), AUCTION_BID (bids), AUCTION_WON (completed).
+ * @returns {Array} Array of { playerId, franchiseId, bidAmount, timestamp, transactionType }
  */
 function fetchLiveAuctionTransactions() {
   var config = getConfig();
   var year = config.mfl.currentYear;
+  var allResults = [];
 
-  var data = mflFetch(year, "transactions", { TRANS_TYPE: "AUCTION_WON" });
+  AUCTION_TRANS_TYPES.forEach(function(transType) {
+    var data = mflFetch(year, "transactions", { TRANS_TYPE: transType });
 
-  if (!data || !data.transactions || !data.transactions.transaction) {
-    Logger.log("  No auction transactions found from MFL API.");
-    return [];
-  }
+    if (!data || !data.transactions || !data.transactions.transaction) {
+      Logger.log("  No " + transType + " transactions found.");
+      return;
+    }
 
-  var txns = data.transactions.transaction;
-  if (!Array.isArray(txns)) txns = [txns];
+    var txns = data.transactions.transaction;
+    if (!Array.isArray(txns)) txns = [txns];
 
-  var results = [];
-  txns.forEach(function(txn) {
-    var franchiseId = String(txn.franchise || "");
-    var timestamp = txn.timestamp || "";
-    var transStr = txn.transaction || "";
+    txns.forEach(function(txn) {
+      var franchiseId = String(txn.franchise || "");
+      var timestamp = txn.timestamp || "";
+      var transStr = txn.transaction || "";
 
-    // MFL format: "playerID,bidAmount|playerID,bidAmount"
-    var entries = transStr.split("|");
-    entries.forEach(function(entry) {
-      var parts = entry.split(",");
-      if (parts.length >= 2) {
-        results.push({
-          playerId: String(parts[0]).trim(),
-          bidAmount: Number(parts[1]) || 0,
-          franchiseId: franchiseId,
-          timestamp: timestamp
-        });
-      }
+      // MFL format: "playerID,bidAmount|playerID,bidAmount"
+      var entries = transStr.split("|");
+      entries.forEach(function(entry) {
+        var parts = entry.split(",");
+        if (parts.length >= 2) {
+          allResults.push({
+            playerId: String(parts[0]).trim(),
+            bidAmount: Number(parts[1]) || 0,
+            franchiseId: franchiseId,
+            timestamp: timestamp,
+            transactionType: transType
+          });
+        }
+      });
     });
+
+    Logger.log("  " + transType + ": found " + txns.length + " transactions");
   });
 
-  return results;
+  return allResults;
 }
 
 
@@ -120,8 +130,14 @@ function importLiveAuction() {
       conference,
       txn.bidAmount,
       isRookie ? "TRUE" : "FALSE",
+      txn.transactionType,
       timestampStr
     ]);
+  });
+
+  // Sort by timestamp descending (most recent first)
+  enrichedRows.sort(function(a, b) {
+    return (b[14] || "").localeCompare(a[14] || "");
   });
 
   // Write to sheet (full replace)
@@ -137,7 +153,7 @@ function importLiveAuction() {
   var headers = [
     "AuctionYear", "PlayerID", "PlayerName", "Position", "NFLTeam",
     "DraftYear", "DraftRound", "DraftPick", "FranchiseID", "FranchiseName",
-    "Conference", "BidAmount", "IsRookie", "Timestamp"
+    "Conference", "BidAmount", "IsRookie", "TransactionType", "Timestamp"
   ];
 
   sheet.appendRow(headers);
@@ -152,6 +168,16 @@ function importLiveAuction() {
   if (enrichedRows.length > 0) {
     sheet.getRange(2, 12, enrichedRows.length, 1).setNumberFormat("$#,##0");
   }
+
+  // Log summary by type
+  var typeCounts = {};
+  enrichedRows.forEach(function(row) {
+    var t = row[13];
+    typeCounts[t] = (typeCounts[t] || 0) + 1;
+  });
+  Object.keys(typeCounts).forEach(function(t) {
+    Logger.log("  " + t + ": " + typeCounts[t] + " rows");
+  });
 
   Logger.log("  Wrote " + enrichedRows.length + " transactions to " + config.sheets.liveAuction);
   Logger.log("=== LIVE AUCTION IMPORT COMPLETE ===");
