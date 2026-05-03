@@ -8,7 +8,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from data.sheets import load_live_auction
+from data.sheets import load_live_auction, load_franchise_lookup
 from models.config import POSITIONS, COLORS
 
 # Human-readable labels for MFL transaction types
@@ -30,6 +30,18 @@ def _label_type(raw_type: str) -> str:
     return TRANS_TYPE_LABELS.get(raw_type, raw_type)
 
 
+def _build_logo_lookup() -> dict:
+    """Build FranchiseName -> Logo URL mapping from FranchiseLookup sheet."""
+    fl = load_franchise_lookup()
+    if fl.empty:
+        return {}
+    return {
+        row["TeamName"]: row["Logo"]
+        for _, row in fl.iterrows()
+        if row.get("Logo") and str(row["Logo"]).startswith("http")
+    }
+
+
 def render_live_auction_tab():
     """Render the Live Auction tab."""
     df = load_live_auction()
@@ -43,6 +55,10 @@ def render_live_auction_tab():
 
     # Add display-friendly type label
     df["Type"] = df["TransactionType"].apply(_label_type)
+
+    # Merge franchise logos
+    logo_lookup = _build_logo_lookup()
+    df["FranchiseLogo"] = df["FranchiseName"].map(logo_lookup).fillna("")
 
     st.markdown("### Live Auction Transactions")
     st.caption(f"{len(df)} transactions loaded. Data refreshes every 5 minutes (sheet syncs hourly).")
@@ -96,12 +112,13 @@ def render_live_auction_tab():
     recent = filtered.sort_values("Timestamp", ascending=False).head(50)
 
     display_cols = ["Timestamp", "Type", "PlayerName", "Position", "NFLTeam",
-                    "FranchiseName", "Conference", "BidAmount", "IsRookie"]
+                    "FranchiseLogo", "FranchiseName", "Conference", "BidAmount", "IsRookie"]
     available = [c for c in display_cols if c in recent.columns]
     display = recent[available].copy()
     display.rename(columns={
         "PlayerName": "Player",
         "NFLTeam": "Team",
+        "FranchiseLogo": "Logo",
         "FranchiseName": "Franchise",
         "Conference": "Conf",
         "BidAmount": "Bid",
@@ -110,7 +127,11 @@ def render_live_auction_tab():
     display["Bid"] = display["Bid"].apply(lambda x: f"${x:.0f}")
     display["Rookie"] = display["Rookie"].apply(lambda x: "Yes" if x else "No")
 
-    st.dataframe(display, hide_index=True, use_container_width=True, height=500)
+    col_config = {}
+    if "Logo" in display.columns:
+        col_config["Logo"] = st.column_config.ImageColumn("", width="small")
+
+    st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
 
     st.markdown("---")
 
@@ -147,14 +168,17 @@ def render_live_auction_tab():
             Rookies=("IsRookie", "sum"),
         ).reset_index()
         team_summary = team_summary.sort_values("TotalSpent", ascending=False)
-        team_summary.columns = ["Team", "Wins", "Total", "Avg", "Max", "Rookies"]
+        team_summary["Logo"] = team_summary["FranchiseName"].map(logo_lookup).fillna("")
+        team_summary = team_summary[["Logo", "FranchiseName", "Wins", "TotalSpent", "AvgBid", "MaxBid", "Rookies"]]
+        team_summary.columns = ["Logo", "Team", "Wins", "Total", "Avg", "Max", "Rookies"]
 
         team_display = team_summary.copy()
         for col in ["Total", "Avg", "Max"]:
             team_display[col] = team_display[col].apply(lambda x: f"${x:.0f}")
         team_display["Rookies"] = team_display["Rookies"].astype(int)
 
-        st.dataframe(team_display, hide_index=True, use_container_width=True)
+        team_col_config = {"Logo": st.column_config.ImageColumn("", width="small")}
+        st.dataframe(team_display, column_config=team_col_config, hide_index=True, use_container_width=True)
 
     st.markdown("---")
 
@@ -235,17 +259,19 @@ def render_live_auction_tab():
         st.info("No completed auctions to display.")
     else:
         top = top_won.nlargest(20, "BidAmount")
-        top_display = top[["PlayerName", "Position", "NFLTeam", "FranchiseName",
+        top_display = top[["PlayerName", "Position", "NFLTeam",
+                            "FranchiseLogo", "FranchiseName",
                             "BidAmount", "IsRookie"]].copy()
         top_display.rename(columns={
             "PlayerName": "Player", "NFLTeam": "Team",
-            "FranchiseName": "Franchise", "BidAmount": "Bid",
-            "IsRookie": "Rookie",
+            "FranchiseLogo": "Logo", "FranchiseName": "Franchise",
+            "BidAmount": "Bid", "IsRookie": "Rookie",
         }, inplace=True)
         top_display["Bid"] = top_display["Bid"].apply(lambda x: f"${x:.0f}")
         top_display["Rookie"] = top_display["Rookie"].apply(lambda x: "Yes" if x else "No")
 
-        st.dataframe(top_display, hide_index=True, use_container_width=True)
+        top_col_config = {"Logo": st.column_config.ImageColumn("", width="small")}
+        st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
 
 
 def _render_bid_history(player_name: str, df: pd.DataFrame):
@@ -279,11 +305,13 @@ def _render_bid_history(player_name: str, df: pd.DataFrame):
         info_cols[3].metric("Won By", f"{winner.get('FranchiseName', '?')} (${winner['BidAmount']:.0f})")
 
     # Full chronological table
-    history_display = player_txns[["Timestamp", "Type", "FranchiseName", "BidAmount"]].copy()
+    history_display = player_txns[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount"]].copy()
     history_display.rename(columns={
+        "FranchiseLogo": "Logo",
         "FranchiseName": "Franchise",
         "BidAmount": "Bid",
     }, inplace=True)
     history_display["Bid"] = history_display["Bid"].apply(lambda x: f"${x:.0f}")
 
-    st.dataframe(history_display, hide_index=True, use_container_width=True)
+    hist_col_config = {"Logo": st.column_config.ImageColumn("", width="small")}
+    st.dataframe(history_display, column_config=hist_col_config, hide_index=True, use_container_width=True)
