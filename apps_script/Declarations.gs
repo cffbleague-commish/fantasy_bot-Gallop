@@ -1317,15 +1317,34 @@ function menuViewEligiblePlayers() {
  * Menu function to process declarations
  */
 function menuProcessDeclarations() {
-  const year = getLeagueYear();
   const ui = SpreadsheetApp.getUi();
+  const defaultYear = Number(getLeagueYear()) - 1;
+
+  const yearResponse = ui.prompt(
+    'Process Early Declarations',
+    `Enter the EARNING YEAR to process declarations for.\n\n` +
+    `This is the season year when awards were earned (not the current league year).\n\n` +
+    `Default: ${defaultYear}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (yearResponse.getSelectedButton() !== ui.Button.OK) return;
+
+  const yearInput = yearResponse.getResponseText().trim();
+  const year = yearInput ? Number(yearInput) : defaultYear;
+
+  if (isNaN(year) || year < 2020 || year > 2030) {
+    ui.alert('Invalid year. Please enter a year between 2020 and 2030.');
+    return;
+  }
 
   const confirm = ui.alert(
     'Process Early Declarations',
-    `This will process all early declarations for ${year}:\n\n` +
+    `This will process all early declarations for the ${year} season:\n\n` +
     `- RELEASE decisions -> Player declared early, marked inactive\n` +
     `- RETAIN decisions -> Player kept active\n` +
     `- No decision -> Auto-retained\n\n` +
+    `Decisions will be loaded from RetentionHistory where Year = ${year}.\n\n` +
     `Proceed?`,
     ui.ButtonSet.YES_NO
   );
