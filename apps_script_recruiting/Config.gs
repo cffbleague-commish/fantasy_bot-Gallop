@@ -64,7 +64,8 @@ function getConfig() {
       playerGrades: "PlayerGrades",           // Individual player auction grades
       franchiseLookup: "FranchiseLookup",     // Franchise identity (team name, logo, conference, etc.)
       espnProspects: "ESPNProspects",         // ESPN draft prospect data (grades, ranks, headshots)
-      dlfRookieStartupADP: "DLF Rookie Startup ADP"  // DLF startup ADP data (market consensus values)
+      dlfRookieStartupADP: "DLF Rookie Startup ADP",  // DLF startup ADP data (market consensus values)
+      liveAuction: "LiveAuction"                       // Live auction transactions from MFL API
     },
 
     // Source Sheet Tab Names (tabs in the League Sheet we read from)

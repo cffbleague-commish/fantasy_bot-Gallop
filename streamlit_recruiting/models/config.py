@@ -142,6 +142,13 @@ PLAYER_GRADES_COLS = {
     "LeagueAvgPrice": 8, "Savings": 9, "PlayerGrade": 10,
 }
 
+LIVE_AUCTION_COLS = {
+    "AuctionYear": 0, "PlayerID": 1, "PlayerName": 2, "Position": 3,
+    "NFLTeam": 4, "DraftYear": 5, "DraftRound": 6, "DraftPick": 7,
+    "FranchiseID": 8, "FranchiseName": 9, "Conference": 10,
+    "BidAmount": 11, "IsRookie": 12, "Timestamp": 13,
+}
+
 # Sheet tab names
 SHEET_NAMES = {
     "auctionData": "AuctionData",
@@ -152,7 +159,18 @@ SHEET_NAMES = {
     "franchiseLookup": "FranchiseLookup",
     "espnProspects": "ESPNProspects",
     "dlfRookieStartupADP": "DLF Rookie Startup ADP",
+    "liveAuction": "LiveAuction",
 }
+
+
+def get_league_year() -> int:
+    """Get the current league year from Streamlit secrets, falling back to calendar year."""
+    import streamlit as st
+    from datetime import datetime
+    try:
+        return int(st.secrets.get("league_year", datetime.now().year))
+    except (ValueError, TypeError):
+        return datetime.now().year
 
 # UI colors (matching existing webapp dark theme)
 COLORS = {

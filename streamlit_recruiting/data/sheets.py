@@ -13,7 +13,7 @@ from models.config import (
     SHEET_NAMES, EXCLUDE_YEARS,
     RECRUITING_BOARD_COLS, AUCTION_DATA_COLS, ESPN_PROSPECTS_COLS,
     DLF_ADP_COLS, FRANCHISE_LOOKUP_COLS, RECRUITING_GRADES_COLS,
-    PLAYER_GRADES_COLS,
+    PLAYER_GRADES_COLS, LIVE_AUCTION_COLS,
 )
 from utils.parsing import parse_dollar, parse_dollar_savings, parse_confidence
 
@@ -295,6 +295,36 @@ def load_player_grades(year: int | None = None) -> pd.DataFrame:
 
     if year is not None:
         df = df[df["DraftYear"] == year].copy()
+
+    return df
+
+
+@st.cache_data(ttl=300)
+def load_live_auction() -> pd.DataFrame:
+    """Load LiveAuction sheet as a typed DataFrame."""
+    data = _get_sheet_data(SHEET_NAMES["liveAuction"])
+    if len(data) <= 1:
+        return pd.DataFrame()
+
+    headers = data[0]
+    rows = data[1:]
+    df = pd.DataFrame(rows, columns=headers)
+
+    c = LIVE_AUCTION_COLS
+    df["AuctionYear"] = df.iloc[:, c["AuctionYear"]].apply(_safe_int)
+    df["PlayerID"] = df.iloc[:, c["PlayerID"]].astype(str)
+    df["PlayerName"] = df.iloc[:, c["PlayerName"]].astype(str)
+    df["Position"] = df.iloc[:, c["Position"]].astype(str)
+    df["NFLTeam"] = df.iloc[:, c["NFLTeam"]].astype(str)
+    df["DraftYear"] = df.iloc[:, c["DraftYear"]].astype(str)
+    df["DraftRound"] = df.iloc[:, c["DraftRound"]].astype(str)
+    df["DraftPick"] = df.iloc[:, c["DraftPick"]].astype(str)
+    df["FranchiseID"] = df.iloc[:, c["FranchiseID"]].astype(str)
+    df["FranchiseName"] = df.iloc[:, c["FranchiseName"]].astype(str)
+    df["Conference"] = df.iloc[:, c["Conference"]].astype(str)
+    df["BidAmount"] = df.iloc[:, c["BidAmount"]].apply(_safe_float).fillna(0)
+    df["IsRookie"] = df.iloc[:, c["IsRookie"]].astype(str).str.upper() == "TRUE"
+    df["Timestamp"] = df.iloc[:, c["Timestamp"]].astype(str)
 
     return df
 

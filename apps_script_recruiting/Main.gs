@@ -28,6 +28,10 @@ function onOpen() {
     .addSeparator()
     .addItem("Run Full Pipeline (Import + Analyze)", "runFullPipeline")
     .addSeparator()
+    .addItem("Start Live Auction Sync (Hourly)", "startLiveAuctionSync")
+    .addItem("Stop Live Auction Sync", "stopLiveAuctionSync")
+    .addItem("Import Live Auction (Once)", "importLiveAuction")
+    .addSeparator()
     .addItem("Set League Year...", "promptSetLeagueYear")
     .addToUi();
 }
