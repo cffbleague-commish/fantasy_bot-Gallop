@@ -75,8 +75,10 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
   const traditionalUsedCol = 6;  // TraditionalRedshirtUsed
   const medicalUsedCol = 7;      // MedicalRedshirtUsed
   const createdSeasonCol = 8;    // CreatedSeason (rookie year)
+  const activeCol = 9;           // Active
   const traditionalYearCol = 11; // TraditionalRedshirtYear
   const medicalYearCol = 12;     // MedicalRedshirtYear
+  const declaredEarlyCol = 16;   // DeclaredEarly
 
   // Get max eligibility years from config for transfer eligibility calculation
   const config = getConfig();
@@ -115,7 +117,8 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
       traditionalRedshirtUsed: row[traditionalUsedCol] === true || row[traditionalUsedCol] === "TRUE",
       medicalRedshirtUsed: row[medicalUsedCol] === true || row[medicalUsedCol] === "TRUE",
       traditionalRedshirtYear: row[traditionalYearCol] || "",
-      medicalRedshirtYear: row[medicalYearCol] || ""
+      medicalRedshirtYear: row[medicalYearCol] || "",
+      declaredEarly: row[declaredEarlyCol] === true || row[declaredEarlyCol] === "TRUE"
     });
   });
 
@@ -198,7 +201,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
         // First, try to find the "last owned" copy if it's available
         if (lastOwnedRowNum) {
           const lastCopy = availableCopies.find(copy => copy.rowNum === lastOwnedRowNum);
-          if (lastCopy) {
+          if (lastCopy && !lastCopy.declaredEarly) {
             // IMPORTANT: Check if key EXISTS in ownershipUpdates, not just if value is truthy
             // Empty string "" means "dropped" but || would fall back to currentOwner
             const lastCopyOwner = lastCopy.rowNum in ownershipUpdates
@@ -211,8 +214,10 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
         }
 
         // If no "last owned" copy available, find first unowned copy
+        // Skip copies that were declared early — they are no longer assignable
         if (!availableCopy) {
           availableCopy = availableCopies.find(copy => {
+            if (copy.declaredEarly) return false;
             // IMPORTANT: Check if key EXISTS in ownershipUpdates, not just if value is truthy
             // Empty string "" means "dropped" but || would fall back to currentOwner
             const currentOwner = copy.rowNum in ownershipUpdates

@@ -955,6 +955,11 @@ function processEarlyDeclarations(year) {
     return { released: 0, retained: 0, autoRetained: 0, skipped: 0 };
   }
 
+  // Load decisions from RetentionHistory (source of truth)
+  // Discord bot writes decisions there; PlayerCopies retentionDecision may be empty
+  const historyDecisions = loadRetentionDecisionsForYear_(year);
+  Logger.log(`  Loaded ${Object.keys(historyDecisions).length} decisions from RetentionHistory for year ${year}`);
+
   const processedMarker = `PROCESSED-${year}`;
   const rows = data.slice(1);
   let released = 0;
@@ -968,7 +973,6 @@ function processEarlyDeclarations(year) {
 
     if (!eligibility.eligible) return;
 
-    const decision = String(row[PC_COLS.retentionDecision] || "").toUpperCase().trim();
     const playerName = row[PC_COLS.playerName];
     const copyId = row[PC_COLS.copyId];
     const existingDecisionDate = String(row[PC_COLS.retentionDecisionDate] || "");
@@ -980,6 +984,15 @@ function processEarlyDeclarations(year) {
       Logger.log(`  SKIPPED (already processed): ${playerName} (${copyId})`);
       skipped++;
       return;
+    }
+
+    // Resolve decision: PlayerCopies field first, then RetentionHistory as fallback
+    const pcDecision = String(row[PC_COLS.retentionDecision] || "").toUpperCase().trim();
+    const histDecision = (historyDecisions[copyId] || "").toUpperCase().trim();
+    const decision = pcDecision || histDecision;
+
+    if (!pcDecision && histDecision) {
+      Logger.log(`  ${playerName} (${copyId}): Using RetentionHistory decision "${histDecision}"`);
     }
 
     // Get current retention count and path for cost tracking
@@ -1038,6 +1051,48 @@ function processEarlyDeclarations(year) {
     autoRetained: autoRetained,
     total: released + retained + autoRetained
   };
+}
+
+/**
+ * Load retention decisions from RetentionHistory sheet for a given year.
+ * Returns a map of copyId -> decision (RETAIN, RELEASE, AUTO_RETAIN).
+ * @param {Number} year - The year to look up
+ * @returns {Object} - Map of copyId -> decision string
+ * @private
+ */
+function loadRetentionDecisionsForYear_(year) {
+  const decisions = {};
+  try {
+    const histSheet = getRetentionHistorySheet();
+    const histData = histSheet.getDataRange().getValues();
+    if (histData.length <= 1) return decisions;
+
+    const headers = histData[0];
+    const colMap = {};
+    headers.forEach((h, i) => { colMap[String(h).trim()] = i; });
+
+    const yearCol = colMap["Year"];
+    const copyIdCol = colMap["CopyId"];
+    const decisionCol = colMap["Decision"];
+
+    if (yearCol === undefined || copyIdCol === undefined || decisionCol === undefined) {
+      Logger.log(`  WARNING: RetentionHistory missing required columns (Year/CopyId/Decision)`);
+      return decisions;
+    }
+
+    histData.slice(1).forEach(row => {
+      if (String(row[yearCol]) === String(year)) {
+        const copyId = String(row[copyIdCol] || "").trim();
+        const decision = String(row[decisionCol] || "").trim();
+        if (copyId && decision) {
+          decisions[copyId] = decision;
+        }
+      }
+    });
+  } catch (e) {
+    Logger.log(`  WARNING: Could not load RetentionHistory: ${e.message}`);
+  }
+  return decisions;
 }
 
 /**
