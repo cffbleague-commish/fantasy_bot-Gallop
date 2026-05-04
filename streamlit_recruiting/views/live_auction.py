@@ -144,7 +144,7 @@ def render_live_auction_tab():
     recent = filtered.sort_values("Timestamp", ascending=False).head(50)
 
     display_cols = ["Timestamp", "Type", "PlayerName", "Position", "NFLTeam",
-                    "FranchiseLogo", "Conference", "BidAmount", "CopyNumber", "IsRookie"]
+                    "FranchiseLogo", "Conference", "BidAmount", "CopyNumber", "Note", "IsRookie"]
     available = [c for c in display_cols if c in recent.columns]
     display = recent[available].copy()
     display.rename(columns={
@@ -156,6 +156,8 @@ def render_live_auction_tab():
         "CopyNumber": "Copy #",
         "IsRookie": "Rookie",
     }, inplace=True)
+    if "Note" in display.columns:
+        display["Note"] = display["Note"].fillna("")
     display["Bid"] = display["Bid"].apply(lambda x: f"${x:.0f}")
     display["Rookie"] = display["Rookie"].apply(lambda x: "Yes" if x else "No")
     if "Copy #" in display.columns:
@@ -432,13 +434,14 @@ def _render_bid_history(player_name: str, df: pd.DataFrame):
         info_cols[3].metric("Won By", f"{winner.get('FranchiseName', '?')} (${winner['BidAmount']:.0f})")
 
     # Full chronological table
-    history_display = player_txns[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount"]].copy()
+    history_display = player_txns[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount", "Note"]].copy()
     history_display.rename(columns={
         "FranchiseLogo": "Franchise",
         "FranchiseName": "Team",
         "BidAmount": "Bid",
     }, inplace=True)
     history_display["Bid"] = history_display["Bid"].apply(lambda x: f"${x:.0f}")
+    history_display["Note"] = history_display["Note"].fillna("")
 
     hist_col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
     st.dataframe(history_display, column_config=hist_col_config, hide_index=True, use_container_width=True)

@@ -325,6 +325,7 @@ def load_live_auction() -> pd.DataFrame:
     df["BidAmount"] = df.iloc[:, c["BidAmount"]].apply(_safe_float).fillna(0)
     df["IsRookie"] = df.iloc[:, c["IsRookie"]].astype(str).str.upper() == "TRUE"
     df["TransactionType"] = df.iloc[:, c["TransactionType"]].astype(str) if c["TransactionType"] < len(df.columns) else "AUCTION_WON"
+    df["Note"] = df.iloc[:, c["Note"]].astype(str).replace("", pd.NA) if c["Note"] < len(df.columns) else ""
     df["Timestamp"] = df.iloc[:, c["Timestamp"]].astype(str)
 
     return df

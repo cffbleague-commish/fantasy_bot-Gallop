@@ -42,11 +42,13 @@ function fetchLiveAuctionTransactions(yearOverride) {
       var transStr = txn.transaction || "";
 
       // MFL auction format: "playerID|bidAmount|optionalNote"
+      // The note field captures proxy bid info (e.g., "Team Name forced bid increase")
       var parts = transStr.split("|");
       if (parts.length >= 2 && parts[0].trim()) {
         allResults.push({
           playerId: String(parts[0]).trim(),
           bidAmount: Number(parts[1]) || 0,
+          note: (parts[2] || "").trim(),
           franchiseId: franchiseId,
           timestamp: timestamp,
           transactionType: transType
@@ -130,13 +132,14 @@ function importLiveAuction(yearOverride) {
       txn.bidAmount,
       isRookie ? "TRUE" : "FALSE",
       txn.transactionType,
+      txn.note || "",
       timestampStr
     ]);
   });
 
   // Sort by timestamp descending (most recent first)
   enrichedRows.sort(function(a, b) {
-    return (b[14] || "").localeCompare(a[14] || "");
+    return (b[15] || "").localeCompare(a[15] || "");
   });
 
   // Write to sheet (full replace)
@@ -152,7 +155,7 @@ function importLiveAuction(yearOverride) {
   var headers = [
     "AuctionYear", "PlayerID", "PlayerName", "Position", "NFLTeam",
     "DraftYear", "DraftRound", "DraftPick", "FranchiseID", "FranchiseName",
-    "Conference", "BidAmount", "IsRookie", "TransactionType", "Timestamp"
+    "Conference", "BidAmount", "IsRookie", "TransactionType", "Note", "Timestamp"
   ];
 
   sheet.appendRow(headers);
