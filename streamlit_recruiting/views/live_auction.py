@@ -44,16 +44,35 @@ def _build_logo_lookup() -> dict:
     }
 
 
-def _build_franchise_conference_lookup() -> dict:
-    """Build FranchiseName -> Conference mapping from FranchiseLookup sheet."""
-    fl = load_franchise_lookup()
-    if fl.empty:
-        return {}
-    return {
-        row["TeamName"]: row["Conference"]
-        for _, row in fl.iterrows()
-        if row.get("Conference")
-    }
+def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """Resolve AUCTION_WON prices from AUCTION_BID history.
+
+    MFL stores $0 in AUCTION_WON records — the actual winning price is the
+    highest AUCTION_BID for the same player+franchise (the winning team's max bid).
+    """
+    bids = df[df["TransactionType"] == "AUCTION_BID"]
+    if bids.empty:
+        return df
+
+    # For each player+franchise combo, find the max bid amount
+    max_bids = bids.groupby(["PlayerID", "FranchiseID"])["BidAmount"].max()
+
+    def _resolve(row):
+        if row["TransactionType"] != "AUCTION_WON" or row["BidAmount"] > 0:
+            return row["BidAmount"]
+        key = (row["PlayerID"], row["FranchiseID"])
+        if key in max_bids.index:
+            return max_bids[key]
+        # Fallback: max bid from any franchise for this player
+        player_bids = bids[bids["PlayerID"] == row["PlayerID"]]
+        if not player_bids.empty:
+            return player_bids["BidAmount"].max()
+        return row["BidAmount"]
+
+    df = df.copy()
+    won_mask = df["TransactionType"] == "AUCTION_WON"
+    df.loc[won_mask, "BidAmount"] = df.loc[won_mask].apply(_resolve, axis=1)
+    return df
 
 
 def _compute_copy_numbers(won_df: pd.DataFrame) -> pd.DataFrame:
@@ -75,6 +94,10 @@ def render_live_auction_tab():
             "Run **Start Live Auction Sync** from the Google Sheets Recruiting Analytics menu to begin importing."
         )
         return
+
+    # Resolve winning prices from bid history (MFL stores $0 in AUCTION_WON)
+    df = _resolve_winning_prices(df)
+    df["BidAmount"] = pd.to_numeric(df["BidAmount"], errors="coerce").fillna(0)
 
     # Add display-friendly type label
     df["Type"] = df["TransactionType"].apply(_label_type)
@@ -111,7 +134,7 @@ def render_live_auction_tab():
     st.markdown("---")
 
     # Filters
-    col_f1, col_f2, col_f3 = st.columns(3)
+    col_f1, col_f2, col_f3, col_f4 = st.columns(4)
     type_filter = col_f1.selectbox(
         "Transaction Type",
         ["All", "Nomination", "Bid", "Won"],
@@ -120,7 +143,10 @@ def render_live_auction_tab():
     pos_filter = col_f2.selectbox(
         "Position", ["All"] + POSITIONS, key="auction_pos_filter"
     )
-    rookie_filter = col_f3.selectbox(
+    conf_filter = col_f3.selectbox(
+        "Conference", ["All"] + CONFERENCE_LIST, key="auction_conf_filter"
+    )
+    rookie_filter = col_f4.selectbox(
         "Player Type", ["All", "Rookies Only", "Veterans Only"], key="auction_rookie_filter"
     )
 
@@ -129,6 +155,8 @@ def render_live_auction_tab():
         filtered = filtered[filtered["Type"] == type_filter]
     if pos_filter != "All":
         filtered = filtered[filtered["Position"] == pos_filter]
+    if conf_filter != "All":
+        filtered = filtered[filtered["Conference"] == conf_filter]
     if rookie_filter == "Rookies Only":
         filtered = filtered[filtered["IsRookie"]]
     elif rookie_filter == "Veterans Only":
@@ -137,6 +165,12 @@ def render_live_auction_tab():
     if filtered.empty:
         st.info("No transactions match the current filters.")
         return
+
+    # Auction timeline
+    st.markdown("#### Auction Timeline")
+    _render_auction_timeline(filtered)
+
+    st.markdown("---")
 
     # Recent transactions
     st.markdown("#### Recent Transactions")
@@ -166,7 +200,6 @@ def render_live_auction_tab():
         )
 
     col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
-
     st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
 
     st.markdown("---")
@@ -177,7 +210,6 @@ def render_live_auction_tab():
 
     won_players = sorted(won_df["PlayerName"].unique().tolist()) if not won_df.empty else []
     all_players = sorted(df["PlayerName"].unique().tolist())
-    # Combine: won players first (they have copy data), then remaining
     remaining = [p for p in all_players if p not in won_players]
     player_copy_list = won_players + remaining
 
@@ -333,6 +365,87 @@ def render_live_auction_tab():
 
         top_col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
         st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
+
+
+def _render_auction_timeline(filtered: pd.DataFrame):
+    """Render an interactive auction timeline with a time-range slider."""
+    # Parse timestamps into datetime for plotting
+    timeline_df = filtered.copy()
+    timeline_df["DateTime"] = pd.to_datetime(timeline_df["Timestamp"], errors="coerce")
+    timeline_df = timeline_df.dropna(subset=["DateTime"])
+
+    if timeline_df.empty:
+        st.info("No timestamped transactions to plot.")
+        return
+
+    min_dt = timeline_df["DateTime"].min()
+    max_dt = timeline_df["DateTime"].max()
+
+    # Only show slider if there's a meaningful time range
+    if min_dt == max_dt:
+        time_filtered = timeline_df
+    else:
+        date_range = st.slider(
+            "Time range",
+            min_value=min_dt.to_pydatetime(),
+            max_value=max_dt.to_pydatetime(),
+            value=(min_dt.to_pydatetime(), max_dt.to_pydatetime()),
+            format="MM/DD HH:mm",
+            key="auction_timeline_slider",
+        )
+        time_filtered = timeline_df[
+            (timeline_df["DateTime"] >= date_range[0])
+            & (timeline_df["DateTime"] <= date_range[1])
+        ]
+
+    if time_filtered.empty:
+        st.info("No transactions in the selected time range.")
+        return
+
+    # Build hover text
+    time_filtered = time_filtered.copy()
+    time_filtered["HoverText"] = time_filtered.apply(
+        lambda r: (
+            f"<b>{r['PlayerName']}</b> ({r['Position']})<br>"
+            f"Franchise: {r['FranchiseName']}<br>"
+            f"Bid: ${r['BidAmount']:.0f}<br>"
+            f"Type: {r['Type']}<br>"
+            + (f"Note: {r['Note']}" if pd.notna(r.get("Note")) and str(r.get("Note", "")).strip() else "")
+        ),
+        axis=1,
+    )
+
+    fig = px.scatter(
+        time_filtered,
+        x="DateTime",
+        y="BidAmount",
+        color="Type",
+        color_discrete_map=TRANS_TYPE_COLORS,
+        hover_name="PlayerName",
+        custom_data=["HoverText"],
+        title="Auction Activity Over Time",
+    )
+    fig.update_traces(
+        hovertemplate="%{customdata[0]}<extra></extra>",
+        marker=dict(size=8, opacity=0.7),
+    )
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor=COLORS["background"],
+        plot_bgcolor=COLORS["surface"],
+        height=400,
+        xaxis_title="Time",
+        yaxis_title="Bid Amount ($)",
+        legend_title_text="Type",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Show count in selected range
+    range_counts = time_filtered["Type"].value_counts()
+    st.caption(
+        f"Showing {len(time_filtered)} transactions in range: "
+        + ", ".join(f"{t}: {c}" for t, c in range_counts.items())
+    )
 
 
 def _render_copy_tracker(player_name: str, df: pd.DataFrame,
