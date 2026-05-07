@@ -7,6 +7,7 @@ Shows nominations, bids, and completed auctions with bid history per player.
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 from data.sheets import load_live_auction, load_franchise_lookup
 from models.config import POSITIONS, COLORS, CONFERENCES, COPIES_PER_CONFERENCE
@@ -75,13 +76,31 @@ def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _compute_copy_numbers(won_df: pd.DataFrame) -> pd.DataFrame:
-    """Assign copy numbers to AUCTION_WON rows, ordered by timestamp per player."""
-    if won_df.empty:
-        return won_df
-    sorted_won = won_df.sort_values("Timestamp", ascending=True).copy()
-    sorted_won["CopyNumber"] = sorted_won.groupby("PlayerID").cumcount() + 1
-    return sorted_won
+def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
+    """Assign a CopySession number to every row based on AUCTION_INIT boundaries.
+
+    For each player, transactions are sorted by timestamp.  Each AUCTION_INIT
+    marks the start of a new copy's auction cycle.  All subsequent BID/WON rows
+    belong to that session until the next INIT appears.
+    """
+    if df.empty:
+        return df
+
+    df = df.copy()
+    df["CopySession"] = 0
+
+    for player_id, group in df.groupby("PlayerID"):
+        idx_sorted = group.sort_values("Timestamp", ascending=True).index
+        counter = 0
+        for i in idx_sorted:
+            if df.at[i, "TransactionType"] == "AUCTION_INIT":
+                counter += 1
+            elif counter == 0:
+                # BID or WON before any INIT — assign to session 1
+                counter = 1
+            df.at[i, "CopySession"] = counter
+
+    return df
 
 
 def render_live_auction_tab():
@@ -106,14 +125,8 @@ def render_live_auction_tab():
     logo_lookup = _build_logo_lookup()
     df["FranchiseLogo"] = df["FranchiseName"].map(logo_lookup).fillna("")
 
-    # Compute copy numbers for won transactions
-    won_all = df[df["TransactionType"] == "AUCTION_WON"].copy()
-    won_with_copies = _compute_copy_numbers(won_all)
-    if not won_with_copies.empty:
-        copy_map = won_with_copies.set_index(won_with_copies.index)["CopyNumber"]
-        df["CopyNumber"] = df.index.map(copy_map)
-    else:
-        df["CopyNumber"] = pd.NA
+    # Assign copy session numbers to all transactions (not just WON)
+    df = _assign_copy_sessions(df)
 
     st.markdown("### Live Auction Transactions")
     st.caption(f"{len(df)} transactions loaded. Data refreshes every 5 minutes (sheet syncs hourly).")
@@ -178,7 +191,7 @@ def render_live_auction_tab():
     recent = filtered.sort_values("Timestamp", ascending=False).head(50)
 
     display_cols = ["Timestamp", "Type", "PlayerName", "Position", "NFLTeam",
-                    "FranchiseLogo", "Conference", "BidAmount", "CopyNumber", "Note", "IsRookie"]
+                    "FranchiseLogo", "Conference", "BidAmount", "CopySession", "Note", "IsRookie"]
     available = [c for c in display_cols if c in recent.columns]
     display = recent[available].copy()
     display.rename(columns={
@@ -187,7 +200,7 @@ def render_live_auction_tab():
         "FranchiseLogo": "Franchise",
         "Conference": "Conf",
         "BidAmount": "Bid",
-        "CopyNumber": "Copy #",
+        "CopySession": "Copy #",
         "IsRookie": "Rookie",
     }, inplace=True)
     if "Note" in display.columns:
@@ -196,7 +209,7 @@ def render_live_auction_tab():
     display["Rookie"] = display["Rookie"].apply(lambda x: "Yes" if x else "No")
     if "Copy #" in display.columns:
         display["Copy #"] = display["Copy #"].apply(
-            lambda x: f"#{int(x)}" if pd.notna(x) else ""
+            lambda x: f"#{int(x)}" if x > 0 else ""
         )
 
     col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
@@ -204,39 +217,24 @@ def render_live_auction_tab():
 
     st.markdown("---")
 
-    # Player copy availability search
-    st.markdown("#### Player Copy Tracker")
-    st.caption("Search for a player to see which copies have been sold and which conferences still have availability.")
+    # Unified player deep dive — copy tracker + bid history + per-copy timeline
+    st.markdown("#### Player Deep Dive")
+    st.caption("Search for a player to see copy availability, per-copy auction summaries, bid history, and timeline.")
 
+    won_df = filtered[filtered["TransactionType"] == "AUCTION_WON"]
     won_players = sorted(won_df["PlayerName"].unique().tolist()) if not won_df.empty else []
     all_players = sorted(df["PlayerName"].unique().tolist())
     remaining = [p for p in all_players if p not in won_players]
-    player_copy_list = won_players + remaining
+    player_deep_dive_list = won_players + remaining
 
-    player_copy_select = st.selectbox(
-        "Search player",
-        ["-- Select a player --"] + player_copy_list,
-        key="auction_copy_tracker_player",
-    )
-
-    if player_copy_select != "-- Select a player --":
-        _render_copy_tracker(player_copy_select, df, won_with_copies, logo_lookup)
-
-    st.markdown("---")
-
-    # Bid history for a specific player
-    st.markdown("#### Player Bid History")
-    st.caption("Select a player to see all auction activity (nomination \u2192 bids \u2192 won).")
-
-    players_with_activity = sorted(df["PlayerName"].unique().tolist())
     player_select = st.selectbox(
-        "Select player",
-        ["-- Select a player --"] + players_with_activity,
-        key="auction_bid_history_player",
+        "Search player",
+        ["-- Select a player --"] + player_deep_dive_list,
+        key="auction_deep_dive_player",
     )
 
     if player_select != "-- Select a player --":
-        _render_bid_history(player_select, df)
+        _render_player_deep_dive(player_select, df, logo_lookup)
 
     st.markdown("---")
 
@@ -349,18 +347,18 @@ def render_live_auction_tab():
         top = top_won.nlargest(20, "BidAmount")
         top_display = top[["PlayerName", "Position", "NFLTeam",
                             "FranchiseLogo", "BidAmount",
-                            "CopyNumber", "IsRookie"]].copy()
+                            "CopySession", "IsRookie"]].copy()
         top_display.rename(columns={
             "PlayerName": "Player", "NFLTeam": "Team",
             "FranchiseLogo": "Franchise",
-            "BidAmount": "Bid", "CopyNumber": "Copy #",
+            "BidAmount": "Bid", "CopySession": "Copy #",
             "IsRookie": "Rookie",
         }, inplace=True)
         top_display["Bid"] = top_display["Bid"].apply(lambda x: f"${x:.0f}")
         top_display["Rookie"] = top_display["Rookie"].apply(lambda x: "Yes" if x else "No")
         if "Copy #" in top_display.columns:
             top_display["Copy #"] = top_display["Copy #"].apply(
-                lambda x: f"#{int(x)}" if pd.notna(x) else ""
+                lambda x: f"#{int(x)}" if x > 0 else ""
             )
 
         top_col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
@@ -410,6 +408,7 @@ def _render_auction_timeline(filtered: pd.DataFrame):
             f"Franchise: {r['FranchiseName']}<br>"
             f"Bid: ${r['BidAmount']:.0f}<br>"
             f"Type: {r['Type']}<br>"
+            + (f"Copy #{int(r['CopySession'])}<br>" if r.get("CopySession", 0) > 0 else "")
             + (f"Note: {r['Note']}" if pd.notna(r.get("Note")) and str(r.get("Note", "")).strip() else "")
         ),
         axis=1,
@@ -448,79 +447,87 @@ def _render_auction_timeline(filtered: pd.DataFrame):
     )
 
 
-def _render_copy_tracker(player_name: str, df: pd.DataFrame,
-                          won_with_copies: pd.DataFrame, logo_lookup: dict):
-    """Show copy availability breakdown by conference for a player."""
-    total_copies = len(CONFERENCE_LIST) * COPIES_PER_CONFERENCE
+def _render_copy_timeline(player_name: str, player_txns: pd.DataFrame, logo_lookup: dict):
+    """Render per-copy timeline showing bid escalation for each copy session."""
+    st.markdown("**Copy Auction Timeline**")
 
-    # Get all won transactions for this player
-    player_won = won_with_copies[won_with_copies["PlayerName"] == player_name].copy()
-    sold_count = len(player_won)
-    available_count = total_copies - sold_count
+    timeline_df = player_txns.copy()
+    timeline_df["DateTime"] = pd.to_datetime(timeline_df["Timestamp"], errors="coerce")
+    timeline_df = timeline_df.dropna(subset=["DateTime"])
+    timeline_df = timeline_df[timeline_df["CopySession"] > 0]
 
-    # Player info
-    player_rows = df[df["PlayerName"] == player_name]
-    if player_rows.empty:
-        st.info(f"No data found for {player_name}.")
+    if timeline_df.empty:
+        st.info("No timestamped auction data to plot.")
         return
-    first = player_rows.iloc[0]
-    pos = first.get("Position", "")
-    team = first.get("NFLTeam", "")
 
-    st.markdown(f"**{player_name}** \u2014 {pos} | {team}")
+    # Create copy label for color grouping
+    timeline_df["Copy"] = timeline_df["CopySession"].apply(lambda x: f"Copy #{int(x)}")
 
-    # Summary metrics
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Copies", total_copies)
-    m2.metric("Sold", sold_count)
-    m3.metric("Available", available_count)
-    if sold_count > 0:
-        avg_price = player_won["BidAmount"].mean()
-        m4.metric("Avg Price", f"${avg_price:.0f}")
+    # Build hover text
+    timeline_df["HoverText"] = timeline_df.apply(
+        lambda r: (
+            f"<b>{r['Type']}</b><br>"
+            f"Franchise: {r['FranchiseName']}<br>"
+            f"Bid: ${r['BidAmount']:.0f}<br>"
+            + (f"Note: {r['Note']}" if pd.notna(r.get("Note")) and str(r.get("Note", "")).strip() else "")
+        ),
+        axis=1,
+    )
 
-    # Per-conference breakdown
-    conf_sold = player_won.groupby("Conference").size().to_dict() if not player_won.empty else {}
+    fig = go.Figure()
 
-    conf_rows = []
-    for conf in CONFERENCE_LIST:
-        sold = conf_sold.get(conf, 0)
-        avail = COPIES_PER_CONFERENCE - sold
-        status = "\u2705 Available" if avail > 0 else "\u274c Full"
-        conf_rows.append({
-            "Conference": conf,
-            "Teams": CONFERENCES[conf],
-            "Sold": sold,
-            "Available": avail,
-            "Status": status,
-        })
+    # Plot each copy session as a connected line + scatter
+    sessions = sorted(timeline_df["CopySession"].unique())
+    # Color palette for copy sessions
+    copy_colors = ["#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6",
+                   "#1abc9c", "#e67e22", "#2980b9", "#27ae60", "#c0392b",
+                   "#8e44ad", "#16a085"]
 
-    conf_df = pd.DataFrame(conf_rows)
-    st.dataframe(conf_df, hide_index=True, use_container_width=True)
+    for i, session_num in enumerate(sessions):
+        session_data = timeline_df[timeline_df["CopySession"] == session_num].sort_values("DateTime")
+        color = copy_colors[i % len(copy_colors)]
+        copy_label = f"Copy #{int(session_num)}"
 
-    # Owners table — who has each copy
-    if not player_won.empty:
-        st.markdown("**Owners**")
-        owners = player_won.sort_values("CopyNumber")[
-            ["CopyNumber", "FranchiseLogo", "FranchiseName", "Conference", "BidAmount", "Timestamp"]
-        ].copy()
-        owners.rename(columns={
-            "CopyNumber": "Copy #",
-            "FranchiseLogo": "Franchise",
-            "FranchiseName": "Team",
-            "BidAmount": "Bid",
-        }, inplace=True)
-        owners["Copy #"] = owners["Copy #"].apply(lambda x: f"#{int(x)}" if pd.notna(x) else "")
-        owners["Bid"] = owners["Bid"].apply(lambda x: f"${x:.0f}")
+        # Line connecting events in this copy session
+        fig.add_trace(go.Scatter(
+            x=session_data["DateTime"],
+            y=session_data["BidAmount"],
+            mode="lines+markers",
+            name=copy_label,
+            line=dict(color=color, width=2),
+            marker=dict(
+                size=10,
+                color=color,
+                symbol=[
+                    "diamond" if t == "Nomination"
+                    else "star" if t == "Won"
+                    else "circle"
+                    for t in session_data["Type"]
+                ],
+            ),
+            customdata=session_data["HoverText"].values,
+            hovertemplate="%{customdata}<extra></extra>",
+        ))
 
-        owners_col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
-        st.dataframe(owners, column_config=owners_col_config, hide_index=True, use_container_width=True)
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor=COLORS["background"],
+        plot_bgcolor=COLORS["surface"],
+        height=400,
+        title=f"{player_name} — Bid Escalation by Copy",
+        xaxis_title="Time",
+        yaxis_title="Bid Amount ($)",
+        legend_title_text="Copy",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption("Diamond = Nomination, Circle = Bid, Star = Won")
 
 
-def _render_bid_history(player_name: str, df: pd.DataFrame):
-    """Show chronological bid history for a player: nomination -> bids -> won."""
+def _render_player_deep_dive(player_name: str, df: pd.DataFrame, logo_lookup: dict):
+    """Unified player view: copy availability, per-copy auction summary, bid history, and timeline."""
     player_txns = df[df["PlayerName"] == player_name].copy()
     if player_txns.empty:
-        st.info(f"No transactions found for {player_name}.")
+        st.info(f"No data found for {player_name}.")
         return
 
     player_txns = player_txns.sort_values("Timestamp", ascending=True)
@@ -529,32 +536,145 @@ def _render_bid_history(player_name: str, df: pd.DataFrame):
     first = player_txns.iloc[0]
     pos = first.get("Position", "")
     team = first.get("NFLTeam", "")
-    st.markdown(f"**{player_name}** \u2014 {pos} | {team}")
+    st.markdown(f"**{player_name}** — {pos} | {team}")
 
-    # Summary of this player's auction
-    won_row = player_txns[player_txns["TransactionType"] == "AUCTION_WON"]
-    bid_count = len(player_txns[player_txns["TransactionType"] == "AUCTION_BID"])
-    init_row = player_txns[player_txns["TransactionType"] == "AUCTION_INIT"]
+    # --- Copy Availability Summary ---
+    total_copies = len(CONFERENCE_LIST) * COPIES_PER_CONFERENCE
+    player_won = player_txns[player_txns["TransactionType"] == "AUCTION_WON"]
+    sold_count = len(player_won)
+    available_count = total_copies - sold_count
+    total_bids = len(player_txns[player_txns["TransactionType"] == "AUCTION_BID"])
+    total_sessions = player_txns["CopySession"].max() if not player_txns.empty else 0
 
-    info_cols = st.columns(4)
-    if not init_row.empty:
-        opener = init_row.iloc[0]
-        info_cols[0].metric("Opening Bid", f"${opener['BidAmount']:.0f}")
-        info_cols[1].metric("Nominated By", opener.get("FranchiseName", "Unknown"))
-    info_cols[2].metric("Total Bids", bid_count)
-    if not won_row.empty:
-        winner = won_row.iloc[0]
-        info_cols[3].metric("Won By", f"{winner.get('FranchiseName', '?')} (${winner['BidAmount']:.0f})")
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Total Copies", total_copies)
+    m2.metric("Sold", sold_count)
+    m3.metric("Available", available_count)
+    m4.metric("Copies Nominated", int(total_sessions))
+    if sold_count > 0:
+        m5.metric("Avg Price", f"${player_won['BidAmount'].mean():.0f}")
+    else:
+        m5.metric("Total Bids", total_bids)
 
-    # Full chronological table
-    history_display = player_txns[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount", "Note"]].copy()
-    history_display.rename(columns={
-        "FranchiseLogo": "Franchise",
-        "FranchiseName": "Team",
-        "BidAmount": "Bid",
-    }, inplace=True)
-    history_display["Bid"] = history_display["Bid"].apply(lambda x: f"${x:.0f}")
-    history_display["Note"] = history_display["Note"].fillna("")
+    # --- Per-Conference Availability ---
+    conf_sold = player_won.groupby("Conference").size().to_dict() if not player_won.empty else {}
+    conf_rows = []
+    for conf in CONFERENCE_LIST:
+        sold = conf_sold.get(conf, 0)
+        avail = COPIES_PER_CONFERENCE - sold
+        status = "Available" if avail > 0 else "Full"
+        conf_rows.append({
+            "Conference": conf,
+            "Teams": CONFERENCES[conf],
+            "Sold": sold,
+            "Available": avail,
+            "Status": status,
+        })
+    conf_df = pd.DataFrame(conf_rows)
+    st.dataframe(conf_df, hide_index=True, use_container_width=True)
 
-    hist_col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
-    st.dataframe(history_display, column_config=hist_col_config, hide_index=True, use_container_width=True)
+    # --- Per-Copy Auction Summary ---
+    st.markdown("**Copy Auction Summary**")
+
+    if total_sessions == 0:
+        st.info("No auction sessions found for this player.")
+    else:
+        copy_summary_rows = []
+        for session_num in range(1, int(total_sessions) + 1):
+            session = player_txns[player_txns["CopySession"] == session_num]
+            if session.empty:
+                continue
+
+            init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
+            bid_rows = session[session["TransactionType"] == "AUCTION_BID"]
+            won_rows = session[session["TransactionType"] == "AUCTION_WON"]
+
+            nominated_by = init_rows.iloc[0]["FranchiseName"] if not init_rows.empty else ""
+            opening_bid = init_rows.iloc[0]["BidAmount"] if not init_rows.empty else 0
+            num_bids = len(bid_rows)
+            max_bid = bid_rows["BidAmount"].max() if not bid_rows.empty else 0
+
+            if not won_rows.empty:
+                winner = won_rows.iloc[0]
+                won_by = winner["FranchiseName"]
+                won_logo = logo_lookup.get(won_by, "")
+                winning_price = winner["BidAmount"]
+                conference = winner.get("Conference", "")
+                status = "Sold"
+            else:
+                won_by = ""
+                won_logo = ""
+                winning_price = 0
+                conference = ""
+                status = "In Progress"
+
+            # Duration: INIT to WON (or INIT to latest transaction)
+            start_time = pd.to_datetime(session["Timestamp"].iloc[0], errors="coerce")
+            end_time = pd.to_datetime(session["Timestamp"].iloc[-1], errors="coerce")
+            if pd.notna(start_time) and pd.notna(end_time) and start_time != end_time:
+                delta = end_time - start_time
+                total_seconds = int(delta.total_seconds())
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, _ = divmod(remainder, 60)
+                duration = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+            else:
+                duration = ""
+
+            copy_summary_rows.append({
+                "Copy #": f"#{session_num}",
+                "Status": status,
+                "Nominated By": nominated_by,
+                "Opening Bid": f"${opening_bid:.0f}",
+                "# Bids": num_bids,
+                "Max Bid": f"${max_bid:.0f}" if max_bid > 0 else "",
+                "Won By Logo": won_logo,
+                "Won By": won_by,
+                "Winning Price": f"${winning_price:.0f}" if winning_price > 0 else "",
+                "Conference": conference,
+                "Duration": duration,
+            })
+
+        if copy_summary_rows:
+            summary_df = pd.DataFrame(copy_summary_rows)
+            summary_col_config = {
+                "Won By Logo": st.column_config.ImageColumn("Winner", width="small"),
+            }
+            st.dataframe(summary_df, column_config=summary_col_config,
+                          hide_index=True, use_container_width=True)
+
+    # --- Per-Copy Bid History ---
+    st.markdown("**Bid History by Copy**")
+
+    for session_num in range(1, int(total_sessions) + 1):
+        session = player_txns[player_txns["CopySession"] == session_num].copy()
+        if session.empty:
+            continue
+
+        init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
+        won_rows = session[session["TransactionType"] == "AUCTION_WON"]
+
+        # Build header
+        header_parts = [f"**Copy #{session_num}**"]
+        if not init_rows.empty:
+            header_parts.append(f"Nominated by {init_rows.iloc[0]['FranchiseName']} at ${init_rows.iloc[0]['BidAmount']:.0f}")
+        if not won_rows.empty:
+            header_parts.append(f"Won by {won_rows.iloc[0]['FranchiseName']} at ${won_rows.iloc[0]['BidAmount']:.0f}")
+        else:
+            header_parts.append("In Progress")
+
+        with st.expander(" — ".join(header_parts)):
+            hist = session[["Timestamp", "Type", "FranchiseLogo", "FranchiseName",
+                             "BidAmount", "Note"]].copy()
+            hist.rename(columns={
+                "FranchiseLogo": "Franchise",
+                "FranchiseName": "Team",
+                "BidAmount": "Bid",
+            }, inplace=True)
+            hist["Bid"] = hist["Bid"].apply(lambda x: f"${x:.0f}")
+            hist["Note"] = hist["Note"].fillna("")
+
+            hist_col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
+            st.dataframe(hist, column_config=hist_col_config, hide_index=True, use_container_width=True)
+
+    # --- Per-Copy Timeline ---
+    _render_copy_timeline(player_name, player_txns, logo_lookup)
