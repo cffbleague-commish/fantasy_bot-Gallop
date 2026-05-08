@@ -51,13 +51,26 @@ def _get_sheet_data(tab_name: str) -> list[list]:
 
 
 def _safe_float(val) -> float | None:
-    """Convert a value to float, returning None for empty/invalid."""
+    """Convert a value to float, returning None for empty/invalid.
+
+    Handles currency-formatted strings (e.g. "$1,234") from Google Sheets,
+    which returns formatted display values via get_all_values().
+    """
     if val is None or val == "":
         return None
     try:
         return float(val)
     except (ValueError, TypeError):
-        return None
+        pass
+    # Strip currency symbols and commas, then retry
+    if isinstance(val, str):
+        cleaned = val.replace("$", "").replace(",", "").strip()
+        if cleaned:
+            try:
+                return float(cleaned)
+            except (ValueError, TypeError):
+                pass
+    return None
 
 
 def _safe_int(val) -> int | None:
