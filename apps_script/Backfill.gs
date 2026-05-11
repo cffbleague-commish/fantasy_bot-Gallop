@@ -57,8 +57,13 @@ function backfillHistoricalData(startYear, endYear) {
  *
  * @param {Array} years - Array of years to process
  * @param {Boolean} logTransactions - Set to true to log all transactions to TransactionLog sheet (slower)
+ * @param {Set|null} logOnlyYears - Optional Set of years to log. When provided, only transactions
+ *   from these years are logged (requires logTransactions=true). When null, all years are logged.
  */
-function backfillHistoricalOwnership(years, logTransactions = false) {
+function backfillHistoricalOwnership(years, logTransactions = false, logOnlyYears = null) {
+  // Year-selective logging: when logOnlyYears is provided, only log transactions for those years
+  const shouldLogYear = (y) => logTransactions && (!logOnlyYears || logOnlyYears.has(y));
+
   const sheet = getPlayerCopiesSheet();
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
@@ -144,7 +149,8 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
 
   // Process each year's transactions chronologically
   years.forEach(year => {
-    Logger.log(`  Processing ${year} transactions...`);
+    const logThisYear = shouldLogYear(year);
+    Logger.log(`  Processing ${year} transactions...${logThisYear ? ' (with logging)' : ''}`);
 
     const transactions = fetchTransactions(String(year));
 
@@ -231,7 +237,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
         const copyToAssign = availableCopy || availableCopies[0];
 
         // DEBUG: Log copy assignment details for troubleshooting
-        if (logTransactions && availableCopies.length > 1) {
+        if (logThisYear && availableCopies.length > 1) {
           Logger.log(`    DEBUG AUCTION: Player ${playerId}, Franchise ${franchiseId} (${franchiseConference})`);
           Logger.log(`      lastOwnedRowNum: ${lastOwnedRowNum || 'none'}`);
           availableCopies.forEach((copy, i) => {
@@ -248,7 +254,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
           auctionsProcessed++;
 
           // Optional: Batch transaction logs in memory
-          if (logTransactions) {
+          if (logThisYear) {
             const playerName = copies[copyToAssign.rowIndex][playerNameCol];
             // MFL transaction format: "playerId|bidAmount|" (e.g., "17157|11|")
             // parts[0] = playerId, parts[1] = bidAmount
@@ -265,7 +271,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
               bidAmount: bidAmount
             });
           }
-        } else if (logTransactions) {
+        } else if (logThisYear) {
           // Player not in index - need to get name differently
           const playerName = playerNameCache[playerId] || "";
           // MFL transaction format: "playerId|bidAmount|" (e.g., "17157|11|")
@@ -320,7 +326,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
                 lastOwnedCopy[lastOwnedKey] = copy.rowNum;
 
                 // Optional: Batch transaction logs in memory
-                if (logTransactions) {
+                if (logThisYear) {
                   const playerName = copies[copy.rowIndex][playerNameCol];
 
                   // Calculate transfer eligibility:
@@ -387,7 +393,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
             });
           });
 
-          if (logTransactions && !dropped) {
+          if (logThisYear && !dropped) {
             const playerName = playerNameCache[playerId] || "";
             transactionLogs.push({
               year: year,
@@ -405,7 +411,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
 
       // Handle IR transactions (Medical Redshirt tracking)
       // Format: { activated: "playerId,", deactivated: "playerId," }
-      if (txn.type === "IR" && logTransactions) {
+      if (txn.type === "IR" && logThisYear) {
         const franchiseConference = franchiseMap[franchiseId] || "UNKNOWN";
 
         // Players moved TO IR (deactivated) = Medical Redshirt used
@@ -491,7 +497,7 @@ function backfillHistoricalOwnership(years, logTransactions = false) {
 
       // Handle TAXI transactions (Traditional Redshirt tracking)
       // Format: { promoted: "playerId,", demoted: "playerId," }
-      if (txn.type === "TAXI" && logTransactions) {
+      if (txn.type === "TAXI" && logThisYear) {
         const franchiseConference = franchiseMap[franchiseId] || "UNKNOWN";
 
         // Players moved TO Taxi (demoted) = Traditional Redshirt used
@@ -667,6 +673,7 @@ function backfillEligibilityYears(firstRookieYear, currentYear) {
   const medicalUsedCol = 7;        // MedicalRedshirtUsed
   const createdSeasonCol = 8;      // CreatedSeason
   const activeCol = 9;             // Active
+  const declaredEarlyCol = 16;     // DeclaredEarly
 
   let updated = 0;
   let reactivated = 0;
@@ -699,8 +706,10 @@ function backfillEligibilityYears(firstRookieYear, currentYear) {
     row[eligibilityYearsCol] = yearsUsed;
 
     // Determine active status based on eligibility (accounting for redshirts)
+    // Declared-early copies must stay inactive regardless of remaining eligibility
     const wasActive = row[activeCol] === true || row[activeCol] === "TRUE";
-    const shouldBeActive = yearsUsed < config.eligibility.maxYears;
+    const declaredEarly = row[declaredEarlyCol] === true || row[declaredEarlyCol] === "TRUE";
+    const shouldBeActive = !declaredEarly && yearsUsed < config.eligibility.maxYears;
 
     row[activeCol] = shouldBeActive;
 
@@ -766,6 +775,7 @@ function recalculateAllActiveStatus() {
   const activeCol = 9;
   const traditionalYearCol = 11;
   const medicalYearCol = 12;
+  const declaredEarlyCol = 16;   // DeclaredEarly
 
   let totalProcessed = 0;
   let changedToActive = 0;
@@ -804,7 +814,11 @@ function recalculateAllActiveStatus() {
     const effectiveYearsUsed = Math.max(0, yearsPassed - redshirtYears);
 
     // Should be active if effective years used < max years
-    const shouldBeActive = effectiveYearsUsed < maxYears;
+    // Declared-early copies must stay inactive regardless of remaining eligibility
+    const declaredEarly = row[declaredEarlyCol] === true ||
+                           row[declaredEarlyCol] === "TRUE" ||
+                           row[declaredEarlyCol] === "true";
+    const shouldBeActive = !declaredEarly && effectiveYearsUsed < maxYears;
 
     // Current active status - handle both boolean and string values
     const currentlyActive = row[activeCol] === true ||
@@ -1432,12 +1446,10 @@ function processCurrentYearTransactions(year) {
   }
   Logger.log(`  Replaying transactions for years: ${allYears.join(', ')}`);
 
-  // Process all years, but only log the target year's transactions
-  allYears.forEach(y => {
-    const shouldLog = (y === targetYear); // Only log current year to TransactionLog
-    Logger.log(`  Processing ${y}...${shouldLog ? ' (with logging)' : ''}`);
-    backfillHistoricalOwnership([y], shouldLog);
-  });
+  // Process all years in a single call to maintain copy continuity (lastOwnedCopy map)
+  // Only log transactions for the target year via logOnlyYears parameter
+  Logger.log(`  Processing all years in single pass (logging only ${targetYear})...`);
+  backfillHistoricalOwnership(allYears, true, new Set([targetYear]));
 
   // Step 3: Update eligibility years (accounts for any new redshirts)
   Logger.log('\n--- Step 3: Updating Eligibility ---');

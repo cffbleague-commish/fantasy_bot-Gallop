@@ -1002,10 +1002,11 @@ function processEarlyDeclarations(year) {
     const retentionPath = determineRetentionPath(nationalAwards, allConfAwards);
 
     if (decision === "RELEASE") {
-      // Mark as declared early and inactive
+      // Mark as declared early, inactive, and clear ownership
       pcSheet.getRange(rowNum, PC_COLS.declaredEarly + 1).setValue(true);
       pcSheet.getRange(rowNum, PC_COLS.declarationYear + 1).setValue(year);
       pcSheet.getRange(rowNum, PC_COLS.active + 1).setValue(false);
+      pcSheet.getRange(rowNum, PC_COLS.currentFranchiseId + 1).setValue("");
       pcSheet.getRange(rowNum, PC_COLS.lastUpdated + 1).setValue(new Date());
 
       Logger.log(`  RELEASED: ${playerName} (${copyId})`);
