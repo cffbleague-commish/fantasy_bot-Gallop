@@ -112,7 +112,7 @@ def render(year: int):
     league_year = get_league_year()
     is_live = (year == league_year)
 
-    df = load_live_auction(year)
+    df = load_live_auction()
 
     if df.empty:
         st.info(
@@ -120,6 +120,13 @@ def render(year: int):
             "Run **Start Live Auction Sync** from the Google Sheets Recruiting Analytics menu to begin importing."
         )
         return
+
+    # Filter to selected year
+    if "AuctionYear" in df.columns:
+        df = df[df["AuctionYear"] == year].copy()
+        if df.empty:
+            st.info(f"No auction data for {year}.")
+            return
 
     df = _prepare_data(df)
     logo_lookup = _build_logo_lookup()
