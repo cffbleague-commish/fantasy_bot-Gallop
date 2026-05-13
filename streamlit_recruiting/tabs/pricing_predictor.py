@@ -9,16 +9,28 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from data.sheets import load_recruiting_board, load_auction_data, load_dlf_adp, load_espn_prospects
+from data.sheets import load_recruiting_board, load_auction_data, load_dlf_adp, load_espn_prospects, get_available_years
 from models.current_model import build_pricing_model
 from models.gradient_boosting import train_gradient_boosting, predict_gb
 from models.replacement_level import calc_replacement_prices, DEFAULT_REPLACEMENT_ADP
-from models.config import POSITIONS
+from models.config import POSITIONS, get_league_year
 from components import render_kpi_row, plotly_layout_defaults, _html
 
 
-def render(year: int, position_filter: str):
+def render():
     """Render the Pricing Predictor tab."""
+    # --- Inline filters ---
+    years = get_available_years()
+    if not years:
+        st.info("No data found.")
+        return
+
+    col_y, col_p = st.columns(2)
+    league_year = get_league_year()
+    default_idx = years.index(league_year) if league_year in years else 0
+    year = col_y.selectbox("Draft Year", years, index=default_idx, key="pricing_year")
+    position_filter = col_p.selectbox("Position", ["All"] + POSITIONS, key="pricing_pos")
+
     board_df = load_recruiting_board(year)
     auction_df = load_auction_data()
     adp_df = load_dlf_adp()

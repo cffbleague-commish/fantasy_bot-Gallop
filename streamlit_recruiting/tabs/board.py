@@ -6,12 +6,24 @@ Research mode: KPI row, search, sortable table, click-to-modal player detail.
 import streamlit as st
 import pandas as pd
 
-from data.sheets import load_recruiting_board
+from data.sheets import load_recruiting_board, get_available_years
+from models.config import POSITIONS, CONFERENCES
 from components import render_kpi_row, _html
 
 
-def render(year: int, position_filter: str, conference_filter: str):
+def render():
     """Render the Board tab."""
+    # --- Inline filters ---
+    years = get_available_years()
+    if not years:
+        st.info("No data found. Check your Google Sheet connection.")
+        return
+
+    col_y, col_p, col_c = st.columns(3)
+    year = col_y.selectbox("Draft Year", years, key="board_year")
+    position_filter = col_p.selectbox("Position", ["All"] + POSITIONS, key="board_pos")
+    conference_filter = col_c.selectbox("Conference", ["All"] + sorted(CONFERENCES.keys()), key="board_conf")
+
     df = load_recruiting_board(year)
 
     if df.empty:
@@ -21,8 +33,6 @@ def render(year: int, position_filter: str, conference_filter: str):
     # Apply filters
     if position_filter != "All":
         df = df[df["Position"] == position_filter]
-    # Note: conference_filter for Board applies to college conference if the column exists
-    # The current data uses Position-based filtering; conference filtering via sidebar
 
     if df.empty:
         st.info("No players match the current filters.")

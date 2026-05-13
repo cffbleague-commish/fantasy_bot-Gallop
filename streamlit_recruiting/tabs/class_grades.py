@@ -8,7 +8,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from data.sheets import load_recruiting_grades, load_player_grades, load_franchise_lookup
+from data.sheets import load_recruiting_grades, load_player_grades, load_franchise_lookup, get_available_years
+from models.config import CONFERENCES
 from grading import compute_class_grades
 from components import (
     render_kpi_row,
@@ -21,8 +22,18 @@ from components import (
 )
 
 
-def render(year: int, conference_filter: str):
+def render():
     """Render the Class Grades tab."""
+    # --- Inline filters ---
+    years = get_available_years()
+    if not years:
+        st.info("No data found.")
+        return
+
+    col_y, col_c = st.columns(2)
+    year = col_y.selectbox("Draft Year", years, key="grades_year")
+    conference_filter = col_c.selectbox("Conference", ["All"] + sorted(CONFERENCES.keys()), key="grades_conf")
+
     grades_df = load_recruiting_grades(year)
 
     if grades_df.empty:

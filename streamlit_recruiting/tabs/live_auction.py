@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from data.sheets import load_live_auction, load_franchise_lookup
+from data.sheets import load_live_auction, load_franchise_lookup, get_available_years
 from models.config import POSITIONS, CONFERENCES, COPIES_PER_CONFERENCE, get_league_year
 from components import (
     render_kpi_row,
@@ -107,9 +107,17 @@ def _prepare_data(df: pd.DataFrame) -> pd.DataFrame:
 # Main render
 # ---------------------------------------------------------------------------
 
-def render(year: int):
+def render():
     """Render the Live Auction tab."""
+    # --- Inline year filter ---
     league_year = get_league_year()
+    years = get_available_years()
+    if not years:
+        st.info("No data found.")
+        return
+
+    default_idx = years.index(league_year) if league_year in years else 0
+    year = st.selectbox("Auction Year", years, index=default_idx, key="auction_year")
     is_live = (year == league_year)
 
     df = load_live_auction()
