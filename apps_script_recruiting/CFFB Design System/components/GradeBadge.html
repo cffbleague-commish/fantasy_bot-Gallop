@@ -1,0 +1,35 @@
+<!-- CFFB · GradeBadge
+     Letter-grade pill. A-tier uses the metallic gold gradient.
+     B = lighter green, C = gold (flat), D/F = brick red.
+     Scale variants: sm, md (default), lg. -->
+<style>
+.cffb-grade {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 4px 10px 5px;
+  color: #F5F5F5;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--md { font-size: 20px; padding: 4px 10px 5px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: #2D7A4E; color: #F5F5F5; }
+.cffb-grade--c  { background: #C9A227; color: #0A0A0A; }
+.cffb-grade--d  { background: #B84545; color: #F5F5F5; }
+.cffb-grade--f  { background: #B84545; color: #F5F5F5; }
+.cffb-grade__row { display: inline-flex; gap: 8px; align-items: center; }
+</style>
+<div class="cffb-grade__row">
+  <span class="cffb-grade cffb-grade--lg cffb-grade--a">A+</span>
+  <span class="cffb-grade cffb-grade--md cffb-grade--a">A</span>
+  <span class="cffb-grade cffb-grade--md cffb-grade--b">B+</span>
+  <span class="cffb-grade cffb-grade--md cffb-grade--b">B</span>
+  <span class="cffb-grade cffb-grade--md cffb-grade--c">C</span>
+  <span class="cffb-grade cffb-grade--md cffb-grade--d">D</span>
+  <span class="cffb-grade cffb-grade--md cffb-grade--f">F</span>
+</div>

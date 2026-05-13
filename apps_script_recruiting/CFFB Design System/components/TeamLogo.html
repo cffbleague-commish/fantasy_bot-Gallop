@@ -1,0 +1,40 @@
+<!-- CFFB · TeamLogo
+     Canonical treatment: a 250×60 ripped-pill PNG (conference badge on the
+     left, torn-paper edge, team art on the right) — matches the league
+     banner's torn motif. Each team has its own pre-rendered icon shipped
+     in assets/teams/<team-slug>.png.
+
+     Size variants: sm (125×30), md (200×48), lg (250×60).
+     Fallback (no art yet): circular chip with team primary color + abbrev.
+-->
+<style>
+.cffb-team {
+  display: inline-block;
+  height: 48px;
+  vertical-align: middle;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+.cffb-team__row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+/* Circular fallback for teams without ripped art */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  vertical-align: middle;
+}
+.cffb-team-chip--sm { width: 30px; height: 30px; font-size: 10px; }
+.cffb-team-chip--md { width: 40px; height: 40px; font-size: 13px; }
+.cffb-team-chip--lg { width: 60px; height: 60px; font-size: 18px; }
+</style>
+
+<div class="cffb-team__row">
+  <img class="cffb-team cffb-team--lg" src="../assets/teams/georgia.png"        alt="Georgia"/>
+  <img class="cffb-team cffb-team--lg" src="../assets/teams/north-carolina.png" alt="North Carolina"/>
+  <img class="cffb-team cffb-team--lg" src="../assets/teams/army.png"           alt="Army"/>
+  <img class="cffb-team cffb-team--lg" src="../assets/teams/fresno-state.png"   alt="Fresno State"/>
+</div>

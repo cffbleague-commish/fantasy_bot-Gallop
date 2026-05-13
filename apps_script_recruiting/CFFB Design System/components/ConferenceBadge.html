@@ -1,0 +1,38 @@
+<!-- CFFB · ConferenceBadge
+     Conference name on conference-specific accent color (desaturated).
+     SEC = gold (signature), B1G = slate-blue, ACC = mauve, Big12 = brick,
+     Pac = sage, AAC = violet, MW = bronze, IND = neutral. -->
+<style>
+.cffb-conf {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 2px;
+  color: #F5F5F5;
+  border: 1px solid transparent;
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: #C9A227; border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: #1C1C1C; color: #9A9A9A; border-color: #2A2A2A; }
+.cffb-conf__row { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+</style>
+<div class="cffb-conf__row">
+  <span class="cffb-conf cffb-conf--sec">SEC</span>
+  <span class="cffb-conf cffb-conf--b1g">Big Ten</span>
+  <span class="cffb-conf cffb-conf--acc">ACC</span>
+  <span class="cffb-conf cffb-conf--big12">Big 12</span>
+  <span class="cffb-conf cffb-conf--pac">Pac-12</span>
+  <span class="cffb-conf cffb-conf--aac">AAC</span>
+  <span class="cffb-conf cffb-conf--mw">Mtn West</span>
+  <span class="cffb-conf cffb-conf--ind">Indep.</span>
+</div>

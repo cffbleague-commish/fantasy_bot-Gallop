@@ -1,0 +1,30 @@
+<!-- CFFB · RankBadge
+     Numeric rank pill (#1, #12) with optional context eyebrow.
+     Top-3 ranks get the metallic gold gradient ; #4-25 flat gold,
+     #26+ neutral border treatment. -->
+<style>
+.cffb-rank {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  border-radius: 4px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 4px 10px 5px;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-rank--top { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; box-shadow: 0 0 8px rgba(201,162,39,0.25); }
+.cffb-rank--mid { background: rgba(201,162,39,0.15); color: #E8C547; border: 1px solid rgba(201,162,39,0.4); }
+.cffb-rank--low { background: #1C1C1C; color: #9A9A9A; border: 1px solid #2A2A2A; }
+.cffb-rank--lg  { font-size: 22px; padding: 5px 14px 7px; }
+.cffb-rank--md  { font-size: 16px; padding: 3px 9px 4px; }
+.cffb-rank--sm  { font-size: 12px; padding: 2px 6px 3px; }
+.cffb-rank__row { display: inline-flex; gap: 10px; align-items: center; }
+</style>
+<div class="cffb-rank__row">
+  <span class="cffb-rank cffb-rank--lg cffb-rank--top">#1</span>
+  <span class="cffb-rank cffb-rank--md cffb-rank--top">#3</span>
+  <span class="cffb-rank cffb-rank--md cffb-rank--mid">#12</span>
+  <span class="cffb-rank cffb-rank--md cffb-rank--low">#247</span>
+  <span class="cffb-rank cffb-rank--sm cffb-rank--mid">#18</span>
+</div>

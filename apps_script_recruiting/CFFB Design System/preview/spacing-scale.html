@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Spacing · 8px Scale</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .label { font-family: var(--font-mono); font-size: 11px; color: var(--fg-secondary); width: 60px; letter-spacing: 0.04em; }
+  .px { font-family: var(--font-mono); font-size: 11px; color: var(--fg-tertiary); width: 44px; }
+  .bar { background: var(--gold); height: 14px; border-radius: 1px; }
+</style></head>
+<body>
+  <div class="stack">
+    <div class="row"><div class="label">s-half</div><div class="px">4px</div><div class="bar" style="width:4px"></div></div>
+    <div class="row"><div class="label">s-1</div><div class="px">8px</div><div class="bar" style="width:8px"></div></div>
+    <div class="row"><div class="label">s-2</div><div class="px">16px</div><div class="bar" style="width:16px"></div></div>
+    <div class="row"><div class="label">s-3</div><div class="px">24px</div><div class="bar" style="width:24px"></div></div>
+    <div class="row"><div class="label">s-4</div><div class="px">32px</div><div class="bar" style="width:32px"></div></div>
+    <div class="row"><div class="label">s-5</div><div class="px">40px</div><div class="bar" style="width:40px"></div></div>
+    <div class="row"><div class="label">s-6</div><div class="px">48px</div><div class="bar" style="width:48px"></div></div>
+    <div class="row"><div class="label">s-7</div><div class="px">64px</div><div class="bar" style="width:64px"></div></div>
+    <div class="row"><div class="label">s-8</div><div class="px">80px</div><div class="bar" style="width:80px"></div></div>
+  </div>
+</body></html>

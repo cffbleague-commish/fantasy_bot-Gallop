@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Colors · Surfaces</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .sw { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .chip { height: 64px; }
+  .meta { padding: 8px 10px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-secondary); background: var(--bg-surface); display: flex; flex-direction: column; gap: 2px; }
+  .meta .name { font-family: var(--font-body); font-weight: 600; font-size: 11px; color: var(--fg-primary); }
+</style></head>
+<body>
+  <div class="grid">
+    <div class="sw"><div class="chip" style="background:#0A0A0A"></div><div class="meta"><div class="name">Canvas</div>#0A0A0A</div></div>
+    <div class="sw"><div class="chip" style="background:#141414"></div><div class="meta"><div class="name">Surface</div>#141414</div></div>
+    <div class="sw"><div class="chip" style="background:#1C1C1C"></div><div class="meta"><div class="name">Elevated</div>#1C1C1C</div></div>
+    <div class="sw"><div class="chip" style="background:#1F1F1F"></div><div class="meta"><div class="name">Row Hover</div>#1F1F1F</div></div>
+    <div class="sw"><div class="chip" style="background:#2A2A2A"></div><div class="meta"><div class="name">Border</div>#2A2A2A</div></div>
+    <div class="sw"><div class="chip" style="background:#3A3A3A"></div><div class="meta"><div class="name">Border+</div>#3A3A3A</div></div>
+  </div>
+</body></html>

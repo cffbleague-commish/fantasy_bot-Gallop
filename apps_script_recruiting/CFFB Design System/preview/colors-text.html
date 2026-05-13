@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Colors · Text</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; align-items: center; gap: 16px; }
+  .sw { width: 56px; height: 56px; border-radius: 6px; border: 1px solid var(--border); flex-shrink: 0; }
+  .name { font-family: var(--font-body); font-weight: 600; font-size: 14px; }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--fg-tertiary); letter-spacing: 0.04em; }
+  .use { font-size: 12px; color: var(--fg-secondary); margin-left: auto; max-width: 240px; text-align: right; }
+</style></head>
+<body>
+  <div class="stack">
+    <div class="row"><div class="sw" style="background:#F5F5F5"></div>
+      <div><div class="name" style="color:#F5F5F5">Primary</div><div class="hex">#F5F5F5 · warm white</div></div>
+      <div class="use">Headings · body · KPI values</div></div>
+    <div class="row"><div class="sw" style="background:#9A9A9A"></div>
+      <div><div class="name" style="color:#9A9A9A">Secondary</div><div class="hex">#9A9A9A</div></div>
+      <div class="use">Labels · metadata · table sub-rows</div></div>
+    <div class="row"><div class="sw" style="background:#5A5A5A"></div>
+      <div><div class="name" style="color:#5A5A5A">Tertiary</div><div class="hex">#5A5A5A</div></div>
+      <div class="use">Captions · disabled · empty states</div></div>
+  </div>
+</body></html>

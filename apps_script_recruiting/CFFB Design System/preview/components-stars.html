@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>StarRating</title>
+<link rel="stylesheet" href="_base.css">
+<style>body { padding: 28px; }</style>
+</head><body>
+<!-- CFFB · StarRating
+     1–5 stars with half-star support and tier coloring.
+     Tier coloring follows the rating: 5★ gold, 4★ deep blue,
+     3★ light blue, 2★ neutral gray. Empty stars are tertiary gray. -->
+<style>
+.cffb-stars {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.cffb-stars__icon {
+  width: 22px; height: 22px;
+  display: inline-block;
+  position: relative;
+  --fill: 100%;
+  --color: #5A5A5A;
+}
+.cffb-stars__icon::before,
+.cffb-stars__icon::after {
+  content: "★";
+  position: absolute; inset: 0;
+  font-size: 22px; line-height: 1;
+  color: #2A2A2A;
+}
+.cffb-stars__icon::after {
+  color: var(--color);
+  width: var(--fill);
+  overflow: hidden;
+  -webkit-text-fill-color: var(--color);
+}
+.cffb-stars__num {
+  font-size: 13px;
+  font-weight: 600;
+  color: #9A9A9A;
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+/* tier color modifiers — applied to whole row */
+.cffb-stars--t5 .cffb-stars__icon { --color: #C9A227; }
+.cffb-stars--t4 .cffb-stars__icon { --color: #3B82C4; }
+.cffb-stars--t3 .cffb-stars__icon { --color: #7BA4C9; }
+.cffb-stars--t2 .cffb-stars__icon { --color: #6A6A6A; }
+.cffb-stars--t1 .cffb-stars__icon { --color: #4A4A4A; }
+.cffb-stars__row { display: flex; flex-direction: column; gap: 10px; }
+</style>
+<div class="cffb-stars__row">
+  <div class="cffb-stars cffb-stars--t5">
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__num">5.0</span>
+  </div>
+  <div class="cffb-stars cffb-stars--t4">
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:50%"></span>
+    <span class="cffb-stars__num">4.5</span>
+  </div>
+  <div class="cffb-stars cffb-stars--t3">
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:0%"></span>
+    <span class="cffb-stars__icon" style="--fill:0%"></span>
+    <span class="cffb-stars__num">3.0</span>
+  </div>
+  <div class="cffb-stars cffb-stars--t2">
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:100%"></span>
+    <span class="cffb-stars__icon" style="--fill:0%"></span>
+    <span class="cffb-stars__icon" style="--fill:0%"></span>
+    <span class="cffb-stars__icon" style="--fill:0%"></span>
+    <span class="cffb-stars__num">2.0</span>
+  </div>
+</div>
+
+</body></html>

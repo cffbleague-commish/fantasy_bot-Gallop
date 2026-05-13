@@ -1,0 +1,72 @@
+<!-- CFFB · KpiTile
+     Label (Inter uppercase muted) + value (Saira Condensed large).
+     Hero variant: value uses the metallic gold gradient. Reserve hero for
+     the primary KPI on each page only (max 1–2 per page).
+     Variants in this file: standard, hero (gold-gradient), with-delta -->
+<style>
+.cffb-kpi {
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  padding: 16px 20px 18px;
+  min-width: 160px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cffb-kpi__label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9A9A9A;
+}
+.cffb-kpi__value {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: #F5F5F5;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+          color: transparent;
+}
+.cffb-kpi__sub {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: #9A9A9A;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: #2D7A4E; }
+.cffb-kpi__sub--neg { color: #B84545; }
+.cffb-kpi__row { display: flex; gap: 12px; flex-wrap: wrap; }
+</style>
+<div class="cffb-kpi__row">
+  <div class="cffb-kpi">
+    <div class="cffb-kpi__label">Class Rank</div>
+    <div class="cffb-kpi__value cffb-kpi__value--hero">#1</div>
+    <div class="cffb-kpi__sub">of 12 · league</div>
+  </div>
+  <div class="cffb-kpi">
+    <div class="cffb-kpi__label">Total Spend</div>
+    <div class="cffb-kpi__value">$487</div>
+    <div class="cffb-kpi__sub cffb-kpi__sub--pos">+$72 value</div>
+  </div>
+  <div class="cffb-kpi">
+    <div class="cffb-kpi__label">5★ Commits</div>
+    <div class="cffb-kpi__value">3</div>
+    <div class="cffb-kpi__sub">League avg 1.4</div>
+  </div>
+  <div class="cffb-kpi">
+    <div class="cffb-kpi__label">Cap Remaining</div>
+    <div class="cffb-kpi__value">$213</div>
+    <div class="cffb-kpi__sub cffb-kpi__sub--neg">−$14 vs plan</div>
+  </div>
+</div>

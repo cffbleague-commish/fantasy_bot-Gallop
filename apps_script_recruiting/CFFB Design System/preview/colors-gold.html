@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Colors · Championship Gold</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .strip {
+    height: 80px; border-radius: 8px;
+    background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+    display: flex; align-items: center; padding: 0 20px;
+    font-family: var(--font-display);
+    font-weight: 700; font-size: 32px;
+    color: #0A0A0A;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    box-shadow: 0 0 24px rgba(201,162,39,0.25);
+  }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .sw { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .chip { height: 56px; }
+  .meta { padding: 8px 10px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-secondary); background: var(--bg-surface); }
+  .meta .name { font-family: var(--font-body); font-weight: 600; font-size: 11px; color: var(--fg-primary); margin-bottom: 2px; }
+  .label { font-family: var(--font-mono); font-size: 9px; color: var(--fg-tertiary); margin-top: 10px; letter-spacing: 0.06em; text-align: center; }
+</style></head>
+<body>
+  <div class="strip">Championship Gold</div>
+  <div class="label">linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%) — sparingly, max 1–2 per page</div>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#E8C547"></div><div class="meta"><div class="name">Gold Light</div>#E8C547</div></div>
+    <div class="sw"><div class="chip" style="background:#C9A227"></div><div class="meta"><div class="name">Gold (flat)</div>#C9A227</div></div>
+    <div class="sw"><div class="chip" style="background:#8B6F1F"></div><div class="meta"><div class="name">Gold Dark</div>#8B6F1F</div></div>
+  </div>
+</body></html>

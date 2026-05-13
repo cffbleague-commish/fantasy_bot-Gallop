@@ -1,0 +1,12 @@
+/* Shared base for design-system preview cards.
+   Cards render in the Design System tab at ~700px wide. */
+@import url('../colors_and_type.css');
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-canvas);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+}
+body { padding: 24px; box-sizing: border-box; }
+* { box-sizing: border-box; }

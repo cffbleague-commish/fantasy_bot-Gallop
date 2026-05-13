@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Type · Tabular Nums</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 28px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .col { display: flex; gap: 24px; align-items: baseline; font-variant-numeric: tabular-nums; }
+  .meta { font-family: var(--font-mono); font-size: 10px; color: var(--fg-tertiary); letter-spacing: 0.04em; min-width: 140px; }
+  .v-hero { font-family: var(--font-display); font-weight: 700; font-size: 48px; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .v-1    { font-family: var(--font-display); font-weight: 700; font-size: 28px; font-variant-numeric: tabular-nums; }
+  .v-2    { font-family: var(--font-body);    font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; color: var(--fg-secondary); }
+  .pos { color: #2D7A4E; }
+  .neg { color: #B84545; }
+  .gold { background: var(--gold-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+  table { border-collapse: collapse; }
+  th, td { font-family: var(--font-body); padding: 6px 14px 6px 0; text-align: right; font-variant-numeric: tabular-nums; }
+  th { font-weight: 600; font-size: 10px; letter-spacing: 0.12em; color: var(--fg-secondary); text-transform: uppercase; }
+  td { font-size: 14px; color: var(--fg-primary); }
+  td.label { text-align: left; color: var(--fg-secondary); font-size: 13px; }
+</style></head>
+<body>
+  <div class="stack">
+    <div class="col"><div class="meta">Hero KPI · 48</div><div class="v-hero gold">$487</div><div class="v-1 pos">+$72</div></div>
+    <div class="col"><div class="meta">KPI · 28</div><div class="v-1">$112</div><div class="v-2 neg">−$14</div><div class="v-2 pos">+$6</div></div>
+    <table>
+      <tr><th>Player</th><th>Bid</th><th>Proj</th><th>Δ</th></tr>
+      <tr><td class="label">Arch Manning</td><td>$112</td><td>$126</td><td class="pos">−14</td></tr>
+      <tr><td class="label">J. Smith</td>      <td>$94</td> <td>$86</td> <td class="neg">+8</td></tr>
+      <tr><td class="label">J. Love</td>       <td>$48</td> <td>$42</td> <td class="neg">+6</td></tr>
+    </table>
+  </div>
+</body></html>

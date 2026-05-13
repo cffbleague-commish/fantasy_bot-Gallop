@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Type · Display</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 28px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .spec { display: flex; align-items: baseline; gap: 16px; }
+  .meta {
+    font-family: var(--font-mono); font-size: 10px; color: var(--fg-tertiary);
+    letter-spacing: 0.04em; white-space: nowrap; min-width: 150px;
+  }
+  .d-hero { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; }
+  .d-1    { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1.05; text-transform: uppercase; }
+  .d-2    { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1;  text-transform: uppercase; }
+  .d-3    { font-family: var(--font-display); font-weight: 600; font-size: 20px; line-height: 1.15; text-transform: uppercase; color: var(--fg-secondary); }
+</style></head>
+<body>
+  <div class="stack">
+    <div class="spec"><div class="meta">Hero · Saira 700 · 56</div><div class="d-hero">CFFB Live</div></div>
+    <div class="spec"><div class="meta">Display 1 · Saira 700 · 40</div><div class="d-1">On The Clock</div></div>
+    <div class="spec"><div class="meta">Display 2 · Saira 700 · 28</div><div class="d-2">Arch Manning · QB</div></div>
+    <div class="spec"><div class="meta">Display 3 · Saira 600 · 20</div><div class="d-3">Position Rank</div></div>
+  </div>
+</body></html>

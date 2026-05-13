@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>LiveIndicator.html</title>
+<link rel="stylesheet" href="_base.css">
+<style>body { padding: 24px 32px; }</style>
+</head><body>
+<!-- CFFB · LiveIndicator
+     Pulsing green dot inside a thin metallic-gold rotating ring + LIVE wordmark.
+     Drop into a Streamlit app via st.markdown(..., unsafe_allow_html=True).
+     Requires the global token CSS (colors_and_type.css) to be injected, OR
+     swap the var(...) values for the hex literals listed in the spec. -->
+<style>
+.cffb-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #F5F5F5;
+}
+.cffb-live__ring {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, #E8C547, #C9A227, #8B6F1F, #C9A227, #E8C547);
+  padding: 1.5px;
+  display: flex; align-items: center; justify-content: center;
+  animation: cffb-live-ring-spin 4s linear infinite;
+}
+.cffb-live__inner {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: #0A0A0A;
+  display: flex; align-items: center; justify-content: center;
+  /* Counter-rotate so the dot doesn't spin */
+  animation: cffb-live-ring-spin 4s linear infinite reverse;
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #2D7A4E;
+  box-shadow: 0 0 8px rgba(45,122,78,0.85);
+  animation: cffb-live-dot-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-ring-spin { to { transform: rotate(360deg); } }
+@keyframes cffb-live-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.6); opacity: 0.45; }
+}
+</style>
+<div class="cffb-live">
+  <div class="cffb-live__ring"><div class="cffb-live__inner"><div class="cffb-live__dot"></div></div></div>
+  <span>LIVE · ROUND 4</span>
+</div>
+
+</body></html>

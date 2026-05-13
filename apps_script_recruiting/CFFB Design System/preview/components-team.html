@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>TeamLogo</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 20px; }
+  .section { display: flex; flex-direction: column; gap: 10px; }
+  .section + .section { margin-top: 16px; }
+  .label {
+    font-family: var(--font-body); font-weight: 600; font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary);
+  }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .team-lg img { height: 60px; display: block; }
+  .team-md img { height: 44px; display: block; }
+  .team-sm img { height: 28px; display: block; }
+  .chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700; text-transform: uppercase;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    width: 44px; height: 44px; font-size: 13px;
+  }
+  .note {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-tertiary); letter-spacing: 0.04em;
+    margin-top: 4px;
+  }
+</style></head>
+<body>
+
+  <div class="section">
+    <div class="label">Canonical · Ripped pill · 250×60</div>
+    <div class="row">
+      <span class="team-lg"><img src="../assets/teams/georgia.png" alt="Georgia"/></span>
+      <span class="team-lg"><img src="../assets/teams/north-carolina.png" alt="UNC"/></span>
+      <span class="team-lg"><img src="../assets/teams/army.png" alt="Army"/></span>
+      <span class="team-lg"><img src="../assets/teams/fresno-state.png" alt="Fresno State"/></span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">Inline · md (44px) &amp; sm (28px)</div>
+    <div class="row">
+      <span class="team-md"><img src="../assets/teams/georgia.png"/></span>
+      <span class="team-md"><img src="../assets/teams/north-carolina.png"/></span>
+      <span class="team-sm"><img src="../assets/teams/army.png"/></span>
+      <span class="team-sm"><img src="../assets/teams/fresno-state.png"/></span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">Fallback · circular chip (teams without ripped art)</div>
+    <div class="row">
+      <span class="chip" style="background:#BF5700; color:#fff;">TEX</span>
+      <span class="chip" style="background:#BB0000; color:#fff;">OSU</span>
+      <span class="chip" style="background:#00274C; color:#FFCB05;">MICH</span>
+      <span class="chip" style="background:#C8102E; color:#fff;">BAMA</span>
+      <span class="chip" style="background:#154733; color:#FEE123;">ORE</span>
+    </div>
+    <div class="note">Use the ripped pill whenever the team's icon exists in <code>assets/teams/</code> · circular chip is a fallback only.</div>
+  </div>
+
+</body></html>

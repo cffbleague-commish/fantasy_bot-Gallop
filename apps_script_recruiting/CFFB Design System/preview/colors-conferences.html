@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Colors · Conferences</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .conf {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .conf__logo {
+    height: 58px;
+    display: flex; align-items: center; justify-content: center;
+    background: #F5F5F5;
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+  .conf__logo img { max-height: 100%; max-width: 100%; object-fit: contain; display: block; }
+  .conf__name {
+    font-family: var(--font-body); font-weight: 600;
+    font-size: 13px; color: var(--fg-primary);
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .conf__name span:last-child {
+    font-family: var(--font-mono); font-size: 9.5px;
+    color: var(--fg-tertiary); letter-spacing: 0.04em;
+  }
+  .conf__swatches { display: flex; gap: 4px; }
+  .conf__sw {
+    flex: 1; height: 26px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 9.5px;
+    font-weight: 500; letter-spacing: 0.04em;
+  }
+</style></head>
+<body>
+  <div class="grid">
+
+    <div class="conf">
+      <div class="conf__logo"><img src="../assets/conferences/sec.png" alt="SEC"/></div>
+      <div class="conf__name"><span>SEC</span><span>--conf-sec</span></div>
+      <div class="conf__swatches">
+        <div class="conf__sw" style="background:#1A3668; color:#fff">#1A3668</div>
+        <div class="conf__sw" style="background:#FFC72A; color:#1A3668">#FFC72A</div>
+      </div>
+    </div>
+
+    <div class="conf">
+      <div class="conf__logo"><img src="../assets/conferences/b1g.png" alt="Big Ten"/></div>
+      <div class="conf__name"><span>Big Ten</span><span>--conf-b1g</span></div>
+      <div class="conf__swatches">
+        <div class="conf__sw" style="background:#0088CE; color:#fff">#0088CE</div>
+        <div class="conf__sw" style="background:#000000; color:#fff; border:1px solid #2A2A2A">#000000</div>
+      </div>
+    </div>
+
+    <div class="conf">
+      <div class="conf__logo"><img src="../assets/conferences/acc.png" alt="ACC"/></div>
+      <div class="conf__name"><span>ACC</span><span>--conf-acc</span></div>
+      <div class="conf__swatches">
+        <div class="conf__sw" style="background:#013CA6; color:#fff">#013CA6</div>
+        <div class="conf__sw" style="background:#A8A8A8; color:#1A1A1A">#A8A8A8</div>
+      </div>
+    </div>
+
+    <div class="conf">
+      <div class="conf__logo"><img src="../assets/conferences/big12.png" alt="Big 12"/></div>
+      <div class="conf__name"><span>Big 12</span><span>--conf-big12</span></div>
+      <div class="conf__swatches">
+        <div class="conf__sw" style="background:#E81E2C; color:#fff">#E81E2C</div>
+        <div class="conf__sw" style="background:#1A1A1A; color:#fff; border:1px solid #2A2A2A">#1A1A1A</div>
+      </div>
+    </div>
+
+    <div class="conf">
+      <div class="conf__logo"><img src="../assets/conferences/pac12.png" alt="Pac-12"/></div>
+      <div class="conf__name"><span>Pac-12</span><span>--conf-pac</span></div>
+      <div class="conf__swatches">
+        <div class="conf__sw" style="background:#003F87; color:#fff">#003F87</div>
+        <div class="conf__sw" style="background:#7BA4C9; color:#0A0A0A">#7BA4C9</div>
+      </div>
+    </div>
+
+    <div class="conf">
+      <div class="conf__logo"><img src="../assets/conferences/aac.png" alt="AAC"/></div>
+      <div class="conf__name"><span>AAC</span><span>--conf-aac</span></div>
+      <div class="conf__swatches">
+        <div class="conf__sw" style="background:#002855; color:#fff">#002855</div>
+        <div class="conf__sw" style="background:#D52B1E; color:#fff">#D52B1E</div>
+      </div>
+    </div>
+
+  </div>
+</body></html>

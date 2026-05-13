@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Brand · Marks</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+
+  body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .note {
+    font-family: var(--font-body); font-size: 11px; line-height: 1.5;
+    color: var(--fg-secondary);
+    padding: 12px 14px;
+    background: rgba(201,162,39,0.06);
+    border-left: 2px solid var(--gold);
+    border-radius: 4px;
+  }
+  .note strong { color: var(--fg-primary); font-weight: 600; }
+  .header {
+    font-family: var(--font-body); font-weight: 600; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--fg-secondary);
+  }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  .mark {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 18px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    min-height: 168px;
+    justify-content: center;
+    position: relative;
+  }
+  .mark__label {
+    position: absolute; bottom: 8px; left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--fg-tertiary); letter-spacing: 0.04em;
+  }
+
+  /* ---- Mark A: Stacked CFFB + rule + tagline ---- */
+  .ma__cffb {
+    font-family: 'Anton', sans-serif;
+    font-size: 64px; line-height: 0.85;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #FFFFFF 0%, #E8C547 60%, #C9A227 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ma__rule {
+    width: 56px; height: 2px;
+    background: linear-gradient(90deg, transparent, #C9A227, transparent);
+  }
+  .ma__tag {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 9px;
+    letter-spacing: 0.32em; text-transform: uppercase;
+    color: #C9A227;
+  }
+
+  /* ---- Mark B: Wide chrome wordmark only ---- */
+  .mb__cffb {
+    font-family: 'Anton', sans-serif;
+    font-size: 56px; line-height: 1;
+    letter-spacing: -0.025em;
+    background: linear-gradient(180deg, #F4DA7A 0%, #C9A227 50%, #8B6F1F 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,0.04));
+  }
+  .mb__sub {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 0.3em; text-transform: uppercase;
+    color: #9A9A9A;
+    margin-top: -4px;
+  }
+
+  /* ---- Mark C: Gold containment block (broadcast-graphic) ---- */
+  .mc__box {
+    background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+    padding: 12px 18px;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 18px rgba(201,162,39,0.25);
+  }
+  .mc__box span {
+    font-family: 'Anton', sans-serif;
+    font-size: 48px; line-height: 1;
+    letter-spacing: -0.02em;
+    color: #0A0A0A;
+  }
+  .mc__caption {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 9px;
+    letter-spacing: 0.32em; text-transform: uppercase;
+    color: #C9A227;
+  }
+
+  /* ---- Lockups (horizontal) ---- */
+  .lock {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    display: flex; align-items: center; gap: 14px;
+    position: relative;
+  }
+  .lock__rule { width: 1px; height: 44px; background: #2A2A2A; }
+  .lock__cffb {
+    font-family: 'Anton', sans-serif;
+    font-size: 44px; line-height: 1;
+    letter-spacing: -0.025em;
+    background: linear-gradient(180deg, #F4DA7A 0%, #C9A227 60%, #8B6F1F 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lock__stack { display: flex; flex-direction: column; gap: 3px; }
+  .lock__l1 {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700; font-size: 18px; line-height: 1;
+    letter-spacing: -0.005em; text-transform: uppercase;
+    color: #F5F5F5;
+  }
+  .lock__l2 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 9px;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: #C9A227;
+  }
+  .lock__label {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-tertiary); letter-spacing: 0.04em;
+  }
+</style></head>
+<body>
+
+  <div class="note">
+    Hand-drawn SVG illustrations of footballs / helmets / trophies <strong>don't read as professional</strong>
+    without a real illustrator. The brand's strongest assets are already typographic — the canonical banner
+    is type-driven. Here are three type-only marks plus two horizontal lockups. <strong>For an actual
+    illustrated symbol, commission an illustrator</strong> rather than generating SVG.
+  </div>
+
+  <div class="header">Stacked marks · type-driven</div>
+  <div class="row">
+
+    <div class="mark">
+      <div class="ma__cffb">CFFB</div>
+      <div class="ma__rule"></div>
+      <div class="ma__tag">College Fantasy Football</div>
+      <div class="mark__label">A · stacked + rule</div>
+    </div>
+
+    <div class="mark">
+      <div class="mb__cffb">CFFB</div>
+      <div class="mb__sub">Est. 2021</div>
+      <div class="mark__label">B · gold-fill chrome</div>
+    </div>
+
+    <div class="mark">
+      <div class="mc__box"><span>CFFB</span></div>
+      <div class="mc__caption">College Fantasy Football</div>
+      <div class="mark__label">C · gold block</div>
+    </div>
+
+  </div>
+
+  <div class="header">Horizontal lockups</div>
+
+  <div class="lock">
+    <div class="lock__cffb">CFFB</div>
+    <div class="lock__rule"></div>
+    <div class="lock__stack">
+      <div class="lock__l1">College Fantasy</div>
+      <div class="lock__l2">Football · Est. 2021</div>
+    </div>
+    <div class="lock__label">D · lockup with hairline</div>
+  </div>
+
+  <div class="lock">
+    <div class="mc__box" style="padding: 8px 12px;"><span style="font-size:28px;">CFFB</span></div>
+    <div class="lock__stack">
+      <div class="lock__l1">College Fantasy Football</div>
+      <div class="lock__l2">Class of '26 · Season Five</div>
+    </div>
+    <div class="lock__label">E · block + wordmark</div>
+  </div>
+
+</body></html>

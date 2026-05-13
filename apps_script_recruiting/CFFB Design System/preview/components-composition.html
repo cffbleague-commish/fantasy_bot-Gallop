@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>CommitCompositionBar.html</title>
+<link rel="stylesheet" href="_base.css">
+<style>body { padding: 24px; }</style>
+</head><body>
+<!-- CFFB · CommitCompositionBar
+     Horizontal stacked bar broken out by star tier. Each segment is
+     colored by tier and labeled with the count. Total is shown at right.
+     Use to summarize a class composition at a glance. -->
+<style>
+.cffb-cc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-cc__header {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.cffb-cc__label {
+  font-weight: 600; font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: #9A9A9A;
+}
+.cffb-cc__total {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 20px; color: #F5F5F5;
+}
+.cffb-cc__bar {
+  display: flex; height: 16px; width: 100%;
+  border-radius: 4px; overflow: hidden;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+}
+.cffb-cc__seg {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #0A0A0A;
+  border-right: 1px solid rgba(0,0,0,0.35);
+  min-width: 0;
+}
+.cffb-cc__seg:last-child { border-right: 0; }
+.cffb-cc__seg--5 { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); }
+.cffb-cc__seg--4 { background: #3B82C4; color: #F5F5F5; }
+.cffb-cc__seg--3 { background: #7BA4C9; color: #0A0A0A; }
+.cffb-cc__seg--2 { background: #6A6A6A; color: #F5F5F5; }
+.cffb-cc__legend {
+  display: flex; gap: 16px; font-size: 11px; color: #9A9A9A;
+}
+.cffb-cc__legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.cffb-cc__dot { width: 8px; height: 8px; border-radius: 2px; }
+</style>
+<div class="cffb-cc">
+  <div class="cffb-cc__header">
+    <span class="cffb-cc__label">Class Composition</span>
+    <span class="cffb-cc__total">22 commits</span>
+  </div>
+  <div class="cffb-cc__bar">
+    <div class="cffb-cc__seg cffb-cc__seg--5" style="flex: 3">3</div>
+    <div class="cffb-cc__seg cffb-cc__seg--4" style="flex: 7">7</div>
+    <div class="cffb-cc__seg cffb-cc__seg--3" style="flex: 8">8</div>
+    <div class="cffb-cc__seg cffb-cc__seg--2" style="flex: 4">4</div>
+  </div>
+  <div class="cffb-cc__legend">
+    <span class="cffb-cc__legend-item"><span class="cffb-cc__dot" style="background:#C9A227"></span>5★ · 3</span>
+    <span class="cffb-cc__legend-item"><span class="cffb-cc__dot" style="background:#3B82C4"></span>4★ · 7</span>
+    <span class="cffb-cc__legend-item"><span class="cffb-cc__dot" style="background:#7BA4C9"></span>3★ · 8</span>
+    <span class="cffb-cc__legend-item"><span class="cffb-cc__dot" style="background:#6A6A6A"></span>2★ · 4</span>
+  </div>
+</div>
+
+</body></html>

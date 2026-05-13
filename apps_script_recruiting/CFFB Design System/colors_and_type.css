@@ -1,0 +1,244 @@
+/* ============================================================
+   CFFB Design System — Colors & Type
+   Foundations for the College Fantasy Football League app.
+   Streamlit (Python) + custom HTML injection.
+
+   Aesthetic: CFP-inspired broadcast graphics. Black + warm gold.
+   ============================================================ */
+
+/* --- Fonts ------------------------------------------------- */
+/* Display: Saira Condensed 600/700  — H1/H2, KPI values, hero names.
+            Wide condensed geometric sans, adjacent to CFP "Video".
+   Body:    Inter 400/500/600          — body, tables, labels, buttons.
+   All numerics use font-variant-numeric: tabular-nums. */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* === Surfaces ============================================ */
+  --bg-canvas:         #0A0A0A;    /* True matte black */
+  --bg-surface:        #141414;    /* Cards */
+  --bg-surface-elev:   #1C1C1C;    /* KPI tiles, popovers */
+  --bg-surface-hover:  #1F1F1F;    /* Row hover */
+  --border:            #2A2A2A;
+  --border-strong:     #3A3A3A;
+
+  /* === Text ================================================ */
+  --fg-primary:        #F5F5F5;    /* Warm white */
+  --fg-secondary:      #9A9A9A;
+  --fg-tertiary:       #5A5A5A;
+
+  /* === Championship Gold system ============================ */
+  --gold:              #C9A227;    /* Flat brassy */
+  --gold-light:        #E8C547;
+  --gold-dark:         #8B6F1F;
+  --gold-gradient:     linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  /* Use the gradient SPARINGLY — max 1–2 hero values per page. */
+
+  /* === Star tiers ========================================== */
+  --star-5: var(--gold);            /* Championship Gold */
+  --star-4: #3B82C4;                /* Deep blue */
+  --star-3: #7BA4C9;                /* Light blue */
+  --star-2: #6A6A6A;                /* Neutral */
+  --star-1: #4A4A4A;
+
+  /* === Grade scale (desaturated to harmonize w/ gold) ====== */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: var(--gold);
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* === Value deltas ======================================== */
+  --delta-pos: #2D7A4E;
+  --delta-neg: #B84545;
+  --delta-flat: var(--fg-tertiary);
+
+  /* === Live indicator ====================================== */
+  --live: #2D7A4E;   /* pulsing green dot, with gold ring */
+
+  /* === Conferences (sampled from official marks) =========== */
+  --conf-sec:    #1A3668;   /* navy · with --conf-sec-gold #FFC72A accent */
+  --conf-sec-gold: #FFC72A;
+  --conf-b1g:    #0088CE;
+  --conf-acc:    #013CA6;
+  --conf-big12:  #E81E2C;
+  --conf-pac:    #003F87;
+  --conf-aac:    #002855;
+  --conf-aac-red: #D52B1E;
+
+  /* === Type — families ===================================== */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* === Type — scale (px) =================================== */
+  /* Display (Saira Condensed) */
+  --ds-hero: 64px;   /* Page hero / huge KPI value */
+  --ds-1:    48px;   /* Section header / large KPI */
+  --ds-2:    32px;   /* KPI value / player name (expanded) */
+  --ds-3:    24px;   /* Player name (compact) / sub-header */
+  --ds-4:    18px;   /* Small display */
+
+  /* Body (Inter) */
+  --tx-lg:   16px;
+  --tx-md:   14px;   /* Default UI */
+  --tx-sm:   13px;   /* Tables */
+  --tx-xs:   12px;   /* Labels */
+  --tx-2xs:  11px;   /* Eyebrows */
+
+  /* === Weights ============================================= */
+  --w-400: 400;
+  --w-500: 500;
+  --w-600: 600;
+  --w-700: 700;
+
+  /* === Spacing (8px base) ================================== */
+  --s-1:   8px;
+  --s-2:  16px;
+  --s-3:  24px;
+  --s-4:  32px;
+  --s-5:  40px;
+  --s-6:  48px;
+  --s-7:  64px;
+  --s-8:  80px;
+  --s-half: 4px;   /* Reserved for tight inline gaps only */
+
+  /* === Radii =============================================== */
+  --r-1: 2px;     /* chips, tag */
+  --r-2: 4px;     /* buttons, inputs */
+  --r-3: 8px;     /* cards */
+  --r-4: 12px;    /* sheets */
+  --r-pill: 999px;
+
+  /* === Shadows ============================================= */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* === Motion ============================================== */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
+
+  /* === Layout ============================================== */
+  --container-max: 1280px;
+}
+
+/* ============================================================
+   Element styles — drop these into the global Streamlit
+   <style> injection block.
+   ============================================================ */
+
+body {
+  background: var(--bg-canvas);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: var(--tx-md);
+  font-weight: var(--w-400);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num * {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* --- Display (Saira Condensed) ----------------------------- */
+.cffb-display-hero {
+  font-family: var(--font-display);
+  font-weight: var(--w-700);
+  font-size: var(--ds-hero);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-display-1 {
+  font-family: var(--font-display);
+  font-weight: var(--w-700);
+  font-size: var(--ds-1);
+  line-height: 1.05;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-display-2 {
+  font-family: var(--font-display);
+  font-weight: var(--w-700);
+  font-size: var(--ds-2);
+  line-height: 1.1;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-display-3 {
+  font-family: var(--font-display);
+  font-weight: var(--w-600);
+  font-size: var(--ds-3);
+  line-height: 1.15;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Body (Inter) ------------------------------------------ */
+.cffb-h1 {
+  font-family: var(--font-body);
+  font-weight: var(--w-700);
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.cffb-h2 {
+  font-family: var(--font-body);
+  font-weight: var(--w-600);
+  font-size: 20px;
+  line-height: 1.25;
+}
+.cffb-h3 {
+  font-family: var(--font-body);
+  font-weight: var(--w-600);
+  font-size: 16px;
+  line-height: 1.3;
+}
+.cffb-body {
+  font-size: var(--tx-md);
+  color: var(--fg-primary);
+}
+.cffb-body-sm {
+  font-size: var(--tx-sm);
+  color: var(--fg-secondary);
+}
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: var(--w-600);
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+
+/* --- Helpers ---------------------------------------------- */
+.cffb-gold-grad-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+          color: transparent;
+}
+
+/* Live pulse used by LiveIndicator */
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.5; }
+}
+@keyframes cffb-ring-spin {
+  to { transform: rotate(360deg); }
+}

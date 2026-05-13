@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="cffb-mark-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8C547"></stop>
+      <stop offset="50%" stop-color="#C9A227"></stop>
+      <stop offset="100%" stop-color="#8B6F1F"></stop>
+    </linearGradient>
+  </defs>
+  
+  <path d="M40 4 L72 14 L72 38 C72 56 58 70 40 76 C22 70 8 56 8 38 L8 14 Z" fill="url(#cffb-mark-grad)"></path>
+  
+  <path d="M40 12 L66 20 L66 38 C66 52 55 64 40 69 C25 64 14 52 14 38 L14 20 Z" fill="#0A0A0A"></path>
+  
+  <path d="M27 32 L40 40 L53 32" stroke="#C9A227" stroke-width="3.5"></path>
+  <path d="M27 41 L40 49 L53 41" stroke="#C9A227" stroke-width="3.5"></path>
+  <path d="M27 50 L40 58 L53 50" stroke="#C9A227" stroke-width="3.5"></path>
+</svg>

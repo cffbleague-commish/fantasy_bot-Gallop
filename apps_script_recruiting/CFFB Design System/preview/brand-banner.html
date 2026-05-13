@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Brand · Banner alternates</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .item { display: flex; flex-direction: column; gap: 6px; }
+  .cap {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--fg-tertiary); letter-spacing: 0.04em;
+  }
+  .cap b {
+    font-family: var(--font-body); font-weight: 600; font-size: 11px;
+    color: var(--fg-secondary); letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  .banner {
+    width: 100%;
+    aspect-ratio: 1180 / 220;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background: #0A0A0A;
+    color: #F5F5F5;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    container-type: inline-size;
+  }
+
+  /* Shared lower-third anatomy */
+  .lt-bar {
+    background: linear-gradient(180deg, #E8C547, #C9A227 50%, #8B6F1F);
+    height: 80%; align-self: center;
+  }
+  .lt-id { padding: 0 4%; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .lt-eye {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700; font-size: 10px;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: #C9A227;
+  }
+  .lt-title {
+    font-weight: 700;
+    font-size: 13cqw;
+    line-height: 0.92;
+    letter-spacing: -0.015em;
+    text-transform: uppercase;
+    color: #F5F5F5;
+  }
+  .lt-title .fb { color: #C9A227; }
+  .lt-foot {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600; font-size: 10px;
+    letter-spacing: 0.24em; text-transform: uppercase;
+    color: #9A9A9A;
+  }
+  .lt-foot .est { color: #C9A227; }
+  .lt-sep { color: #3A3A3A; margin: 0 6px; }
+
+  /* Variant 1: classic lower third — gold bar + type */
+  .v1 {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 6px 1fr;
+    align-items: center;
+    background: linear-gradient(90deg, #0A0A0A 0%, #0A0A0A 70%, #14100A 100%);
+    padding-right: 4%;
+  }
+
+  /* Variant 2: end-rule — gold bars on both sides, centered type */
+  .v2 {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 6px 1fr 6px;
+    align-items: center;
+    background: linear-gradient(90deg, #14100A 0%, #0A0A0A 30%, #0A0A0A 70%, #14100A 100%);
+  }
+  .v2 .lt-id { padding: 0 5%; align-items: center; text-align: center; }
+
+  /* Variant 3: corner monogram — bold CFFB + wordmark stack */
+  .v3 {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 20% 6px 1fr;
+    align-items: center;
+    background: linear-gradient(90deg, #14100A 0%, #0A0A0A 35%);
+    padding-right: 4%;
+  }
+  .v3 .mono {
+    height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .v3 .mono span {
+    font-weight: 700;
+    font-size: 22cqw;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    background: linear-gradient(180deg, #F4DA7A 0%, #C9A227 60%, #8B6F1F 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 18px rgba(201,162,39,0.25));
+  }
+</style></head>
+<body>
+
+  <!-- Variant 1 -->
+  <div class="item">
+    <div class="cap"><b>Lower Third</b><span>gold bar · type only · recommended</span></div>
+    <div class="banner">
+      <div class="v1">
+        <div class="lt-bar"></div>
+        <div class="lt-id">
+          <div class="lt-eye">Season Five</div>
+          <div class="lt-title">College Fantasy <span class="fb">Football</span></div>
+          <div class="lt-foot"><span class="est">Est. 2021</span><span class="lt-sep">·</span>Class of '26 Recruiting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variant 2 -->
+  <div class="item">
+    <div class="cap"><b>End-Rule</b><span>gold bars both sides · centered type</span></div>
+    <div class="banner">
+      <div class="v2">
+        <div class="lt-bar"></div>
+        <div class="lt-id">
+          <div class="lt-eye">Season Five · Est. 2021</div>
+          <div class="lt-title">College Fantasy <span class="fb">Football</span></div>
+          <div class="lt-foot">Class of '26 Recruiting</div>
+        </div>
+        <div class="lt-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variant 3 -->
+  <div class="item">
+    <div class="cap"><b>Monogram + Wordmark</b><span>CFFB monogram left, wordmark stack right</span></div>
+    <div class="banner">
+      <div class="v3">
+        <div class="mono"><span>CFFB</span></div>
+        <div class="lt-bar"></div>
+        <div class="lt-id">
+          <div class="lt-eye">Season Five</div>
+          <div class="lt-title">College Fantasy <span class="fb">Football</span></div>
+          <div class="lt-foot"><span class="est">Est. 2021</span><span class="lt-sep">·</span>Class of '26 Recruiting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body></html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Form Inputs</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-family: var(--font-body); font-weight: 600; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); }
+  input, select {
+    font-family: var(--font-body); font-size: 14px; color: var(--fg-primary);
+    background: #1C1C1C; border: 1px solid #2A2A2A; border-radius: 4px;
+    padding: 10px 12px; outline: none; transition: border-color 120ms;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+  input.bid {
+    font-family: var(--font-display); font-weight: 700; font-size: 22px;
+    letter-spacing: -0.01em; text-align: center; width: 120px;
+    font-variant-numeric: tabular-nums;
+  }
+  .row { display: flex; gap: 16px; align-items: flex-end; }
+  .grow { flex: 1; }
+  .prefix { display: flex; align-items: center; background: #1C1C1C; border: 1px solid #2A2A2A; border-radius: 4px; padding-left: 12px; }
+  .prefix span { color: var(--fg-tertiary); margin-right: 8px; }
+  .prefix input { border: 0; background: transparent; padding-left: 0; flex: 1; }
+</style></head>
+<body>
+  <div class="row">
+    <div class="field grow">
+      <label>Search players</label>
+      <div class="prefix"><span>⌕</span><input placeholder="Arch Manning, Quinn Ewers…" /></div>
+    </div>
+    <div class="field">
+      <label>Position</label>
+      <select><option>All</option><option>QB</option><option>RB</option><option>WR</option></select>
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label>Your bid</label>
+      <input class="bid" value="$52" />
+    </div>
+    <div class="field">
+      <label>Max bid (auto)</label>
+      <input class="bid" value="$78" />
+    </div>
+    <div class="field grow">
+      <label>Disabled / closed</label>
+      <input disabled value="Bid window closed" />
+    </div>
+  </div>
+</body></html>

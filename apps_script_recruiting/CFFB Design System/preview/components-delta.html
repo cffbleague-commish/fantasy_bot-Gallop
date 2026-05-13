@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>ValueDelta.html</title>
+<link rel="stylesheet" href="_base.css">
+<style>body { padding: 24px; }</style>
+</head><body>
+<!-- CFFB · ValueDelta
+     Dollar value with directional arrow. Positive green, negative red.
+     Sizes: sm (inline), md (default), lg (KPI sub-value). -->
+<style>
+.cffb-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-delta--sm { font-size: 12px; }
+.cffb-delta--md { font-size: 13px; }
+.cffb-delta--lg { font-size: 18px; font-weight: 700; }
+.cffb-delta--pos  { color: #2D7A4E; }
+.cffb-delta--neg  { color: #B84545; }
+.cffb-delta--flat { color: #5A5A5A; }
+.cffb-delta__arrow {
+  display: inline-flex;
+  font-size: 0.85em;
+  line-height: 1;
+}
+.cffb-delta__row { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+</style>
+<div class="cffb-delta__row">
+  <span class="cffb-delta cffb-delta--lg cffb-delta--pos"><span class="cffb-delta__arrow">▲</span>+$14</span>
+  <span class="cffb-delta cffb-delta--md cffb-delta--neg"><span class="cffb-delta__arrow">▼</span>−$8</span>
+  <span class="cffb-delta cffb-delta--md cffb-delta--pos"><span class="cffb-delta__arrow">▲</span>+$72</span>
+  <span class="cffb-delta cffb-delta--sm cffb-delta--flat">±$0</span>
+</div>
+
+</body></html>
