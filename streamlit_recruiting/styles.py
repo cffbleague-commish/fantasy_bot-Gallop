@@ -185,45 +185,59 @@ GLOBAL_CSS = """
 
 /* ============================================================
    Streamlit overrides — Dataframe / Table
+   Note: st.dataframe uses glide-data-grid (canvas-rendered).
+   Cell fonts/colors come from config.toml theme, NOT CSS.
+   CSS only affects wrapper elements around the canvas.
    ============================================================ */
-/* Outer container */
-[data-testid="stDataFrame"] {
+/* Outer wrapper */
+[data-testid="stDataFrame"],
+.stDataFrame {
   border: 1px solid var(--border) !important;
   border-radius: var(--r-3) !important;
   overflow: hidden;
 }
-/* Glide-data-grid cells */
-[data-testid="stDataFrame"] [data-testid="glideDataEditor"] {
-  font-family: var(--font-body) !important;
+/* Glide-data-grid editor wrapper */
+.stDataFrameGlideDataEditor,
+[data-testid="stDataFrameGlideDataEditor"] {
+  border: none !important;
+  border-radius: var(--r-3) !important;
 }
-/* Header row */
-.stDataFrame [data-testid="StyledDataFrameRowHeader"],
-[data-testid="stDataFrame"] th,
-[data-testid="stDataFrame"] [role="columnheader"] {
-  font-family: var(--font-body) !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  letter-spacing: 0.03em !important;
-  text-transform: uppercase !important;
-  color: var(--fg-secondary) !important;
+/* Virtual scroller container */
+.dvn-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--bg-surface);
+}
+.dvn-scroller::-webkit-scrollbar { width: 6px; height: 6px; }
+.dvn-scroller::-webkit-scrollbar-track { background: var(--bg-surface); }
+.dvn-scroller::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+}
+.dvn-scroller::-webkit-scrollbar-thumb:hover { background: var(--fg-tertiary); }
+/* Resize handle styling */
+[data-testid="stDataFrame"] [data-testid="stDataFrameResizeHandle"] {
+  background: var(--gold) !important;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+[data-testid="stDataFrame"]:hover [data-testid="stDataFrameResizeHandle"] {
+  opacity: 0.5;
+}
+/* Column config: image columns */
+[data-testid="stDataFrame"] img {
+  border-radius: 50% !important;
+}
+/* Toolbar (search, download) */
+[data-testid="stElementToolbar"] {
   background: var(--bg-surface-elev) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-2) !important;
 }
-/* Body cells */
-.stDataFrame [data-testid="StyledDataFrameDataCell"],
-[data-testid="stDataFrame"] td {
-  font-family: var(--font-body) !important;
-  font-size: 14px !important;
-  color: var(--fg-primary) !important;
-  font-variant-numeric: tabular-nums;
-  border-bottom: 1px solid var(--border) !important;
+[data-testid="stElementToolbar"] button {
+  color: var(--fg-secondary) !important;
 }
-/* Row hover */
-[data-testid="stDataFrame"] tr:hover td {
-  background: var(--bg-surface-hover) !important;
-}
-/* Remove heavy borders, keep hairline */
-[data-testid="stDataFrame"] table {
-  border-collapse: collapse !important;
+[data-testid="stElementToolbar"] button:hover {
+  color: var(--gold) !important;
 }
 
 /* ============================================================
@@ -461,11 +475,6 @@ GLOBAL_CSS = """
 [data-testid="stCheckbox"] label span {
   font-family: var(--font-body) !important;
   color: var(--fg-primary) !important;
-}
-
-/* Column config: image columns */
-[data-testid="stDataFrame"] img {
-  border-radius: 50% !important;
 }
 
 /* Scrollbar styling for dark theme */

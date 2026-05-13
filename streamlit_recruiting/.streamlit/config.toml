@@ -1,6 +1,17 @@
 [theme]
+# === Colors ===
 primaryColor = "#C9A227"
 backgroundColor = "#0A0A0A"
 secondaryBackgroundColor = "#141414"
 textColor = "#F5F5F5"
-font = "sans serif"
+
+# === Borders ===
+borderColor = "#2A2A2A"
+dataframeBorderColor = "#2A2A2A"
+dataframeHeaderBackgroundColor = "#1C1C1C"
+
+# === Fonts ===
+# Inline Google Fonts (Streamlit 1.50+)
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap, sans-serif"
+headingFont = "Saira Condensed:https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&display=swap, sans-serif"
+codeFont = "monospace"
