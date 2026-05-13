@@ -2,21 +2,20 @@
 Recruiting Analytics Dashboard — Main Entrypoint
 
 Read-only Streamlit dashboard for fantasy football recruiting analysis.
-Connects to Google Sheets for data, provides three pricing models,
-team needs analysis, and interactive draft planning.
+Connects to Google Sheets for data, provides pricing models,
+live auction tracking, and recruiting class evaluation.
+
+Refactored: 4 tabs (Board, Pricing Predictor, Live Auction, Class Grades).
 """
 
 import streamlit as st
 
 from data.sheets import get_available_years
-from views.components import inject_custom_css
-from views.board import render_board_tab
-from views.team_recruiting import render_team_recruiting_tab
-from views.model_comparison import render_comparison_tab
-from views.team_needs import render_needs_tab
-from views.value_finder import render_value_finder_tab
-from views.budget_tool import render_budget_tool_tab
-from views.live_auction import render_live_auction_tab
+from styles import inject_global_css
+from tabs.board import render as render_board
+from tabs.pricing_predictor import render as render_pricing_predictor
+from tabs.live_auction import render as render_live_auction
+from tabs.class_grades import render as render_class_grades
 from models.config import POSITIONS, CONFERENCES, get_league_year
 
 # Page config
@@ -27,8 +26,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS
-inject_custom_css()
+# Global design system CSS
+inject_global_css()
 
 # --- Sidebar ---
 league_year = get_league_year()
@@ -37,7 +36,7 @@ with st.sidebar:
     st.markdown("## Recruiting Analytics")
     st.caption("Fantasy Football Draft Dashboard")
 
-    # Year selector (applies to Board + Team Recruiting only)
+    # Year selector (applies to Board + Class Grades + Live Auction)
     years = get_available_years()
     if not years:
         st.error("No data found. Check your Google Sheet connection in .streamlit/secrets.toml")
@@ -55,40 +54,29 @@ with st.sidebar:
 
     st.markdown("---")
     st.caption(f"League Year: {league_year}")
-    st.caption("Board & Recruiting use the draft year selector.")
-    st.caption("Other tabs use the league year.")
+    st.caption("Board & Class Grades use the draft year selector.")
+    st.caption("Live Auction uses the draft year (current year = live mode).")
+    st.caption("Pricing Predictor uses the league year.")
     st.caption("Data refreshes every 5 minutes.")
 
 # --- Main content ---
 st.markdown(f"# {selected_year} Recruiting Dashboard")
 
-tab_board, tab_recruiting, tab_models, tab_needs, tab_values, tab_budget, tab_auction = st.tabs([
+tab_board, tab_pricing, tab_auction, tab_grades = st.tabs([
     "Board",
-    "Recruiting",
-    "Models",
-    "Team Needs",
-    "Value Finder",
-    "Budget Tool",
+    "Pricing Predictor",
     "Live Auction",
+    "Class Grades",
 ])
 
 with tab_board:
-    render_board_tab(selected_year, selected_position, selected_conference)
+    render_board(selected_year, selected_position, selected_conference)
 
-with tab_recruiting:
-    render_team_recruiting_tab(selected_year, selected_conference)
-
-with tab_models:
-    render_comparison_tab(league_year, selected_position)
-
-with tab_needs:
-    render_needs_tab(league_year, selected_position, selected_conference)
-
-with tab_values:
-    render_value_finder_tab(league_year, selected_position)
-
-with tab_budget:
-    render_budget_tool_tab(league_year, selected_position)
+with tab_pricing:
+    render_pricing_predictor(league_year, selected_position)
 
 with tab_auction:
-    render_live_auction_tab()
+    render_live_auction(selected_year)
+
+with tab_grades:
+    render_class_grades(selected_year, selected_conference)
