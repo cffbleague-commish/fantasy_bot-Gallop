@@ -1,7 +1,7 @@
 """
 Class Grades tab — leaderboard of team recruiting class grades.
 Evaluation mode: KPI row, two-column layout (leaderboard + team preview),
-click-to-modal team detail.
+click a row in the leaderboard to see team detail on the right.
 """
 
 import streamlit as st
@@ -73,6 +73,7 @@ def render():
 
     with col_left:
         st.markdown("#### Class Leaderboard")
+        st.caption("Click a row to view team details.")
 
         # Build display table
         display_rows = []
@@ -105,24 +106,27 @@ def render():
         if "Logo" in display_df.columns:
             column_config["Logo"] = st.column_config.ImageColumn("Logo", width="small")
 
-        st.dataframe(
+        # Row-selectable dataframe
+        selection = st.dataframe(
             display_df,
             column_config=column_config,
             hide_index=True,
             use_container_width=True,
             height=min(len(display_df) * 35 + 38, 700),
+            on_select="rerun",
+            selection_mode="single-row",
+            key="grades_leaderboard",
         )
+
+        # Get selected row index
+        selected_rows = selection.selection.rows if selection and selection.selection else []
 
     with col_right:
-        # Team selector for preview / modal
-        team_select = st.selectbox(
-            "Select team for detail",
-            ["-- Select a team --"] + grades_df["Franchise"].tolist(),
-            key="grades_team_select",
-        )
-
-        if team_select != "-- Select a team --":
-            _render_team_preview(team_select, grades_df, year)
+        if selected_rows:
+            row_idx = selected_rows[0]
+            if row_idx < len(grades_df):
+                team_name = grades_df.iloc[row_idx]["Franchise"]
+                _render_team_preview(team_name, grades_df, year)
         else:
             _render_league_overview(grades_df, conference_filter)
 

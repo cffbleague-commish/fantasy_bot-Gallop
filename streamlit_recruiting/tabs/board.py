@@ -1,6 +1,6 @@
 """
 Board tab — browse and evaluate available college players.
-Research mode: KPI row, search, sortable table, click-to-modal player detail.
+Research mode: KPI row, search, sortable table, click a row for player detail.
 """
 
 import streamlit as st
@@ -74,19 +74,9 @@ def render():
         st.info("No players match your search.")
         return
 
-    # --- Player select for deep dive modal ---
-    player_names = filtered_df["Player"].tolist()
-    selected_player = st.selectbox(
-        "Select player for detail view",
-        ["-- Select a player --"] + player_names,
-        key="board_player_select",
-        label_visibility="collapsed",
-    )
+    # --- Sortable table with row selection ---
+    st.caption("Click a row to view player details.")
 
-    if selected_player != "-- Select a player --":
-        _show_player_deep_dive(selected_player, df, year)
-
-    # --- Sortable table ---
     display_cols = {
         "Rank": "#",
         "Player": "Player",
@@ -123,12 +113,23 @@ def render():
             lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
         )
 
-    st.dataframe(
+    selection = st.dataframe(
         display_df,
         hide_index=True,
         use_container_width=True,
         height=min(len(display_df) * 35 + 38, 700),
+        on_select="rerun",
+        selection_mode="single-row",
+        key="board_table",
     )
+
+    # Show player deep dive when a row is selected
+    selected_rows = selection.selection.rows if selection and selection.selection else []
+    if selected_rows:
+        row_idx = selected_rows[0]
+        if row_idx < len(filtered_df):
+            player_name = filtered_df.iloc[row_idx]["Player"]
+            _show_player_deep_dive(player_name, df, year)
 
 
 def _show_player_deep_dive(player_name: str, board_df: pd.DataFrame, year: int):
