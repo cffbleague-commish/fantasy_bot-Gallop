@@ -126,13 +126,15 @@ GLOBAL_CSS = """
 }
 
 /* ============================================================
-   Streamlit overrides
+   Streamlit overrides — App shell
    ============================================================ */
 .stApp {
   background: var(--bg-canvas) !important;
   color: var(--fg-primary);
   font-family: var(--font-body);
 }
+
+/* --- Sidebar ------------------------------------------------ */
 [data-testid="stSidebar"] {
   background: var(--bg-surface) !important;
   border-right: 1px solid var(--border) !important;
@@ -145,7 +147,7 @@ GLOBAL_CSS = """
   color: var(--fg-primary);
 }
 
-/* Tab indicator: gold underline */
+/* --- Tabs --------------------------------------------------- */
 [data-testid="stTabs"] button[data-baseweb="tab"] {
   font-family: var(--font-body) !important;
   font-weight: 600 !important;
@@ -159,19 +161,321 @@ GLOBAL_CSS = """
   color: var(--fg-primary) !important;
   border-bottom: 2px solid var(--gold) !important;
 }
+/* Remove default tab highlight bar */
+[data-testid="stTabs"] [role="tablist"] {
+  border-bottom: 1px solid var(--border) !important;
+}
+[data-testid="stTabs"] button[data-baseweb="tab"]::before {
+  background-color: transparent !important;
+}
 
-/* Dialog styling */
+/* --- Dialog / Modal ----------------------------------------- */
 [data-testid="stModal"] > div {
   background: var(--bg-surface) !important;
   border: 1px solid rgba(201,162,39,0.2) !important;
   border-radius: var(--r-4) !important;
   box-shadow: var(--shadow-md) !important;
 }
-
-/* Dataframe header styling */
-.stDataFrame [data-testid="StyledDataFrameDataCell"] {
-  font-variant-numeric: tabular-nums;
+[data-testid="stModal"] [data-testid="stModalCloseButton"] button {
+  color: var(--fg-secondary) !important;
 }
+[data-testid="stModal"] [data-testid="stModalCloseButton"] button:hover {
+  color: var(--fg-primary) !important;
+}
+
+/* ============================================================
+   Streamlit overrides — Dataframe / Table
+   ============================================================ */
+/* Outer container */
+[data-testid="stDataFrame"] {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-3) !important;
+  overflow: hidden;
+}
+/* Glide-data-grid cells */
+[data-testid="stDataFrame"] [data-testid="glideDataEditor"] {
+  font-family: var(--font-body) !important;
+}
+/* Header row */
+.stDataFrame [data-testid="StyledDataFrameRowHeader"],
+[data-testid="stDataFrame"] th,
+[data-testid="stDataFrame"] [role="columnheader"] {
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
+  color: var(--fg-secondary) !important;
+  background: var(--bg-surface-elev) !important;
+}
+/* Body cells */
+.stDataFrame [data-testid="StyledDataFrameDataCell"],
+[data-testid="stDataFrame"] td {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  color: var(--fg-primary) !important;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--border) !important;
+}
+/* Row hover */
+[data-testid="stDataFrame"] tr:hover td {
+  background: var(--bg-surface-hover) !important;
+}
+/* Remove heavy borders, keep hairline */
+[data-testid="stDataFrame"] table {
+  border-collapse: collapse !important;
+}
+
+/* ============================================================
+   Streamlit overrides — Form controls
+   ============================================================ */
+/* Selectbox / Multiselect */
+[data-baseweb="select"] {
+  font-family: var(--font-body) !important;
+}
+[data-baseweb="select"] > div {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-2) !important;
+  color: var(--fg-primary) !important;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+[data-baseweb="select"] > div:hover {
+  border-color: var(--border-strong) !important;
+}
+[data-baseweb="select"] > div:focus-within {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 1px var(--gold) !important;
+}
+/* Dropdown list */
+[data-baseweb="popover"] > div,
+[data-baseweb="menu"] {
+  background: var(--bg-surface-elev) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-2) !important;
+}
+[data-baseweb="menu"] li {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  color: var(--fg-primary) !important;
+}
+[data-baseweb="menu"] li:hover {
+  background: var(--bg-surface-hover) !important;
+}
+[data-baseweb="menu"] li[aria-selected="true"] {
+  background: rgba(201,162,39,0.12) !important;
+  color: var(--gold-light) !important;
+}
+
+/* Text input */
+[data-testid="stTextInput"] input,
+[data-baseweb="input"] input {
+  font-family: var(--font-body) !important;
+  font-size: 14px !important;
+  background: var(--bg-surface) !important;
+  color: var(--fg-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-2) !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-baseweb="input"] input:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 1px var(--gold) !important;
+}
+[data-testid="stTextInput"] input::placeholder {
+  color: var(--fg-tertiary) !important;
+}
+/* Input container (baseweb wraps input in a div) */
+[data-baseweb="input"] > div {
+  background: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+}
+
+/* Slider */
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
+  background: var(--gold) !important;
+  border-color: var(--gold) !important;
+}
+[data-testid="stSlider"] [data-baseweb="slider"] [data-testid="stTickBar"] > div {
+  background: var(--gold) !important;
+}
+[data-testid="stSlider"] div[data-baseweb="slider"] > div > div:first-child > div {
+  background: var(--border-strong) !important;
+}
+[data-testid="stSlider"] div[data-baseweb="slider"] > div > div:first-child > div > div {
+  background: var(--gold) !important;
+}
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"]:focus {
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.35) !important;
+}
+
+/* Number input */
+[data-testid="stNumberInput"] input {
+  font-family: var(--font-body) !important;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-surface) !important;
+  color: var(--fg-primary) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Labels for all form controls */
+[data-testid="stWidgetLabel"] label,
+[data-testid="stWidgetLabel"] p {
+  font-family: var(--font-body) !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  color: var(--fg-secondary) !important;
+}
+
+/* ============================================================
+   Streamlit overrides — Expander
+   ============================================================ */
+[data-testid="stExpander"] {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-3) !important;
+}
+[data-testid="stExpander"] summary {
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: var(--fg-primary) !important;
+  padding: 12px 16px !important;
+}
+[data-testid="stExpander"] summary:hover {
+  background: var(--bg-surface-hover) !important;
+  color: var(--gold-light) !important;
+}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+  border-top: 1px solid var(--border) !important;
+  padding: 16px !important;
+}
+/* Expander icon color */
+[data-testid="stExpander"] summary svg {
+  color: var(--fg-secondary) !important;
+}
+
+/* ============================================================
+   Streamlit overrides — Buttons
+   ============================================================ */
+/* Primary button */
+[data-testid="stButton"] button[kind="primary"],
+[data-testid="stButton"] button[data-testid="stBaseButton-primary"] {
+  background: var(--gold) !important;
+  color: #0A0A0A !important;
+  border: none !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  border-radius: var(--r-2) !important;
+  box-shadow: var(--inset-metallic) !important;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+[data-testid="stButton"] button[kind="primary"]:hover,
+[data-testid="stButton"] button[data-testid="stBaseButton-primary"]:hover {
+  background: var(--gold-light) !important;
+}
+[data-testid="stButton"] button[kind="primary"]:active,
+[data-testid="stButton"] button[data-testid="stBaseButton-primary"]:active {
+  background: var(--gold-dark) !important;
+}
+
+/* Secondary button */
+[data-testid="stButton"] button[kind="secondary"],
+[data-testid="stButton"] button[data-testid="stBaseButton-secondary"] {
+  background: transparent !important;
+  color: var(--fg-primary) !important;
+  border: 1px solid var(--border) !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  border-radius: var(--r-2) !important;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+[data-testid="stButton"] button[kind="secondary"]:hover,
+[data-testid="stButton"] button[data-testid="stBaseButton-secondary"]:hover {
+  border-color: var(--gold) !important;
+  color: var(--fg-primary) !important;
+}
+
+/* ============================================================
+   Streamlit overrides — Metric
+   ============================================================ */
+[data-testid="stMetric"] {
+  background: var(--bg-surface-elev) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-3) !important;
+  padding: 12px 16px !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--fg-secondary) !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  color: var(--fg-primary) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* ============================================================
+   Streamlit overrides — Misc widgets
+   ============================================================ */
+/* Markdown & captions */
+.stMarkdown, .stCaption {
+  font-family: var(--font-body) !important;
+  color: var(--fg-primary);
+}
+.stCaption, [data-testid="stCaptionContainer"] {
+  color: var(--fg-tertiary) !important;
+}
+/* Section headers (#### markdown) */
+.stMarkdown h4 {
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  font-size: var(--ds-4) !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.01em !important;
+  color: var(--fg-primary) !important;
+}
+/* Horizontal rule */
+.stMarkdown hr {
+  border-color: var(--border) !important;
+}
+
+/* Info / Warning / Error boxes */
+[data-testid="stAlert"] {
+  background: var(--bg-surface-elev) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-3) !important;
+  color: var(--fg-primary) !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Checkbox */
+[data-testid="stCheckbox"] label span {
+  font-family: var(--font-body) !important;
+  color: var(--fg-primary) !important;
+}
+
+/* Column config: image columns */
+[data-testid="stDataFrame"] img {
+  border-radius: 50% !important;
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-canvas); }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--fg-tertiary); }
 
 /* ============================================================
    Base typography classes
