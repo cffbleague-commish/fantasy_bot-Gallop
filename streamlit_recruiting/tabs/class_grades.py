@@ -68,12 +68,11 @@ def render():
 
     st.markdown("")  # spacer
 
-    # --- Two-column layout: leaderboard + preview ---
+    # --- Two-column layout: leaderboard + league overview ---
     col_left, col_right = st.columns([65, 35], gap="medium")
 
     with col_left:
         st.markdown("#### Class Leaderboard")
-        st.caption("Click a row to view team details.")
 
         # Build display table
         display_rows = []
@@ -122,13 +121,15 @@ def render():
         selected_rows = selection.selection.rows if selection and selection.selection else []
 
     with col_right:
-        if selected_rows:
-            row_idx = selected_rows[0]
-            if row_idx < len(grades_df):
-                team_name = grades_df.iloc[row_idx]["Franchise"]
-                _render_team_preview(team_name, grades_df, year)
-        else:
-            _render_league_overview(grades_df, conference_filter)
+        _render_league_overview(grades_df, conference_filter)
+
+    # --- Full team detail below leaderboard when a row is selected ---
+    if selected_rows:
+        row_idx = selected_rows[0]
+        if row_idx < len(grades_df):
+            team_name = grades_df.iloc[row_idx]["Franchise"]
+            st.markdown("---")
+            _show_team_deep_dive(team_name, grades_df, year)
 
     # --- Conference Comparison Chart (below fold) ---
     if conference_filter == "All" and len(grades_df) > 5:

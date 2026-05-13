@@ -74,9 +74,10 @@ def render():
         st.info("No players match your search.")
         return
 
-    # --- Sortable table with row selection ---
-    st.caption("Click a row to view player details.")
+    # --- Placeholder for player detail (renders above the table) ---
+    player_detail_slot = st.empty()
 
+    # --- Sortable table with row selection ---
     display_cols = {
         "Rank": "#",
         "Player": "Player",
@@ -123,13 +124,14 @@ def render():
         key="board_table",
     )
 
-    # Show player deep dive when a row is selected
+    # Show player deep dive above the table when a row is selected
     selected_rows = selection.selection.rows if selection and selection.selection else []
     if selected_rows:
         row_idx = selected_rows[0]
         if row_idx < len(filtered_df):
             player_name = filtered_df.iloc[row_idx]["Player"]
-            _show_player_deep_dive(player_name, df, year)
+            with player_detail_slot.container():
+                _show_player_deep_dive(player_name, df, year)
 
 
 def _show_player_deep_dive(player_name: str, board_df: pd.DataFrame, year: int):
