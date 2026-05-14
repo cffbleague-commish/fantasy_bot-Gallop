@@ -149,7 +149,7 @@ def render():
         comparison_df = pd.DataFrame(rows)
         col_config = {}
         if "Photo" in comparison_df.columns:
-            col_config["Photo"] = st.column_config.ImageColumn("Photo", width="small")
+            col_config["Photo"] = st.column_config.ImageColumn("", width="medium")
         st.dataframe(comparison_df, column_config=col_config, hide_index=True, use_container_width=True, height=600)
 
     with col_right:
