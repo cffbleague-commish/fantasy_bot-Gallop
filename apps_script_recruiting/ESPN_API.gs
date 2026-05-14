@@ -231,11 +231,13 @@ function parseESPNAthlete(data, espnId) {
       }
     }
 
-    // Headshot URL - use NFL path for drafted players, college path for pre-draft
-    const headshotPath = (draftRound && draftRound !== "0")
-      ? `/i/headshots/nfl/players/full/${espnId}.png`
-      : `/i/headshots/college-football/players/full/${espnId}.png`;
-    const headshotUrl = `https://a.espncdn.com/combiner/i?img=${headshotPath}&w=350&h=254`;
+    // Headshot URL - extract from API response (draft athlete ID ≠ player headshot ID)
+    let headshotUrl = "";
+    if (data.headshot && data.headshot.href) {
+      headshotUrl = data.headshot.href;
+    } else if (data.headshot && data.headshot.url) {
+      headshotUrl = data.headshot.url;
+    }
 
     return {
       espnId: String(espnId),
