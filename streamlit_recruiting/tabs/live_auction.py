@@ -65,12 +65,18 @@ def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
-    """Assign CopySession numbers based on AUCTION_INIT boundaries."""
+    """Assign CopySession numbers per conference based on AUCTION_INIT boundaries.
+
+    Each conference auctions its copies independently (max 1 active at a time).
+    A new AUCTION_INIT within the same (PlayerID, Conference) starts the next copy.
+    """
     if df.empty:
         return df
     df = df.copy()
     df["CopySession"] = 0
-    for player_id, group in df.groupby("PlayerID"):
+    for (_, conference), group in df.groupby(["PlayerID", "Conference"]):
+        if not conference or str(conference) == "nan":
+            continue
         idx_sorted = group.sort_values("Timestamp", ascending=True).index
         counter = 0
         for i in idx_sorted:
@@ -240,7 +246,7 @@ def render():
         display["Copy #"] = display["Copy #"].apply(lambda x: f"#{int(x)}" if x > 0 else "")
 
     col_config = {
-        "Franchise": st.column_config.ImageColumn("Franchise", width="small"),
+        "Franchise": st.column_config.ImageColumn("", width="small"),
     }
     if "Photo" in display.columns:
         col_config["Photo"] = st.column_config.ImageColumn("", width="small")
@@ -487,7 +493,7 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         )
 
     top_col_config = {
-        "Franchise": st.column_config.ImageColumn("Franchise", width="small"),
+        "Franchise": st.column_config.ImageColumn("", width="small"),
     }
     if "Photo" in top_display.columns:
         top_col_config["Photo"] = st.column_config.ImageColumn("", width="small")

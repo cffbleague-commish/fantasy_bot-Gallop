@@ -108,7 +108,7 @@ def render():
 
         column_config = {}
         if "Logo" in display_df.columns:
-            column_config["Logo"] = st.column_config.ImageColumn("Logo", width="small")
+            column_config["Logo"] = st.column_config.ImageColumn("", width="small")
 
         # Row-selectable dataframe
         selection = st.dataframe(
