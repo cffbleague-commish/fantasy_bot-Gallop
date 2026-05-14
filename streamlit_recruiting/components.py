@@ -362,6 +362,13 @@ def render_player_card_expanded(
             )
         facts_html = f'<div class="cffb-pc-e__facts">{fact_items}</div>'
 
+    # College logo inline
+    college_logo = college_logo_url(college) if college else ""
+    college_logo_html = (
+        f'<img src="{college_logo}" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;" '
+        f'onerror="this.style.display=\'none\'">'
+    ) if college_logo else ""
+
     photo_section = ""
     if not skip_photo:
         photo_section = (
@@ -380,7 +387,7 @@ def render_player_card_expanded(
         f'      {conf_html}'
         f'    </div>'
         f'    <div class="cffb-pc-e__name">{_esc(name)}</div>'
-        f'    <div class="cffb-pc-e__meta">{_esc(college)}</div>'
+        f'    <div class="cffb-pc-e__meta">{college_logo_html}{_esc(college)}</div>'
         f'    <div class="cffb-pc-e__stars">{star_html}</div>'
         f'    {facts_html}'
         f'  </div>'

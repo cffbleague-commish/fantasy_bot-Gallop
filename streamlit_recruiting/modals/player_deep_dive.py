@@ -334,134 +334,141 @@ def _render_auction_context(player_name: str, year: int):
     render_kpi_row(kpi_tiles)
     st.markdown("")
 
-    # --- Per-Conference Availability ---
-    conf_sold = player_won.groupby("Conference").size().to_dict() if not player_won.empty else {}
-    conf_rows = []
-    for conf in CONFERENCE_LIST:
-        sold = conf_sold.get(conf, 0)
-        avail = COPIES_PER_CONFERENCE - sold
-        conf_rows.append({
-            "Conference": conf,
-            "Teams": CONFERENCES[conf],
-            "Sold": sold,
-            "Available": avail,
-            "Status": "Available" if avail > 0 else "Full",
-        })
-    st.dataframe(pd.DataFrame(conf_rows), hide_index=True, use_container_width=True)
-
-    # --- Per-Copy Auction Summary ---
+    # --- Per-Copy Auction Summary (includes availability rows) ---
     st.markdown("#### Copy Auction Summary")
+    st.caption("Select a copy to view its bid history and timeline.")
 
-    if copy_keys.empty:
-        st.info("No auction sessions found for this player.")
-    else:
-        copy_summary_rows = []
-        for _, key in copy_keys.iterrows():
-            conf = key["Conference"]
-            session_num = int(key["CopySession"])
-            session = player_txns[
-                (player_txns["Conference"] == conf)
-                & (player_txns["CopySession"] == session_num)
-            ]
-            if session.empty:
-                continue
-
-            copy_label = f"{conf} #{session_num}"
-
-            init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
-            bid_rows = session[session["TransactionType"] == "AUCTION_BID"]
-            won_rows = session[session["TransactionType"] == "AUCTION_WON"]
-
-            nom_name = init_rows.iloc[0]["FranchiseName"] if not init_rows.empty else ""
-            nom_logo = logo_lookup.get(nom_name, "") if nom_name else ""
-            opening_bid = init_rows.iloc[0]["BidAmount"] if not init_rows.empty else 0
-            num_bids = len(bid_rows)
-            max_bid = bid_rows["BidAmount"].max() if not bid_rows.empty else 0
-
-            if not won_rows.empty:
-                winner = won_rows.iloc[0]
-                won_name = winner["FranchiseName"]
-                won_logo = logo_lookup.get(won_name, "")
-                winning_price = winner["BidAmount"]
-                status = "Sold"
-            else:
-                won_name = ""
-                won_logo = ""
-                winning_price = 0
-                status = "In Progress"
-
-            # Duration
-            start_time = pd.to_datetime(session["Timestamp"].iloc[0], errors="coerce")
-            end_time = pd.to_datetime(session["Timestamp"].iloc[-1], errors="coerce")
-            if pd.notna(start_time) and pd.notna(end_time) and start_time != end_time:
-                delta = end_time - start_time
-                total_seconds = int(delta.total_seconds())
-                hours, remainder = divmod(total_seconds, 3600)
-                minutes, _ = divmod(remainder, 60)
-                duration = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
-            else:
-                duration = ""
-
-            copy_summary_rows.append({
-                "Copy": copy_label,
-                "Status": status,
-                "Nominated By": nom_logo,
-                "Opening": f"${opening_bid:.0f}",
-                "# Bids": num_bids,
-                "Max Bid": f"${max_bid:.0f}" if max_bid > 0 else "",
-                "Won By": won_logo,
-                "Price": f"${winning_price:.0f}" if winning_price > 0 else "",
-                "Duration": duration,
-            })
-
-        if copy_summary_rows:
-            summary_col_config = {
-                "Nominated By": st.column_config.ImageColumn("Nominated By", width="small"),
-                "Won By": st.column_config.ImageColumn("Won By", width="small"),
-            }
-            st.dataframe(
-                pd.DataFrame(copy_summary_rows),
-                column_config=summary_col_config,
-                hide_index=True,
-                use_container_width=True,
-            )
-
-    # --- Per-Copy Bid History (expanders) ---
-    st.markdown("#### Bid History by Copy")
-
+    # Build summary rows for every conference copy (nominated or available)
+    # Track which (conf, session) pairs have transaction data
+    conf_sessions: dict[str, set[int]] = {}
     for _, key in copy_keys.iterrows():
-        conf = key["Conference"]
-        session_num = int(key["CopySession"])
-        copy_label = f"{conf} #{session_num}"
+        conf_sessions.setdefault(key["Conference"], set()).add(int(key["CopySession"]))
 
-        session = player_txns[
-            (player_txns["Conference"] == conf)
-            & (player_txns["CopySession"] == session_num)
-        ].copy()
-        if session.empty:
-            continue
+    copy_summary_rows = []
+    # row_keys maps row index → (conf, session_num) for selection lookup
+    row_keys: list[tuple[str, int]] = []
 
-        init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
-        won_rows = session[session["TransactionType"] == "AUCTION_WON"]
+    for conf in CONFERENCE_LIST:
+        sessions_used = conf_sessions.get(conf, set())
+        for copy_num in range(1, COPIES_PER_CONFERENCE + 1):
+            copy_label = f"{conf} #{copy_num}"
 
-        header_parts = [f"**{copy_label}**"]
-        if not init_rows.empty:
-            header_parts.append(f"Nominated by {init_rows.iloc[0]['FranchiseName']} at ${init_rows.iloc[0]['BidAmount']:.0f}")
-        if not won_rows.empty:
-            header_parts.append(f"Won by {won_rows.iloc[0]['FranchiseName']} at ${won_rows.iloc[0]['BidAmount']:.0f}")
-        else:
-            header_parts.append("In Progress")
+            if copy_num in sessions_used:
+                # This copy has auction data — build a real summary row
+                session = player_txns[
+                    (player_txns["Conference"] == conf)
+                    & (player_txns["CopySession"] == copy_num)
+                ]
+                if session.empty:
+                    continue
 
-        with st.expander(" \u2014 ".join(header_parts)):
-            hist = session[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount", "Note"]].copy()
-            hist.rename(columns={"FranchiseLogo": "Team", "FranchiseName": "Name", "BidAmount": "Bid"}, inplace=True)
-            hist["Bid"] = hist["Bid"].apply(lambda x: f"${x:.0f}")
-            hist["Note"] = hist["Note"].fillna("")
-            hist_col_config = {"Team": st.column_config.ImageColumn("Team", width="small")}
-            st.dataframe(hist, column_config=hist_col_config, hide_index=True, use_container_width=True)
+                init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
+                bid_rows = session[session["TransactionType"] == "AUCTION_BID"]
+                won_rows = session[session["TransactionType"] == "AUCTION_WON"]
 
-    # --- Per-Copy Timeline Chart ---
-    _render_copy_timeline(player_name, player_txns)
+                nom_name = init_rows.iloc[0]["FranchiseName"] if not init_rows.empty else ""
+                nom_logo = logo_lookup.get(nom_name, "") if nom_name else ""
+                opening_bid = init_rows.iloc[0]["BidAmount"] if not init_rows.empty else 0
+                num_bids = len(bid_rows)
+                max_bid = bid_rows["BidAmount"].max() if not bid_rows.empty else 0
+
+                if not won_rows.empty:
+                    winner = won_rows.iloc[0]
+                    won_name = winner["FranchiseName"]
+                    won_logo = logo_lookup.get(won_name, "")
+                    winning_price = winner["BidAmount"]
+                    status = "Sold"
+                else:
+                    won_logo = ""
+                    winning_price = 0
+                    status = "In Progress"
+
+                # Duration
+                start_time = pd.to_datetime(session["Timestamp"].iloc[0], errors="coerce")
+                end_time = pd.to_datetime(session["Timestamp"].iloc[-1], errors="coerce")
+                if pd.notna(start_time) and pd.notna(end_time) and start_time != end_time:
+                    delta = end_time - start_time
+                    total_seconds = int(delta.total_seconds())
+                    hours, remainder = divmod(total_seconds, 3600)
+                    minutes, _ = divmod(remainder, 60)
+                    duration = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+                else:
+                    duration = ""
+
+                copy_summary_rows.append({
+                    "Copy": copy_label,
+                    "Status": status,
+                    "Nominated By": nom_logo,
+                    "Opening": f"${opening_bid:.0f}",
+                    "# Bids": num_bids,
+                    "Max Bid": f"${max_bid:.0f}" if max_bid > 0 else "",
+                    "Won By": won_logo,
+                    "Price": f"${winning_price:.0f}" if winning_price > 0 else "",
+                    "Duration": duration,
+                })
+            else:
+                # No auction data for this copy — mark as Available
+                copy_summary_rows.append({
+                    "Copy": copy_label,
+                    "Status": "Available",
+                    "Nominated By": "",
+                    "Opening": "",
+                    "# Bids": "",
+                    "Max Bid": "",
+                    "Won By": "",
+                    "Price": "",
+                    "Duration": "",
+                })
+
+            row_keys.append((conf, copy_num))
+
+    if copy_summary_rows:
+        summary_col_config = {
+            "Nominated By": st.column_config.ImageColumn("Nominated By", width="small"),
+            "Won By": st.column_config.ImageColumn("Won By", width="small"),
+        }
+        selection = st.dataframe(
+            pd.DataFrame(copy_summary_rows),
+            column_config=summary_col_config,
+            hide_index=True,
+            use_container_width=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            key="copy_summary_table",
+        )
+
+        # --- Selection-driven Bid History + Timeline ---
+        selected_rows = selection.selection.rows if selection and selection.selection else []
+        if selected_rows:
+            sel_idx = selected_rows[0]
+            if sel_idx < len(row_keys):
+                sel_conf, sel_session = row_keys[sel_idx]
+                sel_label = f"{sel_conf} #{sel_session}"
+                sel_status = copy_summary_rows[sel_idx]["Status"]
+
+                if sel_status == "Available":
+                    st.info(f"{sel_label} has not been nominated yet.")
+                else:
+                    # Filter transactions to the selected copy
+                    sel_txns = player_txns[
+                        (player_txns["Conference"] == sel_conf)
+                        & (player_txns["CopySession"] == sel_session)
+                    ].copy()
+
+                    if not sel_txns.empty:
+                        # Bid history table
+                        st.markdown(f"#### Bid History — {sel_label}")
+                        hist = sel_txns[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount", "Note"]].copy()
+                        hist.rename(columns={"FranchiseLogo": "Team", "FranchiseName": "Name", "BidAmount": "Bid"}, inplace=True)
+                        hist["Bid"] = hist["Bid"].apply(lambda x: f"${x:.0f}")
+                        hist["Note"] = hist["Note"].fillna("")
+                        hist_col_config = {"Team": st.column_config.ImageColumn("Team", width="small")}
+                        st.dataframe(hist, column_config=hist_col_config, hide_index=True, use_container_width=True)
+
+                        # Timeline chart for this copy only
+                        _render_copy_timeline(player_name, sel_txns)
+    else:
+        st.info("No auction sessions found for this player.")
 
 
 def _render_copy_timeline(player_name: str, player_txns: pd.DataFrame):
