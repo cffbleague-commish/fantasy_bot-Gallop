@@ -182,7 +182,7 @@ def render_player_card_expanded(
 
     # Photo slot
     if headshot_url and str(headshot_url).startswith("http"):
-        photo_inner = f'<img src="{headshot_url}" alt="{_esc(name)}" onerror="this.style.display=\'none\'">'
+        photo_inner = f'<img src="{headshot_url}" alt="{_esc(name)}" referrerpolicy="no-referrer" crossorigin="anonymous" onerror="this.style.display=\'none\'">'
     else:
         photo_inner = (
             '<div class="cffb-pc-e__photo-empty">'
@@ -259,6 +259,7 @@ def render_team_logo(
     if logo_url and str(logo_url).startswith("http"):
         return (
             f'<img src="{logo_url}" alt="{_esc(abbreviation)}" '
+            f'referrerpolicy="no-referrer" crossorigin="anonymous" '
             f'style="height:{"30px" if size == "sm" else "48px" if size == "md" else "60px"};'
             f'border-radius:50%;object-fit:cover;" '
             f'onerror="this.style.display=\'none\'">'
