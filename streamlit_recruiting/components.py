@@ -6,7 +6,6 @@ via st.markdown(..., unsafe_allow_html=True). CSS lives in styles.py.
 
 import streamlit as st
 import math
-import base64
 import requests
 
 
@@ -20,21 +19,20 @@ def _html(html: str):
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def _fetch_image_b64(url: str) -> str:
-    """Fetch an external image server-side and return a base64 data URI.
+def fetch_image_bytes(url: str) -> bytes | None:
+    """Fetch an external image server-side and return raw bytes.
 
     Bypasses hotlink protection (e.g. ESPN's CDN) by making the request
-    from the server where no Referer header is sent.
+    from the server. Use with st.image(bytes) — st.markdown strips data:
+    URIs so base64 embedding doesn't work.
     """
     try:
         resp = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
-        if resp.status_code == 200:
-            content_type = resp.headers.get("content-type", "image/png")
-            b64 = base64.b64encode(resp.content).decode()
-            return f"data:{content_type};base64,{b64}"
+        if resp.status_code == 200 and len(resp.content) > 100:
+            return resp.content
     except Exception:
         pass
-    return ""
+    return None
 
 
 # Position badge colors (saturated, on dark bg)
@@ -200,22 +198,21 @@ def render_player_card_expanded(
     """
     pos_color = _POS_COLORS.get(position, "#6A6A6A")
 
-    # Photo slot — fetch server-side to bypass ESPN hotlink protection
-    if headshot_url and str(headshot_url).startswith("http"):
-        b64_src = _fetch_image_b64(headshot_url)
-        if b64_src:
-            photo_inner = f'<img src="{b64_src}" alt="{_esc(name)}">'
-        else:
+    # Photo slot — when headshot_url is None, skip photo entirely
+    # (caller renders headshot separately via st.image for external URLs)
+    skip_photo = headshot_url is None
+    if not skip_photo:
+        if headshot_url and str(headshot_url).startswith("http"):
             photo_inner = f'<img src="{headshot_url}" alt="{_esc(name)}" onerror="this.style.display=\'none\'">'
-    else:
-        photo_inner = (
-            '<div class="cffb-pc-e__photo-empty">'
-            '<svg viewBox="0 0 56 56" style="width:56px;height:56px;stroke:#3A3A3A;fill:none;stroke-width:1.5">'
-            '<circle cx="28" cy="20" r="9"/>'
-            '<path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"/>'
-            '</svg>'
-            '</div>'
-        )
+        else:
+            photo_inner = (
+                '<div class="cffb-pc-e__photo-empty">'
+                '<svg viewBox="0 0 56 56" style="width:56px;height:56px;stroke:#3A3A3A;fill:none;stroke-width:1.5">'
+                '<circle cx="28" cy="20" r="9"/>'
+                '<path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"/>'
+                '</svg>'
+                '</div>'
+            )
 
     # Stars
     star_html = "".join(
@@ -245,12 +242,18 @@ def render_player_card_expanded(
             )
         facts_html = f'<div class="cffb-pc-e__facts">{fact_items}</div>'
 
+    photo_section = ""
+    if not skip_photo:
+        photo_section = (
+            f'  <div class="cffb-pc-e__photo">'
+            f'    <div class="cffb-pc-e__photo-bar" style="background:{pos_color};"></div>'
+            f'    {photo_inner}'
+            f'  </div>'
+        )
+
     return (
         f'<div class="cffb-pc-e">'
-        f'  <div class="cffb-pc-e__photo">'
-        f'    <div class="cffb-pc-e__photo-bar" style="background:{pos_color};"></div>'
-        f'    {photo_inner}'
-        f'  </div>'
+        f'  {photo_section}'
         f'  <div class="cffb-pc-e__id">'
         f'    <div class="cffb-pc-e__tagrow">'
         f'      <span class="cffb-pc-e__pos" style="background:{pos_color};">{position}</span>'
@@ -282,10 +285,8 @@ def render_team_logo(
     """
     if logo_url and str(logo_url).startswith("http"):
         img_height = "30px" if size == "sm" else "48px" if size == "md" else "60px"
-        b64_src = _fetch_image_b64(logo_url)
-        src = b64_src if b64_src else logo_url
         return (
-            f'<img src="{src}" alt="{_esc(abbreviation)}" '
+            f'<img src="{logo_url}" alt="{_esc(abbreviation)}" '
             f'style="height:{img_height};'
             f'border-radius:50%;object-fit:cover;" '
             f'onerror="this.style.display=\'none\'">'

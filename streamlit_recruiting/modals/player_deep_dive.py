@@ -29,6 +29,7 @@ from components import (
     render_grade_badge,
     render_value_delta,
     render_conference_badge,
+    fetch_image_bytes,
     plotly_layout_defaults,
     _html,
 )
@@ -197,15 +198,35 @@ def show_player_deep_dive(
         {"label": "Confidence", "value": p.get("ConfidenceLabel", "N/A") or "N/A"},
     ]
 
-    _html(render_player_card_expanded(
-        name=player_name,
-        position=p.get("Position", ""),
-        college=p.get("College", ""),
-        stars=stars,
-        headshot_url=str(headshot) if headshot else "",
-        conference="",
-        facts=facts,
-    ))
+    # Fetch headshot server-side (bypasses ESPN hotlink protection + st.markdown sanitizer)
+    headshot_bytes = None
+    if headshot and str(headshot).startswith("http"):
+        headshot_bytes = fetch_image_bytes(str(headshot))
+
+    if headshot_bytes:
+        col_photo, col_card = st.columns([1, 5])
+        with col_photo:
+            st.image(headshot_bytes, width=100)
+        with col_card:
+            _html(render_player_card_expanded(
+                name=player_name,
+                position=p.get("Position", ""),
+                college=p.get("College", ""),
+                stars=stars,
+                headshot_url=None,  # skip photo in HTML, rendered via st.image above
+                conference="",
+                facts=facts,
+            ))
+    else:
+        _html(render_player_card_expanded(
+            name=player_name,
+            position=p.get("Position", ""),
+            college=p.get("College", ""),
+            stars=stars,
+            headshot_url="",  # show SVG placeholder in HTML
+            conference="",
+            facts=facts,
+        ))
 
     st.markdown("")  # spacer
 
