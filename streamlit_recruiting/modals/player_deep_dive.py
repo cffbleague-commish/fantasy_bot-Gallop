@@ -29,7 +29,6 @@ from components import (
     render_grade_badge,
     render_value_delta,
     render_conference_badge,
-    fetch_image_bytes,
     plotly_layout_defaults,
     _html,
 )
@@ -198,40 +197,19 @@ def show_player_deep_dive(
         {"label": "Confidence", "value": p.get("ConfidenceLabel", "N/A") or "N/A"},
     ]
 
-    # Fetch headshot server-side (bypasses ESPN hotlink protection + st.markdown sanitizer)
+    # Pass headshot URL directly to the card component (ESPN URLs work now
+    # that the API returns correct player IDs)
     headshot_url_str = str(headshot) if headshot and str(headshot).startswith("http") else ""
-    headshot_bytes = fetch_image_bytes(headshot_url_str) if headshot_url_str else None
 
-    # Render: photo column + card column
-    has_photo = headshot_bytes or headshot_url_str
-    if has_photo:
-        col_photo, col_card = st.columns([1, 4])
-        with col_photo:
-            if headshot_bytes:
-                st.image(headshot_bytes, width=160)
-            else:
-                # Fallback: let browser try the URL directly
-                st.image(headshot_url_str, width=160)
-        with col_card:
-            _html(render_player_card_expanded(
-                name=player_name,
-                position=p.get("Position", ""),
-                college=p.get("College", ""),
-                stars=stars,
-                headshot_url=None,  # skip photo in HTML
-                conference="",
-                facts=facts,
-            ))
-    else:
-        _html(render_player_card_expanded(
-            name=player_name,
-            position=p.get("Position", ""),
-            college=p.get("College", ""),
-            stars=stars,
-            headshot_url="",  # show SVG placeholder
-            conference="",
-            facts=facts,
-        ))
+    _html(render_player_card_expanded(
+        name=player_name,
+        position=p.get("Position", ""),
+        college=p.get("College", ""),
+        stars=stars,
+        headshot_url=headshot_url_str,
+        conference="",
+        facts=facts,
+    ))
 
     st.markdown("")  # spacer
 
@@ -291,9 +269,9 @@ def _render_board_context(p, player_name: str, year: int):
 
 def _render_auction_context(player_name: str, year: int):
     """Show copy availability, per-copy auction summaries, and bid timelines."""
-    df = load_live_auction(year)
+    df = load_live_auction()
     if df.empty:
-        st.info("No live auction data available for this year.")
+        st.info("No live auction data available.")
         return
 
     df = _resolve_winning_prices(df)
