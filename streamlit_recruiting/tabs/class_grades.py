@@ -31,13 +31,16 @@ def render():
         return
 
     col_y, col_c = st.columns(2)
-    year = col_y.selectbox("Draft Year", years, key="grades_year")
+    year_options = ["All Years"] + years
+    year_selection = col_y.selectbox("Draft Year", year_options, key="grades_year")
+    show_all_years = year_selection == "All Years"
+    year = None if show_all_years else year_selection
     conference_filter = col_c.selectbox("Conference", ["All"] + sorted(CONFERENCES.keys()), key="grades_conf")
 
     grades_df = load_recruiting_grades(year)
 
     if grades_df.empty:
-        st.info(f"No recruiting grades available for {year}. Generate them in Google Sheets first.")
+        st.info(f"No recruiting grades available{'' if show_all_years else f' for {year}'}. Generate them in Google Sheets first.")
         return
 
     # Ensure grades are computed
@@ -82,9 +85,10 @@ def render():
             three = int(row.get("ThreeStar", 0) or 0)
             two = int(row.get("TwoStar", 0) or 0)
 
-            display_rows.append({
-                "Rank": idx + 1,
-                "Logo": row.get("FranchiseLogo", ""),
+            row_data = {"Rank": idx + 1, "Logo": row.get("FranchiseLogo", "")}
+            if show_all_years:
+                row_data["Year"] = int(row["DraftYear"]) if pd.notna(row.get("DraftYear")) else ""
+            row_data.update({
                 "Team": row.get("Franchise", ""),
                 "Conf": row.get("Conference", ""),
                 "Grade": row.get("OverallGrade", ""),
@@ -98,6 +102,7 @@ def render():
                 "Efficiency": row.get("EfficiencyGrade", "N/A"),
                 "Avg Savings": f"${row.get('AvgSavings', 0):.1f}" if pd.notna(row.get("AvgSavings")) else "N/A",
             })
+            display_rows.append(row_data)
 
         display_df = pd.DataFrame(display_rows)
 
@@ -128,24 +133,41 @@ def render():
         row_idx = selected_rows[0]
         if row_idx < len(grades_df):
             team_name = grades_df.iloc[row_idx]["Franchise"]
+            dive_year = year
+            if show_all_years:
+                dive_year = grades_df.iloc[row_idx].get("DraftYear")
             st.markdown("---")
-            _show_team_deep_dive(team_name, grades_df, year)
+            _show_team_deep_dive(team_name, grades_df, dive_year)
 
     # --- Conference Comparison Chart (below fold) ---
     if conference_filter == "All" and len(grades_df) > 5:
         st.markdown("---")
         st.markdown("#### Conference Comparison")
 
-        conf_avg = grades_df.groupby("Conference")["ClassScore"].mean().reset_index()
-        conf_avg.columns = ["Conference", "Avg Score"]
-        conf_avg = conf_avg.sort_values("Avg Score", ascending=False)
+        if show_all_years and "DraftYear" in grades_df.columns:
+            conf_avg = grades_df.groupby(["Conference", "DraftYear"])["ClassScore"].mean().reset_index()
+            conf_avg.columns = ["Conference", "Year", "Avg Score"]
+            conf_avg["Year"] = conf_avg["Year"].astype(str)
+            conf_avg = conf_avg.sort_values("Avg Score", ascending=False)
 
-        fig = px.bar(
-            conf_avg,
-            x="Conference",
-            y="Avg Score",
-            color_discrete_sequence=["#C9A227"],
-        )
+            fig = px.bar(
+                conf_avg,
+                x="Conference",
+                y="Avg Score",
+                color="Year",
+                barmode="group",
+            )
+        else:
+            conf_avg = grades_df.groupby("Conference")["ClassScore"].mean().reset_index()
+            conf_avg.columns = ["Conference", "Avg Score"]
+            conf_avg = conf_avg.sort_values("Avg Score", ascending=False)
+
+            fig = px.bar(
+                conf_avg,
+                x="Conference",
+                y="Avg Score",
+                color_discrete_sequence=["#C9A227"],
+            )
         layout = plotly_layout_defaults()
         layout.update(height=350)
         fig.update_layout(**layout)

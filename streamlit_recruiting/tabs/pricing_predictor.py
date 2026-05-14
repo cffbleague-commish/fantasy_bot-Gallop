@@ -27,8 +27,11 @@ def render():
 
     col_y, col_p = st.columns(2)
     league_year = get_league_year()
-    default_idx = years.index(league_year) if league_year in years else 0
-    year = col_y.selectbox("Draft Year", years, index=default_idx, key="pricing_year")
+    year_options = ["All Years"] + years
+    default_idx = year_options.index(league_year) if league_year in year_options else 0
+    year_selection = col_y.selectbox("Draft Year", year_options, index=default_idx, key="pricing_year")
+    show_all_years = year_selection == "All Years"
+    year = None if show_all_years else year_selection
     position_filter = col_p.selectbox("Position", ["All"] + POSITIONS, key="pricing_pos")
 
     board_df = load_recruiting_board(year)
@@ -37,7 +40,7 @@ def render():
     espn_df = load_espn_prospects()
 
     if board_df.empty:
-        st.info(f"No board data for {year}.")
+        st.info(f"No board data{'' if show_all_years else f' for {year}'}.")
         return
 
     if auction_df.empty:
@@ -129,8 +132,10 @@ def render():
         rows = []
         for _, player in board_df.iterrows():
             name = player["Player"]
-            row_data = {
-                "Photo": player.get("HeadshotURL", ""),
+            row_data = {"Photo": player.get("HeadshotURL", "")}
+            if show_all_years:
+                row_data["Year"] = int(player["DraftYear"]) if pd.notna(player.get("DraftYear")) else ""
+            row_data.update({
                 "Player": name,
                 "Pos": player["Position"],
                 "ADP": player.get("StartupADP"),
@@ -138,7 +143,7 @@ def render():
                 "Current": f"${current_prices[name]:.0f}" if name in current_prices else "",
                 "Multi-Feature": f"${gb_prices[name]:.0f}" if name in gb_prices else "",
                 "Replacement": f"${replacement_prices[name]:.0f}" if name in replacement_prices else "",
-            }
+            })
             rows.append(row_data)
 
         comparison_df = pd.DataFrame(rows)
@@ -201,22 +206,29 @@ def render():
         for name in set(current_prices.keys()) & set(gb_prices.keys()):
             pos_row = board_df[board_df["Player"] == name]
             pos = pos_row["Position"].iloc[0] if not pos_row.empty else ""
-            scatter_data.append({
+            entry = {
                 "Player": name,
                 "Position": pos,
                 "Current": current_prices[name],
                 "Multi-Feature": gb_prices[name],
-            })
+            }
+            if show_all_years and not pos_row.empty:
+                entry["Year"] = str(int(pos_row["DraftYear"].iloc[0])) if pd.notna(pos_row["DraftYear"].iloc[0]) else ""
+            scatter_data.append(entry)
 
         if scatter_data:
             scatter_df = pd.DataFrame(scatter_data)
             pos_colors = {"QB": "#C9A227", "RB": "#3B82C4", "WR": "#7BA4C9", "TE": "#6A6A6A"}
 
-            fig = px.scatter(
-                scatter_df, x="Current", y="Multi-Feature",
+            scatter_kwargs = dict(
+                x="Current", y="Multi-Feature",
                 color="Position", hover_name="Player",
                 color_discrete_map=pos_colors,
             )
+            if show_all_years and "Year" in scatter_df.columns:
+                scatter_kwargs["symbol"] = "Year"
+
+            fig = px.scatter(scatter_df, **scatter_kwargs)
             # Diagonal reference line
             max_val = max(scatter_df["Current"].max(), scatter_df["Multi-Feature"].max())
             fig.add_trace(go.Scatter(

@@ -20,14 +20,17 @@ def render():
         return
 
     col_y, col_p, col_c = st.columns(3)
-    year = col_y.selectbox("Draft Year", years, key="board_year")
+    year_options = ["All Years"] + years
+    year_selection = col_y.selectbox("Draft Year", year_options, key="board_year")
+    show_all_years = year_selection == "All Years"
+    year = None if show_all_years else year_selection
     position_filter = col_p.selectbox("Position", ["All"] + POSITIONS, key="board_pos")
     conference_filter = col_c.selectbox("Conference", ["All"] + sorted(CONFERENCES.keys()), key="board_conf")
 
     df = load_recruiting_board(year)
 
     if df.empty:
-        st.info(f"No recruiting board data available for {year}.")
+        st.info(f"No recruiting board data available{'' if show_all_years else f' for {year}'}.")
         return
 
     # Apply filters
@@ -78,9 +81,10 @@ def render():
     player_detail_slot = st.empty()
 
     # --- Sortable table with row selection ---
-    display_cols = {
-        "Rank": "#",
-        "HeadshotURL": "Photo",
+    display_cols = {"Rank": "#", "HeadshotURL": "Photo"}
+    if show_all_years:
+        display_cols["DraftYear"] = "Year"
+    display_cols.update({
         "Player": "Player",
         "Position": "Pos",
         "College": "College",
@@ -89,7 +93,7 @@ def render():
         "ESPNGrade": "ESPN",
         "PredictedCost": "Predicted",
         "ADPTier": "Tier",
-    }
+    })
 
     available = [c for c in display_cols if c in filtered_df.columns]
     display_df = filtered_df[available].copy()
@@ -136,8 +140,12 @@ def render():
         row_idx = selected_rows[0]
         if row_idx < len(filtered_df):
             player_name = filtered_df.iloc[row_idx]["Player"]
+            # For deep dive, use the player's specific year when showing all
+            dive_year = year
+            if show_all_years and "DraftYear" in filtered_df.columns:
+                dive_year = filtered_df.iloc[row_idx].get("DraftYear")
             with player_detail_slot.container():
-                _show_player_deep_dive(player_name, df, year)
+                _show_player_deep_dive(player_name, df, dive_year)
 
 
 

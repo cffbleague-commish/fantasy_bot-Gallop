@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from data.sheets import load_live_auction, load_recruiting_board, load_franchise_lookup, get_available_years
+from data.sheets import load_live_auction, load_recruiting_board, load_franchise_lookup
 from models.config import POSITIONS, CONFERENCES, COPIES_PER_CONFERENCE, get_league_year
 from components import (
     render_kpi_row,
@@ -121,16 +121,7 @@ def _prepare_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def render():
     """Render the Live Auction tab."""
-    # --- Inline year filter ---
     league_year = get_league_year()
-    years = get_available_years()
-    if not years:
-        st.info("No data found.")
-        return
-
-    default_idx = years.index(league_year) if league_year in years else 0
-    year = st.selectbox("Auction Year", years, index=default_idx, key="auction_year")
-    is_live = (year == league_year)
 
     df = load_live_auction()
 
@@ -141,17 +132,19 @@ def render():
         )
         return
 
-    # Filter to selected year
+    # Determine auction year from the data (should only be one year at a time)
+    auction_year = None
     if "AuctionYear" in df.columns:
-        df = df[df["AuctionYear"] == year].copy()
-        if df.empty:
-            st.info(f"No auction data for {year}.")
-            return
+        auction_years = df["AuctionYear"].dropna().unique()
+        if len(auction_years) == 1:
+            auction_year = int(auction_years[0])
+
+    is_live = (auction_year == league_year) if auction_year else False
 
     df = _prepare_data(df)
     logo_lookup = _build_logo_lookup()
     df["FranchiseLogo"] = df["FranchiseName"].map(logo_lookup).fillna("")
-    headshot_lookup = _build_headshot_lookup(year)
+    headshot_lookup = _build_headshot_lookup(None)
     df["PlayerPhoto"] = df["PlayerName"].map(headshot_lookup).fillna("")
 
     # --- Header with live indicator ---
@@ -163,7 +156,8 @@ def render():
             f'</div>'
         )
     else:
-        _html(f'<div class="cffb-display-3" style="margin-bottom:16px;">{year} Auction History</div>')
+        title = f"{auction_year} Auction History" if auction_year else "Auction History"
+        _html(f'<div class="cffb-display-3" style="margin-bottom:16px;">{title}</div>')
 
     # --- KPI Row ---
     won_df = df[df["TransactionType"] == "AUCTION_WON"]
@@ -270,7 +264,7 @@ def render():
     )
 
     if player_select != "-- Select a player --":
-        _show_player_deep_dive_auction(player_select, df, year, logo_lookup)
+        _show_player_deep_dive_auction(player_select, df, auction_year, logo_lookup)
 
     st.markdown("---")
 
@@ -500,10 +494,10 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
     st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
 
 
-def _show_player_deep_dive_auction(player_name: str, df: pd.DataFrame, year: int, logo_lookup: dict):
+def _show_player_deep_dive_auction(player_name: str, df: pd.DataFrame, auction_year: int | None, logo_lookup: dict):
     """Show the player deep dive in auction context."""
     from data.sheets import load_recruiting_board
-    board_df = load_recruiting_board(year)
+    board_df = load_recruiting_board(auction_year)
 
     from modals.player_deep_dive import show_player_deep_dive
-    show_player_deep_dive(player_name, board_df, year, context="auction")
+    show_player_deep_dive(player_name, board_df, auction_year, context="auction")
