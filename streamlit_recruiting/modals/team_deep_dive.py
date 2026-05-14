@@ -23,6 +23,7 @@ from components import (
     render_value_delta,
     plotly_layout_defaults,
     _html,
+    college_logo_url,
 )
 
 
@@ -90,11 +91,17 @@ def show_team_deep_dive(
         st.info("No player grade data available.")
         return
 
-    # Join headshot URLs from the recruiting board
+    # Join headshot URLs and college names from the recruiting board
     board_df = load_recruiting_board(year)
-    if not board_df.empty and "HeadshotURL" in board_df.columns:
-        headshot_map = board_df.set_index("Player")["HeadshotURL"].to_dict()
-        player_grades["HeadshotURL"] = player_grades["Player"].map(headshot_map).fillna("")
+    if not board_df.empty:
+        if "HeadshotURL" in board_df.columns:
+            headshot_map = board_df.set_index("Player")["HeadshotURL"].to_dict()
+            player_grades["HeadshotURL"] = player_grades["Player"].map(headshot_map).fillna("")
+        if "College" in board_df.columns and "College" not in player_grades.columns:
+            college_map = board_df.set_index("Player")["College"].to_dict()
+            player_grades["College"] = player_grades["Player"].map(college_map).fillna("")
+    if "College" in player_grades.columns:
+        player_grades["CollegeLogo"] = player_grades["College"].apply(college_logo_url)
 
     team_players = player_grades[player_grades["Franchise"] == team_name].copy()
     if team_players.empty:
@@ -118,13 +125,15 @@ def show_team_deep_dive(
 
             st.markdown(f"**{pos}** ({len(pos_players)})")
 
-            display_cols = ["HeadshotURL", "Player", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
+            display_cols = ["HeadshotURL", "Player", "CollegeLogo", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
             available = [c for c in display_cols if c in pos_players.columns]
             display = pos_players[available].copy()
 
             # Format columns
             if "HeadshotURL" in display.columns:
                 display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
+            if "CollegeLogo" in display.columns:
+                display.rename(columns={"CollegeLogo": "School"}, inplace=True)
             if "RecruitScore" in display.columns:
                 display.rename(columns={"RecruitScore": "Score"}, inplace=True)
             if "BidAmount" in display.columns:
@@ -151,6 +160,8 @@ def show_team_deep_dive(
             pos_col_config = {}
             if "Photo" in display.columns:
                 pos_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+            if "School" in display.columns:
+                pos_col_config["School"] = st.column_config.ImageColumn("", width="small")
             st.dataframe(display, column_config=pos_col_config, hide_index=True, use_container_width=True)
 
     with col_right:
