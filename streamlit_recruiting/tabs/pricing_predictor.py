@@ -14,7 +14,7 @@ from models.current_model import build_pricing_model
 from models.gradient_boosting import train_gradient_boosting, predict_gb
 from models.replacement_level import calc_replacement_prices, DEFAULT_REPLACEMENT_ADP
 from models.config import POSITIONS, get_league_year
-from components import render_kpi_row, plotly_layout_defaults, _html
+from components import render_kpi_row, plotly_layout_defaults, _html, college_logo_url
 
 
 def render():
@@ -138,6 +138,7 @@ def render():
             row_data.update({
                 "Player": name,
                 "Pos": player["Position"],
+                "School": college_logo_url(player.get("College", "")),
                 "ADP": player.get("StartupADP"),
                 "Stars": player.get("Rating"),
                 "Current": f"${current_prices[name]:.0f}" if name in current_prices else "",
@@ -150,6 +151,8 @@ def render():
         col_config = {}
         if "Photo" in comparison_df.columns:
             col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+        if "School" in comparison_df.columns:
+            col_config["School"] = st.column_config.ImageColumn("", width="small")
         st.dataframe(comparison_df, column_config=col_config, hide_index=True, use_container_width=True, height=600)
 
     with col_right:

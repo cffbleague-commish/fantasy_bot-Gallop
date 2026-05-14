@@ -8,7 +8,7 @@ import pandas as pd
 
 from data.sheets import load_recruiting_board, get_available_years
 from models.config import POSITIONS, CONFERENCES
-from components import render_kpi_row
+from components import render_kpi_row, college_logo_url, nfl_logo_url
 
 
 def render():
@@ -81,12 +81,17 @@ def render():
     player_detail_slot = st.empty()
 
     # --- Sortable table with row selection ---
+    # Compute college logo URLs from College name
+    if "College" in filtered_df.columns:
+        filtered_df["CollegeLogo"] = filtered_df["College"].apply(college_logo_url)
+
     display_cols = {"Rank": "#", "HeadshotURL": "Photo"}
     if show_all_years:
         display_cols["DraftYear"] = "Year"
     display_cols.update({
         "Player": "Player",
         "Position": "Pos",
+        "CollegeLogo": "School",
         "College": "College",
         "Rating": "Stars",
         "RecruitScore": "Score",
@@ -122,6 +127,8 @@ def render():
     column_config = {}
     if "Photo" in display_df.columns:
         column_config["Photo"] = st.column_config.ImageColumn("", width="small")
+    if "School" in display_df.columns:
+        column_config["School"] = st.column_config.ImageColumn("", width="small")
 
     selection = st.dataframe(
         display_df,

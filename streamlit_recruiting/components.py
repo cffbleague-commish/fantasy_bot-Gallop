@@ -40,6 +40,121 @@ def fetch_image_bytes(url: str) -> bytes | None:
     return None
 
 
+# ---------------------------------------------------------------------------
+# Team logo URL builders
+# ---------------------------------------------------------------------------
+
+# ESPN college football team IDs — maps college name → ESPN numeric ID.
+# Used to construct CDN URLs: https://a.espncdn.com/i/teamlogos/ncaa/500/{id}.png
+_COLLEGE_ESPN_IDS: dict[str, int] = {
+    # SEC
+    "Alabama": 333, "Auburn": 2, "Arkansas": 8, "Florida": 57,
+    "Georgia": 61, "Kentucky": 96, "LSU": 99, "Mississippi State": 344,
+    "Missouri": 142, "Ole Miss": 145, "South Carolina": 2579,
+    "Tennessee": 2633, "Texas": 251, "Texas A&M": 245,
+    "Oklahoma": 201, "Vanderbilt": 238,
+    # Big Ten
+    "Illinois": 356, "Indiana": 84, "Iowa": 2294, "Maryland": 120,
+    "Michigan": 130, "Michigan State": 127, "Minnesota": 135,
+    "Nebraska": 158, "Northwestern": 77, "Ohio State": 194,
+    "Oregon": 2483, "Penn State": 213, "Purdue": 2509,
+    "Rutgers": 164, "UCLA": 26, "USC": 30, "Washington": 264,
+    "Wisconsin": 275,
+    # ACC
+    "Boston College": 103, "Clemson": 228, "Duke": 150,
+    "Florida State": 52, "Georgia Tech": 59, "Louisville": 97,
+    "Miami": 2390, "NC State": 152, "North Carolina": 153,
+    "Notre Dame": 87, "Pittsburgh": 221, "SMU": 2567,
+    "Stanford": 24, "Syracuse": 183, "Virginia": 258,
+    "Virginia Tech": 259, "Wake Forest": 154, "California": 25,
+    # Big 12
+    "Arizona": 12, "Arizona State": 9, "Baylor": 239, "BYU": 252,
+    "Cincinnati": 2132, "Colorado": 38, "Houston": 248,
+    "Iowa State": 66, "Kansas": 2305, "Kansas State": 2306,
+    "Oklahoma State": 197, "TCU": 2628, "Texas Tech": 2641,
+    "UCF": 2116, "Utah": 254, "West Virginia": 277,
+    # Group of 5 / Independents
+    "Boise State": 68, "Memphis": 235, "Tulane": 2655,
+    "San Diego State": 21, "Fresno State": 278, "App State": 2026,
+    "Coastal Carolina": 324, "Liberty": 2335, "Army": 349,
+    "Navy": 2426, "Marshall": 276, "Western Kentucky": 98,
+    "James Madison": 256, "Troy": 2653, "Louisiana": 309,
+    "South Alabama": 6, "UTSA": 2636, "UAB": 5,
+    "East Carolina": 151, "FAU": 2229, "Charlotte": 2429,
+    "Temple": 218, "Tulsa": 202, "Rice": 242,
+    "North Texas": 249, "Southern Miss": 2572, "Old Dominion": 295,
+    "Middle Tennessee": 2393, "UNLV": 2439, "Wyoming": 2704,
+    "Colorado State": 36, "Air Force": 2005, "Nevada": 2440,
+    "Hawaii": 62, "New Mexico": 167, "New Mexico State": 166,
+    "Sam Houston": 2534, "Jacksonville State": 55,
+    "Kennesaw State": 338, "UConn": 41, "UMass": 113,
+    "FIU": 2229, "UTEP": 2638, "Akron": 2006, "Ball State": 2050,
+    "Bowling Green": 189, "Buffalo": 2084, "Central Michigan": 2117,
+    "Eastern Michigan": 2199, "Kent State": 2309, "Miami (OH)": 193,
+    "Northern Illinois": 2459, "Ohio": 195, "Toledo": 2649,
+    "Western Michigan": 2711,
+}
+
+# Build a case-insensitive lookup (lowercased keys)
+_COLLEGE_ID_LOOKUP: dict[str, int] = {k.lower(): v for k, v in _COLLEGE_ESPN_IDS.items()}
+
+# Common alternate spellings / abbreviations
+_COLLEGE_ALIASES: dict[str, str] = {
+    "miss": "ole miss", "mississippi": "ole miss",
+    "usc trojans": "usc", "southern california": "usc",
+    "lsu tigers": "lsu", "tcu horned frogs": "tcu",
+    "smu mustangs": "smu", "ucf knights": "ucf",
+    "byu cougars": "byu", "fau owls": "fau",
+    "fiu panthers": "fiu", "uab blazers": "uab",
+    "utsa roadrunners": "utsa", "utep miners": "utep",
+    "unlv rebels": "unlv",
+    "appalachian state": "app state",
+    "western kentucky": "western kentucky",
+    "texas a&m aggies": "texas a&m",
+    "penn st": "penn state", "ohio st": "ohio state",
+    "michigan st": "michigan state", "miss state": "mississippi state",
+    "mississippi st": "mississippi state",
+    "florida st": "florida state", "oregon st": "oregon state",
+    "oklahoma st": "oklahoma state", "iowa st": "iowa state",
+    "kansas st": "kansas state", "boise st": "boise state",
+    "san diego st": "san diego state", "fresno st": "fresno state",
+    "colorado st": "colorado state", "n.c. state": "nc state",
+    "n carolina": "north carolina", "unc": "north carolina",
+    "pitt": "pittsburgh", "cal": "california",
+    "ga tech": "georgia tech", "vt": "virginia tech",
+    "bc": "boston college", "wvu": "west virginia",
+    "osu": "ohio state", "msu": "michigan state",
+    "tamu": "texas a&m", "a&m": "texas a&m",
+}
+
+
+def college_logo_url(college_name: str) -> str:
+    """Return ESPN CDN logo URL for a college, or empty string if unknown."""
+    if not college_name:
+        return ""
+    key = str(college_name).strip().lower()
+    # Check direct match
+    team_id = _COLLEGE_ID_LOOKUP.get(key)
+    # Check aliases
+    if team_id is None:
+        alias = _COLLEGE_ALIASES.get(key)
+        if alias:
+            team_id = _COLLEGE_ID_LOOKUP.get(alias)
+    if team_id is None:
+        return ""
+    return f"https://a.espncdn.com/i/teamlogos/ncaa/500/{team_id}.png"
+
+
+def nfl_logo_url(nfl_team: str) -> str:
+    """Return ESPN CDN logo URL for an NFL team abbreviation, or empty string."""
+    if not nfl_team:
+        return ""
+    abbr = str(nfl_team).strip().lower()
+    if not abbr or abbr == "nan":
+        return ""
+    return f"https://a.espncdn.com/i/teamlogos/nfl/500/{abbr}.png"
+
+
 # Position badge colors (saturated, on dark bg)
 _POS_COLORS = {
     "QB": "#C9A227",  # Gold

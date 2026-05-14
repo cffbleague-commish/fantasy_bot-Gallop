@@ -372,18 +372,21 @@ def _render_auction_context(player_name: str, year: int):
             bid_rows = session[session["TransactionType"] == "AUCTION_BID"]
             won_rows = session[session["TransactionType"] == "AUCTION_WON"]
 
-            nominated_by = init_rows.iloc[0]["FranchiseName"] if not init_rows.empty else ""
+            nom_name = init_rows.iloc[0]["FranchiseName"] if not init_rows.empty else ""
+            nom_logo = logo_lookup.get(nom_name, "") if nom_name else ""
             opening_bid = init_rows.iloc[0]["BidAmount"] if not init_rows.empty else 0
             num_bids = len(bid_rows)
             max_bid = bid_rows["BidAmount"].max() if not bid_rows.empty else 0
 
             if not won_rows.empty:
                 winner = won_rows.iloc[0]
-                won_by = winner["FranchiseName"]
+                won_name = winner["FranchiseName"]
+                won_logo = logo_lookup.get(won_name, "")
                 winning_price = winner["BidAmount"]
                 status = "Sold"
             else:
-                won_by = ""
+                won_name = ""
+                won_logo = ""
                 winning_price = 0
                 status = "In Progress"
 
@@ -402,18 +405,23 @@ def _render_auction_context(player_name: str, year: int):
             copy_summary_rows.append({
                 "Copy": copy_label,
                 "Status": status,
-                "Nominated By": nominated_by,
+                "Nominated By": nom_logo,
                 "Opening": f"${opening_bid:.0f}",
                 "# Bids": num_bids,
                 "Max Bid": f"${max_bid:.0f}" if max_bid > 0 else "",
-                "Won By": won_by,
+                "Won By": won_logo,
                 "Price": f"${winning_price:.0f}" if winning_price > 0 else "",
                 "Duration": duration,
             })
 
         if copy_summary_rows:
+            summary_col_config = {
+                "Nominated By": st.column_config.ImageColumn("Nominated By", width="small"),
+                "Won By": st.column_config.ImageColumn("Won By", width="small"),
+            }
             st.dataframe(
                 pd.DataFrame(copy_summary_rows),
+                column_config=summary_col_config,
                 hide_index=True,
                 use_container_width=True,
             )
@@ -445,11 +453,12 @@ def _render_auction_context(player_name: str, year: int):
             header_parts.append("In Progress")
 
         with st.expander(" \u2014 ".join(header_parts)):
-            hist = session[["Timestamp", "Type", "FranchiseName", "BidAmount", "Note"]].copy()
-            hist.rename(columns={"FranchiseName": "Team", "BidAmount": "Bid"}, inplace=True)
+            hist = session[["Timestamp", "Type", "FranchiseLogo", "FranchiseName", "BidAmount", "Note"]].copy()
+            hist.rename(columns={"FranchiseLogo": "Team", "FranchiseName": "Name", "BidAmount": "Bid"}, inplace=True)
             hist["Bid"] = hist["Bid"].apply(lambda x: f"${x:.0f}")
             hist["Note"] = hist["Note"].fillna("")
-            st.dataframe(hist, hide_index=True, use_container_width=True)
+            hist_col_config = {"Team": st.column_config.ImageColumn("Team", width="small")}
+            st.dataframe(hist, column_config=hist_col_config, hide_index=True, use_container_width=True)
 
     # --- Per-Copy Timeline Chart ---
     _render_copy_timeline(player_name, player_txns)

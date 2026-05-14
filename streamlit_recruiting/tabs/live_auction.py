@@ -17,6 +17,7 @@ from components import (
     render_kpi_row,
     render_live_indicator,
     plotly_layout_defaults,
+    nfl_logo_url,
     _html,
 )
 
@@ -152,6 +153,8 @@ def render():
     df["FranchiseLogo"] = df["FranchiseName"].map(logo_lookup).fillna("")
     headshot_lookup = _build_headshot_lookup(None)
     df["PlayerPhoto"] = df["PlayerName"].map(headshot_lookup).fillna("")
+    if "NFLTeam" in df.columns:
+        df["NFLLogo"] = df["NFLTeam"].apply(nfl_logo_url)
 
     # --- Header with live indicator ---
     if is_live:
@@ -228,12 +231,13 @@ def render():
     st.markdown("#### Recent Transactions")
     recent = filtered.sort_values("Timestamp", ascending=False).head(50)
 
-    display_cols = ["Timestamp", "Type", "PlayerPhoto", "PlayerName", "Position", "NFLTeam",
+    display_cols = ["Timestamp", "Type", "PlayerPhoto", "PlayerName", "Position", "NFLLogo", "NFLTeam",
                     "FranchiseLogo", "Conference", "BidAmount", "CopySession", "Note", "IsRookie"]
     available = [c for c in display_cols if c in recent.columns]
     display = recent[available].copy()
     display.rename(columns={
-        "PlayerPhoto": "Photo", "PlayerName": "Player", "NFLTeam": "Team",
+        "PlayerPhoto": "Photo", "PlayerName": "Player",
+        "NFLLogo": "NFL", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise", "Conference": "Conf",
         "BidAmount": "Bid", "CopySession": "Copy #", "IsRookie": "Rookie",
     }, inplace=True)
@@ -250,6 +254,8 @@ def render():
     }
     if "Photo" in display.columns:
         col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+    if "NFL" in display.columns:
+        col_config["NFL"] = st.column_config.ImageColumn("", width="small")
     st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
 
     # --- Player Deep Dive ---
@@ -475,12 +481,13 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         return
 
     top = top_won.nlargest(20, "BidAmount")
-    top_cols = ["PlayerPhoto", "PlayerName", "Position", "NFLTeam",
+    top_cols = ["PlayerPhoto", "PlayerName", "Position", "NFLLogo", "NFLTeam",
                 "FranchiseLogo", "BidAmount", "CopySession", "IsRookie"]
     top_available = [c for c in top_cols if c in top.columns]
     top_display = top[top_available].copy()
     top_display.rename(columns={
-        "PlayerPhoto": "Photo", "PlayerName": "Player", "NFLTeam": "Team",
+        "PlayerPhoto": "Photo", "PlayerName": "Player",
+        "NFLLogo": "NFL", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise",
         "BidAmount": "Bid", "CopySession": "Copy #",
         "IsRookie": "Rookie",
@@ -497,6 +504,8 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
     }
     if "Photo" in top_display.columns:
         top_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+    if "NFL" in top_display.columns:
+        top_col_config["NFL"] = st.column_config.ImageColumn("", width="small")
     st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
 
 
