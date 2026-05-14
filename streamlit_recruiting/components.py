@@ -6,6 +6,8 @@ via st.markdown(..., unsafe_allow_html=True). CSS lives in styles.py.
 
 import streamlit as st
 import math
+import base64
+import requests
 
 
 # ---------------------------------------------------------------------------
@@ -15,6 +17,24 @@ import math
 def _html(html: str):
     """Render raw HTML via Streamlit."""
     st.markdown(html, unsafe_allow_html=True)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _fetch_image_b64(url: str) -> str:
+    """Fetch an external image server-side and return a base64 data URI.
+
+    Bypasses hotlink protection (e.g. ESPN's CDN) by making the request
+    from the server where no Referer header is sent.
+    """
+    try:
+        resp = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
+        if resp.status_code == 200:
+            content_type = resp.headers.get("content-type", "image/png")
+            b64 = base64.b64encode(resp.content).decode()
+            return f"data:{content_type};base64,{b64}"
+    except Exception:
+        pass
+    return ""
 
 
 # Position badge colors (saturated, on dark bg)
@@ -180,9 +200,13 @@ def render_player_card_expanded(
     """
     pos_color = _POS_COLORS.get(position, "#6A6A6A")
 
-    # Photo slot
+    # Photo slot — fetch server-side to bypass ESPN hotlink protection
     if headshot_url and str(headshot_url).startswith("http"):
-        photo_inner = f'<img src="{headshot_url}" alt="{_esc(name)}" referrerpolicy="no-referrer" crossorigin="anonymous" onerror="this.style.display=\'none\'">'
+        b64_src = _fetch_image_b64(headshot_url)
+        if b64_src:
+            photo_inner = f'<img src="{b64_src}" alt="{_esc(name)}">'
+        else:
+            photo_inner = f'<img src="{headshot_url}" alt="{_esc(name)}" onerror="this.style.display=\'none\'">'
     else:
         photo_inner = (
             '<div class="cffb-pc-e__photo-empty">'
@@ -257,10 +281,12 @@ def render_team_logo(
         size: "sm", "md", or "lg"
     """
     if logo_url and str(logo_url).startswith("http"):
+        img_height = "30px" if size == "sm" else "48px" if size == "md" else "60px"
+        b64_src = _fetch_image_b64(logo_url)
+        src = b64_src if b64_src else logo_url
         return (
-            f'<img src="{logo_url}" alt="{_esc(abbreviation)}" '
-            f'referrerpolicy="no-referrer" crossorigin="anonymous" '
-            f'style="height:{"30px" if size == "sm" else "48px" if size == "md" else "60px"};'
+            f'<img src="{src}" alt="{_esc(abbreviation)}" '
+            f'style="height:{img_height};'
             f'border-radius:50%;object-fit:cover;" '
             f'onerror="this.style.display=\'none\'">'
         )
