@@ -18,6 +18,7 @@ from components import (
     render_live_indicator,
     plotly_layout_defaults,
     nfl_logo_url,
+    position_badge_url,
     _html,
 )
 
@@ -66,10 +67,15 @@ def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
-    """Assign CopySession numbers per conference based on AUCTION_INIT boundaries.
+    """Assign CopySession numbers per conference using INIT/WON lifecycle.
 
     Each conference auctions its copies independently (max 1 active at a time).
-    A new AUCTION_INIT within the same (PlayerID, Conference) starts the next copy.
+    Rules:
+    - AUCTION_INIT always opens a new session (increments counter).
+    - AUCTION_WON closes the current session.
+    - Any transaction after a closed session (even without an explicit INIT)
+      opens a new session.  This prevents two WON events from sharing a session
+      and ensures Copy #1 is always resolved before Copy #2 begins.
     """
     if df.empty:
         return df
@@ -80,12 +86,21 @@ def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
             continue
         idx_sorted = group.sort_values("Timestamp", ascending=True).index
         counter = 0
+        session_closed = True  # no active session at start
         for i in idx_sorted:
-            if df.at[i, "TransactionType"] == "AUCTION_INIT":
+            txn_type = df.at[i, "TransactionType"]
+            if txn_type == "AUCTION_INIT":
+                # Explicit nomination — always starts a new copy session
                 counter += 1
-            elif counter == 0:
-                counter = 1
+                session_closed = False
+            elif session_closed:
+                # Previous session was closed (won) or we haven't started yet;
+                # this transaction implicitly opens the next copy session.
+                counter += 1
+                session_closed = False
             df.at[i, "CopySession"] = counter
+            if txn_type == "AUCTION_WON":
+                session_closed = True
     return df
 
 
@@ -155,6 +170,8 @@ def render():
     df["PlayerPhoto"] = df["PlayerName"].map(headshot_lookup).fillna("")
     if "NFLTeam" in df.columns:
         df["NFLLogo"] = df["NFLTeam"].apply(nfl_logo_url)
+    if "Position" in df.columns:
+        df["PosBadge"] = df["Position"].apply(position_badge_url)
 
     # --- Header with live indicator ---
     if is_live:
@@ -231,12 +248,12 @@ def render():
     st.markdown("#### Recent Transactions")
     recent = filtered.sort_values("Timestamp", ascending=False).head(50)
 
-    display_cols = ["Timestamp", "Type", "PlayerPhoto", "PlayerName", "Position", "NFLLogo", "NFLTeam",
+    display_cols = ["Timestamp", "Type", "PlayerPhoto", "PlayerName", "PosBadge", "NFLLogo", "NFLTeam",
                     "FranchiseLogo", "Conference", "BidAmount", "CopySession", "Note", "IsRookie"]
     available = [c for c in display_cols if c in recent.columns]
     display = recent[available].copy()
     display.rename(columns={
-        "PlayerPhoto": "Photo", "PlayerName": "Player",
+        "PlayerPhoto": "Photo", "PlayerName": "Player", "PosBadge": "Pos",
         "NFLLogo": "NFL", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise", "Conference": "Conf",
         "BidAmount": "Bid", "CopySession": "Copy #", "IsRookie": "Rookie",
@@ -254,6 +271,8 @@ def render():
     }
     if "Photo" in display.columns:
         col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+    if "Pos" in display.columns:
+        col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
     if "NFL" in display.columns:
         col_config["NFL"] = st.column_config.ImageColumn("", width="small")
     st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
@@ -481,12 +500,12 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         return
 
     top = top_won.nlargest(20, "BidAmount")
-    top_cols = ["PlayerPhoto", "PlayerName", "Position", "NFLLogo", "NFLTeam",
+    top_cols = ["PlayerPhoto", "PlayerName", "PosBadge", "NFLLogo", "NFLTeam",
                 "FranchiseLogo", "BidAmount", "CopySession", "IsRookie"]
     top_available = [c for c in top_cols if c in top.columns]
     top_display = top[top_available].copy()
     top_display.rename(columns={
-        "PlayerPhoto": "Photo", "PlayerName": "Player",
+        "PlayerPhoto": "Photo", "PlayerName": "Player", "PosBadge": "Pos",
         "NFLLogo": "NFL", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise",
         "BidAmount": "Bid", "CopySession": "Copy #",
@@ -504,6 +523,8 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
     }
     if "Photo" in top_display.columns:
         top_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+    if "Pos" in top_display.columns:
+        top_col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
     if "NFL" in top_display.columns:
         top_col_config["NFL"] = st.column_config.ImageColumn("", width="small")
     st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)

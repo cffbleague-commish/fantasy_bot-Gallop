@@ -122,10 +122,15 @@ def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
-    """Assign CopySession numbers per conference based on AUCTION_INIT boundaries.
+    """Assign CopySession numbers per conference using INIT/WON lifecycle.
 
     Each conference auctions its copies independently (max 1 active at a time).
-    A new AUCTION_INIT within the same (PlayerID, Conference) starts the next copy.
+    Rules:
+    - AUCTION_INIT always opens a new session (increments counter).
+    - AUCTION_WON closes the current session.
+    - Any transaction after a closed session (even without an explicit INIT)
+      opens a new session.  This prevents two WON events from sharing a session
+      and ensures Copy #1 is always resolved before Copy #2 begins.
     """
     if df.empty:
         return df
@@ -136,12 +141,21 @@ def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
             continue
         idx_sorted = group.sort_values("Timestamp", ascending=True).index
         counter = 0
+        session_closed = True  # no active session at start
         for i in idx_sorted:
-            if df.at[i, "TransactionType"] == "AUCTION_INIT":
+            txn_type = df.at[i, "TransactionType"]
+            if txn_type == "AUCTION_INIT":
+                # Explicit nomination — always starts a new copy session
                 counter += 1
-            elif counter == 0:
-                counter = 1
+                session_closed = False
+            elif session_closed:
+                # Previous session was closed (won) or we haven't started yet;
+                # this transaction implicitly opens the next copy session.
+                counter += 1
+                session_closed = False
             df.at[i, "CopySession"] = counter
+            if txn_type == "AUCTION_WON":
+                session_closed = True
     return df
 
 

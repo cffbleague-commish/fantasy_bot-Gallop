@@ -154,7 +154,7 @@ def show_team_deep_dive(
                 display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
             if "Stars" in display.columns:
                 display["Stars"] = display["Stars"].apply(
-                    lambda x: f"{'★' * int(x)}" if pd.notna(x) else ""
+                    lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
                 )
 
             pos_col_config = {}

@@ -163,6 +163,27 @@ _POS_COLORS = {
     "TE": "#6A6A6A",  # Neutral
 }
 
+
+def position_badge_url(position: str) -> str:
+    """Return an inline SVG data URI for a position badge.
+
+    Renders as a small rounded pill with the position's color, suitable
+    for use with st.column_config.ImageColumn.
+    """
+    from urllib.parse import quote
+    pos = str(position).strip().upper() if position else ""
+    if not pos:
+        return ""
+    color = _POS_COLORS.get(pos, "#6A6A6A")
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="42" height="22">'
+        f'<rect width="42" height="22" rx="6" fill="{color}"/>'
+        f'<text x="21" y="15.5" text-anchor="middle" font-family="Inter,system-ui,sans-serif" '
+        f'font-size="11" font-weight="700" fill="#fff">{pos}</text>'
+        f'</svg>'
+    )
+    return f"data:image/svg+xml,{quote(svg)}"
+
 # Star tier CSS modifier classes
 _STAR_TIERS = {5: "t5", 4: "t4", 3: "t3", 2: "t2", 1: "t1"}
 
