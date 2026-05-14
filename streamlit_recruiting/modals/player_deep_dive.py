@@ -122,12 +122,18 @@ def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
-    """Assign a CopySession number to every row based on AUCTION_INIT boundaries."""
+    """Assign CopySession numbers per conference based on AUCTION_INIT boundaries.
+
+    Each conference auctions its copies independently (max 1 active at a time).
+    A new AUCTION_INIT within the same (PlayerID, Conference) starts the next copy.
+    """
     if df.empty:
         return df
     df = df.copy()
     df["CopySession"] = 0
-    for player_id, group in df.groupby("PlayerID"):
+    for (_, conference), group in df.groupby(["PlayerID", "Conference"]):
+        if not conference or str(conference) == "nan":
+            continue
         idx_sorted = group.sort_values("Timestamp", ascending=True).index
         counter = 0
         for i in idx_sorted:
@@ -303,13 +309,21 @@ def _render_auction_context(player_name: str, year: int):
     player_won = player_txns[player_txns["TransactionType"] == "AUCTION_WON"]
     sold_count = len(player_won)
     available_count = total_copies - sold_count
-    total_sessions = int(player_txns["CopySession"].max()) if not player_txns.empty else 0
+
+    # Count unique (Conference, CopySession) pairs — each is one copy auction
+    active_txns = player_txns[player_txns["CopySession"] > 0]
+    copy_keys = (
+        active_txns[["Conference", "CopySession"]]
+        .drop_duplicates()
+        .sort_values(["Conference", "CopySession"])
+    )
+    total_nominated = len(copy_keys)
 
     kpi_tiles = [
         {"label": "Total Copies", "value": str(total_copies)},
         {"label": "Sold", "value": str(sold_count), "hero": True},
         {"label": "Available", "value": str(available_count)},
-        {"label": "Copies Nominated", "value": str(total_sessions)},
+        {"label": "Copies Nominated", "value": str(total_nominated)},
     ]
     if sold_count > 0:
         kpi_tiles.append({"label": "Avg Price", "value": f"${player_won['BidAmount'].mean():.0f}"})
@@ -338,14 +352,21 @@ def _render_auction_context(player_name: str, year: int):
     # --- Per-Copy Auction Summary ---
     st.markdown("#### Copy Auction Summary")
 
-    if total_sessions == 0:
+    if copy_keys.empty:
         st.info("No auction sessions found for this player.")
     else:
         copy_summary_rows = []
-        for session_num in range(1, total_sessions + 1):
-            session = player_txns[player_txns["CopySession"] == session_num]
+        for _, key in copy_keys.iterrows():
+            conf = key["Conference"]
+            session_num = int(key["CopySession"])
+            session = player_txns[
+                (player_txns["Conference"] == conf)
+                & (player_txns["CopySession"] == session_num)
+            ]
             if session.empty:
                 continue
+
+            copy_label = f"{conf} #{session_num}"
 
             init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
             bid_rows = session[session["TransactionType"] == "AUCTION_BID"]
@@ -360,12 +381,10 @@ def _render_auction_context(player_name: str, year: int):
                 winner = won_rows.iloc[0]
                 won_by = winner["FranchiseName"]
                 winning_price = winner["BidAmount"]
-                conference = winner.get("Conference", "")
                 status = "Sold"
             else:
                 won_by = ""
                 winning_price = 0
-                conference = ""
                 status = "In Progress"
 
             # Duration
@@ -381,7 +400,7 @@ def _render_auction_context(player_name: str, year: int):
                 duration = ""
 
             copy_summary_rows.append({
-                "Copy #": f"#{session_num}",
+                "Copy": copy_label,
                 "Status": status,
                 "Nominated By": nominated_by,
                 "Opening": f"${opening_bid:.0f}",
@@ -389,7 +408,6 @@ def _render_auction_context(player_name: str, year: int):
                 "Max Bid": f"${max_bid:.0f}" if max_bid > 0 else "",
                 "Won By": won_by,
                 "Price": f"${winning_price:.0f}" if winning_price > 0 else "",
-                "Conf": conference,
                 "Duration": duration,
             })
 
@@ -403,15 +421,22 @@ def _render_auction_context(player_name: str, year: int):
     # --- Per-Copy Bid History (expanders) ---
     st.markdown("#### Bid History by Copy")
 
-    for session_num in range(1, total_sessions + 1):
-        session = player_txns[player_txns["CopySession"] == session_num].copy()
+    for _, key in copy_keys.iterrows():
+        conf = key["Conference"]
+        session_num = int(key["CopySession"])
+        copy_label = f"{conf} #{session_num}"
+
+        session = player_txns[
+            (player_txns["Conference"] == conf)
+            & (player_txns["CopySession"] == session_num)
+        ].copy()
         if session.empty:
             continue
 
         init_rows = session[session["TransactionType"] == "AUCTION_INIT"]
         won_rows = session[session["TransactionType"] == "AUCTION_WON"]
 
-        header_parts = [f"**Copy #{session_num}**"]
+        header_parts = [f"**{copy_label}**"]
         if not init_rows.empty:
             header_parts.append(f"Nominated by {init_rows.iloc[0]['FranchiseName']} at ${init_rows.iloc[0]['BidAmount']:.0f}")
         if not won_rows.empty:
@@ -443,20 +468,34 @@ def _render_copy_timeline(player_name: str, player_txns: pd.DataFrame):
         st.info("No timestamped auction data to plot.")
         return
 
+    # Build unique (Conference, CopySession) pairs for the legend traces
+    copy_keys = (
+        timeline_df[["Conference", "CopySession"]]
+        .drop_duplicates()
+        .sort_values(["Conference", "CopySession"])
+    )
+
     fig = go.Figure()
-    sessions = sorted(timeline_df["CopySession"].unique())
     copy_colors = [
         "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6",
         "#1abc9c", "#e67e22", "#2980b9", "#27ae60", "#c0392b",
     ]
 
-    for i, session_num in enumerate(sessions):
-        session_data = timeline_df[timeline_df["CopySession"] == session_num].sort_values("DateTime")
+    for i, (_, key) in enumerate(copy_keys.iterrows()):
+        conf = key["Conference"]
+        session_num = int(key["CopySession"])
+        copy_label = f"{conf} #{session_num}"
+
+        session_data = timeline_df[
+            (timeline_df["Conference"] == conf)
+            & (timeline_df["CopySession"] == session_num)
+        ].sort_values("DateTime")
         color = copy_colors[i % len(copy_colors)]
 
         hover_text = session_data.apply(
             lambda r: (
                 f"<b>{r['Type']}</b><br>"
+                f"Conference: {r['Conference']}<br>"
                 f"Franchise: {r['FranchiseName']}<br>"
                 f"Bid: ${r['BidAmount']:.0f}<br>"
                 + (f"Note: {r['Note']}" if pd.notna(r.get("Note")) and str(r.get("Note", "")).strip() else "")
@@ -468,7 +507,7 @@ def _render_copy_timeline(player_name: str, player_txns: pd.DataFrame):
             x=session_data["DateTime"],
             y=session_data["BidAmount"],
             mode="lines+markers",
-            name=f"Copy #{int(session_num)}",
+            name=copy_label,
             line=dict(color=color, width=2),
             marker=dict(
                 size=10, color=color,
