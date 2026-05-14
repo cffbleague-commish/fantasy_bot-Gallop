@@ -170,56 +170,62 @@ def show_player_deep_dive(
         context: "board", "auction", or "pricing"
     """
     player_row = board_df[board_df["Player"] == player_name]
-    if player_row.empty:
-        st.warning(f"No board data found for {player_name}.")
-        return
+    has_board_data = not player_row.empty
 
-    p = player_row.iloc[0]
+    if has_board_data:
+        p = player_row.iloc[0]
 
-    # --- Common header ---
-    stars = int(p.get("Rating", 1) or 1)
-    headshot = p.get("HeadshotURL", "")
+        # --- Common header ---
+        stars = int(p.get("Rating", 1) or 1)
+        headshot = p.get("HeadshotURL", "")
 
-    # Build draft string
-    draft_str = f"Rd {p.get('DraftRd', '')}" if p.get("DraftRd") else "N/A"
-    if pd.notna(p.get("OverallPick")):
-        draft_str += f", Pick {int(p['OverallPick'])}"
+        # Build draft string
+        draft_str = f"Rd {p.get('DraftRd', '')}" if p.get("DraftRd") else "N/A"
+        if pd.notna(p.get("OverallPick")):
+            draft_str += f", Pick {int(p['OverallPick'])}"
 
-    facts = [
-        {"label": "Recruit Score", "value": f"{p.get('RecruitScore', 0):.1f}" if pd.notna(p.get("RecruitScore")) else "N/A", "hero": True},
-        {"label": "ESPN Grade", "value": f"{p.get('ESPNGrade', 0):.0f}" if pd.notna(p.get("ESPNGrade")) else "N/A"},
-        {"label": "ADP", "value": f"{int(p['StartupADP'])}" if pd.notna(p.get("StartupADP")) else "N/A"},
-        {"label": "ADP Tier", "value": str(p.get("ADPTier", "N/A") or "N/A")},
-        {"label": "Rank", "value": f"#{int(p.get('Rank', 0))}" if p.get("Rank") else "N/A"},
-        {"label": "ESPN Rank", "value": f"#{int(p['ESPNRank'])}" if pd.notna(p.get("ESPNRank")) else "N/A"},
-        {"label": "Pos Rank", "value": f"#{int(p['PosRank'])}" if pd.notna(p.get("PosRank")) else "N/A"},
-        {"label": "Draft", "value": draft_str},
-        {"label": "Confidence", "value": p.get("ConfidenceLabel", "N/A") or "N/A"},
-    ]
+        facts = [
+            {"label": "Recruit Score", "value": f"{p.get('RecruitScore', 0):.1f}" if pd.notna(p.get("RecruitScore")) else "N/A", "hero": True},
+            {"label": "ESPN Grade", "value": f"{p.get('ESPNGrade', 0):.0f}" if pd.notna(p.get("ESPNGrade")) else "N/A"},
+            {"label": "ADP", "value": f"{int(p['StartupADP'])}" if pd.notna(p.get("StartupADP")) else "N/A"},
+            {"label": "ADP Tier", "value": str(p.get("ADPTier", "N/A") or "N/A")},
+            {"label": "Rank", "value": f"#{int(p.get('Rank', 0))}" if p.get("Rank") else "N/A"},
+            {"label": "ESPN Rank", "value": f"#{int(p['ESPNRank'])}" if pd.notna(p.get("ESPNRank")) else "N/A"},
+            {"label": "Pos Rank", "value": f"#{int(p['PosRank'])}" if pd.notna(p.get("PosRank")) else "N/A"},
+            {"label": "Draft", "value": draft_str},
+            {"label": "Confidence", "value": p.get("ConfidenceLabel", "N/A") or "N/A"},
+        ]
 
-    # Pass headshot URL directly to the card component (ESPN URLs work now
-    # that the API returns correct player IDs)
-    headshot_url_str = str(headshot) if headshot and str(headshot).startswith("http") else ""
+        headshot_url_str = str(headshot) if headshot and str(headshot).startswith("http") else ""
 
-    _html(render_player_card_expanded(
-        name=player_name,
-        position=p.get("Position", ""),
-        college=p.get("College", ""),
-        stars=stars,
-        headshot_url=headshot_url_str,
-        conference="",
-        facts=facts,
-    ))
+        _html(render_player_card_expanded(
+            name=player_name,
+            position=p.get("Position", ""),
+            college=p.get("College", ""),
+            stars=stars,
+            headshot_url=headshot_url_str,
+            conference="",
+            facts=facts,
+        ))
 
-    st.markdown("")  # spacer
+        st.markdown("")  # spacer
+    else:
+        # No board match — show a minimal header (auction context can still render)
+        _html(f'<div class="cffb-display-3" style="margin-bottom:16px;">{player_name}</div>')
 
     # --- Context-specific content ---
     if context == "board":
-        _render_board_context(p, player_name, year)
+        if has_board_data:
+            _render_board_context(p, player_name, year)
+        else:
+            st.info(f"No board data found for {player_name}.")
     elif context == "auction":
         _render_auction_context(player_name, year)
     elif context == "pricing":
-        _render_pricing_context(p, player_name, year)
+        if has_board_data:
+            _render_pricing_context(p, player_name, year)
+        else:
+            st.info(f"No board data found for {player_name}.")
 
 
 # ---------------------------------------------------------------------------
