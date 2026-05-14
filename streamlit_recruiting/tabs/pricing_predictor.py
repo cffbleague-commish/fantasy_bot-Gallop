@@ -129,7 +129,8 @@ def render():
         rows = []
         for _, player in board_df.iterrows():
             name = player["Player"]
-            rows.append({
+            row_data = {
+                "Photo": player.get("HeadshotURL", ""),
                 "Player": name,
                 "Pos": player["Position"],
                 "ADP": player.get("StartupADP"),
@@ -137,10 +138,14 @@ def render():
                 "Current": f"${current_prices[name]:.0f}" if name in current_prices else "",
                 "Multi-Feature": f"${gb_prices[name]:.0f}" if name in gb_prices else "",
                 "Replacement": f"${replacement_prices[name]:.0f}" if name in replacement_prices else "",
-            })
+            }
+            rows.append(row_data)
 
         comparison_df = pd.DataFrame(rows)
-        st.dataframe(comparison_df, hide_index=True, use_container_width=True, height=600)
+        col_config = {}
+        if "Photo" in comparison_df.columns:
+            col_config["Photo"] = st.column_config.ImageColumn("Photo", width="small")
+        st.dataframe(comparison_df, column_config=col_config, hide_index=True, use_container_width=True, height=600)
 
     with col_right:
         # Model Performance Cards

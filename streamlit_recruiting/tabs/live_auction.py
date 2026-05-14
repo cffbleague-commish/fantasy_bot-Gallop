@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from data.sheets import load_live_auction, load_franchise_lookup, get_available_years
+from data.sheets import load_live_auction, load_recruiting_board, load_franchise_lookup, get_available_years
 from models.config import POSITIONS, CONFERENCES, COPIES_PER_CONFERENCE, get_league_year
 from components import (
     render_kpi_row,
@@ -94,6 +94,18 @@ def _build_logo_lookup() -> dict:
     }
 
 
+def _build_headshot_lookup(year: int) -> dict:
+    """Build PlayerName -> HeadshotURL mapping from the recruiting board."""
+    board = load_recruiting_board(year)
+    if board.empty or "HeadshotURL" not in board.columns:
+        return {}
+    return {
+        row["Player"]: row["HeadshotURL"]
+        for _, row in board.iterrows()
+        if row.get("HeadshotURL") and str(row["HeadshotURL"]).startswith("http")
+    }
+
+
 def _prepare_data(df: pd.DataFrame) -> pd.DataFrame:
     """Resolve prices, add labels, assign copy sessions."""
     df = _resolve_winning_prices(df)
@@ -139,6 +151,8 @@ def render():
     df = _prepare_data(df)
     logo_lookup = _build_logo_lookup()
     df["FranchiseLogo"] = df["FranchiseName"].map(logo_lookup).fillna("")
+    headshot_lookup = _build_headshot_lookup(year)
+    df["PlayerPhoto"] = df["PlayerName"].map(headshot_lookup).fillna("")
 
     # --- Header with live indicator ---
     if is_live:
@@ -214,12 +228,12 @@ def render():
     st.markdown("#### Recent Transactions")
     recent = filtered.sort_values("Timestamp", ascending=False).head(50)
 
-    display_cols = ["Timestamp", "Type", "PlayerName", "Position", "NFLTeam",
+    display_cols = ["Timestamp", "Type", "PlayerPhoto", "PlayerName", "Position", "NFLTeam",
                     "FranchiseLogo", "Conference", "BidAmount", "CopySession", "Note", "IsRookie"]
     available = [c for c in display_cols if c in recent.columns]
     display = recent[available].copy()
     display.rename(columns={
-        "PlayerName": "Player", "NFLTeam": "Team",
+        "PlayerPhoto": "Photo", "PlayerName": "Player", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise", "Conference": "Conf",
         "BidAmount": "Bid", "CopySession": "Copy #", "IsRookie": "Rookie",
     }, inplace=True)
@@ -231,7 +245,11 @@ def render():
     if "Copy #" in display.columns:
         display["Copy #"] = display["Copy #"].apply(lambda x: f"#{int(x)}" if x > 0 else "")
 
-    col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
+    col_config = {
+        "Franchise": st.column_config.ImageColumn("Franchise", width="small"),
+    }
+    if "Photo" in display.columns:
+        col_config["Photo"] = st.column_config.ImageColumn("Photo", width="small")
     st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
 
     # --- Player Deep Dive ---
@@ -457,11 +475,12 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         return
 
     top = top_won.nlargest(20, "BidAmount")
-    top_display = top[["PlayerName", "Position", "NFLTeam",
-                        "FranchiseLogo", "BidAmount",
-                        "CopySession", "IsRookie"]].copy()
+    top_cols = ["PlayerPhoto", "PlayerName", "Position", "NFLTeam",
+                "FranchiseLogo", "BidAmount", "CopySession", "IsRookie"]
+    top_available = [c for c in top_cols if c in top.columns]
+    top_display = top[top_available].copy()
     top_display.rename(columns={
-        "PlayerName": "Player", "NFLTeam": "Team",
+        "PlayerPhoto": "Photo", "PlayerName": "Player", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise",
         "BidAmount": "Bid", "CopySession": "Copy #",
         "IsRookie": "Rookie",
@@ -473,8 +492,12 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
             lambda x: f"#{int(x)}" if x > 0 else ""
         )
 
-    col_config = {"Franchise": st.column_config.ImageColumn("Franchise", width="small")}
-    st.dataframe(top_display, column_config=col_config, hide_index=True, use_container_width=True)
+    top_col_config = {
+        "Franchise": st.column_config.ImageColumn("Franchise", width="small"),
+    }
+    if "Photo" in top_display.columns:
+        top_col_config["Photo"] = st.column_config.ImageColumn("Photo", width="small")
+    st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
 
 
 def _show_player_deep_dive_auction(player_name: str, df: pd.DataFrame, year: int, logo_lookup: dict):

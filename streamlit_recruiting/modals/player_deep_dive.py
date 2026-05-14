@@ -205,13 +205,13 @@ def show_player_deep_dive(
     # Render: photo column + card column
     has_photo = headshot_bytes or headshot_url_str
     if has_photo:
-        col_photo, col_card = st.columns([1, 5])
+        col_photo, col_card = st.columns([1, 4])
         with col_photo:
             if headshot_bytes:
-                st.image(headshot_bytes, width=100)
+                st.image(headshot_bytes, width=160)
             else:
                 # Fallback: let browser try the URL directly
-                st.image(headshot_url_str, width=100)
+                st.image(headshot_url_str, width=160)
         with col_card:
             _html(render_player_card_expanded(
                 name=player_name,

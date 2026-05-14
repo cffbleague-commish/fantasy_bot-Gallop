@@ -8,7 +8,7 @@ import pandas as pd
 
 from data.sheets import load_recruiting_board, get_available_years
 from models.config import POSITIONS, CONFERENCES
-from components import render_kpi_row, _html
+from components import render_kpi_row
 
 
 def render():
@@ -80,6 +80,7 @@ def render():
     # --- Sortable table with row selection ---
     display_cols = {
         "Rank": "#",
+        "HeadshotURL": "Photo",
         "Player": "Player",
         "Position": "Pos",
         "College": "College",
@@ -114,8 +115,13 @@ def render():
             lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
         )
 
+    column_config = {}
+    if "Photo" in display_df.columns:
+        column_config["Photo"] = st.column_config.ImageColumn("Photo", width="small")
+
     selection = st.dataframe(
         display_df,
+        column_config=column_config,
         hide_index=True,
         use_container_width=True,
         height=min(len(display_df) * 35 + 38, 700),
@@ -133,30 +139,6 @@ def render():
             with player_detail_slot.container():
                 _show_player_deep_dive(player_name, df, year)
 
-    # --- Temporary debug: test headshot fetch ---
-    if "HeadshotURL" in df.columns:
-        sample_urls = df["HeadshotURL"].dropna()
-        sample_urls = sample_urls[sample_urls.str.startswith("http", na=False)]
-        if not sample_urls.empty:
-            with st.expander("Debug: Headshot Fetch Test", expanded=False):
-                test_url = sample_urls.iloc[0]
-                st.code(test_url, language=None)
-                import requests as _req
-                try:
-                    resp = _req.get(test_url, timeout=10, headers={
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                        "Accept": "image/*,*/*;q=0.8",
-                    }, allow_redirects=True)
-                    st.write(f"Status: {resp.status_code}, Size: {len(resp.content)} bytes, "
-                             f"Content-Type: {resp.headers.get('content-type', 'unknown')}")
-                    if resp.status_code == 200 and len(resp.content) > 100:
-                        st.image(resp.content, width=100, caption="Server-side fetch OK")
-                    else:
-                        st.warning(f"Got {resp.status_code}, body preview: {resp.content[:200]}")
-                except Exception as e:
-                    st.error(f"Fetch failed: {type(e).__name__}: {e}")
-                st.caption("Also testing st.image(url) direct:")
-                st.image(test_url, width=100)
 
 
 def _show_player_deep_dive(player_name: str, board_df: pd.DataFrame, year: int):

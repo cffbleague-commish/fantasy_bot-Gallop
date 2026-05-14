@@ -12,7 +12,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from data.sheets import load_player_grades, load_franchise_lookup
+from data.sheets import load_player_grades, load_recruiting_board, load_franchise_lookup
 from components import (
     render_kpi_row,
     render_grade_badge,
@@ -90,6 +90,12 @@ def show_team_deep_dive(
         st.info("No player grade data available.")
         return
 
+    # Join headshot URLs from the recruiting board
+    board_df = load_recruiting_board(year)
+    if not board_df.empty and "HeadshotURL" in board_df.columns:
+        headshot_map = board_df.set_index("Player")["HeadshotURL"].to_dict()
+        player_grades["HeadshotURL"] = player_grades["Player"].map(headshot_map).fillna("")
+
     team_players = player_grades[player_grades["Franchise"] == team_name].copy()
     if team_players.empty:
         st.info(f"No player acquisitions found for {team_name}.")
@@ -112,11 +118,13 @@ def show_team_deep_dive(
 
             st.markdown(f"**{pos}** ({len(pos_players)})")
 
-            display_cols = ["Player", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
+            display_cols = ["HeadshotURL", "Player", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
             available = [c for c in display_cols if c in pos_players.columns]
             display = pos_players[available].copy()
 
             # Format columns
+            if "HeadshotURL" in display.columns:
+                display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
             if "RecruitScore" in display.columns:
                 display.rename(columns={"RecruitScore": "Score"}, inplace=True)
             if "BidAmount" in display.columns:
@@ -140,7 +148,10 @@ def show_team_deep_dive(
                     lambda x: f"{'★' * int(x)}" if pd.notna(x) else ""
                 )
 
-            st.dataframe(display, hide_index=True, use_container_width=True)
+            pos_col_config = {}
+            if "Photo" in display.columns:
+                pos_col_config["Photo"] = st.column_config.ImageColumn("Photo", width="small")
+            st.dataframe(display, column_config=pos_col_config, hide_index=True, use_container_width=True)
 
     with col_right:
         st.markdown("#### Value Analysis")
