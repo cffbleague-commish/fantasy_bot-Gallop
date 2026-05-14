@@ -231,12 +231,24 @@ function parseESPNAthlete(data, espnId) {
       }
     }
 
-    // Headshot URL - extract from API response (draft athlete ID ≠ player headshot ID)
+    // Headshot URL — prefer API-provided, fall back to constructed URL
     let headshotUrl = "";
     if (data.headshot && data.headshot.href) {
+      // Best: ESPN provides the correct headshot URL directly
       headshotUrl = data.headshot.href;
-    } else if (data.headshot && data.headshot.url) {
-      headshotUrl = data.headshot.url;
+    } else {
+      // Fallback: try to find the real athlete ID from the athlete $ref,
+      // then construct the URL. Draft athlete ID ≠ player headshot ID.
+      let playerIdForHeadshot = espnId; // default to draft ID (may 404)
+      if (data.athlete && data.athlete["$ref"]) {
+        const athleteMatch = String(data.athlete["$ref"]).match(/athletes\/(\d+)/);
+        if (athleteMatch) playerIdForHeadshot = athleteMatch[1];
+      }
+      // Try NFL path for drafted players, college path for pre-draft
+      const headshotPath = (draftRound && draftRound !== "0")
+        ? `/i/headshots/nfl/players/full/${playerIdForHeadshot}.png`
+        : `/i/headshots/college-football/players/full/${playerIdForHeadshot}.png`;
+      headshotUrl = `https://a.espncdn.com/combiner/i?img=${headshotPath}&w=350&h=254`;
     }
 
     return {
