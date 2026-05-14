@@ -121,7 +121,7 @@ def render():
 
     column_config = {}
     if "Photo" in display_df.columns:
-        column_config["Photo"] = st.column_config.ImageColumn("", width="medium")
+        column_config["Photo"] = st.column_config.ImageColumn("", width="small")
 
     selection = st.dataframe(
         display_df,

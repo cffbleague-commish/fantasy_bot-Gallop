@@ -243,7 +243,7 @@ def render():
         "Franchise": st.column_config.ImageColumn("Franchise", width="small"),
     }
     if "Photo" in display.columns:
-        col_config["Photo"] = st.column_config.ImageColumn("", width="medium")
+        col_config["Photo"] = st.column_config.ImageColumn("", width="small")
     st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
 
     # --- Player Deep Dive ---
@@ -490,7 +490,7 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         "Franchise": st.column_config.ImageColumn("Franchise", width="small"),
     }
     if "Photo" in top_display.columns:
-        top_col_config["Photo"] = st.column_config.ImageColumn("", width="medium")
+        top_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
     st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
 
 

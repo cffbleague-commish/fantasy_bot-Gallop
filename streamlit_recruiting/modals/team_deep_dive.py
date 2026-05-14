@@ -150,7 +150,7 @@ def show_team_deep_dive(
 
             pos_col_config = {}
             if "Photo" in display.columns:
-                pos_col_config["Photo"] = st.column_config.ImageColumn("", width="medium")
+                pos_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
             st.dataframe(display, column_config=pos_col_config, hide_index=True, use_container_width=True)
 
     with col_right:
