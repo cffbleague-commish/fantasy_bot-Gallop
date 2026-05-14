@@ -179,11 +179,22 @@ def show_player_deep_dive(
     # --- Common header ---
     stars = int(p.get("Rating", 1) or 1)
     headshot = p.get("HeadshotURL", "")
+
+    # Build draft string
+    draft_str = f"Rd {p.get('DraftRd', '')}" if p.get("DraftRd") else "N/A"
+    if pd.notna(p.get("OverallPick")):
+        draft_str += f", Pick {int(p['OverallPick'])}"
+
     facts = [
         {"label": "Recruit Score", "value": f"{p.get('RecruitScore', 0):.1f}" if pd.notna(p.get("RecruitScore")) else "N/A", "hero": True},
         {"label": "ESPN Grade", "value": f"{p.get('ESPNGrade', 0):.0f}" if pd.notna(p.get("ESPNGrade")) else "N/A"},
         {"label": "ADP", "value": f"{int(p['StartupADP'])}" if pd.notna(p.get("StartupADP")) else "N/A"},
+        {"label": "ADP Tier", "value": str(p.get("ADPTier", "N/A") or "N/A")},
         {"label": "Rank", "value": f"#{int(p.get('Rank', 0))}" if p.get("Rank") else "N/A"},
+        {"label": "ESPN Rank", "value": f"#{int(p['ESPNRank'])}" if pd.notna(p.get("ESPNRank")) else "N/A"},
+        {"label": "Pos Rank", "value": f"#{int(p['PosRank'])}" if pd.notna(p.get("PosRank")) else "N/A"},
+        {"label": "Draft", "value": draft_str},
+        {"label": "Confidence", "value": p.get("ConfidenceLabel", "N/A") or "N/A"},
     ]
 
     _html(render_player_card_expanded(
@@ -212,72 +223,39 @@ def show_player_deep_dive(
 # ---------------------------------------------------------------------------
 
 def _render_board_context(p, player_name: str, year: int):
-    """Show scouting stats and three-model price estimates."""
-
-    # Key stats KPI row
-    render_kpi_row([
-        {"label": "Recruit Score", "value": f"{p.get('RecruitScore', 0):.1f}" if pd.notna(p.get("RecruitScore")) else "N/A", "hero": True},
-        {"label": "ESPN Grade", "value": f"{p.get('ESPNGrade', 0):.0f}" if pd.notna(p.get("ESPNGrade")) else "N/A"},
-        {"label": "Startup ADP", "value": f"{int(p['StartupADP'])}" if pd.notna(p.get("StartupADP")) else "N/A"},
-        {"label": "ADP Tier", "value": str(p.get("ADPTier", "N/A") or "N/A")},
-    ])
-
-    st.markdown("")
-
-    # Additional stats
-    col1, col2, col3, col4 = st.columns(4)
-    draft_str = f"Rd {p.get('DraftRd', '')}" if p.get("DraftRd") else "N/A"
-    if pd.notna(p.get("OverallPick")):
-        draft_str += f", Pick {int(p['OverallPick'])}"
-    col1.metric("Draft", draft_str)
-    col2.metric("ESPN Rank", f"#{int(p['ESPNRank'])}" if pd.notna(p.get("ESPNRank")) else "N/A")
-    col3.metric("Pos Rank", f"#{int(p['PosRank'])}" if pd.notna(p.get("PosRank")) else "N/A")
-    col4.metric("Confidence", p.get("ConfidenceLabel", "N/A") or "N/A")
-
-    # Three-model price estimates
-    st.markdown("#### Price Estimates")
+    """Show three-model price estimates as KPI tiles."""
 
     current_price = p.get("PredictedCost")
     gb_price = _get_gb_price(p)
     repl_price = _build_replacement_lookup(year).get(player_name)
 
-    price_cols = st.columns(3)
+    # Build price range subtitle for current model
+    range_str = ""
+    p25 = p.get("Copy1_16")
+    p75 = p.get("Copy2_16")
+    if pd.notna(p25) and pd.notna(p75):
+        range_str = f"${p25:.0f} — ${p75:.0f}"
 
-    with price_cols[0]:
-        st.markdown("**Current (ADP Regression)**")
-        if pd.notna(current_price):
-            _html(
-                f'<div class="cffb-display-2" style="color:#C9A227;">'
-                f'${current_price:.0f}</div>'
-            )
-            # Price range
-            p25 = p.get("Copy1_16")
-            p75 = p.get("Copy2_16")
-            if pd.notna(p25) and pd.notna(p75):
-                st.caption(f"Range: ${p25:.0f} — ${p75:.0f}")
-        else:
-            st.caption("N/A")
+    st.markdown("#### Price Estimates")
 
-    with price_cols[1]:
-        st.markdown("**Multi-Feature (GB)**")
-        if gb_price is not None:
-            _html(
-                f'<div class="cffb-display-2" style="color:#C9A227;">'
-                f'${gb_price:.0f}</div>'
-            )
-        else:
-            st.caption("N/A")
+    render_kpi_row([
+        {
+            "label": "ADP Regression",
+            "value": f"${current_price:.0f}" if pd.notna(current_price) else "N/A",
+            "hero": True,
+        },
+        {
+            "label": "Multi-Feature (GB)",
+            "value": f"${gb_price:.0f}" if gb_price is not None else "N/A",
+        },
+        {
+            "label": "Replacement-Level",
+            "value": f"${repl_price:.0f}" if repl_price is not None else "N/A",
+        },
+    ])
 
-    with price_cols[2]:
-        st.markdown("**Replacement-Level (VAR)**")
-        if repl_price is not None:
-            _html(
-                f'<div class="cffb-display-2" style="color:#C9A227;">'
-                f'${repl_price:.0f}</div>'
-            )
-        else:
-            st.caption("N/A")
-
+    if range_str:
+        st.caption(f"ADP Regression range: {range_str}")
     st.caption(f"Price Source: {p.get('PriceSource', 'N/A') or 'N/A'}")
 
 
