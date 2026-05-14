@@ -133,6 +133,31 @@ def render():
             with player_detail_slot.container():
                 _show_player_deep_dive(player_name, df, year)
 
+    # --- Temporary debug: test headshot fetch ---
+    if "HeadshotURL" in df.columns:
+        sample_urls = df["HeadshotURL"].dropna()
+        sample_urls = sample_urls[sample_urls.str.startswith("http", na=False)]
+        if not sample_urls.empty:
+            with st.expander("Debug: Headshot Fetch Test", expanded=False):
+                test_url = sample_urls.iloc[0]
+                st.code(test_url, language=None)
+                import requests as _req
+                try:
+                    resp = _req.get(test_url, timeout=10, headers={
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                        "Accept": "image/*,*/*;q=0.8",
+                    }, allow_redirects=True)
+                    st.write(f"Status: {resp.status_code}, Size: {len(resp.content)} bytes, "
+                             f"Content-Type: {resp.headers.get('content-type', 'unknown')}")
+                    if resp.status_code == 200 and len(resp.content) > 100:
+                        st.image(resp.content, width=100, caption="Server-side fetch OK")
+                    else:
+                        st.warning(f"Got {resp.status_code}, body preview: {resp.content[:200]}")
+                except Exception as e:
+                    st.error(f"Fetch failed: {type(e).__name__}: {e}")
+                st.caption("Also testing st.image(url) direct:")
+                st.image(test_url, width=100)
+
 
 def _show_player_deep_dive(player_name: str, board_df: pd.DataFrame, year: int):
     """Open the Player Deep Dive modal in board context."""

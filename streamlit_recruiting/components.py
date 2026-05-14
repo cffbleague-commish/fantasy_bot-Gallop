@@ -26,8 +26,13 @@ def fetch_image_bytes(url: str) -> bytes | None:
     from the server. Use with st.image(bytes) — st.markdown strips data:
     URIs so base64 embedding doesn't work.
     """
+    _HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
     try:
-        resp = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
+        resp = requests.get(url, timeout=10, headers=_HEADERS, allow_redirects=True)
         if resp.status_code == 200 and len(resp.content) > 100:
             return resp.content
     except Exception:

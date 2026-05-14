@@ -199,21 +199,26 @@ def show_player_deep_dive(
     ]
 
     # Fetch headshot server-side (bypasses ESPN hotlink protection + st.markdown sanitizer)
-    headshot_bytes = None
-    if headshot and str(headshot).startswith("http"):
-        headshot_bytes = fetch_image_bytes(str(headshot))
+    headshot_url_str = str(headshot) if headshot and str(headshot).startswith("http") else ""
+    headshot_bytes = fetch_image_bytes(headshot_url_str) if headshot_url_str else None
 
-    if headshot_bytes:
+    # Render: photo column + card column
+    has_photo = headshot_bytes or headshot_url_str
+    if has_photo:
         col_photo, col_card = st.columns([1, 5])
         with col_photo:
-            st.image(headshot_bytes, width=100)
+            if headshot_bytes:
+                st.image(headshot_bytes, width=100)
+            else:
+                # Fallback: let browser try the URL directly
+                st.image(headshot_url_str, width=100)
         with col_card:
             _html(render_player_card_expanded(
                 name=player_name,
                 position=p.get("Position", ""),
                 college=p.get("College", ""),
                 stars=stars,
-                headshot_url=None,  # skip photo in HTML, rendered via st.image above
+                headshot_url=None,  # skip photo in HTML
                 conference="",
                 facts=facts,
             ))
@@ -223,7 +228,7 @@ def show_player_deep_dive(
             position=p.get("Position", ""),
             college=p.get("College", ""),
             stars=stars,
-            headshot_url="",  # show SVG placeholder in HTML
+            headshot_url="",  # show SVG placeholder
             conference="",
             facts=facts,
         ))
