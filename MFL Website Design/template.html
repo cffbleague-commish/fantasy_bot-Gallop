@@ -1,0 +1,262 @@
+<div id="cfb-contract-board">
+
+  <!-- ============================================================
+       HEADER — edit title/subtitle freely; the build script does
+       not touch this section.
+       ============================================================ -->
+  <div class="cfb-header">
+    <h2 class="cfb-title">CFFB Contract Board</h2>
+    <p class="cfb-subtitle">2025–26 Season — League-Wide Roster Dashboard</p>
+  </div>
+
+  <!-- ============================================================
+       CONTROLS — view toggles, sort buttons, search filter.
+       data-view values: team | class | awards | fa
+       data-sort values:  alpha | class | team
+       ============================================================ -->
+  <div class="cfb-controls">
+    <div class="cfb-view-bar">
+      <button type="button" class="cfb-view-btn cfb-view-btn--active" data-view="team">By Team</button>
+      <button type="button" class="cfb-view-btn" data-view="class">By Class</button>
+      <button type="button" class="cfb-view-btn" data-view="awards">Awards</button>
+      <button type="button" class="cfb-view-btn" data-view="fa">Free Agents</button>
+    </div>
+    <div class="cfb-sort-bar">
+      <span class="cfb-sort-label">Sort:</span>
+      <button type="button" class="cfb-sort-btn cfb-sort-btn--active" data-sort="alpha">A&rarr;Z</button>
+      <button type="button" class="cfb-sort-btn" data-sort="class">Class</button>
+      <button type="button" class="cfb-sort-btn" data-sort="team">Team</button>
+    </div>
+    <div class="cfb-filter">
+      <input type="text" class="cfb-filter-input"
+             placeholder="Filter players&hellip;"
+             aria-label="Filter players by name">
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SUMMARY — generated stats ribbon. {{SUMMARY}} is replaced
+       by the build script.
+       ============================================================ -->
+  <div class="cfb-summary">
+    {{SUMMARY}}
+  </div>
+
+  <!-- ============================================================
+       PLAYER BOARD — generated player cards. {{PLAYER_CARDS}} is
+       replaced by the build script. Static HTML is a flat A–Z list
+       so the board remains readable if JS is stripped.
+       ============================================================ -->
+  <div class="cfb-board" role="list">
+    {{PLAYER_CARDS}}
+  </div>
+
+  <!-- ============================================================
+       INTERACTIVITY — vanilla JS, scoped to #cfb-contract-board.
+       Handles view switching, sorting, and text filtering.
+       If MFL strips this block, the static HTML above still works.
+       ============================================================ -->
+  <script>
+  (function () {
+    'use strict';
+
+    var root = document.getElementById('cfb-contract-board');
+    if (!root) return;
+
+    var board      = root.querySelector('.cfb-board');
+    var filterEl   = root.querySelector('.cfb-filter-input');
+    var viewBtns   = [].slice.call(root.querySelectorAll('.cfb-view-btn'));
+    var sortBtns   = [].slice.call(root.querySelectorAll('.cfb-sort-btn'));
+
+    // ---- Constants ----
+
+    var CLASS_ORDER = { FR: 1, SO: 2, JR: 3, SR: 4, GR: 5 };
+    var CLASS_LABEL = {
+      FR: 'Freshmen', SO: 'Sophomores', JR: 'Juniors',
+      SR: 'Seniors',  GR: 'Graduates'
+    };
+    var TEAM_NAME = {
+      ILL: 'Illinois', IU: 'Indiana', IOWA: 'Iowa',
+      MICH: 'Michigan', MINN: 'Minnesota', MSU: 'Michigan St.',
+      NAVY: 'Navy', ND: 'Notre Dame', NEB: 'Nebraska',
+      NU: 'Northwestern', OSU: 'Ohio State', PSU: 'Penn State',
+      PUR: 'Purdue', RU: 'Rutgers', UMD: 'Maryland', WISC: 'Wisconsin'
+    };
+
+    // ---- State ----
+
+    var currentView   = 'team';
+    var currentSort   = 'alpha';
+    var currentFilter = '';
+
+    // ---- Parse rows from static HTML ----
+
+    var rows = [].slice.call(board.querySelectorAll('.cfb-row')).map(function (el) {
+      return {
+        el:  el,
+        name:   (el.getAttribute('data-name')    || '').toLowerCase(),
+        teamA:   el.getAttribute('data-team-a')   || 'FA',
+        teamB:   el.getAttribute('data-team-b')   || 'FA',
+        classA:  el.getAttribute('data-class-a')  || 'GR',
+        classB:  el.getAttribute('data-class-b')  || 'GR',
+        awards:  parseInt(el.getAttribute('data-awards') || '0', 10),
+        isFa:    el.getAttribute('data-fa') === '1'
+      };
+    });
+
+    // ---- Helpers ----
+
+    function classRank(c) { return CLASS_ORDER[c] || 9; }
+
+    /** Primary team: first non-FA owner (copy A first), or 'FA'. */
+    function primaryTeam(r) {
+      return r.teamA !== 'FA' ? r.teamA : r.teamB !== 'FA' ? r.teamB : 'FA';
+    }
+
+    /** Primary class: the more-junior of the two copies. */
+    function primaryClass(r) {
+      return classRank(r.classA) <= classRank(r.classB) ? r.classA : r.classB;
+    }
+
+    function matchesFilter(r) {
+      return !currentFilter || r.name.indexOf(currentFilter) !== -1;
+    }
+
+    /** Section header label for a group key. */
+    function groupLabel(key) {
+      if (currentView === 'team') {
+        if (key === 'FA') return 'Free Agents';
+        return TEAM_NAME[key] ? key + ' \u2014 ' + TEAM_NAME[key] : key;
+      }
+      return CLASS_LABEL[key] || key;
+    }
+
+    // ---- Comparator ----
+
+    function compare(a, b) {
+      var d;
+
+      // 1. Group ordering (view-dependent)
+      if (currentView === 'team') {
+        var ga = primaryTeam(a), gb = primaryTeam(b);
+        if (ga === 'FA' && gb !== 'FA') return 1;
+        if (ga !== 'FA' && gb === 'FA') return -1;
+        d = ga.localeCompare(gb);
+        if (d) return d;
+      } else if (currentView === 'class' || currentView === 'fa') {
+        d = classRank(primaryClass(a)) - classRank(primaryClass(b));
+        if (d) return d;
+      }
+
+      // 2. Within-group sort
+      if (currentSort === 'class') {
+        d = classRank(primaryClass(a)) - classRank(primaryClass(b));
+        if (d) return d;
+      } else if (currentSort === 'team') {
+        var ta = primaryTeam(a), tb = primaryTeam(b);
+        if (ta === 'FA' && tb !== 'FA') return 1;
+        if (ta !== 'FA' && tb === 'FA') return -1;
+        d = ta.localeCompare(tb);
+        if (d) return d;
+      }
+
+      // 3. Tie-break: alphabetical by name
+      return a.name.localeCompare(b.name);
+    }
+
+    // ---- Render ----
+
+    function render() {
+      // Filter
+      var visible = rows.filter(function (r) {
+        if (!matchesFilter(r)) return false;
+        if (currentView === 'awards' && r.awards === 0) return false;
+        if (currentView === 'fa'     && !r.isFa)        return false;
+        return true;
+      });
+
+      // Sort
+      visible.sort(compare);
+
+      // Count per group (for section headers)
+      var useSections = currentView !== 'awards';
+      var groupKey = function (r) {
+        if (currentView === 'team') return primaryTeam(r);
+        if (currentView === 'class' || currentView === 'fa') return primaryClass(r);
+        return '';
+      };
+
+      var counts = {};
+      if (useSections) {
+        visible.forEach(function (r) {
+          var k = groupKey(r);
+          counts[k] = (counts[k] || 0) + 1;
+        });
+      }
+
+      // Clear board (detaches row elements but keeps JS references)
+      while (board.firstChild) board.removeChild(board.firstChild);
+
+      // Rebuild
+      var lastKey = null;
+      visible.forEach(function (r) {
+        if (useSections) {
+          var k = groupKey(r);
+          if (k !== lastKey) {
+            var hd = document.createElement('div');
+            hd.className = 'cfb-section-hd';
+            hd.innerHTML = groupLabel(k) +
+              ' <span class="cfb-section-count">(' + counts[k] + ')</span>';
+            board.appendChild(hd);
+            lastKey = k;
+          }
+        }
+        board.appendChild(r.el);
+      });
+
+      // Empty state
+      if (visible.length === 0) {
+        var msg = document.createElement('div');
+        msg.className = 'cfb-empty';
+        msg.textContent = 'No players match the current filters.';
+        board.appendChild(msg);
+      }
+    }
+
+    // ---- Event binding ----
+
+    viewBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        viewBtns.forEach(function (b) { b.classList.remove('cfb-view-btn--active'); });
+        btn.classList.add('cfb-view-btn--active');
+        currentView = btn.getAttribute('data-view');
+        render();
+      });
+    });
+
+    sortBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        sortBtns.forEach(function (b) { b.classList.remove('cfb-sort-btn--active'); });
+        btn.classList.add('cfb-sort-btn--active');
+        currentSort = btn.getAttribute('data-sort');
+        render();
+      });
+    });
+
+    var debounceTimer;
+    filterEl.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      var self = this;
+      debounceTimer = setTimeout(function () {
+        currentFilter = self.value.trim().toLowerCase();
+        render();
+      }, 150);
+    });
+
+    // ---- Initial render ----
+    render();
+
+  })();
+  </script>
+
+</div>

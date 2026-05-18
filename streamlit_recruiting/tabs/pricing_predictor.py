@@ -15,6 +15,7 @@ from models.gradient_boosting import train_gradient_boosting, predict_gb
 from models.replacement_level import calc_replacement_prices, DEFAULT_REPLACEMENT_ADP
 from models.config import POSITIONS, get_league_year
 from components import render_kpi_row, plotly_layout_defaults, _html, college_logo_url, position_badge_url
+from descriptions import DESCRIPTIONS
 
 
 def render():
@@ -162,6 +163,8 @@ def render():
         st.markdown("#### Model Details")
 
         with st.expander("Current (ADP Regression)", expanded=False):
+            st.markdown(DESCRIPTIONS["adp_regression_detail"])
+            st.markdown("---")
             if pricing_model and pricing_model.get("adp_regression"):
                 regs = pricing_model["adp_regression"]
                 for pos, reg in regs.items():
@@ -170,6 +173,8 @@ def render():
                 st.caption("No regression available")
 
         with st.expander("Multi-Feature (Gradient Boosting)", expanded=False):
+            st.markdown(DESCRIPTIONS["gradient_boosting_detail"])
+            st.markdown("---")
             if gb_metrics and "error" not in gb_metrics:
                 st.metric("R\u00b2 (train)", f"{gb_metrics['r2']:.3f}")
                 st.metric("MAE", f"${gb_metrics['mae']:.1f}")
@@ -179,10 +184,15 @@ def render():
                 st.caption(gb_metrics.get("error", "Not available") if gb_metrics else "Not available")
 
         with st.expander("Replacement-Level (VAR)", expanded=False):
+            st.markdown(DESCRIPTIONS["replacement_level_detail"])
+            st.markdown("---")
             st.caption("No training \u2014 arithmetic model")
             if pricing_model:
                 st.metric("Budget (16-tm)", f"${pricing_model['conference_budgets'].get(16, 0):,.0f}")
                 st.metric("Budget (20-tm)", f"${pricing_model['conference_budgets'].get(20, 0):,.0f}")
+
+        with st.expander("Copy & Scarcity Pricing", expanded=False):
+            st.markdown(DESCRIPTIONS["copy_scarcity_detail"])
 
         # Feature importance (GB)
         if gb_metrics and "feature_importances" in gb_metrics:

@@ -9,6 +9,7 @@ import pandas as pd
 from data.sheets import load_recruiting_board, get_available_years
 from models.config import POSITIONS, CONFERENCES
 from components import render_kpi_row, college_logo_url, nfl_logo_url, position_badge_url
+from descriptions import DESCRIPTIONS
 
 
 def render():
@@ -54,10 +55,15 @@ def render():
         {"label": "Total Players", "value": str(len(df))},
         {"label": "5-Star", "value": str(five_stars), "hero": True},
         {"label": "4-Star", "value": str(four_stars)},
-        {"label": "Avg Score", "value": f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A"},
+        {"label": "Avg Score", "value": f"{avg_score:.2f}" if pd.notna(avg_score) else "N/A"},
     ])
 
     st.markdown("")  # spacer
+
+    with st.expander("How are players scored and rated?", expanded=False):
+        st.markdown(DESCRIPTIONS["recruit_score"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["star_ratings"])
 
     # --- Search ---
     search = st.text_input(
@@ -111,7 +117,7 @@ def render():
 
     if "Score" in display_df.columns:
         display_df["Score"] = display_df["Score"].apply(
-            lambda x: f"{x:.1f}" if pd.notna(x) else ""
+            lambda x: f"{x:.2f}" if pd.notna(x) else ""
         )
     if "ESPN" in display_df.columns:
         display_df["ESPN"] = display_df["ESPN"].apply(

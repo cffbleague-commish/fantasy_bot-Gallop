@@ -10,6 +10,7 @@ import plotly.express as px
 from data.sheets import load_recruiting_grades, load_player_grades, load_franchise_lookup, get_available_years
 from models.config import CONFERENCES
 from grading import compute_class_grades
+from descriptions import DESCRIPTIONS
 from components import (
     render_kpi_row,
     render_grade_badge,
@@ -64,12 +65,19 @@ def render():
 
     render_kpi_row([
         {"label": "Teams Graded", "value": str(len(grades_df))},
-        {"label": "Avg Class Score", "value": f"{avg_score:.1f}" if pd.notna(avg_score) else "N/A", "hero": True},
+        {"label": "Avg Class Score", "value": f"{avg_score:.2f}" if pd.notna(avg_score) else "N/A", "hero": True},
         {"label": "Total 5-Stars", "value": str(total_five)},
         {"label": "Total 4-Stars", "value": str(total_four)},
     ])
 
     st.markdown("")
+
+    with st.expander("How are class grades calculated?", expanded=False):
+        st.markdown(DESCRIPTIONS["class_score"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["overall_grade"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["efficiency_grade"])
 
     # League overview: grade distribution + top spenders inline
     _render_league_overview(grades_df)
@@ -96,7 +104,7 @@ def render():
             row_data.update({
                 "Team": row.get("FranchiseLogo", ""),
                 "Grade": grade_badge_url(row.get("OverallGrade", "")),
-                "Score": round(row.get("ClassScore", 0) or 0, 1),
+                "Score": round(row.get("ClassScore", 0) or 0, 2),
                 "5\u2605": five,
                 "4\u2605": four,
                 "3\u2605": three,

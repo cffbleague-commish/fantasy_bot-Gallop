@@ -292,8 +292,8 @@ def _render_copy_detail(
         if logo:
             owner_html = (
                 f'<img src="{logo}" '
-                f'style="height:32px;width:32px;border-radius:50%;'
-                f'vertical-align:middle;margin-right:8px;" />'
+                f'style="height:48px;width:48px;border-radius:50%;'
+                f'vertical-align:middle;margin-right:10px;" />'
                 f"{owner_html}"
             )
         _html(
@@ -451,6 +451,8 @@ def _render_awards_section(mfl_player_id: str, fran_logo_map: dict):
 
     award_col_config = {
         "Team": st.column_config.ImageColumn("Team", width="small"),
+        "Score": st.column_config.NumberColumn("Score", format="%.2f"),
+        "Points": st.column_config.NumberColumn("Points", format="%.2f"),
     }
 
     # Split into national and all-conference

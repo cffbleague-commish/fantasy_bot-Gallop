@@ -32,6 +32,7 @@ from components import (
     plotly_layout_defaults,
     _html,
 )
+from descriptions import DESCRIPTIONS
 
 
 # ---------------------------------------------------------------------------
@@ -205,9 +206,9 @@ def show_player_deep_dive(
             draft_str += f", Pick {int(p['OverallPick'])}"
 
         facts = [
-            {"label": "Recruit Score", "value": f"{p.get('RecruitScore', 0):.1f}" if pd.notna(p.get("RecruitScore")) else "N/A", "hero": True},
+            {"label": "Recruit Score", "value": f"{p.get('RecruitScore', 0):.2f}" if pd.notna(p.get("RecruitScore")) else "N/A", "hero": True},
             {"label": "ESPN Grade", "value": f"{p.get('ESPNGrade', 0):.0f}" if pd.notna(p.get("ESPNGrade")) else "N/A"},
-            {"label": "ADP", "value": f"{int(p['StartupADP'])}" if pd.notna(p.get("StartupADP")) else "N/A"},
+            {"label": "ADP", "value": f"{p['StartupADP']:.2f}" if pd.notna(p.get("StartupADP")) else "N/A"},
             {"label": "ADP Tier", "value": str(p.get("ADPTier", "N/A") or "N/A")},
             {"label": "Rank", "value": f"#{int(p.get('Rank', 0))}" if p.get("Rank") else "N/A"},
             {"label": "ESPN Rank", "value": f"#{int(p['ESPNRank'])}" if pd.notna(p.get("ESPNRank")) else "N/A"},
@@ -287,6 +288,15 @@ def _render_board_context(p, player_name: str, year: int):
     if range_str:
         st.caption(f"ADP Regression range: {range_str}")
     st.caption(f"Price Source: {p.get('PriceSource', 'N/A') or 'N/A'}")
+
+    with st.expander("How are prices estimated?", expanded=False):
+        st.markdown(DESCRIPTIONS["adp_regression"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["gradient_boosting"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["replacement_level"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["confidence_labels"])
 
 
 # ---------------------------------------------------------------------------

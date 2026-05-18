@@ -14,6 +14,7 @@ import pandas as pd
 import plotly.express as px
 
 from data.sheets import load_player_grades, load_recruiting_board, load_franchise_lookup
+from descriptions import DESCRIPTIONS
 from components import (
     render_kpi_row,
     render_grade_badge,
@@ -75,7 +76,7 @@ def show_team_deep_dive(
 
     if not player_grades.empty:
         # Join headshot URLs and college names from the recruiting board
-        board_df = load_recruiting_board(year)
+        board_df = load_recruiting_board(None)
         if not board_df.empty:
             # Build lookup dicts keyed by stripped player name
             brd = board_df.copy()
@@ -110,7 +111,7 @@ def show_team_deep_dive(
     # --- KPI Row ---
     render_kpi_row([
         {"label": "Total Spent", "value": f"${team.get('TotalSpent', 0):.0f}" if pd.notna(team.get("TotalSpent")) else "N/A"},
-        {"label": "Class Score", "value": f"{team.get('ClassScore', 0):.1f}" if pd.notna(team.get("ClassScore")) else "N/A", "hero": True},
+        {"label": "Class Score", "value": f"{team.get('ClassScore', 0):.2f}" if pd.notna(team.get("ClassScore")) else "N/A", "hero": True},
         {"label": "Efficiency", "value": str(team.get("EfficiencyGrade", "N/A"))},
         {"label": "Class Rank", "value": f"#{rank}"},
         {"label": "Best Value", "value": best_value_amt, "sub": best_value_name, "sub_type": "pos"},
@@ -127,6 +128,11 @@ def show_team_deep_dive(
         2: int(team.get("TwoStar", 0) or 0),
     }
     _html(render_commit_composition_bar(stars_dict, show_legend=True))
+
+    with st.expander("How are value and efficiency measured?", expanded=False):
+        st.markdown(DESCRIPTIONS["savings"])
+        st.markdown("---")
+        st.markdown(DESCRIPTIONS["efficiency_grade"])
 
     st.markdown("---")
 

@@ -4,17 +4,23 @@
  * Detects MFL page type, parses encoded eligibility/contract strings,
  * and replaces raw text with styled .player-card components.
  *
- * Loaded via an MFL home page message <script> tag.
- * Requires mfl-custom.css to be loaded for visual styles.
+ * Ownership reconciliation:
+ *   MFL's live roster data is the source of truth for who currently
+ *   owns a player.  The encoded string's owner is used for rendering
+ *   only when MFL ownership can't be determined from the page context.
+ *   Drift indicators (commissioner-only) flag stale encoded strings.
  *
  * Parser logic (parseCopy / parseModifierSegment) is inlined from
  * mfl-player-parser.js so the script is fully self-contained.
  * If the parser changes, update both files.
+ *
+ * Loaded via an MFL home page message <script> tag.
+ * Requires mfl-custom.css for visual styles.
  */
 (function () {
   "use strict";
 
-  // Guard: never run twice (idempotent at the script-load level)
+  // Guard: never run twice
   if (window.__CFFB_ENHANCER_LOADED) return;
   window.__CFFB_ENHANCER_LOADED = true;
 
@@ -24,11 +30,11 @@
   //  UNICODE CHARACTERS (safe in any source encoding)
   // ==================================================================
 
-  var CHR_SHIELD = "\uD83D\uDEE1"; // 🛡
-  var CHR_ARROW  = "\u2197";        // ↗
-  var CHR_STAR   = "\u2605";        // ★
-  var CHR_TIMES  = "\u00D7";        // ×
-  var CHR_RSQUO  = "\u2019";        // '
+  var CHR_SHIELD = "\uD83D\uDEE1"; // shield emoji
+  var CHR_ARROW  = "\u2197";        // north-east arrow
+  var CHR_STAR   = "\u2605";        // filled star
+  var CHR_TIMES  = "\u00D7";        // multiplication sign
+  var CHR_RSQUO  = "\u2019";        // right single quote
 
   // ==================================================================
   //  PARSER — inlined from mfl-player-parser.js
@@ -146,7 +152,6 @@
 
   // ==================================================================
   //  TEAM COLORS — college primary/secondary for tag backgrounds
-  //  bg: tag fill, fg: text (chosen for contrast), border: accent
   // ==================================================================
 
   var TEAM_COLORS = {
@@ -173,11 +178,18 @@
     WF:   { bg: "#9E7E38", fg: "#000000", border: "#000000", name: "Wake Forest Demon Deacons" },
   };
 
+  // Reverse lookup: franchise display name → team code
+  var FRANCHISE_NAME_TO_CODE = {};
+  (function () {
+    for (var code in TEAM_COLORS) {
+      if (TEAM_COLORS.hasOwnProperty(code)) {
+        FRANCHISE_NAME_TO_CODE[TEAM_COLORS[code].name] = code;
+      }
+    }
+  })();
+
   // ==================================================================
   //  NATIONAL AWARD MAPPING
-  //  Position-specific national awards.  Heisman can go to any
-  //  position, so we default to the generic "National Award" when
-  //  position is unknown or does not map to one specific award.
   // ==================================================================
 
   function resolveNationalAward(position) {
@@ -192,7 +204,7 @@
   }
 
   // ==================================================================
-  //  ELIGIBILITY LABELS (for title attributes)
+  //  ELIGIBILITY LABELS
   // ==================================================================
 
   var ELIG_LABELS = {
@@ -204,50 +216,189 @@
   };
 
   // ==================================================================
+  //  COMMISSIONER DETECTION
+  //  Checks multiple signals; any one is sufficient.
+  // ==================================================================
+
+  var _isCommishCached = null;
+
+  function isCommissioner() {
+    if (_isCommishCached !== null) return _isCommishCached;
+    try {
+      // Signal 1: franchise_id global set to '0000' (commissioner pseudo-franchise)
+      if (window.franchise_id === "0000") {
+        _isCommishCached = true;
+        return true;
+      }
+      // Signal 2: commissioner_setup link in navigation
+      if (document.querySelector('a[href*="commissioner_setup"]')) {
+        _isCommishCached = true;
+        return true;
+      }
+      // Signal 3: welcome text contains "Commissioner"
+      var welcome = document.querySelector("td.welcome b");
+      if (welcome && /Commissioner/i.test(welcome.textContent)) {
+        _isCommishCached = true;
+        return true;
+      }
+    } catch (e) {
+      // Defensive — if DOM query fails, assume not commissioner
+    }
+    _isCommishCached = false;
+    return false;
+  }
+
+  // ==================================================================
+  //  FRANCHISE CODE RESOLUTION
+  //  Converts franchise identifiers from the DOM into team codes.
+  // ==================================================================
+
+  /**
+   * Look up a franchise code from the MFL franchiseDatabase global.
+   * @param {string} franchiseId - 4-digit MFL franchise ID (e.g. "0001")
+   * @returns {string|null} Team code like "BC", or null
+   */
+  function getFranchiseCodeFromDb(franchiseId) {
+    try {
+      if (!window.franchiseDatabase) return null;
+      var entry = window.franchiseDatabase["fid_" + franchiseId];
+      if (!entry) return null;
+      // MFL Franchise constructor stores short code as .abbrev
+      return entry.abbrev || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Determine the franchise team code from a roster table element.
+   * Tries: franchise database (via table class), then caption name lookup.
+   */
+  function getFranchiseCodeFromTable(table) {
+    // Try 1: Extract franchise ID from table class → look up in DB
+    var classMatch = (table.className || "").match(/franchise_(\d+)/);
+    if (classMatch) {
+      var dbCode = getFranchiseCodeFromDb(classMatch[1]);
+      if (dbCode) return dbCode;
+    }
+
+    // Try 2: Read franchise name from caption → reverse-map
+    var captionLink = table.querySelector("caption a");
+    if (captionLink) {
+      var name = captionLink.textContent.trim();
+      var code = FRANCHISE_NAME_TO_CODE[name];
+      if (code) return code;
+    }
+
+    return null;
+  }
+
+  // ==================================================================
   //  POSITION EXTRACTION
   // ==================================================================
 
-  /** Extract position string from a player <a> element's CSS class. */
   function extractPosition(linkEl) {
     if (!linkEl) return null;
     var m = (linkEl.className || "").match(/position_(\w+)/);
     return m ? m[1] : null;
   }
 
-  /** Extract position from a player-profile page title. */
   function extractPositionFromProfile() {
     var title = document.title || "";
-    // Title format: "Fantasy Football: CFFB Pickens, George DAL WR"
     var m = title.match(/\b(QB|RB|WR|TE|PK|K|DEF|DL|LB|DB|S|CB)\s*$/i);
     return m ? m[1].toLowerCase() : null;
   }
 
   // ==================================================================
-  //  RENDERER — builds a .player-card element from parsed data
+  //  OWNERSHIP DRIFT COMPUTATION (pure logic, no DOM)
+  //
+  //  Compares a single copy's encoded owner against MFL's page-level
+  //  ownership signal.  Uses the other copy's encoded owner as
+  //  context on roster pages (to distinguish "other conference copy"
+  //  from genuine drift).
+  //
+  //  Returns: { type, encodedOwner, mflOwner, reason }
+  //    type: null (no drift), "dropped", "picked-up", "traded", "fallback"
   // ==================================================================
 
-  function renderPlayerCard(parsed, position) {
+  function computeCopyDrift(encodedOwner, otherCopyEncodedOwner, mflOwner) {
+    // No MFL signal → can't compare → fallback
+    if (!mflOwner) {
+      return { type: "fallback", encodedOwner: encodedOwner, mflOwner: null,
+               reason: "MFL ownership could not be determined from this page" };
+    }
+
+    // --- FA page: MFL says player is free agent ---
+    if (mflOwner === "FA") {
+      if (!encodedOwner || encodedOwner === "FA") return { type: null };
+      // Encoded says rostered, MFL says FA → dropped
+      return { type: "dropped", encodedOwner: encodedOwner, mflOwner: "FA" };
+    }
+
+    // --- Roster page: MFL says player is on franchise mflOwner ---
+    if (encodedOwner === mflOwner) return { type: null }; // match
+
+    // This copy doesn't match the roster franchise.
+    // If the OTHER copy matches, this is the "other conference copy" —
+    // we can't verify its ownership from this page.
+    if (otherCopyEncodedOwner === mflOwner) {
+      return { type: "fallback", encodedOwner: encodedOwner, mflOwner: mflOwner,
+               reason: "Other conference copy; ownership not verifiable from this page" };
+    }
+
+    // NEITHER copy matches the roster franchise → both are stale.
+    if (!encodedOwner || encodedOwner === "FA") {
+      return { type: "picked-up", encodedOwner: encodedOwner || "FA", mflOwner: mflOwner };
+    }
+    return { type: "traded", encodedOwner: encodedOwner, mflOwner: mflOwner };
+  }
+
+  /**
+   * Given drift info, determine the rendering owner.
+   * MFL owner takes precedence when drift is detected; encoded owner
+   * is used when there's no drift or when we're in fallback.
+   */
+  function resolveRenderingOwner(encodedOwner, drift) {
+    if (!drift || !drift.type) return encodedOwner; // no drift, use encoded
+    if (drift.type === "fallback") return encodedOwner; // can't determine, use encoded
+    // For dropped/picked-up/traded, MFL is the source of truth
+    return drift.mflOwner || encodedOwner;
+  }
+
+  // ==================================================================
+  //  RENDERER — builds a .player-card element
+  //
+  //  @param parsed    - output of parseCopy()
+  //  @param position  - player position string (e.g. "qb")
+  //  @param ownerOverride - if set, use this instead of parsed.owner
+  //                         for the team tag (ownership reconciliation)
+  // ==================================================================
+
+  function renderPlayerCard(parsed, position, ownerOverride) {
+    var effectiveOwner = (ownerOverride != null) ? ownerOverride : parsed.owner;
+    var effectiveFA    = effectiveOwner === "FA";
+
     var card = document.createElement("span");
     card.className = "player-card";
-    if (parsed.isFreeAgent) card.classList.add("player-card--unowned");
+    if (effectiveFA) card.classList.add("player-card--unowned");
     if (parsed.eligibility === "GR") card.classList.add("player-card--graduated");
 
     // ---- Team tag ----
     var tag = document.createElement("span");
     tag.className = "team-tag";
-    tag.textContent = parsed.owner;
-    if (parsed.isFreeAgent) {
+    tag.textContent = effectiveOwner;
+    if (effectiveFA) {
       tag.classList.add("team-tag--free-agent");
       tag.title = "Free Agent";
     } else {
-      var tc = TEAM_COLORS[parsed.owner];
+      var tc = TEAM_COLORS[effectiveOwner];
       if (tc) {
         tag.style.setProperty("--team-bg", tc.bg);
         tag.style.setProperty("--team-fg", tc.fg);
         tag.style.setProperty("--team-border", tc.border);
         tag.title = tc.name;
       } else {
-        tag.title = parsed.owner;
+        tag.title = effectiveOwner;
       }
     }
     card.appendChild(tag);
@@ -326,7 +477,7 @@
       card.appendChild(ac);
     }
 
-    // ---- Graduated label (GR only, reinforces the muted chip) ----
+    // ---- Graduated label ----
     if (parsed.eligibility === "GR") {
       var gl = document.createElement("span");
       gl.className = "graduated-label";
@@ -338,15 +489,120 @@
   }
 
   // ==================================================================
-  //  CELL ENHANCER — core parse-and-replace logic
+  //  DRIFT INDICATOR — small colored dot appended to player-card
+  //  Only added when viewer is commissioner.
+  // ==================================================================
+
+  function createDriftIndicator(drift) {
+    if (!drift || !drift.type) return null;
+
+    var dot = document.createElement("span");
+
+    if (drift.type === "fallback") {
+      dot.className = "ownership-fallback";
+      dot.title = drift.reason || "MFL ownership could not be determined";
+    } else {
+      dot.className = "ownership-drift ownership-drift--" + drift.type;
+      var encLabel = drift.encodedOwner || "unknown";
+      var mflLabel = drift.mflOwner || "unknown";
+      var teamName = function (code) {
+        var tc = TEAM_COLORS[code];
+        return tc ? tc.name : code;
+      };
+
+      if (drift.type === "dropped") {
+        dot.title = "Drift: string says " + teamName(encLabel) +
+                    " (" + encLabel + "); MFL says Free Agent \u2014 update at next import";
+      } else if (drift.type === "picked-up") {
+        dot.title = "Drift: string says Free Agent; MFL roster says " +
+                    teamName(mflLabel) + " (" + mflLabel + ") \u2014 update at next import";
+      } else if (drift.type === "traded") {
+        dot.title = "Drift: string says " + teamName(encLabel) + " (" + encLabel +
+                    "); MFL roster says " + teamName(mflLabel) + " (" + mflLabel +
+                    ") \u2014 update at next import";
+      }
+    }
+
+    return dot;
+  }
+
+  // ==================================================================
+  //  CELL ENHANCEMENT — parse, reconcile, render, replace
   // ==================================================================
 
   /**
-   * Parse one contract cell's text and replace it with a rendered
-   * .player-card.  Skips cells already enhanced.  On parse error,
-   * leaves the raw text and sets data-parse-error for debugging.
+   * Enhance a single cell, with ownership context from the page.
+   *
+   * @param td            - the <td> element
+   * @param parsed        - pre-parsed copy data (or null to parse from cell text)
+   * @param position      - player position string
+   * @param drift         - drift info from computeCopyDrift (or null)
+   * @param showDrift     - whether to render drift indicators (commissioner)
+   * @param ownerOverride - rendering owner override (from reconciliation)
    */
-  function enhanceCell(td, position) {
+  function enhanceCellFull(td, parsed, position, drift, showDrift, ownerOverride) {
+    if (td.getAttribute("data-cffb-enhanced")) return;
+
+    // Parse if not pre-parsed
+    if (!parsed) {
+      var raw = td.textContent.trim();
+      if (!raw) {
+        td.setAttribute("data-cffb-enhanced", "1");
+        return;
+      }
+      try {
+        parsed = parseCopy(raw);
+      } catch (e) {
+        td.setAttribute("data-parse-error", e.message);
+        td.setAttribute("data-cffb-enhanced", "1");
+        console.warn(LOG_PREFIX, "Parse exception:", e);
+        return;
+      }
+    }
+
+    if (parsed.error) {
+      td.setAttribute("data-parse-error", parsed.error);
+      td.setAttribute("data-cffb-enhanced", "1");
+      console.warn(LOG_PREFIX, "Parse error:", parsed.error, "| raw:", parsed.raw);
+      return;
+    }
+
+    try {
+      var card = renderPlayerCard(parsed, position, ownerOverride);
+
+      // Append drift indicator after team tag (commissioner only)
+      if (showDrift && drift && drift.type) {
+        var dot = createDriftIndicator(drift);
+        if (dot) {
+          var teamTag = card.querySelector(".team-tag");
+          if (teamTag && teamTag.nextSibling) {
+            card.insertBefore(dot, teamTag.nextSibling);
+          } else {
+            card.appendChild(dot);
+          }
+        }
+      }
+
+      td.textContent = "";
+      td.appendChild(card);
+      td.setAttribute("data-cffb-enhanced", "1");
+
+      // Store drift type for auditing
+      if (drift && drift.type) {
+        td.setAttribute("data-cffb-drift", drift.type);
+      }
+    } catch (err) {
+      td.setAttribute("data-parse-error", err.message);
+      td.setAttribute("data-cffb-enhanced", "1");
+      console.warn(LOG_PREFIX, "Render error:", err);
+    }
+  }
+
+  /**
+   * Simple cell enhancement with no ownership context.
+   * Used for pages where MFL ownership is undeterminable (auction, profile).
+   */
+  function enhanceCellSimple(td, position, showDrift) {
     if (td.getAttribute("data-cffb-enhanced")) return;
 
     var raw = td.textContent.trim();
@@ -355,23 +611,21 @@
       return;
     }
 
+    var parsed = null;
     try {
-      var parsed = parseCopy(raw);
-      if (parsed.error) {
-        td.setAttribute("data-parse-error", parsed.error);
-        td.setAttribute("data-cffb-enhanced", "1");
-        console.warn(LOG_PREFIX, "Parse error:", parsed.error, "| raw:", raw);
-        return;
-      }
-      var card = renderPlayerCard(parsed, position);
-      td.textContent = "";
-      td.appendChild(card);
+      parsed = parseCopy(raw);
+    } catch (e) {
+      td.setAttribute("data-parse-error", e.message);
       td.setAttribute("data-cffb-enhanced", "1");
-    } catch (err) {
-      td.setAttribute("data-parse-error", err.message);
-      td.setAttribute("data-cffb-enhanced", "1");
-      console.warn(LOG_PREFIX, "Render error:", err);
+      console.warn(LOG_PREFIX, "Parse exception:", e);
+      return;
     }
+
+    // Fallback drift — MFL ownership unknown
+    var drift = { type: "fallback", encodedOwner: parsed.error ? null : parsed.owner,
+                  mflOwner: null, reason: "MFL ownership not available on this page type" };
+
+    enhanceCellFull(td, parsed, position, drift, showDrift, null);
   }
 
   // ==================================================================
@@ -392,39 +646,79 @@
 
   // ==================================================================
   //  ROSTER PAGE ENHANCER
+  //
+  //  Each franchise table provides ownership context:
+  //    table.report.franchise_XXXX → all players are on that franchise.
+  //  Processes both copies per row together so drift detection can
+  //  use the other copy's encoded owner as context.
   // ==================================================================
 
-  function enhanceRosterPage() {
-    var rows = document.querySelectorAll(
-      "table.report tr.oddtablerow, table.report tr.eventablerow"
-    );
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i];
+  function enhanceRosterPage(commish) {
+    // Find franchise-specific roster tables
+    var tables = document.querySelectorAll("table.report[class*='franchise_']");
+    if (!tables.length) {
+      // Fallback: try any report table with contractstatus cells
+      tables = document.querySelectorAll("table.report");
+    }
 
-      // Skip total/summary rows
-      if (row.classList.contains("total_salary_row")) continue;
+    for (var t = 0; t < tables.length; t++) {
+      var table = tables[t];
+      var franchiseCode = getFranchiseCodeFromTable(table);
+      // franchiseCode may be null if we can't determine it
 
-      var playerLink = row.querySelector("td.player a[class*='position_']");
-      var position   = extractPosition(playerLink);
+      var rows = table.querySelectorAll("tr.oddtablerow, tr.eventablerow");
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        if (row.classList.contains("total_salary_row")) continue;
 
-      var c1 = row.querySelector("td.contractstatus");
-      var c2 = row.querySelector("td.contractinfo");
-      if (c1) enhanceCell(c1, position);
-      if (c2) enhanceCell(c2, position);
+        var c1 = row.querySelector("td.contractstatus");
+        var c2 = row.querySelector("td.contractinfo");
+        if (!c1 && !c2) continue;
+
+        // Skip if both already enhanced
+        var c1Done = !c1 || c1.getAttribute("data-cffb-enhanced");
+        var c2Done = !c2 || c2.getAttribute("data-cffb-enhanced");
+        if (c1Done && c2Done) continue;
+
+        var playerLink = row.querySelector("td.player a[class*='position_']");
+        var position   = extractPosition(playerLink);
+
+        // Parse both copies first (needed for drift heuristic)
+        var raw1 = c1 && !c1Done ? c1.textContent.trim() : "";
+        var raw2 = c2 && !c2Done ? c2.textContent.trim() : "";
+        var parsed1 = raw1 ? parseCopy(raw1) : null;
+        var parsed2 = raw2 ? parseCopy(raw2) : null;
+        var enc1 = (parsed1 && !parsed1.error) ? parsed1.owner : null;
+        var enc2 = (parsed2 && !parsed2.error) ? parsed2.owner : null;
+
+        // Compute drift for each copy
+        var drift1 = computeCopyDrift(enc1, enc2, franchiseCode);
+        var drift2 = computeCopyDrift(enc2, enc1, franchiseCode);
+
+        // Determine rendering owners
+        var render1 = enc1 ? resolveRenderingOwner(enc1, drift1) : null;
+        var render2 = enc2 ? resolveRenderingOwner(enc2, drift2) : null;
+
+        // Enhance cells
+        if (c1 && !c1Done) {
+          enhanceCellFull(c1, parsed1, position, drift1, commish, render1 !== enc1 ? render1 : null);
+        }
+        if (c2 && !c2Done) {
+          enhanceCellFull(c2, parsed2, position, drift2, commish, render2 !== enc2 ? render2 : null);
+        }
+      }
     }
   }
 
   // ==================================================================
   //  AUCTION PAGE ENHANCER
   //
-  //  Auction tables have no dedicated contract cells.  The encoded
-  //  strings live in the player link's title attribute:
-  //    "Copy 1 Info: XXX, Copy 2 Info: YYY\n, Week 1: ..."
-  //  We parse the title, inject .player-card elements inline after
-  //  the player link, and clean the title to remove raw strings.
+  //  Auction tables have no dedicated contract cells.  Encoded strings
+  //  live in the player link's title attribute.  MFL ownership is
+  //  undeterminable from this page, so we fall back to encoded owners.
   // ==================================================================
 
-  function enhanceAuctionPage() {
+  function enhanceAuctionPage(commish) {
     var tables = document.querySelectorAll("table.report");
     for (var t = 0; t < tables.length; t++) {
       var rows = tables[t].querySelectorAll("tr.oddtablerow, tr.eventablerow");
@@ -443,7 +737,6 @@
         var c2Match = title.match(/Copy 2 Info:\s*([^,\n]+)/);
         if (!c1Match && !c2Match) continue;
 
-        // Build inline wrapper for the two player cards
         var wrapper  = document.createElement("span");
         wrapper.className = "cffb-auction-copies";
         wrapper.style.cssText = "margin-left:6px;display:inline-flex;gap:8px;vertical-align:middle;";
@@ -454,7 +747,18 @@
           try {
             var p1 = parseCopy(c1Match[1].trim());
             if (!p1.error) {
-              wrapper.appendChild(renderPlayerCard(p1, position));
+              var drift1 = { type: "fallback", encodedOwner: p1.owner, mflOwner: null,
+                             reason: "MFL ownership not available on auction page" };
+              var card1 = renderPlayerCard(p1, position, null);
+              if (commish) {
+                var dot1 = createDriftIndicator(drift1);
+                if (dot1) {
+                  var tt1 = card1.querySelector(".team-tag");
+                  if (tt1 && tt1.nextSibling) card1.insertBefore(dot1, tt1.nextSibling);
+                  else card1.appendChild(dot1);
+                }
+              }
+              wrapper.appendChild(card1);
               hasCards = true;
             }
           } catch (e) {
@@ -466,7 +770,18 @@
           try {
             var p2 = parseCopy(c2Match[1].trim());
             if (!p2.error) {
-              wrapper.appendChild(renderPlayerCard(p2, position));
+              var drift2 = { type: "fallback", encodedOwner: p2.owner, mflOwner: null,
+                             reason: "MFL ownership not available on auction page" };
+              var card2 = renderPlayerCard(p2, position, null);
+              if (commish) {
+                var dot2 = createDriftIndicator(drift2);
+                if (dot2) {
+                  var tt2 = card2.querySelector(".team-tag");
+                  if (tt2 && tt2.nextSibling) card2.insertBefore(dot2, tt2.nextSibling);
+                  else card2.appendChild(dot2);
+                }
+              }
+              wrapper.appendChild(card2);
               hasCards = true;
             }
           } catch (e) {
@@ -474,10 +789,7 @@
           }
         }
 
-        if (hasCards) {
-          firstTd.appendChild(wrapper);
-        }
-
+        if (hasCards) firstTd.appendChild(wrapper);
         firstTd.setAttribute("data-cffb-enhanced", "1");
       }
     }
@@ -486,37 +798,36 @@
   // ==================================================================
   //  PLAYER PROFILE ENHANCER
   //
-  //  Profile pages have a biography table with th/td pairs:
-  //    <th>Contract Status:</th><td class="contractstatus">...</td>
-  //    <th>Contract Info:</th><td class="contractinfo">...</td>
+  //  Profile pages show a biography table with th/td pairs.
+  //  MFL ownership is unreliable from the "League Status" field,
+  //  so we fall back to encoded string owners.
   // ==================================================================
 
-  function enhancePlayerProfilePage() {
+  function enhancePlayerProfilePage(commish) {
     var position = extractPositionFromProfile();
 
     var c1 = document.querySelector("td.contractstatus");
     var c2 = document.querySelector("td.contractinfo");
 
-    if (c1) enhanceCell(c1, position);
-    if (c2) enhanceCell(c2, position);
+    if (c1) enhanceCellSimple(c1, position, commish);
+    if (c2) enhanceCellSimple(c2, position, commish);
   }
 
   // ==================================================================
   //  FREE AGENT REPORT ENHANCER
   //
-  //  FA tables have no CSS class on the contract cells.  We identify
-  //  the correct columns by scanning <th> headers for "Copy 1 Info"
-  //  and "Copy 2 Info", then use those column indices.
+  //  All players on this page are currently free agents in MFL.
+  //  MFL owner = "FA" for every row.  If the encoded string claims
+  //  a rostered owner, that's drift (dropped).
   // ==================================================================
 
-  function enhanceFreeAgentPage() {
+  function enhanceFreeAgentPage(commish) {
     var tables = document.querySelectorAll("table.report");
     for (var t = 0; t < tables.length; t++) {
       var table     = tables[t];
       var headerRow = table.querySelector("tr");
       if (!headerRow) continue;
 
-      // Determine column indices from header text
       var headers = headerRow.querySelectorAll("th");
       var c1Idx = -1;
       var c2Idx = -1;
@@ -535,8 +846,288 @@
         var playerLink = row.querySelector("td.player a[class*='position_']");
         var position   = extractPosition(playerLink);
 
-        if (c1Idx >= 0 && c1Idx < cells.length) enhanceCell(cells[c1Idx], position);
-        if (c2Idx >= 0 && c2Idx < cells.length) enhanceCell(cells[c2Idx], position);
+        // Parse both copies for drift context
+        var c1Td = (c1Idx >= 0 && c1Idx < cells.length) ? cells[c1Idx] : null;
+        var c2Td = (c2Idx >= 0 && c2Idx < cells.length) ? cells[c2Idx] : null;
+
+        var c1Done = !c1Td || c1Td.getAttribute("data-cffb-enhanced");
+        var c2Done = !c2Td || c2Td.getAttribute("data-cffb-enhanced");
+        if (c1Done && c2Done) continue;
+
+        var raw1 = c1Td && !c1Done ? c1Td.textContent.trim() : "";
+        var raw2 = c2Td && !c2Done ? c2Td.textContent.trim() : "";
+        var parsed1 = raw1 ? parseCopy(raw1) : null;
+        var parsed2 = raw2 ? parseCopy(raw2) : null;
+        var enc1 = (parsed1 && !parsed1.error) ? parsed1.owner : null;
+        var enc2 = (parsed2 && !parsed2.error) ? parsed2.owner : null;
+
+        // MFL says FA for all players on this page
+        var mflOwner = "FA";
+        var drift1 = computeCopyDrift(enc1, enc2, mflOwner);
+        var drift2 = computeCopyDrift(enc2, enc1, mflOwner);
+
+        var render1 = enc1 ? resolveRenderingOwner(enc1, drift1) : null;
+        var render2 = enc2 ? resolveRenderingOwner(enc2, drift2) : null;
+
+        if (c1Td && !c1Done) {
+          enhanceCellFull(c1Td, parsed1, position, drift1, commish, render1 !== enc1 ? render1 : null);
+        }
+        if (c2Td && !c2Done) {
+          enhanceCellFull(c2Td, parsed2, position, drift2, commish, render2 !== enc2 ? render2 : null);
+        }
+      }
+    }
+  }
+
+  // ==================================================================
+  //  AUDIT FUNCTION — window.cfbAudit()
+  //
+  //  Scans the current page on demand and returns a structured report
+  //  of all ownership drift.  Works regardless of viewer role.
+  //  Reports drift per-copy, not per-player.
+  // ==================================================================
+
+  window.cfbAudit = function () {
+    var report = {
+      dropped:  [],
+      pickedUp: [],
+      traded:   [],
+      fallback: [],
+      summary:  { totalPlayers: 0, totalDrift: 0, lastChecked: new Date().toISOString() },
+    };
+
+    var pageType = getPageType();
+    if (!pageType) {
+      console.warn(LOG_PREFIX, "cfbAudit: unrecognized page type");
+      return report;
+    }
+
+    try {
+      if (pageType === "roster") {
+        auditRosterPage(report);
+      } else if (pageType === "freeagent") {
+        auditFreeAgentPage(report);
+      } else if (pageType === "auction") {
+        auditAuctionPage(report);
+      } else if (pageType === "profile") {
+        auditProfilePage(report);
+      }
+    } catch (err) {
+      console.warn(LOG_PREFIX, "cfbAudit error:", err);
+    }
+
+    report.summary.totalDrift =
+      report.dropped.length + report.pickedUp.length + report.traded.length;
+
+    return report;
+  };
+
+  function addAuditEntry(report, playerName, copyNum, drift, encodedOwner, mflOwner) {
+    var entry = {
+      player: playerName,
+      copy: copyNum,
+      encodedOwner: encodedOwner || "unknown",
+      mflOwner: mflOwner || "unknown",
+    };
+
+    switch (drift.type) {
+      case "dropped":
+        entry.mflOwner = "FA";
+        report.dropped.push(entry);
+        break;
+      case "picked-up":
+        entry.encodedOwner = "FA";
+        report.pickedUp.push(entry);
+        break;
+      case "traded":
+        report.traded.push(entry);
+        break;
+      case "fallback":
+        entry.reason = drift.reason;
+        report.fallback.push(entry);
+        break;
+    }
+  }
+
+  function getPlayerName(row) {
+    var link = row.querySelector("td.player a, td:first-child a[class*='position_']");
+    return link ? link.textContent.trim() : "Unknown";
+  }
+
+  function auditRosterPage(report) {
+    var tables = document.querySelectorAll("table.report[class*='franchise_']");
+    if (!tables.length) tables = document.querySelectorAll("table.report");
+
+    for (var t = 0; t < tables.length; t++) {
+      var table = tables[t];
+      var franchiseCode = getFranchiseCodeFromTable(table);
+
+      var rows = table.querySelectorAll("tr.oddtablerow, tr.eventablerow");
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        if (row.classList.contains("total_salary_row")) continue;
+
+        var c1 = row.querySelector("td.contractstatus");
+        var c2 = row.querySelector("td.contractinfo");
+        if (!c1 && !c2) continue;
+
+        report.summary.totalPlayers++;
+        var name = getPlayerName(row);
+
+        var raw1 = c1 ? c1.textContent.trim() : "";
+        var raw2 = c2 ? c2.textContent.trim() : "";
+
+        // If already enhanced, read from data attribute or re-parse original
+        // The original text might be gone; check for data-cffb-drift
+        var parsed1 = null, parsed2 = null;
+        if (raw1 && !c1.getAttribute("data-cffb-enhanced")) {
+          parsed1 = parseCopy(raw1);
+        } else if (c1 && c1.getAttribute("data-cffb-enhanced")) {
+          // Cell was already enhanced — try to read drift from data attr
+          var driftAttr1 = c1.getAttribute("data-cffb-drift");
+          if (driftAttr1) {
+            addAuditEntry(report, name, 1,
+              { type: driftAttr1 },
+              c1.getAttribute("data-cffb-enc-owner") || "?",
+              franchiseCode);
+          }
+          parsed1 = null; // skip further processing
+        }
+
+        if (raw2 && !c2.getAttribute("data-cffb-enhanced")) {
+          parsed2 = parseCopy(raw2);
+        } else if (c2 && c2.getAttribute("data-cffb-enhanced")) {
+          var driftAttr2 = c2.getAttribute("data-cffb-drift");
+          if (driftAttr2) {
+            addAuditEntry(report, name, 2,
+              { type: driftAttr2 },
+              c2.getAttribute("data-cffb-enc-owner") || "?",
+              franchiseCode);
+          }
+          parsed2 = null;
+        }
+
+        var enc1 = (parsed1 && !parsed1.error) ? parsed1.owner : null;
+        var enc2 = (parsed2 && !parsed2.error) ? parsed2.owner : null;
+
+        if (enc1 !== null) {
+          var drift1 = computeCopyDrift(enc1, enc2, franchiseCode);
+          if (drift1.type) addAuditEntry(report, name, 1, drift1, enc1, franchiseCode);
+        }
+        if (enc2 !== null) {
+          var drift2 = computeCopyDrift(enc2, enc1, franchiseCode);
+          if (drift2.type) addAuditEntry(report, name, 2, drift2, enc2, franchiseCode);
+        }
+      }
+    }
+  }
+
+  function auditFreeAgentPage(report) {
+    var tables = document.querySelectorAll("table.report");
+    for (var t = 0; t < tables.length; t++) {
+      var table = tables[t];
+      var headerRow = table.querySelector("tr");
+      if (!headerRow) continue;
+
+      var headers = headerRow.querySelectorAll("th");
+      var c1Idx = -1, c2Idx = -1;
+      for (var h = 0; h < headers.length; h++) {
+        var hText = headers[h].textContent || "";
+        if (hText.indexOf("Copy 1") !== -1) c1Idx = h;
+        if (hText.indexOf("Copy 2") !== -1) c2Idx = h;
+      }
+      if (c1Idx === -1 && c2Idx === -1) continue;
+
+      var rows = table.querySelectorAll("tr.oddtablerow, tr.eventablerow");
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        report.summary.totalPlayers++;
+        var name = getPlayerName(row);
+        var cells = row.querySelectorAll("td");
+
+        var raw1 = (c1Idx >= 0 && c1Idx < cells.length) ? cells[c1Idx].textContent.trim() : "";
+        var raw2 = (c2Idx >= 0 && c2Idx < cells.length) ? cells[c2Idx].textContent.trim() : "";
+
+        var parsed1 = raw1 ? parseCopy(raw1) : null;
+        var parsed2 = raw2 ? parseCopy(raw2) : null;
+        var enc1 = (parsed1 && !parsed1.error) ? parsed1.owner : null;
+        var enc2 = (parsed2 && !parsed2.error) ? parsed2.owner : null;
+
+        if (enc1 !== null) {
+          var drift1 = computeCopyDrift(enc1, enc2, "FA");
+          if (drift1.type) addAuditEntry(report, name, 1, drift1, enc1, "FA");
+        }
+        if (enc2 !== null) {
+          var drift2 = computeCopyDrift(enc2, enc1, "FA");
+          if (drift2.type) addAuditEntry(report, name, 2, drift2, enc2, "FA");
+        }
+      }
+    }
+  }
+
+  function auditAuctionPage(report) {
+    var tables = document.querySelectorAll("table.report");
+    for (var t = 0; t < tables.length; t++) {
+      var rows = tables[t].querySelectorAll("tr.oddtablerow, tr.eventablerow");
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var link = row.querySelector("a[class*='position_']");
+        if (!link) continue;
+
+        report.summary.totalPlayers++;
+        var name = link.textContent.trim();
+        var title = link.getAttribute("title") || "";
+
+        var c1Match = title.match(/Copy 1 Info:\s*([^,\n]+)/);
+        var c2Match = title.match(/Copy 2 Info:\s*([^,\n]+)/);
+
+        if (c1Match) {
+          var p1 = parseCopy(c1Match[1].trim());
+          if (!p1.error) {
+            addAuditEntry(report, name, 1,
+              { type: "fallback", reason: "Auction page — MFL ownership unavailable" },
+              p1.owner, null);
+          }
+        }
+        if (c2Match) {
+          var p2 = parseCopy(c2Match[1].trim());
+          if (!p2.error) {
+            addAuditEntry(report, name, 2,
+              { type: "fallback", reason: "Auction page — MFL ownership unavailable" },
+              p2.owner, null);
+          }
+        }
+      }
+    }
+  }
+
+  function auditProfilePage(report) {
+    var c1 = document.querySelector("td.contractstatus");
+    var c2 = document.querySelector("td.contractinfo");
+    var name = (document.title || "").replace(/^Fantasy Football:\s*CFFB\s*/i, "").trim() || "Unknown";
+
+    report.summary.totalPlayers = (c1 || c2) ? 1 : 0;
+
+    if (c1) {
+      var raw1 = c1.textContent.trim();
+      if (raw1) {
+        var p1 = parseCopy(raw1);
+        if (!p1.error) {
+          addAuditEntry(report, name, 1,
+            { type: "fallback", reason: "Profile page — MFL ownership unreliable" },
+            p1.owner, null);
+        }
+      }
+    }
+    if (c2) {
+      var raw2 = c2.textContent.trim();
+      if (raw2) {
+        var p2 = parseCopy(raw2);
+        if (!p2.error) {
+          addAuditEntry(report, name, 2,
+            { type: "fallback", reason: "Profile page — MFL ownership unreliable" },
+            p2.owner, null);
+        }
       }
     }
   }
@@ -550,11 +1141,13 @@
       var pageType = getPageType();
       if (!pageType) return;
 
+      var commish = isCommissioner();
+
       switch (pageType) {
-        case "roster":    enhanceRosterPage();        break;
-        case "auction":   enhanceAuctionPage();       break;
-        case "profile":   enhancePlayerProfilePage(); break;
-        case "freeagent": enhanceFreeAgentPage();     break;
+        case "roster":    enhanceRosterPage(commish);        break;
+        case "auction":   enhanceAuctionPage(commish);       break;
+        case "profile":   enhancePlayerProfilePage(commish); break;
+        case "freeagent": enhanceFreeAgentPage(commish);     break;
       }
     } catch (err) {
       console.warn(LOG_PREFIX, "Page enhancer error:", err);
@@ -563,10 +1156,6 @@
 
   // ==================================================================
   //  MUTATION OBSERVER — handles AJAX-driven page updates
-  //
-  //  Watches for DOM additions (new rows loaded via AJAX, especially
-  //  on auction pages).  Debounced to 200ms to avoid thrashing.
-  //  Idempotent — cells with data-cffb-enhanced are skipped.
   // ==================================================================
 
   function setupObserver() {
@@ -596,7 +1185,6 @@
       setupObserver();
     });
   } else {
-    // DOM already ready (script loaded at end of body or deferred)
     runEnhancer();
     setupObserver();
   }
