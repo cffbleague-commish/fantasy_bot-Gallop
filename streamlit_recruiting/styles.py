@@ -223,12 +223,11 @@ GLOBAL_CSS = """
 [data-testid="stDataFrame"]:hover [data-testid="stDataFrameResizeHandle"] {
   opacity: 0.5;
 }
-/* Column config: image columns — larger, centered headshots */
+/* Column config: image columns — constrain size, preserve aspect ratio */
 [data-testid="stDataFrame"] img {
-  border-radius: 50% !important;
   width: 40px !important;
   height: 40px !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
 }
 /* Toolbar (search, download) */
 [data-testid="stElementToolbar"] {
