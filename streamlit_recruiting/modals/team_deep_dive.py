@@ -77,12 +77,19 @@ def show_team_deep_dive(
         # Join headshot URLs and college names from the recruiting board
         board_df = load_recruiting_board(year)
         if not board_df.empty:
-            if "HeadshotURL" in board_df.columns:
-                headshot_map = board_df.set_index("Player")["HeadshotURL"].to_dict()
-                player_grades["HeadshotURL"] = player_grades["Player"].map(headshot_map).fillna("")
-            if "College" in board_df.columns and "College" not in player_grades.columns:
-                college_map = board_df.set_index("Player")["College"].to_dict()
-                player_grades["College"] = player_grades["Player"].map(college_map).fillna("")
+            # Build lookup dicts keyed by stripped player name
+            brd = board_df.copy()
+            brd["_key"] = brd["Player"].str.strip()
+            brd = brd.drop_duplicates(subset="_key", keep="last")
+            pg_key = player_grades["Player"].str.strip()
+            if "HeadshotURL" in brd.columns:
+                headshot_map = dict(zip(brd["_key"], brd["HeadshotURL"]))
+                player_grades["HeadshotURL"] = pg_key.map(headshot_map).fillna("")
+                # Clean up non-URL values
+                player_grades.loc[~player_grades["HeadshotURL"].str.startswith("http", na=False), "HeadshotURL"] = ""
+            if "College" in brd.columns and "College" not in player_grades.columns:
+                college_map = dict(zip(brd["_key"], brd["College"]))
+                player_grades["College"] = pg_key.map(college_map).fillna("")
         if "College" in player_grades.columns:
             player_grades["CollegeLogo"] = player_grades["College"].apply(college_logo_url)
 

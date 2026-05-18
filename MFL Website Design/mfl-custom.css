@@ -395,9 +395,9 @@ body .player-card .team-tag {
   min-width: 22px;
   padding: 0 5px;
   border-radius: var(--r-1);
-  background: var(--bg-surface-elev);
-  border: 1px solid var(--border);
-  color: var(--fg-primary);
+  background: var(--team-bg, var(--bg-surface-elev));
+  border: 1px solid var(--team-border, var(--border));
+  color: var(--team-fg, var(--fg-primary));
   white-space: nowrap;
   flex-shrink: 0;
   cursor: default;

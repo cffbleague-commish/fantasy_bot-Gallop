@@ -461,10 +461,12 @@ def _render_awards_section(mfl_player_id: str, fran_logo_map: dict):
         player_awards["AwardType"].str.startswith("AllConf_", na=False)
     ].copy()
 
+    national = national[national["Rank"] == 1]
+
     if not national.empty:
         st.markdown("**National Awards**")
         nat_display = national[
-            ["Year", "AwardType", "Conference", "Rank", "AwardScore", "StarterPoints"]
+            ["Year", "AwardType", "Conference", "AwardScore", "StarterPoints"]
         ].copy()
         nat_display["AwardType"] = nat_display["AwardType"].map(
             AWARD_DISPLAY_NAMES
