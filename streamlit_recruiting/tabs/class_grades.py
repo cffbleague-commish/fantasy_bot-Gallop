@@ -144,6 +144,8 @@ def render():
                 dive_year = year
                 if show_all_years:
                     dive_year = grades_df.iloc[row_idx].get("DraftYear")
+                year_label = int(dive_year) if dive_year and pd.notna(dive_year) else ""
+                st.markdown(f"#### {team_name} — {year_label} Class Detail" if year_label else f"#### {team_name} — Class Detail")
                 _show_team_deep_dive(team_name, grades_df, dive_year)
         else:
             st.caption("Select a team from the leaderboard to view their recruiting detail.")

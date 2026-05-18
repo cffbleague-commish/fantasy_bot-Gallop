@@ -129,86 +129,81 @@ def show_team_deep_dive(
 
     team_players = team_players.sort_values("RecruitScore", ascending=False)
 
-    # --- Single player acquisition table + scatter ---
-    col_left, col_right = st.columns([55, 45], gap="medium")
+    # --- Player Acquisitions ---
+    st.markdown("#### Player Acquisitions")
 
-    with col_left:
-        st.markdown("#### Player Acquisitions")
+    # Add position badge column
+    if "Position" in team_players.columns:
+        team_players["PosBadge"] = team_players["Position"].apply(position_badge_url)
 
-        # Add position badge column
-        if "Position" in team_players.columns:
-            team_players["PosBadge"] = team_players["Position"].apply(position_badge_url)
+    display_cols = ["HeadshotURL", "Player", "PosBadge", "CollegeLogo", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
+    available = [c for c in display_cols if c in team_players.columns]
+    display = team_players[available].copy()
 
-        display_cols = ["HeadshotURL", "Player", "PosBadge", "CollegeLogo", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
-        available = [c for c in display_cols if c in team_players.columns]
-        display = team_players[available].copy()
+    # Format columns
+    if "HeadshotURL" in display.columns:
+        display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
+    if "PosBadge" in display.columns:
+        display.rename(columns={"PosBadge": "Pos"}, inplace=True)
+    if "CollegeLogo" in display.columns:
+        display.rename(columns={"CollegeLogo": "School"}, inplace=True)
+    if "RecruitScore" in display.columns:
+        display.rename(columns={"RecruitScore": "Score"}, inplace=True)
+    if "BidAmount" in display.columns:
+        display["BidAmount"] = display["BidAmount"].apply(
+            lambda x: f"${x:.0f}" if pd.notna(x) else ""
+        )
+        display.rename(columns={"BidAmount": "Paid"}, inplace=True)
+    if "PredictedCost" in display.columns:
+        display["PredictedCost"] = display["PredictedCost"].apply(
+            lambda x: f"${x:.0f}" if pd.notna(x) else ""
+        )
+        display.rename(columns={"PredictedCost": "Predicted"}, inplace=True)
+    if "Savings" in display.columns:
+        display["Savings"] = display["Savings"].apply(
+            lambda x: f"${x:+.1f}" if pd.notna(x) else ""
+        )
+    if "PlayerGrade" in display.columns:
+        display["PlayerGrade"] = display["PlayerGrade"].apply(
+            lambda x: grade_badge_url(x) if pd.notna(x) else ""
+        )
+        display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
+    if "Stars" in display.columns:
+        display["Stars"] = display["Stars"].apply(
+            lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
+        )
 
-        # Format columns
-        if "HeadshotURL" in display.columns:
-            display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
-        if "PosBadge" in display.columns:
-            display.rename(columns={"PosBadge": "Pos"}, inplace=True)
-        if "CollegeLogo" in display.columns:
-            display.rename(columns={"CollegeLogo": "School"}, inplace=True)
-        if "RecruitScore" in display.columns:
-            display.rename(columns={"RecruitScore": "Score"}, inplace=True)
-        if "BidAmount" in display.columns:
-            display["BidAmount"] = display["BidAmount"].apply(
-                lambda x: f"${x:.0f}" if pd.notna(x) else ""
+    col_config = {}
+    if "Photo" in display.columns:
+        col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+    if "Pos" in display.columns:
+        col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
+    if "School" in display.columns:
+        col_config["School"] = st.column_config.ImageColumn("", width="small")
+    if "Grade" in display.columns:
+        col_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
+
+    st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True)
+
+    # --- Value Analysis (below acquisitions) ---
+    if "RecruitScore" in team_players.columns and "BidAmount" in team_players.columns:
+        scatter_df = team_players.dropna(subset=["RecruitScore", "BidAmount"])
+        if not scatter_df.empty:
+            st.markdown("#### Value Analysis")
+            fig = px.scatter(
+                scatter_df,
+                x="RecruitScore",
+                y="BidAmount",
+                color="Position",
+                hover_name="Player",
+                color_discrete_map={"QB": "#C9A227", "RB": "#3B82C4", "WR": "#7BA4C9", "TE": "#6A6A6A"},
             )
-            display.rename(columns={"BidAmount": "Paid"}, inplace=True)
-        if "PredictedCost" in display.columns:
-            display["PredictedCost"] = display["PredictedCost"].apply(
-                lambda x: f"${x:.0f}" if pd.notna(x) else ""
+            layout = plotly_layout_defaults()
+            layout.update(
+                height=350,
+                xaxis_title="Recruit Score",
+                yaxis_title="Price Paid ($)",
+                title="Score vs Price",
             )
-            display.rename(columns={"PredictedCost": "Predicted"}, inplace=True)
-        if "Savings" in display.columns:
-            display["Savings"] = display["Savings"].apply(
-                lambda x: f"${x:+.1f}" if pd.notna(x) else ""
-            )
-        if "PlayerGrade" in display.columns:
-            display["PlayerGrade"] = display["PlayerGrade"].apply(
-                lambda x: grade_badge_url(x) if pd.notna(x) else ""
-            )
-            display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
-        if "Stars" in display.columns:
-            display["Stars"] = display["Stars"].apply(
-                lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
-            )
-
-        col_config = {}
-        if "Photo" in display.columns:
-            col_config["Photo"] = st.column_config.ImageColumn("", width="small")
-        if "Pos" in display.columns:
-            col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
-        if "School" in display.columns:
-            col_config["School"] = st.column_config.ImageColumn("", width="small")
-        if "Grade" in display.columns:
-            col_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
-
-        st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True)
-
-    with col_right:
-        st.markdown("#### Value Analysis")
-
-        # Scatter: recruit score vs price paid
-        if "RecruitScore" in team_players.columns and "BidAmount" in team_players.columns:
-            scatter_df = team_players.dropna(subset=["RecruitScore", "BidAmount"])
-            if not scatter_df.empty:
-                fig = px.scatter(
-                    scatter_df,
-                    x="RecruitScore",
-                    y="BidAmount",
-                    color="Position",
-                    hover_name="Player",
-                    color_discrete_map={"QB": "#C9A227", "RB": "#3B82C4", "WR": "#7BA4C9", "TE": "#6A6A6A"},
-                )
-                layout = plotly_layout_defaults()
-                layout.update(
-                    height=350,
-                    xaxis_title="Recruit Score",
-                    yaxis_title="Price Paid ($)",
-                    title="Score vs Price",
-                )
-                fig.update_layout(**layout)
-                st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(**layout)
+            st.plotly_chart(fig, use_container_width=True)
