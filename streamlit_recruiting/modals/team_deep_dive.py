@@ -152,6 +152,9 @@ def show_team_deep_dive(
                     lambda x: f"${x:+.1f}" if pd.notna(x) else ""
                 )
             if "PlayerGrade" in display.columns:
+                display["PlayerGrade"] = display["PlayerGrade"].apply(
+                    lambda x: grade_badge_url(x) if pd.notna(x) else ""
+                )
                 display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
             if "Stars" in display.columns:
                 display["Stars"] = display["Stars"].apply(
@@ -163,6 +166,8 @@ def show_team_deep_dive(
                 pos_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
             if "School" in display.columns:
                 pos_col_config["School"] = st.column_config.ImageColumn("", width="small")
+            if "Grade" in display.columns:
+                pos_col_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
             st.dataframe(display, column_config=pos_col_config, hide_index=True, use_container_width=True)
 
     with col_right:
