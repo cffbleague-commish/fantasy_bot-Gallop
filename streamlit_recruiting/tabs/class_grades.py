@@ -106,9 +106,18 @@ def render():
 
         display_df = pd.DataFrame(display_rows)
 
-        column_config = {}
+        column_config = {
+            "Rank": st.column_config.NumberColumn("#", width=50),
+            "Score": st.column_config.NumberColumn("Score", width=65),
+            "5\u2605": st.column_config.NumberColumn("5\u2605", width=50),
+            "4\u2605": st.column_config.NumberColumn("4\u2605", width=50),
+            "3\u2605": st.column_config.NumberColumn("3\u2605", width=50),
+            "2\u2605": st.column_config.NumberColumn("2\u2605", width=50),
+        }
+        if show_all_years:
+            column_config["Year"] = st.column_config.NumberColumn("Year", width=60, format="%d")
         if "Team" in display_df.columns:
-            column_config["Team"] = st.column_config.ImageColumn("Team", width="small")
+            column_config["Team"] = st.column_config.ImageColumn("Team", width="medium")
         if "Grade" in display_df.columns:
             column_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
 
