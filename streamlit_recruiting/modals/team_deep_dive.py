@@ -3,9 +3,10 @@ Team Deep Dive modal — detailed view of a team's recruiting class.
 
 Shows:
 - Team header with logo, grade, rank
-- KPI row (Total Spent, Score, Efficiency, Rank)
-- Position-grouped commit list with stars, price, predicted, value delta
-- Best Value / Biggest Overpay highlight cards
+- KPI row (Total Spent, Score, Efficiency, Rank, Best Value, Biggest Overpay)
+- Star composition bar
+- Single player acquisition table with position badges
+- Value analysis scatter chart
 """
 
 import streamlit as st
@@ -25,6 +26,7 @@ from components import (
     _html,
     college_logo_url,
     grade_badge_url,
+    position_badge_url,
 )
 
 
@@ -48,7 +50,7 @@ def show_team_deep_dive(
     # --- Header ---
     logo = team.get("FranchiseLogo", "")
     if logo and str(logo).startswith("http"):
-        st.image(logo, width=80)
+        st.image(logo, width=140)
 
     grade = team.get("OverallGrade", "N/A")
     conf = team.get("Conference", "")
@@ -64,13 +66,44 @@ def show_team_deep_dive(
 
     st.markdown("")
 
+    # --- Load player data early so we can compute best/worst for KPIs ---
+    player_grades = load_player_grades(year)
+    best_value_label = "N/A"
+    worst_value_label = "N/A"
+
+    if not player_grades.empty:
+        # Join headshot URLs and college names from the recruiting board
+        board_df = load_recruiting_board(year)
+        if not board_df.empty:
+            if "HeadshotURL" in board_df.columns:
+                headshot_map = board_df.set_index("Player")["HeadshotURL"].to_dict()
+                player_grades["HeadshotURL"] = player_grades["Player"].map(headshot_map).fillna("")
+            if "College" in board_df.columns and "College" not in player_grades.columns:
+                college_map = board_df.set_index("Player")["College"].to_dict()
+                player_grades["College"] = player_grades["Player"].map(college_map).fillna("")
+        if "College" in player_grades.columns:
+            player_grades["CollegeLogo"] = player_grades["College"].apply(college_logo_url)
+
+        team_players = player_grades[player_grades["Franchise"] == team_name].copy()
+
+        if not team_players.empty and "Savings" in team_players.columns:
+            savings_valid = team_players.dropna(subset=["Savings"])
+            if not savings_valid.empty:
+                best = savings_valid.nlargest(1, "Savings").iloc[0]
+                worst = savings_valid.nsmallest(1, "Savings").iloc[0]
+                best_value_label = f"{best['Player']} (${best['Savings']:+.1f})"
+                worst_value_label = f"{worst['Player']} (${worst['Savings']:+.1f})"
+    else:
+        team_players = pd.DataFrame()
+
     # --- KPI Row ---
     render_kpi_row([
         {"label": "Total Spent", "value": f"${team.get('TotalSpent', 0):.0f}" if pd.notna(team.get("TotalSpent")) else "N/A"},
         {"label": "Class Score", "value": f"{team.get('ClassScore', 0):.1f}" if pd.notna(team.get("ClassScore")) else "N/A", "hero": True},
         {"label": "Efficiency", "value": str(team.get("EfficiencyGrade", "N/A"))},
         {"label": "Class Rank", "value": f"#{rank}"},
-        {"label": "Conf Rank", "value": f"#{int(team.get('ConfRank', 0) or 0)}" if pd.notna(team.get("ConfRank")) else "N/A"},
+        {"label": "Best Value", "value": best_value_label},
+        {"label": "Biggest Overpay", "value": worst_value_label},
     ])
 
     st.markdown("")
@@ -86,89 +119,70 @@ def show_team_deep_dive(
 
     st.markdown("---")
 
-    # --- Player Acquisitions ---
-    player_grades = load_player_grades(year)
-    if player_grades.empty:
-        st.info("No player grade data available.")
-        return
-
-    # Join headshot URLs and college names from the recruiting board
-    board_df = load_recruiting_board(year)
-    if not board_df.empty:
-        if "HeadshotURL" in board_df.columns:
-            headshot_map = board_df.set_index("Player")["HeadshotURL"].to_dict()
-            player_grades["HeadshotURL"] = player_grades["Player"].map(headshot_map).fillna("")
-        if "College" in board_df.columns and "College" not in player_grades.columns:
-            college_map = board_df.set_index("Player")["College"].to_dict()
-            player_grades["College"] = player_grades["Player"].map(college_map).fillna("")
-    if "College" in player_grades.columns:
-        player_grades["CollegeLogo"] = player_grades["College"].apply(college_logo_url)
-
-    team_players = player_grades[player_grades["Franchise"] == team_name].copy()
     if team_players.empty:
         st.info(f"No player acquisitions found for {team_name}.")
         return
 
     team_players = team_players.sort_values("RecruitScore", ascending=False)
 
-    # Two-column: commit list + scatter
+    # --- Single player acquisition table + scatter ---
     col_left, col_right = st.columns([55, 45], gap="medium")
 
     with col_left:
         st.markdown("#### Player Acquisitions")
 
-        # Group by position
-        positions = ["QB", "RB", "WR", "TE"]
-        for pos in positions:
-            pos_players = team_players[team_players["Position"] == pos]
-            if pos_players.empty:
-                continue
+        # Add position badge column
+        if "Position" in team_players.columns:
+            team_players["PosBadge"] = team_players["Position"].apply(position_badge_url)
 
-            st.markdown(f"**{pos}** ({len(pos_players)})")
+        display_cols = ["HeadshotURL", "Player", "PosBadge", "CollegeLogo", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
+        available = [c for c in display_cols if c in team_players.columns]
+        display = team_players[available].copy()
 
-            display_cols = ["HeadshotURL", "Player", "CollegeLogo", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
-            available = [c for c in display_cols if c in pos_players.columns]
-            display = pos_players[available].copy()
+        # Format columns
+        if "HeadshotURL" in display.columns:
+            display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
+        if "PosBadge" in display.columns:
+            display.rename(columns={"PosBadge": "Pos"}, inplace=True)
+        if "CollegeLogo" in display.columns:
+            display.rename(columns={"CollegeLogo": "School"}, inplace=True)
+        if "RecruitScore" in display.columns:
+            display.rename(columns={"RecruitScore": "Score"}, inplace=True)
+        if "BidAmount" in display.columns:
+            display["BidAmount"] = display["BidAmount"].apply(
+                lambda x: f"${x:.0f}" if pd.notna(x) else ""
+            )
+            display.rename(columns={"BidAmount": "Paid"}, inplace=True)
+        if "PredictedCost" in display.columns:
+            display["PredictedCost"] = display["PredictedCost"].apply(
+                lambda x: f"${x:.0f}" if pd.notna(x) else ""
+            )
+            display.rename(columns={"PredictedCost": "Predicted"}, inplace=True)
+        if "Savings" in display.columns:
+            display["Savings"] = display["Savings"].apply(
+                lambda x: f"${x:+.1f}" if pd.notna(x) else ""
+            )
+        if "PlayerGrade" in display.columns:
+            display["PlayerGrade"] = display["PlayerGrade"].apply(
+                lambda x: grade_badge_url(x) if pd.notna(x) else ""
+            )
+            display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
+        if "Stars" in display.columns:
+            display["Stars"] = display["Stars"].apply(
+                lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
+            )
 
-            # Format columns
-            if "HeadshotURL" in display.columns:
-                display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
-            if "CollegeLogo" in display.columns:
-                display.rename(columns={"CollegeLogo": "School"}, inplace=True)
-            if "RecruitScore" in display.columns:
-                display.rename(columns={"RecruitScore": "Score"}, inplace=True)
-            if "BidAmount" in display.columns:
-                display["BidAmount"] = display["BidAmount"].apply(
-                    lambda x: f"${x:.0f}" if pd.notna(x) else ""
-                )
-                display.rename(columns={"BidAmount": "Paid"}, inplace=True)
-            if "PredictedCost" in display.columns:
-                display["PredictedCost"] = display["PredictedCost"].apply(
-                    lambda x: f"${x:.0f}" if pd.notna(x) else ""
-                )
-                display.rename(columns={"PredictedCost": "Predicted"}, inplace=True)
-            if "Savings" in display.columns:
-                display["Savings"] = display["Savings"].apply(
-                    lambda x: f"${x:+.1f}" if pd.notna(x) else ""
-                )
-            if "PlayerGrade" in display.columns:
-                display["PlayerGrade"] = display["PlayerGrade"].apply(
-                    lambda x: grade_badge_url(x) if pd.notna(x) else ""
-                )
-                display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
-            if "Stars" in display.columns:
-                display["Stars"] = display["Stars"].apply(
-                    lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
-                )
+        col_config = {}
+        if "Photo" in display.columns:
+            col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+        if "Pos" in display.columns:
+            col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
+        if "School" in display.columns:
+            col_config["School"] = st.column_config.ImageColumn("", width="small")
+        if "Grade" in display.columns:
+            col_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
 
-            pos_col_config = {}
-            if "Photo" in display.columns:
-                pos_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
-            if "School" in display.columns:
-                pos_col_config["School"] = st.column_config.ImageColumn("", width="small")
-            if "Grade" in display.columns:
-                pos_col_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
-            st.dataframe(display, column_config=pos_col_config, hide_index=True, use_container_width=True)
+        st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True)
 
     with col_right:
         st.markdown("#### Value Analysis")
@@ -194,28 +208,3 @@ def show_team_deep_dive(
                 )
                 fig.update_layout(**layout)
                 st.plotly_chart(fig, use_container_width=True)
-
-        # Best Value / Biggest Overpay
-        if "Savings" in team_players.columns:
-            savings_valid = team_players.dropna(subset=["Savings"])
-            if not savings_valid.empty:
-                best = savings_valid.nlargest(1, "Savings").iloc[0]
-                worst = savings_valid.nsmallest(1, "Savings").iloc[0]
-
-                st.markdown("**Best Value**")
-                _html(
-                    f'<div style="display:flex;align-items:center;gap:12px;padding:8px;'
-                    f'background:#141414;border:1px solid #2A2A2A;border-radius:8px;">'
-                    f'<span style="color:#F5F5F5;font-weight:600;">{best["Player"]}</span>'
-                    f'{render_value_delta(best["Savings"], size="md")}'
-                    f'</div>'
-                )
-
-                st.markdown("**Biggest Overpay**")
-                _html(
-                    f'<div style="display:flex;align-items:center;gap:12px;padding:8px;'
-                    f'background:#141414;border:1px solid #2A2A2A;border-radius:8px;">'
-                    f'<span style="color:#F5F5F5;font-weight:600;">{worst["Player"]}</span>'
-                    f'{render_value_delta(worst["Savings"], size="md")}'
-                    f'</div>'
-                )
