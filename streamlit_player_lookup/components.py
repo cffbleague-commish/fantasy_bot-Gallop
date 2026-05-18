@@ -744,3 +744,130 @@ def _esc(text: str) -> str:
         .replace(">", "&gt;")
         .replace('"', "&quot;")
     )
+
+
+# ---------------------------------------------------------------------------
+# Player Lookup — additional components
+# ---------------------------------------------------------------------------
+
+
+def render_redshirt_indicator(
+    traditional: bool,
+    medical: bool,
+    trad_year: int | None = None,
+    med_year: int | None = None,
+) -> str:
+    """Render redshirt status pills.
+
+    Returns HTML string with gold-tinted pill for traditional RS
+    and red-tinted pill for medical RS, or dim "No Redshirts" text.
+    """
+    pill = (
+        "display:inline-flex;align-items:center;padding:3px 10px;"
+        "border-radius:4px;font-family:var(--font-body);font-weight:600;"
+        "font-size:11px;letter-spacing:0.06em;text-transform:uppercase;"
+        "margin-right:6px;"
+    )
+    parts = []
+    if traditional:
+        yr = f" ({int(trad_year)})" if trad_year else ""
+        parts.append(
+            f'<span style="{pill}background:rgba(201,162,39,0.18);'
+            f'color:#E8C547;border:1px solid rgba(201,162,39,0.3);">'
+            f"TRAD RS{_esc(yr)}</span>"
+        )
+    if medical:
+        yr = f" ({int(med_year)})" if med_year else ""
+        parts.append(
+            f'<span style="{pill}background:rgba(184,69,69,0.18);'
+            f'color:#E07070;border:1px solid rgba(184,69,69,0.3);">'
+            f"MED RS{_esc(yr)}</span>"
+        )
+    if not parts:
+        return (
+            '<span style="color:var(--fg-tertiary);font-size:12px;'
+            'font-family:var(--font-body);">No Redshirts</span>'
+        )
+    return " ".join(parts)
+
+
+def render_eligibility_bar(years_used: int, max_years: int = 4) -> str:
+    """Render a horizontal eligibility progress bar.
+
+    Shows filled segments in gold and empty segments in dark gray.
+    Returns HTML string.
+    """
+    used = min(max(years_used, 0), max_years)
+    segments = []
+    for i in range(max_years):
+        if i < used:
+            bg = "background:var(--gold);opacity:0.9;"
+        else:
+            bg = "background:var(--bg-surface-elev);border:1px solid var(--fg-tertiary);"
+        segments.append(
+            f'<div style="flex:1;height:10px;border-radius:2px;{bg}"></div>'
+        )
+    bar = "".join(segments)
+    return (
+        f'<div style="margin:6px 0;">'
+        f'  <div style="font-family:var(--font-body);font-size:11px;'
+        f'  color:var(--fg-secondary);text-transform:uppercase;letter-spacing:0.08em;'
+        f'  font-weight:600;margin-bottom:4px;">Eligibility {used}/{max_years}</div>'
+        f'  <div style="display:flex;gap:4px;">{bar}</div>'
+        f'</div>'
+    )
+
+
+def render_transaction_type_badge(txn_type: str) -> str:
+    """Render a color-coded badge for a transaction type.
+
+    Colors: AUCTION_WON=green, FREE_AGENT=gray, IR=red, TAXI=gold.
+    Returns HTML string.
+    """
+    from config import TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_COLORS
+
+    label = TRANSACTION_TYPE_LABELS.get(txn_type, txn_type)
+    color = TRANSACTION_TYPE_COLORS.get(txn_type, "#5A5A5A")
+    return (
+        f'<span style="display:inline-flex;align-items:center;padding:2px 8px;'
+        f'border-radius:3px;font-family:var(--font-body);font-weight:600;'
+        f'font-size:10px;letter-spacing:0.06em;text-transform:uppercase;'
+        f'background:{color}22;color:{color};'
+        f'border:1px solid {color}44;">{_esc(label)}</span>'
+    )
+
+
+def render_award_badge(award_type: str, year: int | None = None) -> str:
+    """Render an award badge.
+
+    National awards get gold gradient treatment.
+    All-Conference awards get conference-colored treatment.
+    Parses 'AllConf_SEC,1st' into '1st Team All-SEC'.
+    Returns HTML string.
+    """
+    if award_type.startswith("AllConf_"):
+        # Parse "AllConf_SEC,1st" -> conf="SEC", team="1st"
+        remainder = award_type.replace("AllConf_", "")
+        parts = remainder.split(",")
+        conf = parts[0] if parts else ""
+        team = parts[1].strip() if len(parts) > 1 else ""
+        display_name = f"{team} Team All-{conf}"
+        bg = "rgba(90,90,90,0.2)"
+        fg = "var(--fg-primary)"
+        border = "rgba(90,90,90,0.4)"
+    else:
+        from config import AWARD_DISPLAY_NAMES
+
+        display_name = AWARD_DISPLAY_NAMES.get(award_type, award_type)
+        bg = "rgba(201,162,39,0.18)"
+        fg = "#E8C547"
+        border = "rgba(201,162,39,0.35)"
+
+    yr = f" ({int(year)})" if year else ""
+    return (
+        f'<span style="display:inline-flex;align-items:center;padding:3px 10px;'
+        f'border-radius:4px;font-family:var(--font-body);font-weight:600;'
+        f'font-size:11px;letter-spacing:0.04em;'
+        f'background:{bg};color:{fg};border:1px solid {border};'
+        f'margin:2px 4px 2px 0;">{_esc(display_name)}{_esc(yr)}</span>'
+    )

@@ -8,7 +8,7 @@ import requests
 import pandas as pd
 from typing import Optional
 
-from models.config import POSITIONS
+from config import POSITIONS
 
 
 MFL_BASE_URL = "https://api.myfantasyleague.com"

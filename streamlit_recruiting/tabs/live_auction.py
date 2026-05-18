@@ -154,6 +154,10 @@ def render():
         )
         return
 
+    # Scope to rookie auction transactions only
+    if "IsRookie" in df.columns:
+        df = df[df["IsRookie"]].copy()
+
     # Determine auction year from the data (should only be one year at a time)
     auction_year = None
     if "AuctionYear" in df.columns:
@@ -187,7 +191,6 @@ def render():
 
     # --- KPI Row ---
     won_df = df[df["TransactionType"] == "AUCTION_WON"]
-    rookie_won = int(won_df["IsRookie"].sum()) if not won_df.empty else 0
 
     render_kpi_row([
         {"label": "Total Events", "value": str(len(df))},
@@ -195,13 +198,13 @@ def render():
         {"label": "Total Spent", "value": f"${won_df['BidAmount'].sum():,.0f}" if not won_df.empty else "$0"},
         {"label": "Avg Win", "value": f"${won_df['BidAmount'].mean():.1f}" if not won_df.empty else "$0"},
         {"label": "Highest Win", "value": f"${won_df['BidAmount'].max():.0f}" if not won_df.empty else "$0"},
-        {"label": "Rookie Wins", "value": str(rookie_won)},
+        {"label": "Players Won", "value": str(won_df["PlayerName"].nunique()) if not won_df.empty else "0"},
     ])
 
     st.markdown("")
 
     # --- Filters ---
-    col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+    col_f1, col_f2, col_f3 = st.columns(3)
     type_filter = col_f1.selectbox(
         "Transaction Type",
         ["All", "Nomination", "Bid", "Won"],
@@ -213,9 +216,6 @@ def render():
     conf_filter = col_f3.selectbox(
         "Conference", ["All"] + CONFERENCE_LIST, key="auction_conf_filter"
     )
-    rookie_filter = col_f4.selectbox(
-        "Player Type", ["All", "Rookies Only", "Veterans Only"], key="auction_rookie_filter"
-    )
 
     filtered = df.copy()
     if type_filter != "All":
@@ -224,10 +224,6 @@ def render():
         filtered = filtered[filtered["Position"] == pos_filter]
     if conf_filter != "All":
         filtered = filtered[filtered["Conference"] == conf_filter]
-    if rookie_filter == "Rookies Only":
-        filtered = filtered[filtered["IsRookie"]]
-    elif rookie_filter == "Veterans Only":
-        filtered = filtered[~filtered["IsRookie"]]
 
     if filtered.empty:
         st.info("No transactions match the current filters.")
@@ -240,42 +236,14 @@ def render():
         _render_auction_timeline(filtered)
 
     with col_right:
-        _render_summary_panels(filtered, won_df if type_filter == "All" else filtered[filtered["TransactionType"] == "AUCTION_WON"])
+        _render_summary_panels(filtered)
 
     st.markdown("---")
 
-    # --- Recent Transactions Table ---
-    st.markdown("#### Recent Transactions")
-    recent = filtered.sort_values("Timestamp", ascending=False).head(50)
-
-    display_cols = ["Timestamp", "Type", "PlayerPhoto", "PlayerName", "PosBadge", "NFLLogo", "NFLTeam",
-                    "FranchiseLogo", "Conference", "BidAmount", "CopySession", "Note", "IsRookie"]
-    available = [c for c in display_cols if c in recent.columns]
-    display = recent[available].copy()
-    display.rename(columns={
-        "PlayerPhoto": "Photo", "PlayerName": "Player", "PosBadge": "Pos",
-        "NFLLogo": "NFL", "NFLTeam": "Team",
-        "FranchiseLogo": "Franchise", "Conference": "Conf",
-        "BidAmount": "Bid", "CopySession": "Copy #", "IsRookie": "Rookie",
-    }, inplace=True)
-
-    if "Note" in display.columns:
-        display["Note"] = display["Note"].fillna("")
-    display["Bid"] = display["Bid"].apply(lambda x: f"${x:.0f}")
-    display["Rookie"] = display["Rookie"].apply(lambda x: "Yes" if x else "No")
-    if "Copy #" in display.columns:
-        display["Copy #"] = display["Copy #"].apply(lambda x: f"#{int(x)}" if x > 0 else "")
-
-    col_config = {
-        "Franchise": st.column_config.ImageColumn("", width="small"),
-    }
-    if "Photo" in display.columns:
-        col_config["Photo"] = st.column_config.ImageColumn("", width="small")
-    if "Pos" in display.columns:
-        col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
-    if "NFL" in display.columns:
-        col_config["NFL"] = st.column_config.ImageColumn("", width="small")
-    st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True, height=500)
+    # --- 24-Hour Activity Summary ---
+    st.markdown("#### Daily Activity Summary")
+    st.caption("Transactions bundled into 24-hour windows per player copy.")
+    _render_daily_summary(filtered)
 
     # --- Player Deep Dive ---
     st.markdown("---")
@@ -396,7 +364,7 @@ def _render_auction_timeline(filtered: pd.DataFrame):
     )
 
 
-def _render_summary_panels(filtered: pd.DataFrame, won_filtered: pd.DataFrame):
+def _render_summary_panels(filtered: pd.DataFrame):
     """Render summary panels on the right side of the two-column layout."""
 
     # Transaction type breakdown
@@ -413,12 +381,78 @@ def _render_summary_panels(filtered: pd.DataFrame, won_filtered: pd.DataFrame):
         fig.update_layout(**layout)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Top 5 highest wins
-    if not won_filtered.empty:
-        st.markdown("#### Top 5 Wins")
-        top5 = won_filtered.nlargest(5, "BidAmount")
-        for _, row in top5.iterrows():
-            st.caption(f"${row['BidAmount']:.0f} — {row['PlayerName']} ({row['Position']})")
+
+def _render_daily_summary(filtered: pd.DataFrame):
+    """Render a 24-hour activity summary grouped by player copy per day."""
+    work = filtered.copy()
+    work["DateTime"] = pd.to_datetime(work["Timestamp"], errors="coerce")
+    work = work.dropna(subset=["DateTime"])
+    if work.empty:
+        st.info("No timestamped transactions to summarise.")
+        return
+
+    work["Date"] = work["DateTime"].dt.date
+
+    # Group by day + player + conference + copy session
+    group_cols = ["Date", "PlayerName", "Conference", "CopySession"]
+    rows = []
+    for keys, grp in work.groupby(group_cols, sort=False):
+        date, player_name, conf, copy_num = keys
+        if copy_num <= 0:
+            continue
+
+        copy_label = f"{conf} #{int(copy_num)}"
+
+        init_rows = grp[grp["TransactionType"] == "AUCTION_INIT"]
+        bid_rows = grp[grp["TransactionType"] == "AUCTION_BID"]
+        won_rows = grp[grp["TransactionType"] == "AUCTION_WON"]
+
+        # Player metadata (consistent across group)
+        first = grp.iloc[0]
+        photo = first.get("PlayerPhoto", "")
+        pos_badge = first.get("PosBadge", "")
+        nfl_logo = first.get("NFLLogo", "")
+
+        # Status + single price (context-dependent)
+        num_bids = len(bid_rows)
+        if not won_rows.empty:
+            status = "Sold"
+            price = f"${won_rows.iloc[0]['BidAmount']:.0f}"
+        elif not bid_rows.empty:
+            status = "Bidding"
+            price = f"${bid_rows['BidAmount'].max():.0f}"
+        elif not init_rows.empty:
+            status = "Nominated"
+            price = f"${init_rows.iloc[0]['BidAmount']:.0f}"
+        else:
+            status = ""
+            price = ""
+
+        rows.append({
+            "Date": date,
+            "Photo": photo,
+            "Player": player_name,
+            "Pos": pos_badge,
+            "NFL": nfl_logo,
+            "Copy": copy_label,
+            "Status": status,
+            "Bids": num_bids,
+            "Price": price,
+        })
+
+    if not rows:
+        st.info("No copy-level activity to summarise.")
+        return
+
+    summary_df = pd.DataFrame(rows)
+    summary_df = summary_df.sort_values("Date", ascending=False)
+
+    col_config = {
+        "Photo": st.column_config.ImageColumn("", width="small"),
+        "Pos": st.column_config.ImageColumn("Pos", width="small"),
+        "NFL": st.column_config.ImageColumn("", width="small"),
+    }
+    st.dataframe(summary_df, column_config=col_config, hide_index=True, use_container_width=True, height=500)
 
 
 def _render_team_spending(filtered: pd.DataFrame, logo_lookup: dict):
@@ -433,17 +467,15 @@ def _render_team_spending(filtered: pd.DataFrame, logo_lookup: dict):
         TotalSpent=("BidAmount", "sum"),
         AvgBid=("BidAmount", "mean"),
         MaxBid=("BidAmount", "max"),
-        Rookies=("IsRookie", "sum"),
     ).reset_index()
     team_summary = team_summary.sort_values("TotalSpent", ascending=False)
     team_summary["Logo"] = team_summary["FranchiseName"].map(logo_lookup).fillna("")
-    team_summary = team_summary[["Logo", "FranchiseName", "Wins", "TotalSpent", "AvgBid", "MaxBid", "Rookies"]]
-    team_summary.columns = ["Logo", "Team", "Wins", "Total", "Avg", "Max", "Rookies"]
+    team_summary = team_summary[["Logo", "FranchiseName", "Wins", "TotalSpent", "AvgBid", "MaxBid"]]
+    team_summary.columns = ["Logo", "Team", "Wins", "Total", "Avg", "Max"]
 
     team_display = team_summary.copy()
     for col in ["Total", "Avg", "Max"]:
         team_display[col] = team_display[col].apply(lambda x: f"${x:.0f}")
-    team_display["Rookies"] = team_display["Rookies"].astype(int)
 
     team_col_config = {"Logo": st.column_config.ImageColumn("", width="small")}
     st.dataframe(team_display, column_config=team_col_config, hide_index=True, use_container_width=True)
@@ -501,7 +533,7 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
 
     top = top_won.nlargest(20, "BidAmount")
     top_cols = ["PlayerPhoto", "PlayerName", "PosBadge", "NFLLogo", "NFLTeam",
-                "FranchiseLogo", "BidAmount", "CopySession", "IsRookie"]
+                "FranchiseLogo", "BidAmount", "CopySession"]
     top_available = [c for c in top_cols if c in top.columns]
     top_display = top[top_available].copy()
     top_display.rename(columns={
@@ -509,10 +541,8 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         "NFLLogo": "NFL", "NFLTeam": "Team",
         "FranchiseLogo": "Franchise",
         "BidAmount": "Bid", "CopySession": "Copy #",
-        "IsRookie": "Rookie",
     }, inplace=True)
     top_display["Bid"] = top_display["Bid"].apply(lambda x: f"${x:.0f}")
-    top_display["Rookie"] = top_display["Rookie"].apply(lambda x: "Yes" if x else "No")
     if "Copy #" in top_display.columns:
         top_display["Copy #"] = top_display["Copy #"].apply(
             lambda x: f"#{int(x)}" if x > 0 else ""
