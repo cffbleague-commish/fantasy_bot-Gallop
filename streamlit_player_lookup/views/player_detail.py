@@ -393,8 +393,9 @@ def _render_copy_transactions(
         st.caption("No transactions found for this copy.")
         return
 
-    # Sort newest first
-    copy_txns = copy_txns.sort_values("Timestamp", ascending=False)
+    # Sort newest first (parse to datetime for proper chronological order)
+    copy_txns["_sort_ts"] = pd.to_datetime(copy_txns["Timestamp"], errors="coerce")
+    copy_txns = copy_txns.sort_values("_sort_ts", ascending=False).drop(columns=["_sort_ts"])
 
     # Build display table
     display = copy_txns[
