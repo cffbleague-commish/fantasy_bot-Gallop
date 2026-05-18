@@ -1,0 +1,46 @@
+body {
+	--fsAddBuffer: 22px;
+}
+[id='myfantasyleague_leaderboard_atf_desktop'],
+[id='myfantasyleague_rightrail'],
+[id='myfantasyleague_leaderboard_atf_mobile'],
+[id='myfantasyleague_leftrail'],
+[id='myfantasyleague_leaderboard_btf_mobile'],
+[id='myfantasyleague_leaderboard_btf_desktop'] {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	min-height: calc(var(--height) + var(--fsAddBuffer));
+	height: calc(var(--height) + var(--fsAddBuffer));
+	width: 100%;
+}
+[id='myfantasyleague_leaderboard_atf_mobile'] {
+		--height: 100px;
+}
+[id='myfantasyleague_leaderboard_btf_mobile'] {
+		--height: 50px;
+}
+[id='myfantasyleague_leftrail'] {
+		--height: 600px;
+}
+@media only screen and (min-width: 768px) {
+	[id='myfantasyleague_leaderboard_atf_desktop'] {
+		--height: 90px;
+	}
+	[id='myfantasyleague_leaderboard_atf_mobile'] {
+		display: none; 
+	}
+	[id='myfantasyleague_leaderboard_btf_desktop'] {
+		--height: 90px;
+	}
+	[id='myfantasyleague_leaderboard_btf_mobile'] {
+		display: none; 
+	}
+	[id='myfantasyleague_leftrail'] {
+		--height: 600px;
+	}
+	[id='myfantasyleague_rightrail'] {
+		--height: 600px;
+	}
+}

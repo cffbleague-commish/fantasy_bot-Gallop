@@ -152,10 +152,6 @@ _NFL_ABBR_MAP = {
     "nep": "ne",    # New England Patriots
     "nos": "no",    # New Orleans Saints
     "gbp": "gb",    # Green Bay Packers
-    "sfo": "sf",    # San Francisco 49ers
-    "tbb": "tb",    # Tampa Bay Buccaneers
-    "jac": "jax",   # Jacksonville Jaguars
-    "was": "wsh",   # Washington Commanders
 }
 
 
