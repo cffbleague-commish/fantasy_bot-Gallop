@@ -381,10 +381,10 @@ def _render_copy_transactions(
         st.caption("No transaction data available.")
         return
 
-    # Filter by player ID and conference
+    # Filter by player ID and specific copy
     copy_txns = txn_df[
         (txn_df["PlayerID"] == mfl_player_id)
-        & (txn_df["Conference"] == conference)
+        & (txn_df["CopyAssigned"] == copy_id)
     ].copy()
 
     if copy_txns.empty:
