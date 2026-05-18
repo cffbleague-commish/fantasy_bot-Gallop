@@ -68,8 +68,10 @@ def show_team_deep_dive(
 
     # --- Load player data early so we can compute best/worst for KPIs ---
     player_grades = load_player_grades(year)
-    best_value_label = "N/A"
-    worst_value_label = "N/A"
+    best_value_amt = "N/A"
+    best_value_name = ""
+    worst_value_amt = "N/A"
+    worst_value_name = ""
 
     if not player_grades.empty:
         # Join headshot URLs and college names from the recruiting board
@@ -91,8 +93,10 @@ def show_team_deep_dive(
             if not savings_valid.empty:
                 best = savings_valid.nlargest(1, "Savings").iloc[0]
                 worst = savings_valid.nsmallest(1, "Savings").iloc[0]
-                best_value_label = f"{best['Player']} (${best['Savings']:+.1f})"
-                worst_value_label = f"{worst['Player']} (${worst['Savings']:+.1f})"
+                best_value_amt = f"${best['Savings']:+.1f}"
+                best_value_name = best["Player"]
+                worst_value_amt = f"${worst['Savings']:+.1f}"
+                worst_value_name = worst["Player"]
     else:
         team_players = pd.DataFrame()
 
@@ -102,8 +106,8 @@ def show_team_deep_dive(
         {"label": "Class Score", "value": f"{team.get('ClassScore', 0):.1f}" if pd.notna(team.get("ClassScore")) else "N/A", "hero": True},
         {"label": "Efficiency", "value": str(team.get("EfficiencyGrade", "N/A"))},
         {"label": "Class Rank", "value": f"#{rank}"},
-        {"label": "Best Value", "value": best_value_label},
-        {"label": "Biggest Overpay", "value": worst_value_label},
+        {"label": "Best Value", "value": best_value_amt, "sub": best_value_name, "sub_type": "pos"},
+        {"label": "Biggest Overpay", "value": worst_value_amt, "sub": worst_value_name, "sub_type": "neg"},
     ])
 
     st.markdown("")
