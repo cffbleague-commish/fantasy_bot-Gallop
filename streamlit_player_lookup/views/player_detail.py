@@ -63,7 +63,7 @@ def render_player_detail(
     # --- KPI row ---
     _render_kpi_summary(player_copies, fran_name_map)
 
-    st.markdown("")
+    st.markdown("---")
 
     # --- Conference filter hint ---
     if conference_filter:
@@ -107,6 +107,8 @@ def render_player_detail(
         selection_mode="single-row",
         key="copy_table",
     )
+
+    st.markdown("---")
 
     # --- Copy detail panel (on row selection) ---
     selected = selection.selection.rows if selection and selection.selection else []
