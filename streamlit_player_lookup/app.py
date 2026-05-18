@@ -34,6 +34,7 @@ with st.sidebar:
 
 # --- App title ---
 st.markdown("# CFFB Player Lookup")
+st.caption("Player information is manually updated at select times of the year. Direct any questions to the commissioner.")
 
 # --- Main view ---
 render_search()

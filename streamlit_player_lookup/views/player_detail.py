@@ -362,6 +362,7 @@ def _render_copy_detail(
             c.get("MFL_Player_ID", ""),
             c.get("Conference", ""),
             copy_id,
+            fran_logo_map,
         )
 
 
@@ -374,6 +375,7 @@ def _render_copy_transactions(
     mfl_player_id: str,
     conference: str,
     copy_id: str,
+    fran_logo_map: dict,
 ):
     """Render transaction history for a specific player copy."""
     txn_df = load_transaction_log()
@@ -396,23 +398,29 @@ def _render_copy_transactions(
 
     # Build display table
     display = copy_txns[
-        ["Timestamp", "Type", "Action", "FranchiseName", "BidAmount"]
+        ["Timestamp", "Type", "Action", "FranchiseID", "BidAmount"]
     ].copy()
+    display["Logo"] = display["FranchiseID"].map(fran_logo_map).fillna("")
     display["Type"] = display["Type"].map(TRANSACTION_TYPE_LABELS).fillna(display["Type"])
     display["BidAmount"] = display["BidAmount"].apply(
         lambda x: f"${x:.0f}" if pd.notna(x) and x > 0 else ""
     )
+    display.drop(columns=["FranchiseID"], inplace=True)
     display.rename(
         columns={
             "Type": "Transaction",
-            "FranchiseName": "Team",
             "BidAmount": "Amount",
         },
         inplace=True,
     )
+    # Reorder so Logo comes before Action
+    display = display[["Timestamp", "Transaction", "Logo", "Action", "Amount"]]
 
     st.dataframe(
         display,
+        column_config={
+            "Logo": st.column_config.ImageColumn("Team", width="small"),
+        },
         hide_index=True,
         use_container_width=True,
         height=min(len(display) * 35 + 38, 400),
