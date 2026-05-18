@@ -18,6 +18,7 @@ from components import (
     render_conference_badge,
     render_commit_composition_bar,
     plotly_layout_defaults,
+    grade_badge_url,
     _html,
 )
 
@@ -90,7 +91,7 @@ def render():
                 row_data["Year"] = int(row["DraftYear"]) if pd.notna(row.get("DraftYear")) else ""
             row_data.update({
                 "Team": row.get("FranchiseLogo", ""),
-                "Grade": row.get("OverallGrade", ""),
+                "Grade": grade_badge_url(row.get("OverallGrade", "")),
                 "Score": round(row.get("ClassScore", 0) or 0, 1),
                 "5\u2605": five,
                 "4\u2605": four,
@@ -104,6 +105,8 @@ def render():
         column_config = {}
         if "Team" in display_df.columns:
             column_config["Team"] = st.column_config.ImageColumn("Team", width="small")
+        if "Grade" in display_df.columns:
+            column_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
 
         # Row-selectable dataframe
         selection = st.dataframe(

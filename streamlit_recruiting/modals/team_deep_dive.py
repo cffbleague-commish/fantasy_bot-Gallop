@@ -24,6 +24,7 @@ from components import (
     plotly_layout_defaults,
     _html,
     college_logo_url,
+    grade_badge_url,
 )
 
 
