@@ -145,6 +145,20 @@ def college_logo_url(college_name: str) -> str:
     return f"https://a.espncdn.com/i/teamlogos/ncaa/500/{team_id}.png"
 
 
+# MFL 3-letter → ESPN 2/3-letter abbreviation mapping
+_NFL_ABBR_MAP = {
+    "lvr": "lv",    # Las Vegas Raiders
+    "kcc": "kc",    # Kansas City Chiefs
+    "nep": "ne",    # New England Patriots
+    "nos": "no",    # New Orleans Saints
+    "gbp": "gb",    # Green Bay Packers
+    "sfo": "sf",    # San Francisco 49ers
+    "tbb": "tb",    # Tampa Bay Buccaneers
+    "jac": "jax",   # Jacksonville Jaguars
+    "was": "wsh",   # Washington Commanders
+}
+
+
 def nfl_logo_url(nfl_team: str) -> str:
     """Return ESPN CDN logo URL for an NFL team abbreviation, or empty string."""
     if not nfl_team:
@@ -152,6 +166,8 @@ def nfl_logo_url(nfl_team: str) -> str:
     abbr = str(nfl_team).strip().lower()
     if not abbr or abbr == "nan":
         return ""
+    # Normalize MFL-style abbreviations to ESPN abbreviations
+    abbr = _NFL_ABBR_MAP.get(abbr, abbr)
     return f"https://a.espncdn.com/i/teamlogos/nfl/500/{abbr}.png"
 
 

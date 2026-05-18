@@ -147,7 +147,9 @@ def load_transaction_log() -> pd.DataFrame:
 
     c = TRANSACTION_LOG_COLS
 
-    df["Timestamp"] = df.iloc[:, c["Timestamp"]].astype(str)
+    df["Timestamp"] = pd.to_datetime(
+        df.iloc[:, c["Timestamp"]], errors="coerce"
+    )
     df["Year"] = df.iloc[:, c["Year"]].apply(_safe_int)
     df["Type"] = df.iloc[:, c["Type"]].astype(str)
     df["FranchiseID"] = (
