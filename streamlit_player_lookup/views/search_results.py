@@ -28,7 +28,7 @@ def render():
     )
 
     # --- Filter row ---
-    col_pos, col_conf, col_class = st.columns(3)
+    col_pos, col_conf, col_class, col_status = st.columns(4)
 
     with col_pos:
         position_filter = st.selectbox(
@@ -51,6 +51,13 @@ def render():
             "Draft Class",
             class_options,
             key="lookup_class",
+        )
+
+    with col_status:
+        status_filter = st.selectbox(
+            "Status",
+            ["Active", "All"],
+            key="lookup_status",
         )
 
     # --- Load data ---
@@ -80,6 +87,9 @@ def render():
 
     if class_filter != "All":
         filtered = filtered[filtered["CreatedSeason"] == int(class_filter)]
+
+    if status_filter == "Active":
+        filtered = filtered[filtered["ActiveCopies"] > 0]
 
     # --- Placeholder for detail view (renders above table when a row is selected) ---
     detail_slot = st.empty()
