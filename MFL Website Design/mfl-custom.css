@@ -1,3 +1,6 @@
+/* Google Fonts — Inter (body) + Saira Condensed (display) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700&display=swap');
+
 /* ============================================================
    mfl-custom.css — CFFB MyFantasyLeague Custom Stylesheet
    College Fantasy Football League
@@ -70,6 +73,571 @@
   --ease-out:  cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur-fast:  120ms;
   --dur-base:  180ms;
+}
+
+
+/* ============================================================
+   01 · MFL SITE-WIDE OVERRIDES
+   ----------------------------------------------------------------
+   Restyle MFL's native page elements to match the CFFB Design
+   System. Targets BackinBlack.css selectors with equal or higher
+   specificity. !important is used ONLY where BackinBlack uses it
+   (each usage annotated).
+   ============================================================ */
+
+/* ---- Body & page shell ---- */
+body {
+  background: var(--bg-canvas) !important; /* !important: BackinBlack sets bg with url(bg.jpg) */
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body .pagebody {
+  background: var(--bg-canvas);
+  font-family: var(--font-body);
+  color: var(--fg-primary);
+}
+
+/* ---- Links ---- */
+body a:link,
+body a:active,
+body a:visited {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+body a:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Headings ---- */
+body h1, body h2, body h3, body h4, body h5, body h6 {
+  font-family: var(--font-display);
+  color: var(--fg-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+body h2 {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--bg-surface);
+  padding: 8px 12px;
+  margin: var(--s-2) 0;
+}
+
+body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  background: var(--bg-canvas);
+  padding: var(--s-half);
+  margin-bottom: var(--s-1);
+}
+
+body h3 a:link,
+body h3 a:visited,
+body h3 a:active {
+  color: var(--gold);
+}
+body h3 a:hover {
+  color: var(--gold-light);
+}
+
+/* ---- table.report — main data tables ---- */
+body .report {
+  background: var(--bg-surface) !important; /* !important: BackinBlack uses it */
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 13px;
+  width: 100%;
+}
+
+/* ---- Table headers ---- */
+body .report th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  font-style: normal;         /* Override BackinBlack italic */
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  background: var(--bg-surface-elev);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  border-left: none;
+  white-space: nowrap;
+  text-align: left;
+}
+
+body .report th a:link,
+body .report th a:visited,
+body .report th a:active {
+  color: var(--fg-secondary);
+  text-decoration: none;
+}
+body .report th a:hover {
+  color: var(--fg-primary);
+  text-decoration: underline;
+}
+
+/* ---- Table rows ---- */
+body .report tr.oddtablerow {
+  background: var(--bg-surface);
+  color: var(--fg-primary) !important; /* !important: BackinBlack sets color:#ccc!important */
+}
+
+body .report tr.eventablerow {
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary) !important; /* !important: BackinBlack sets color:#ccc!important */
+}
+
+/* Row hover: surface tints + gold left accent */
+body .report tr.oddtablerow:hover,
+body .report tr.eventablerow:hover {
+  background: var(--bg-surface-hover);
+}
+
+body .report tr.oddtablerow:hover td:first-child,
+body .report tr.eventablerow:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+
+/* ---- Table cells ---- */
+body .report td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+
+body .report .oddtablerow td,
+body .report .eventablerow td {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px;
+}
+
+/* Specific cell types */
+body .report td.player {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+body .report td.contractstatus,
+body .report td.contractinfo {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+/* Tabular numerics on numeric cells */
+body .report td.points,
+body .report td.week,
+body .report td.salary,
+body .report td.rank,
+body .report td.contractyear {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  text-align: center;
+}
+
+/* ---- Row link colors ---- */
+body .report .oddtablerow a:link,
+body .report .oddtablerow a:active,
+body .report .oddtablerow a:visited,
+body .report .eventablerow a:link,
+body .report .eventablerow a:active,
+body .report .eventablerow a:visited {
+  color: var(--fg-primary);
+  text-decoration: none;
+}
+
+body .report .oddtablerow a:hover,
+body .report .eventablerow a:hover {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- Captions (table titles) ---- */
+body caption,
+body .homepagemodule caption,
+body .homepagecolumn .homepagemodule caption {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg-surface-elev);
+  background-image: none;
+  color: var(--fg-primary);
+  border: 1px solid var(--border);
+  border-bottom: 4px solid var(--gold);
+  padding: 0 12px;
+  line-height: 38px;
+  text-align: left;
+  box-shadow: none;
+}
+
+body caption a:link,
+body caption a:active,
+body caption a:visited {
+  color: var(--fg-primary) !important; /* !important: BackinBlack uses it on caption a */
+  text-decoration: none;
+}
+
+body caption a:hover,
+body caption a:link:hover,
+body caption a:active:hover,
+body caption a:visited:hover {
+  color: var(--gold) !important; /* !important: BackinBlack uses it */
+  text-decoration: underline;
+}
+
+/* ---- Report containers ---- */
+body div.mobile-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  overflow-x: auto;
+  margin-bottom: var(--s-2);
+}
+
+/* ---- Navigation menu ---- */
+body .myfantasyleague_menu,
+body .myfantasyleague_menu ul,
+body .myfantasyleague_menu ul li ul {
+  background: var(--bg-surface);
+}
+
+body .myfantasyleague_menu {
+  border-bottom-color: var(--gold);
+}
+
+body .myfantasyleague_menu ul li a,
+body .myfantasyleague_menu ul li:hover ul li a,
+body .myfantasyleague_menu ul li ul li:hover ul li a {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+}
+
+body .myfantasyleague_menu ul li:hover a,
+body .myfantasyleague_menu ul li ul li:hover a,
+body .myfantasyleague_menu ul li ul li ul li:hover a {
+  color: var(--fg-primary);
+}
+
+body .myfantasyleague_menu li:hover > a {
+  background-color: var(--bg-surface-hover);
+}
+
+body .myfantasyleague_menu ul li ul {
+  border-top-color: var(--gold);
+}
+
+body .myfantasyleague_menu ul ul li a,
+body .myfantasyleague_menu ul ul li.has-sub a {
+  border-color: var(--border);
+}
+
+/* ---- Tab menu ---- */
+body .myfantasyleague_tabmenu {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+body .myfantasyleague_tabmenu ul#homepagetabs {
+  border-bottom-color: var(--gold);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li {
+  border-left-color: var(--border);
+  border-right-color: rgba(255,255,255,0.05);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li a {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li:hover a {
+  color: var(--fg-primary);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li.currenttab,
+body .myfantasyleague_tabmenu #homepagetabs li.currenttab:hover {
+  background: var(--gold);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li.currenttab a {
+  color: var(--bg-canvas);
+}
+
+/* ---- Page header ---- */
+body .pageheader {
+  background: var(--bg-surface);
+  background-image: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+}
+
+body .pageheader a:link,
+body .pageheader a:active,
+body .pageheader a:visited {
+  color: var(--fg-primary);
+}
+
+body .pageheader a:hover {
+  color: var(--gold);
+}
+
+body .pagetitle h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--fg-primary);
+  letter-spacing: 0.06em;
+}
+
+/* ---- Page footer ---- */
+body .pagefooter {
+  background: var(--bg-surface);
+  border-top: 3px solid var(--gold);
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+body .pagefooter a:link,
+body .pagefooter a:active,
+body .pagefooter a:visited {
+  color: var(--fg-secondary);
+}
+
+body .pagefooter a:hover {
+  color: var(--gold);
+}
+
+/* ---- Form inputs ---- */
+body .pagebody input[type="text"],
+body .pagebody input[type="password"],
+body .pagebody textarea,
+body .pagebody select {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 10px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+body .pagebody input[type="text"]:focus,
+body .pagebody input[type="password"]:focus,
+body .pagebody textarea:focus,
+body .pagebody select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+body .pagebody input[type="text"]::placeholder,
+body .pagebody input[type="password"]::placeholder,
+body .pagebody textarea::placeholder {
+  color: var(--fg-tertiary);
+}
+
+/* ---- Buttons ---- */
+body input[type="submit"],
+body input[type="button"] {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+body input[type="submit"]:hover,
+body input[type="button"]:hover {
+  filter: brightness(1.08);
+  border-color: var(--border-strong);
+}
+
+body input[type="submit"]:active,
+body input[type="button"]:active {
+  filter: brightness(0.92);
+}
+
+/* ---- Home page message ---- */
+body .homepagemessage {
+  background: var(--bg-surface);
+  border: 4px double var(--gold);
+  border-radius: var(--r-2);
+  padding: var(--s-2);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+}
+
+/* ---- Report footer ---- */
+body .reportfooter {
+  background: var(--bg-surface);
+  border: none;
+  color: var(--fg-secondary);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+body .reportfooter a:link,
+body .reportfooter a:active,
+body .reportfooter a:visited {
+  color: var(--gold);
+}
+body .reportfooter a:hover {
+  color: var(--gold-light);
+}
+
+/* ---- Report navigation ---- */
+body span.reportnavigation {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+body span.reportnavigation a {
+  color: var(--fg-secondary);
+}
+body span.reportnavigation a:hover {
+  color: var(--gold);
+}
+
+body .reportnavigation .currentweek {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+body .reportnavigationheader {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- My franchise highlight ---- */
+body tr.myfranchise {
+  background-color: rgba(201, 162, 39, 0.08);
+}
+
+body a.myfranchise,
+body a.myfranchise:link,
+body a.myfranchise:visited,
+body a.myfranchise:active {
+  color: var(--gold);
+}
+body a.myfranchise:hover {
+  color: var(--gold-light);
+}
+
+/* ---- Position dividers ---- */
+body .newposition td,
+body .newposition th {
+  border-top: 3px solid var(--gold) !important; /* !important: BackinBlack uses it */
+}
+
+/* ---- Warnings ---- */
+body .warning,
+body th.warning {
+  color: var(--delta-neg);
+}
+
+/* ---- Abbreviations ---- */
+body abbr {
+  color: var(--gold);
+  text-decoration: none;
+  cursor: help;
+}
+
+/* ---- Tooltips ---- */
+body #tooltip {
+  background: var(--bg-surface-elev) !important; /* !important: BackinBlack uses it */
+  color: var(--fg-primary) !important;            /* !important: BackinBlack uses it */
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-2);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+body #tooltip:after {
+  border-top-color: var(--bg-surface-elev) !important; /* !important: BackinBlack uses it */
+}
+
+/* ---- Standings headers ---- */
+body #standings h3,
+body #brief_standings h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-primary);
+  background: var(--bg-surface-elev);
+  background-image: none;
+  border: 1px solid var(--border);
+  box-shadow: none;
+  line-height: 42px;
+  height: 42px;
+}
+
+/* ---- Scrollbars (webkit) ---- */
+body ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body ::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+body ::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+}
+body ::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-tertiary);
+}
+
+/* Firefox scrollbar */
+body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--bg-canvas);
 }
 
 
