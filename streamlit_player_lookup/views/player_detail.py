@@ -124,7 +124,7 @@ def render_player_detail(
     st.markdown("---")
 
     # --- Awards section ---
-    _render_awards_section(mfl_player_id, fran_name_map)
+    _render_awards_section(mfl_player_id, fran_logo_map)
 
 
 # ---------------------------------------------------------------------------
@@ -292,8 +292,8 @@ def _render_copy_detail(
         if logo:
             owner_html = (
                 f'<img src="{logo}" '
-                f'style="height:20px;width:20px;border-radius:50%;'
-                f'vertical-align:middle;margin-right:6px;" />'
+                f'style="height:32px;width:32px;border-radius:50%;'
+                f'vertical-align:middle;margin-right:8px;" />'
                 f"{owner_html}"
             )
         _html(
@@ -435,7 +435,7 @@ def _render_copy_transactions(
 # ---------------------------------------------------------------------------
 
 
-def _render_awards_section(mfl_player_id: str, fran_name_map: dict):
+def _render_awards_section(mfl_player_id: str, fran_logo_map: dict):
     """Render awards across all copies for this player."""
     awards_df = load_awards()
     if awards_df.empty:
@@ -448,6 +448,10 @@ def _render_awards_section(mfl_player_id: str, fran_name_map: dict):
     _html(
         '<div class="cffb-display-3" style="margin-bottom:12px;">Awards</div>'
     )
+
+    award_col_config = {
+        "Team": st.column_config.ImageColumn("Team", width="small"),
+    }
 
     # Split into national and all-conference
     national = player_awards[
@@ -465,9 +469,8 @@ def _render_awards_section(mfl_player_id: str, fran_name_map: dict):
         nat_display["AwardType"] = nat_display["AwardType"].map(
             AWARD_DISPLAY_NAMES
         ).fillna(nat_display["AwardType"])
-        # Resolve franchise name
         if "FranchiseID" in national.columns:
-            nat_display["Team"] = national["FranchiseID"].map(fran_name_map).fillna("--")
+            nat_display["Team"] = national["FranchiseID"].map(fran_logo_map).fillna("")
         nat_display.rename(
             columns={
                 "AwardType": "Award",
@@ -477,7 +480,7 @@ def _render_awards_section(mfl_player_id: str, fran_name_map: dict):
             },
             inplace=True,
         )
-        st.dataframe(nat_display, hide_index=True, use_container_width=True)
+        st.dataframe(nat_display, column_config=award_col_config, hide_index=True, use_container_width=True)
 
     if not all_conf.empty:
         st.markdown("**All-Conference Awards**")
@@ -486,7 +489,7 @@ def _render_awards_section(mfl_player_id: str, fran_name_map: dict):
         ].copy()
         ac_display["AwardType"] = ac_display["AwardType"].apply(_format_allconf_award)
         if "FranchiseID" in all_conf.columns:
-            ac_display["Team"] = all_conf["FranchiseID"].map(fran_name_map).fillna("--")
+            ac_display["Team"] = all_conf["FranchiseID"].map(fran_logo_map).fillna("")
         ac_display.rename(
             columns={
                 "AwardType": "Award",
@@ -496,7 +499,7 @@ def _render_awards_section(mfl_player_id: str, fran_name_map: dict):
             },
             inplace=True,
         )
-        st.dataframe(ac_display, hide_index=True, use_container_width=True)
+        st.dataframe(ac_display, column_config=award_col_config, hide_index=True, use_container_width=True)
 
 
 def _format_allconf_award(award_type: str) -> str:
