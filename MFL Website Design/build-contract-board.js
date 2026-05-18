@@ -220,7 +220,17 @@ function primaryTeam(p) {
     return 0;
   });
 
-  // ---- Compute summary stats ----
+  // ---- Filter out graduated free agents (GR + both copies FA) ----
+  // These players have no active contracts and have exhausted eligibility.
+  // Excluding them keeps the output under MFL's 768 KB limit.
+  function isGraduatedFa(p) {
+    return primaryClass(p) === 'GR' && isBothFa(p);
+  }
+
+  const excludedGrFa = good.filter(p => isGraduatedFa(p)).length;
+  const included     = good.filter(p => !isGraduatedFa(p));
+
+  // ---- Compute summary stats (over ALL parsed players) ----
   const stats = { total: good.length, rostered: 0, fa: 0, rs: 0, awards: 0 };
   const classCounts = { FR: 0, SO: 0, JR: 0, SR: 0, GR: 0 };
   const teamCounts = {};
@@ -253,11 +263,15 @@ function primaryTeam(p) {
   summaryHtml += `<span class="cfb-stat">Free Agents <strong>${stats.fa}</strong></span>`;
   summaryHtml += `<span class="cfb-stat">Redshirts <strong>${stats.rs}</strong></span>`;
   summaryHtml += `<span class="cfb-stat">Award Winners <strong>${stats.awards}</strong></span>`;
+  if (excludedGrFa > 0) {
+    summaryHtml += `<span class="cfb-stat cfb-stat--muted">${excludedGrFa} graduated FA omitted</span>`;
+  }
 
   // ---- Generate player card HTML ----
+  // Only emit cards for included players (excludes GR free agents).
   let cardsHtml = '';
 
-  good.forEach(p => {
+  included.forEach(p => {
     const name      = `${p.name.last}, ${p.name.first}`;
     const teamA     = p.copy1.error ? 'FA' : p.copy1.owner;
     const teamB     = p.copy2.error ? 'FA' : p.copy2.owner;
@@ -266,32 +280,17 @@ function primaryTeam(p) {
     const awCount   = totalAwards(p);
     const bothFa    = isBothFa(p) ? '1' : '0';
 
+    // Minified: no indentation or newlines between elements to save bytes.
     cardsHtml += `<div class="cfb-row" role="listitem"` +
       ` data-name="${esc(name.toLowerCase())}"` +
-      ` data-team-a="${esc(teamA)}"` +
-      ` data-team-b="${esc(teamB)}"` +
-      ` data-class-a="${esc(classA)}"` +
-      ` data-class-b="${esc(classB)}"` +
-      ` data-awards="${awCount}"` +
-      ` data-fa="${bothFa}">\n`;
-
-    cardsHtml += `  <div class="cfb-player-name">${esc(name)}</div>\n`;
-    cardsHtml += `  <div class="cfb-copies">\n`;
-
-    // Copy A
-    cardsHtml += `    <div class="cfb-copy">`;
-    cardsHtml += `<span class="cfb-copy-label">A</span>`;
-    cardsHtml += renderCopy(p.copy1);
-    cardsHtml += `</div>\n`;
-
-    // Copy B
-    cardsHtml += `    <div class="cfb-copy">`;
-    cardsHtml += `<span class="cfb-copy-label">B</span>`;
-    cardsHtml += renderCopy(p.copy2);
-    cardsHtml += `</div>\n`;
-
-    cardsHtml += `  </div>\n`;
-    cardsHtml += `</div>\n`;
+      ` data-team-a="${esc(teamA)}" data-team-b="${esc(teamB)}"` +
+      ` data-class-a="${esc(classA)}" data-class-b="${esc(classB)}"` +
+      ` data-awards="${awCount}" data-fa="${bothFa}">` +
+      `<div class="cfb-player-name">${esc(name)}</div>` +
+      `<div class="cfb-copies">` +
+      `<div class="cfb-copy"><span class="cfb-copy-label">A</span>${renderCopy(p.copy1)}</div>` +
+      `<div class="cfb-copy"><span class="cfb-copy-label">B</span>${renderCopy(p.copy2)}</div>` +
+      `</div></div>\n`;
   });
 
   // ---- Fill template and write output ----
@@ -299,10 +298,18 @@ function primaryTeam(p) {
     .replace('{{SUMMARY}}', summaryHtml)
     .replace('{{PLAYER_CARDS}}', cardsHtml);
 
+  // Strip HTML comments to save bytes
+  output = output.replace(/<!--[\s\S]*?-->\s*/g, '');
+
   fs.writeFileSync(outputPath, output, 'utf-8');
 
+  const outputBytes = Buffer.byteLength(output, 'utf-8');
+  const outputKb    = (outputBytes / 1024).toFixed(1);
+
   console.log(`home-message.html generated successfully.`);
+  console.log(`  Size: ${outputBytes} bytes (${outputKb} KB) — limit 768 KB`);
   console.log(`  Players: ${good.length} parsed, ${errors.length} error(s)`);
+  console.log(`  Cards emitted: ${included.length} (${excludedGrFa} graduated FA excluded)`);
   console.log(`  Rostered: ${stats.rostered}  |  Free agents: ${stats.fa}`);
   console.log(`  Teams: ${Object.keys(teamCounts).sort().join(', ')}`);
   console.log(`  Class breakdown: FR=${classCounts.FR} SO=${classCounts.SO} JR=${classCounts.JR} SR=${classCounts.SR} GR=${classCounts.GR}`);

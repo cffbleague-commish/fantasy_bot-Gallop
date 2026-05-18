@@ -859,6 +859,7 @@ body .player-card .ownership-fallback {
 #cfb-contract-board .cfb-stat--jr strong { color: var(--gold); }
 #cfb-contract-board .cfb-stat--sr strong { color: var(--delta-neg); }
 #cfb-contract-board .cfb-stat--gr strong { color: var(--fg-tertiary); }
+#cfb-contract-board .cfb-stat--muted { color: var(--fg-tertiary); font-style: italic; opacity: 0.7; }
 
 /* ---- Section headers (team/class groupings) ---- */
 #cfb-contract-board .cfb-section-hd {
