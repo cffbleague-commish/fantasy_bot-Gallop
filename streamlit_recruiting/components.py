@@ -184,6 +184,42 @@ def position_badge_url(position: str) -> str:
     )
     return f"data:image/svg+xml,{quote(svg)}"
 
+
+# Grade badge colors (bg, text) — mirrors CSS .cffb-grade--{mod}
+_GRADE_COLORS = {
+    "a": ("#C9A227", "#0A0A0A"),  # gold bg, dark text
+    "b": ("#2D7A4E", "#F5F5F5"),  # green bg, light text
+    "c": ("#C9A227", "#0A0A0A"),  # gold bg, dark text
+    "d": ("#B84545", "#F5F5F5"),  # red bg, light text
+    "f": ("#B84545", "#F5F5F5"),  # red bg, light text
+}
+
+
+def grade_badge_url(grade: str) -> str:
+    """Return an inline SVG data URI for a letter-grade badge.
+
+    Renders as a small rounded pill matching the design system grade colors,
+    suitable for use with st.column_config.ImageColumn.
+    """
+    from urllib.parse import quote
+    g = str(grade).strip().upper() if grade else ""
+    if not g or g in ("N/A", "NAN"):
+        return ""
+    css_key = g if g in _GRADE_CSS else (g[0] if g else "F")
+    mod = _GRADE_CSS.get(css_key, "d")
+    bg, fg = _GRADE_COLORS.get(mod, ("#6A6A6A", "#F5F5F5"))
+    # Wider pill for grades with + or - suffix
+    w = 42 if len(g) <= 1 else 48
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="22">'
+        f'<rect width="{w}" height="22" rx="6" fill="{bg}"/>'
+        f'<text x="{w // 2}" y="15.5" text-anchor="middle" font-family="Inter,system-ui,sans-serif" '
+        f'font-size="12" font-weight="700" fill="{fg}">{g}</text>'
+        f'</svg>'
+    )
+    return f"data:image/svg+xml,{quote(svg)}"
+
+
 # Star tier CSS modifier classes
 _STAR_TIERS = {5: "t5", 4: "t4", 3: "t3", 2: "t2", 1: "t1"}
 
