@@ -85,30 +85,25 @@ def render():
             three = int(row.get("ThreeStar", 0) or 0)
             two = int(row.get("TwoStar", 0) or 0)
 
-            row_data = {"Rank": idx + 1, "Logo": row.get("FranchiseLogo", "")}
+            row_data = {"Rank": idx + 1}
             if show_all_years:
                 row_data["Year"] = int(row["DraftYear"]) if pd.notna(row.get("DraftYear")) else ""
             row_data.update({
-                "Team": row.get("Franchise", ""),
-                "Conf": row.get("Conference", ""),
+                "Team": row.get("FranchiseLogo", ""),
                 "Grade": row.get("OverallGrade", ""),
                 "Score": round(row.get("ClassScore", 0) or 0, 1),
                 "5\u2605": five,
                 "4\u2605": four,
                 "3\u2605": three,
                 "2\u2605": two,
-                "Players": int(row.get("TotalPlayers", 0) or 0),
-                "Spent": f"${row.get('TotalSpent', 0):.0f}" if pd.notna(row.get("TotalSpent")) else "",
-                "Efficiency": row.get("EfficiencyGrade", "N/A"),
-                "Avg Savings": f"${row.get('AvgSavings', 0):.1f}" if pd.notna(row.get("AvgSavings")) else "N/A",
             })
             display_rows.append(row_data)
 
         display_df = pd.DataFrame(display_rows)
 
         column_config = {}
-        if "Logo" in display_df.columns:
-            column_config["Logo"] = st.column_config.ImageColumn("", width="small")
+        if "Team" in display_df.columns:
+            column_config["Team"] = st.column_config.ImageColumn("Team", width="small")
 
         # Row-selectable dataframe
         selection = st.dataframe(

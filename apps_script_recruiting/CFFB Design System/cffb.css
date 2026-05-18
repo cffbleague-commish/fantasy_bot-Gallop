@@ -1,0 +1,924 @@
+/* ============================================================
+   CFFB.css — College Fantasy Football League stylesheet
+   Drop-in stylesheet for MyFantasyLeague custom CSS.
+
+   Built on: CFFB Design System (dark mode, championship gold)
+   Inspiration: ESPN GameDay, CFP broadcast graphics, 247sports.
+
+   Sections
+   --------
+   01  Foundations  — tokens, fonts, reset
+   02  Typography   — display + body helpers
+   03  Page chrome  — top bar, sidebar, page shell, ticker
+   04  Surfaces     — cards, KPI tiles, panels
+   05  Tables       — MFL legacy tables + custom data tables
+   06  Buttons + forms
+   07  Player atoms — name plate, position chip, team chip
+   08  NEW · Redshirt chips (traditional + medical bandage)
+   09  NEW · Eligibility dots (class + years used)
+   10  NEW · Award badges (Heisman, Davey O'Brien, Doak Walker,
+            Biletnikoff, Conference All-American)
+   11  Misc · stars, conference badges, grade pills, value delta
+   12  Utilities
+   ============================================================ */
+
+
+/* ============================================================
+   01 · FOUNDATIONS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Star tiers */
+  --star-5: #C9A227;
+  --star-4: #3B82C4;
+  --star-3: #7BA4C9;
+  --star-2: #6A6A6A;
+  --star-1: #4A4A4A;
+
+  /* Grades */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: #C9A227;
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* Deltas */
+  --delta-pos:  #2D7A4E;
+  --delta-neg:  #B84545;
+  --delta-flat: #5A5A5A;
+
+  /* Live */
+  --live: #2D7A4E;
+
+  /* Conferences */
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
+  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
+
+  /* Eligibility / Redshirt */
+  --rs-trad:    #C9A227;   /* gold shield */
+  --rs-medical: #D17575;   /* dusty red bandage */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Type scale */
+  --ds-hero: 64px; --ds-1: 48px; --ds-2: 32px; --ds-3: 24px; --ds-4: 18px;
+  --tx-lg: 16px; --tx-md: 14px; --tx-sm: 13px; --tx-xs: 12px; --tx-2xs: 11px;
+
+  /* Weights */
+  --w-400: 400; --w-500: 500; --w-600: 600; --w-700: 700;
+
+  /* Spacing — 8px base */
+  --s-half: 4px;
+  --s-1:  8px; --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 40px; --s-6: 48px; --s-7: 64px; --s-8: 80px;
+
+  /* Radii */
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+
+  /* Layout */
+  --container-max: 1280px;
+  --topbar-h: 64px;
+  --ticker-h: 44px;
+}
+
+/* Reset (light, MFL-friendly) */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg-canvas);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: var(--tx-md);
+  font-weight: var(--w-400);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--gold); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num *, td.cffb-num, th.cffb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+
+/* ============================================================
+   02 · TYPOGRAPHY
+   ============================================================ */
+
+.cffb-display-hero,
+.cffb-display-1,
+.cffb-display-2,
+.cffb-display-3,
+.cffb-display-4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cffb-display-hero { font-weight: 700; font-size: var(--ds-hero); line-height: 1; }
+.cffb-display-1    { font-weight: 700; font-size: var(--ds-1); line-height: 1.05; }
+.cffb-display-2    { font-weight: 700; font-size: var(--ds-2); line-height: 1.1; }
+.cffb-display-3    { font-weight: 600; font-size: var(--ds-3); line-height: 1.15; }
+.cffb-display-4    { font-weight: 600; font-size: var(--ds-4); line-height: 1.2; }
+
+.cffb-h1 { font: 700 28px/1.2 var(--font-body); letter-spacing: -0.01em; margin: 0; }
+.cffb-h2 { font: 600 20px/1.25 var(--font-body); margin: 0; }
+.cffb-h3 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+.cffb-body    { font-size: var(--tx-md); color: var(--fg-primary); }
+.cffb-body-sm { font-size: var(--tx-sm); color: var(--fg-secondary); }
+
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Gold-gradient text — RESERVE for the page's hero value only. */
+.cffb-gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+
+/* ============================================================
+   03 · PAGE CHROME
+   ============================================================ */
+
+.cffb-shell {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar — sticky, 64px, holds wordmark + nav + manager chip */
+.cffb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 var(--s-3);
+  gap: var(--s-3);
+}
+.cffb-topbar__brand {
+  display: flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; font-size: var(--ds-4);
+  letter-spacing: 0.02em;
+  color: var(--fg-primary);
+  border-right: 1px solid var(--border);
+  padding-right: var(--s-3);
+  height: 100%;
+}
+.cffb-topbar__brand-mark {
+  width: 28px; height: 28px;
+  background: var(--gold-gradient);
+  -webkit-mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+          mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+}
+.cffb-topbar__nav {
+  display: flex; align-items: center; gap: var(--s-half);
+  height: 100%;
+}
+.cffb-topbar__nav a {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-sm); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 0 var(--s-2); height: 100%;
+  display: inline-flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cffb-topbar__nav a:hover { color: var(--fg-primary); text-decoration: none; }
+.cffb-topbar__nav a.is-active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--gold);
+}
+.cffb-topbar__spacer { flex: 1; }
+.cffb-topbar__manager {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--tx-sm); font-weight: 600;
+}
+.cffb-topbar__manager-cap {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* Ticker — sticky under topbar, 44px, scrolls left */
+.cffb-ticker {
+  position: sticky; top: var(--topbar-h); z-index: 49;
+  height: var(--ticker-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cffb-ticker__label {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 0 var(--s-2);
+  background: var(--bg-surface-elev);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--tx-sm); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  z-index: 2;
+}
+.cffb-ticker__track {
+  display: inline-flex; align-items: center; gap: var(--s-4);
+  white-space: nowrap;
+  padding-left: 140px;
+  animation: cffb-ticker-scroll 60s linear infinite;
+}
+.cffb-ticker__item {
+  display: inline-flex; align-items: baseline; gap: var(--s-1);
+  font-size: var(--tx-sm); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-ticker__item strong {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-primary); font-size: var(--tx-md);
+  text-transform: uppercase;
+}
+.cffb-ticker__item em { font-style: normal; color: var(--gold); font-weight: 600; }
+.cffb-ticker__sep { color: var(--border-strong); }
+@keyframes cffb-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Page shell */
+.cffb-page {
+  flex: 1;
+  max-width: var(--container-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-7);
+}
+.cffb-page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.cffb-page__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 40px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.005em;
+}
+
+/* Footer */
+.cffb-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-3);
+  font-size: var(--tx-xs);
+  color: var(--fg-tertiary);
+  text-align: center;
+}
+
+
+/* ============================================================
+   04 · SURFACES — cards, KPI tiles, panels
+   ============================================================ */
+
+.cffb-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3);
+}
+.cffb-card--featured { box-shadow: var(--inset-metallic); }
+.cffb-card--featured::before {
+  content: ""; display: block; height: 3px;
+  background: var(--gold-gradient);
+  margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) var(--s-2);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+.cffb-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.cffb-card__title {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.cffb-card__action {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* KPI tile */
+.cffb-kpi {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3) 18px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-kpi__label { /* alias for .cffb-label */
+  font-family: var(--font-body);
+  font-weight: 600; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-kpi__value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--ds-1); line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cffb-kpi__sub {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: var(--delta-pos); }
+.cffb-kpi__sub--neg { color: var(--delta-neg); }
+.cffb-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+/* Live indicator */
+.cffb-live {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--tx-2xs); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--live);
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: var(--shadow-glow-live);
+  animation: cffb-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+
+/* ============================================================
+   05 · TABLES (MFL legacy + custom)
+   ============================================================ */
+
+.cffb-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.cffb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tx-sm);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 12px var(--s-2);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cffb-table tbody td {
+  padding: 12px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.cffb-table tbody tr:last-child td { border-bottom: none; }
+.cffb-table tbody tr {
+  position: relative;
+  transition: background var(--dur-fast);
+}
+.cffb-table tbody tr:hover { background: var(--bg-surface-hover); }
+.cffb-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table tbody tr.is-active td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table__num { text-align: right; }
+.cffb-table__rank {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-secondary);
+  width: 40px; text-align: center;
+}
+
+
+/* ============================================================
+   06 · BUTTONS + FORMS
+   ============================================================ */
+
+.cffb-btn {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-xs); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+.cffb-btn:hover { filter: brightness(1.08); }
+.cffb-btn:active { filter: brightness(0.9); }
+.cffb-btn--primary {
+  background: var(--gold-gradient);
+  color: #0A0A0A;
+  border-color: transparent;
+}
+.cffb-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cffb-btn--sm { padding: 6px 10px; font-size: 10px; }
+
+.cffb-input {
+  font-family: var(--font-body); font-size: var(--tx-md);
+  padding: 10px 12px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  width: 100%;
+}
+.cffb-input::placeholder { color: var(--fg-tertiary); }
+.cffb-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+
+/* ============================================================
+   07 · PLAYER ATOMS — name plate, position chip, team chip
+   ============================================================ */
+
+.cffb-player {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-player__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 18px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.cffb-player__meta {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cffb-pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  min-width: 28px; padding: 3px 6px;
+  border-radius: var(--r-1);
+  color: #0A0A0A;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cffb-pos--qb { background: #C9A227; }
+.cffb-pos--rb { background: #3B82C4; color: #F5F5F5; }
+.cffb-pos--wr { background: #7BA4C9; }
+.cffb-pos--te { background: #8B6F1F; color: #F5F5F5; }
+.cffb-pos--ol { background: #6A6A6A; color: #F5F5F5; }
+.cffb-pos--def, .cffb-pos--lb, .cffb-pos--db { background: #B84545; color: #F5F5F5; }
+.cffb-pos--k  { background: #5C7A6A; color: #F5F5F5; }
+
+/* Team logo — canonical "ripped pill" PNGs in assets/teams/<slug>.png.
+   Conference badge on left, torn-paper edge, team art on right (250×60).
+   Sizes match the design system: sm 30px, md 48px, lg 60px tall. */
+.cffb-team {
+  display: inline-block;
+  height: 48px; width: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+
+/* Team chip — circular fallback for teams without ripped art yet */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cffb-team-chip--sm { width: 24px; height: 24px; font-size: 9px; }
+.cffb-team-chip--lg { width: 48px; height: 48px; font-size: 14px; }
+
+
+/* ============================================================
+   08 · REDSHIRT CHIPS — Traditional + Medical (NEW)
+   ------------------------------------------------------------
+   Sits inline next to a player's name. Shield silhouette,
+   gold for traditional, dusty-red bandage for medical.
+
+   Markup:
+     <span class="cffb-rs cffb-rs--trad" title="Traditional Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield…</svg>
+       <span class="cffb-rs__txt">RS</span>
+     </span>
+     <span class="cffb-rs cffb-rs--med" title="Medical Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield+bandage…</svg>
+       <span class="cffb-rs__txt">MRS</span>
+     </span>
+
+   Sizes: --xs (12px), --sm (14px default), --md (18px)
+   ------------------------------------------------------------ */
+
+.cffb-rs {
+  display: inline-flex; align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.cffb-rs__icon {
+  display: block;
+  width: 14px; height: auto;
+  flex-shrink: 0;
+}
+.cffb-rs__txt {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Sizes */
+.cffb-rs--xs .cffb-rs__icon { width: 10px; }
+.cffb-rs--xs .cffb-rs__txt  { font-size: 8.5px; }
+.cffb-rs--sm .cffb-rs__icon { width: 14px; }
+.cffb-rs--sm .cffb-rs__txt  { font-size: 10px; }
+.cffb-rs--md .cffb-rs__icon { width: 18px; }
+.cffb-rs--md .cffb-rs__txt  { font-size: 12px; }
+
+/* Traditional */
+.cffb-rs--trad           { color: var(--rs-trad); }
+.cffb-rs--trad .cffb-rs__icon { stroke: var(--rs-trad); fill: rgba(201,162,39,0.08); }
+
+/* Medical */
+.cffb-rs--med            { color: var(--rs-medical); }
+.cffb-rs--med .cffb-rs__icon { stroke: var(--rs-medical); fill: rgba(209,117,117,0.08); }
+
+/* Icon-only variant (no text), used in tight rows/tables */
+.cffb-rs--solo .cffb-rs__txt { display: none; }
+.cffb-rs--solo { gap: 0; }
+
+
+/* ============================================================
+   09 · ELIGIBILITY DOTS — class + years used (NEW)
+   ------------------------------------------------------------
+   Class label (FR / SO / JR / SR / GR) + 5 dots showing years
+   used / remaining. Redshirt years marked with a ring (◎) instead
+   of a fill — communicates "burned a year but no eligibility used".
+
+   Markup:
+     <span class="cffb-elig">
+       <span class="cffb-elig__class">JR</span>
+       <span class="cffb-elig__dots" aria-label="2 of 5 eligibility used">
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot is-rs"></span>   ← redshirt
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot"></span>
+         <span class="cffb-elig__dot"></span>
+       </span>
+       <span class="cffb-elig__remain">2 left</span>
+     </span>
+   ------------------------------------------------------------ */
+
+.cffb-elig {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cffb-elig__class {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 26px; padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  color: var(--fg-primary);
+  text-align: center;
+  background: var(--bg-surface-elev);
+}
+.cffb-elig__class--fr { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--so { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--jr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--sr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--gr { border-color: var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+
+.cffb-elig__dots {
+  display: inline-flex; gap: 3px; align-items: center;
+}
+.cffb-elig__dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.cffb-elig__dot.is-used {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.cffb-elig__dot.is-rs {
+  /* Redshirt: filled ring with hollow center — "year burned, no game time" */
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-trad) 2.5px 100%);
+  border-color: var(--rs-trad);
+}
+.cffb-elig__dot.is-rs-med {
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-medical) 2.5px 100%);
+  border-color: var(--rs-medical);
+}
+.cffb-elig__remain {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Compact variant — no remaining label, no class chip */
+.cffb-elig--compact { gap: var(--s-half); }
+.cffb-elig--compact .cffb-elig__class { display: none; }
+.cffb-elig--compact .cffb-elig__remain { display: none; }
+
+
+/* ============================================================
+   10 · AWARD BADGES — Heisman, Davey O'Brien, Doak Walker,
+        Biletnikoff, Conference All-American (NEW)
+   ------------------------------------------------------------
+   Stacked horizontal badges with a stroke-icon glyph, award
+   name, and year. The Heisman is the hero — metallic gold
+   gradient fill; the four position awards share a uniform
+   gold-outline treatment. Conference All-American picks up the
+   player's conference accent color.
+
+   Markup:
+     <div class="cffb-awards">
+       <span class="cffb-award cffb-award--heisman">
+         <svg class="cffb-award__glyph" viewBox="0 0 24 24">…</svg>
+         <span class="cffb-award__name">Heisman</span>
+         <span class="cffb-award__year">2024</span>
+       </span>
+       <span class="cffb-award cffb-award--obrien">…</span>
+       …
+     </div>
+   ------------------------------------------------------------ */
+
+.cffb-awards {
+  display: flex; flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.cffb-award {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-elev);
+  font-family: var(--font-body);
+  font-size: var(--tx-xs); font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  transition: filter var(--dur-fast);
+  cursor: default;
+}
+.cffb-award:hover { filter: brightness(1.08); }
+
+.cffb-award__glyph {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75;
+  color: var(--gold);
+}
+.cffb-award__name {
+  letter-spacing: 0.04em;
+}
+.cffb-award__year {
+  color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* Heisman — hero treatment, metallic gold fill */
+.cffb-award--heisman {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+  font-weight: 700;
+}
+.cffb-award--heisman .cffb-award__glyph { color: #0A0A0A; stroke-width: 2; }
+.cffb-award--heisman .cffb-award__year  { color: rgba(10,10,10,0.65); }
+
+/* Position awards — gold outline */
+.cffb-award--obrien,
+.cffb-award--walker,
+.cffb-award--biletnikoff {
+  border-color: rgba(201,162,39,0.45);
+  background: rgba(201,162,39,0.06);
+}
+
+/* Conference All-American — picks up conference color */
+.cffb-award--allamerican {
+  border-color: rgba(154,154,154,0.35);
+}
+.cffb-award--allamerican.is-sec   { border-color: rgba(201,162,39,0.45); color: var(--fg-primary); }
+.cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
+.cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
+.cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
+.cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+
+/* Size variants */
+.cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
+.cffb-awards--sm .cffb-award__glyph { width: 13px; height: 13px; }
+.cffb-awards--sm .cffb-award__year { font-size: 10px; }
+
+
+/* ============================================================
+   11 · MISC — stars, conference badges, grade pills, value delta
+   ============================================================ */
+
+/* Stars */
+.cffb-stars { display: inline-flex; align-items: center; gap: 2px; }
+.cffb-star { font-size: 14px; line-height: 1; color: var(--star-5); }
+.cffb-star--off { color: var(--border); }
+.cffb-stars--t5 .cffb-star { color: var(--star-5); }
+.cffb-stars--t4 .cffb-star { color: var(--star-4); }
+.cffb-stars--t3 .cffb-star { color: var(--star-3); }
+.cffb-stars--t2 .cffb-star { color: var(--star-2); }
+
+/* Conference badges */
+.cffb-conf {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: var(--r-1);
+  border: 1px solid transparent; color: var(--fg-primary);
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
+
+/* Grade pill */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: var(--r-2);
+  padding: 4px 10px 5px; color: var(--fg-primary);
+  font-size: 20px;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: var(--gold-gradient); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
+.cffb-grade--bp { background: var(--grade-b); color: var(--fg-primary); }
+.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
+.cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
+
+/* Value delta */
+.cffb-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-body); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tx-sm);
+}
+.cffb-delta--pos  { color: var(--delta-pos); }
+.cffb-delta--neg  { color: var(--delta-neg); }
+.cffb-delta--flat { color: var(--delta-flat); }
+.cffb-delta__arrow { font-size: 0.85em; line-height: 1; }
+
+
+/* ============================================================
+   12 · UTILITIES
+   ============================================================ */
+
+.cffb-row     { display: flex; gap: var(--s-2); align-items: center; }
+.cffb-row--sb { justify-content: space-between; }
+.cffb-row--end{ justify-content: flex-end; }
+.cffb-stack   { display: flex; flex-direction: column; gap: var(--s-1); }
+.cffb-stack--2 { gap: var(--s-2); }
+.cffb-stack--3 { gap: var(--s-3); }
+
+.cffb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+.cffb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.cffb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.cffb-divider { height: 1px; background: var(--border); margin: var(--s-2) 0; }
+.cffb-spacer  { flex: 1; }
+
+.cffb-muted     { color: var(--fg-secondary); }
+.cffb-tertiary  { color: var(--fg-tertiary); }
+.cffb-gold      { color: var(--gold); }
+.cffb-mono      { font-family: var(--font-mono); }
+
+.cffb-mt-1 { margin-top: var(--s-1); }
+.cffb-mt-2 { margin-top: var(--s-2); }
+.cffb-mt-3 { margin-top: var(--s-3); }
+.cffb-mb-2 { margin-bottom: var(--s-2); }
