@@ -350,9 +350,94 @@ body .myfantasyleague_menu ul li ul {
   border-top-color: var(--gold);
 }
 
+body .myfantasyleague_menu ul ul li {
+  background: var(--bg-surface);
+}
+
 body .myfantasyleague_menu ul ul li a,
 body .myfantasyleague_menu ul ul li.has-sub a {
   border-color: var(--border);
+}
+
+body .myfantasyleague_menu ul li ul li:hover > a {
+  background-color: var(--bg-surface-hover);
+}
+
+/* Submenu arrow indicators */
+body .myfantasyleague_menu > ul > li.has-sub > a:after {
+  border-top-color: var(--fg-secondary);
+}
+body .myfantasyleague_menu ul ul > li.has-sub > a:after {
+  border-left-color: var(--fg-secondary);
+}
+body .myfantasyleague_menu > ul > li.has-sub:hover > a:after {
+  border-top-color: var(--fg-primary);
+}
+body .myfantasyleague_menu ul ul > li.has-sub:hover > a:after {
+  border-left-color: var(--fg-primary);
+}
+
+/* Menu hover — strip BackinBlack's box-shadow/image */
+body .myfantasyleague_menu li:hover > a {
+  background-image: none;
+  box-shadow: none;
+}
+
+/* ---- Horizontal submenu (#hsubmenu) ---- */
+body #hsubmenu {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  margin: 0 auto var(--s-2);
+}
+
+body #hsubmenu a {
+  color: var(--fg-secondary);
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+body #hsubmenu a:hover,
+body #hsubmenu ul li:hover a {
+  color: var(--fg-primary);
+  text-decoration: underline;
+}
+
+body #hsubmenu ul li {
+  border-left-color: var(--border);
+}
+
+body #hsubmenu ul li:hover {
+  background: var(--bg-surface-hover);
+}
+
+/* ---- Vertical submenu (#vsubmenu) ---- */
+body #vsubmenu ul li {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+}
+
+body #vsubmenu ul li ul li {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+body #vsubmenu ul li a {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+  text-transform: uppercase;
+}
+
+body #vsubmenu ul li a:hover {
+  background: var(--bg-surface-hover);
+  color: var(--gold);
+  text-decoration: underline;
 }
 
 /* ---- Tab menu ---- */
@@ -498,6 +583,56 @@ body input[type="button"]:active {
   filter: brightness(0.92);
 }
 
+/* ---- Commissioner setup ---- */
+body #commissioner_setup table th {
+  background-color: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 12px 10px 50px;
+  border: none;
+  border-bottom: 2px solid var(--gold);
+  background-position: 12px center;
+  background-repeat: no-repeat;
+  background-size: auto 24px;
+}
+
+body #commissioner_setup table td {
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+body #commissioner_setup table li {
+  color: var(--gold);
+}
+
+body #commissioner_setup table a:link,
+body #commissioner_setup table a:active,
+body #commissioner_setup table a:visited {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+body #commissioner_setup table a:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
+/* Caution section header — red accent instead of gold */
+body #commissioner_setup th#use_with_caution {
+  background-color: rgba(184, 69, 69, 0.15);
+  border-bottom-color: var(--delta-neg);
+}
+
 /* ---- Home page message ---- */
 body .homepagemessage {
   background: var(--bg-surface);
@@ -638,6 +773,120 @@ body ::-webkit-scrollbar-thumb:hover {
 body {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) var(--bg-canvas);
+}
+
+/* ---- Mobile: ≤640px — tighten site-wide elements ---- */
+@media only screen and (max-width: 640px) {
+
+  body {
+    font-size: 13px;
+  }
+
+  /* Tighter table cells on narrow screens */
+  body .report td {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+
+  body .report .oddtablerow td,
+  body .report .eventablerow td {
+    padding: 4px 6px;
+  }
+
+  body .report th {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  /* Captions: smaller text, tighter padding */
+  body caption,
+  body .homepagemodule caption,
+  body .homepagecolumn .homepagemodule caption {
+    font-size: 13px;
+    padding: 0 8px;
+    line-height: 32px;
+  }
+
+  /* Headings: scale down */
+  body h1 { font-size: 22px; }
+  body h2 { font-size: 16px; padding: 6px 10px; }
+  body h3 { font-size: 14px; }
+
+  /* Page header: reduce height */
+  body .pageheader {
+    height: auto;
+    padding: 8px 0;
+  }
+
+  body .pagetitle h1 {
+    font-size: 20px;
+  }
+
+  /* Buttons: slightly smaller */
+  body input[type="submit"],
+  body input[type="button"] {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  /* Form inputs: tighter */
+  body .pagebody input[type="text"],
+  body .pagebody input[type="password"],
+  body .pagebody textarea,
+  body .pagebody select {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  /* Commissioner setup: tighter */
+  body #commissioner_setup table th {
+    font-size: 13px;
+    padding: 8px 10px 8px 42px;
+    background-size: auto 20px;
+  }
+
+  body #commissioner_setup table td {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+
+  /* Standings headers */
+  body #standings h3,
+  body #brief_standings h3 {
+    font-size: 15px;
+    line-height: 36px;
+    height: 36px;
+  }
+}
+
+/* ---- Extra-narrow: ≤375px — further compression ---- */
+@media only screen and (max-width: 375px) {
+
+  body .report td {
+    padding: 3px 4px;
+    font-size: 11px;
+  }
+
+  body .report .oddtablerow td,
+  body .report .eventablerow td {
+    padding: 3px 4px;
+  }
+
+  body .report th {
+    padding: 4px 6px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  body caption,
+  body .homepagemodule caption {
+    font-size: 12px;
+    line-height: 28px;
+  }
+
+  body h1 { font-size: 18px; }
+  body h2 { font-size: 14px; }
+  body h3 { font-size: 13px; }
 }
 
 
