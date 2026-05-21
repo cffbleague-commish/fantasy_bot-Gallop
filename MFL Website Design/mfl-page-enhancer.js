@@ -418,7 +418,7 @@
       rs.className = "redshirt-badge redshirt-badge--traditional";
       rs.title = "Traditional redshirt taken in 20" + yr;
       rs.innerHTML =
-        '<span class="redshirt-badge__icon" aria-hidden="true">' + CHR_SHIELD + "</span>" +
+        '<span class="redshirt-badge__icon" aria-hidden="true"></span>' +
         '<span class="redshirt-badge__label">RS</span>' +
         '<span class="redshirt-badge__year">' + CHR_RSQUO + yr + "</span>";
       card.appendChild(rs);
@@ -431,7 +431,7 @@
       mrs.className = "redshirt-badge redshirt-badge--medical";
       mrs.title = "Medical redshirt taken in 20" + myr;
       mrs.innerHTML =
-        '<span class="redshirt-badge__icon" aria-hidden="true">' + CHR_SHIELD + "</span>" +
+        '<span class="redshirt-badge__icon" aria-hidden="true"></span>' +
         '<span class="redshirt-badge__label">MRS</span>' +
         '<span class="redshirt-badge__year">' + CHR_RSQUO + myr + "</span>";
       card.appendChild(mrs);
@@ -639,7 +639,7 @@
     if (/[?&]O=07\b/.test(search))                                  return "roster";
     if (/[?&]O=43\b/.test(search) || path.indexOf("/auction") >= 0) return "auction";
     if (path.indexOf("/player") >= 0 && /[?&]P=/.test(search))      return "profile";
-    if (/[?&]R=FULLFA\b/i.test(search))                             return "freeagent";
+    if (/[?&](?:REPORT|R)=FULLFA\b/i.test(search))                  return "freeagent";
 
     return null;
   }
@@ -876,6 +876,32 @@
           enhanceCellFull(c2Td, parsed2, position, drift2, commish, render2 !== enc2 ? render2 : null);
         }
       }
+    }
+  }
+
+  // ==================================================================
+  //  ORPHAN CELL SWEEP — catches contract cells outside known pages
+  //
+  //  Finds any td.contractstatus or td.contractinfo that hasn't been
+  //  enhanced yet.  Used for home page modules, franchise roster
+  //  widgets, and any other MFL page that embeds contract data.
+  //  Uses simple enhancement (no drift detection).
+  // ==================================================================
+
+  function enhanceOrphanCells() {
+    var cells = document.querySelectorAll(
+      "td.contractstatus:not([data-cffb-enhanced]), td.contractinfo:not([data-cffb-enhanced])"
+    );
+    if (!cells.length) return;
+
+    var commish = isCommissioner();
+
+    for (var i = 0; i < cells.length; i++) {
+      var td = cells[i];
+      var row = td.closest("tr");
+      var playerLink = row ? row.querySelector("a[class*='position_']") : null;
+      var position = extractPosition(playerLink);
+      enhanceCellSimple(td, position, commish);
     }
   }
 
@@ -1139,16 +1165,21 @@
   function runEnhancer() {
     try {
       var pageType = getPageType();
-      if (!pageType) return;
 
-      var commish = isCommissioner();
+      if (pageType) {
+        var commish = isCommissioner();
 
-      switch (pageType) {
-        case "roster":    enhanceRosterPage(commish);        break;
-        case "auction":   enhanceAuctionPage(commish);       break;
-        case "profile":   enhancePlayerProfilePage(commish); break;
-        case "freeagent": enhanceFreeAgentPage(commish);     break;
+        switch (pageType) {
+          case "roster":    enhanceRosterPage(commish);        break;
+          case "auction":   enhanceAuctionPage(commish);       break;
+          case "profile":   enhancePlayerProfilePage(commish); break;
+          case "freeagent": enhanceFreeAgentPage(commish);     break;
+        }
       }
+
+      // General sweep: catch contract cells in home page modules,
+      // franchise roster widgets, or any un-enhanced cells on any page.
+      enhanceOrphanCells();
     } catch (err) {
       console.warn(LOG_PREFIX, "Page enhancer error:", err);
     }
@@ -1176,6 +1207,98 @@
   }
 
   // ==================================================================
+  //  TOUCH TOOLTIP — tap-to-show for title attributes on mobile
+  //
+  //  On touch devices, creates a floating tooltip when a badge with
+  //  a title attribute is tapped.  Dismisses on outside tap or timeout.
+  //  Uses event delegation on document.body for efficiency.
+  // ==================================================================
+
+  function setupTouchTooltip() {
+    // Only activate on touch-capable devices
+    if (!("ontouchstart" in window)) return;
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "cffb-touch-tooltip";
+    tooltip.setAttribute("role", "tooltip");
+    tooltip.setAttribute("aria-hidden", "true");
+    document.body.appendChild(tooltip);
+
+    var hideTimer = null;
+
+    function showTooltip(target) {
+      var titleText = target.getAttribute("title");
+      if (!titleText) return;
+
+      // Temporarily remove title to prevent native tooltip flash
+      target.setAttribute("data-cffb-title", titleText);
+      target.removeAttribute("title");
+
+      tooltip.textContent = titleText;
+      tooltip.setAttribute("aria-hidden", "false");
+      tooltip.style.display = "block";
+
+      // Position near the target
+      var rect = target.getBoundingClientRect();
+      tooltip.style.left = "0px";
+      tooltip.style.top = "0px";
+      var tooltipRect = tooltip.getBoundingClientRect();
+
+      var left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+      var top  = rect.top - tooltipRect.height - 6;
+
+      // Keep within viewport
+      if (left < 4) left = 4;
+      if (left + tooltipRect.width > window.innerWidth - 4) {
+        left = window.innerWidth - tooltipRect.width - 4;
+      }
+      // If tooltip would go above viewport, show below instead
+      if (top < 4) {
+        top = rect.bottom + 6;
+      }
+
+      tooltip.style.left = left + "px";
+      tooltip.style.top  = (top + window.scrollY) + "px";
+
+      // Auto-dismiss after 3 seconds
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(hideTooltip, 3000);
+    }
+
+    function hideTooltip() {
+      clearTimeout(hideTimer);
+      tooltip.style.display = "none";
+      tooltip.setAttribute("aria-hidden", "true");
+
+      // Restore title attributes
+      var restored = document.querySelectorAll("[data-cffb-title]");
+      for (var i = 0; i < restored.length; i++) {
+        restored[i].setAttribute("title", restored[i].getAttribute("data-cffb-title"));
+        restored[i].removeAttribute("data-cffb-title");
+      }
+    }
+
+    // Delegate from body — catches badges in both page-enhanced and
+    // contract board contexts
+    document.body.addEventListener("click", function (e) {
+      var target = e.target.closest(
+        ".player-card [title], .player-card[title]"
+      );
+      if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideTooltip(); // close any existing
+        showTooltip(target);
+        return;
+      }
+      // Tap outside — dismiss
+      if (tooltip.style.display === "block") {
+        hideTooltip();
+      }
+    });
+  }
+
+  // ==================================================================
   //  INIT
   // ==================================================================
 
@@ -1183,10 +1306,12 @@
     document.addEventListener("DOMContentLoaded", function () {
       runEnhancer();
       setupObserver();
+      setupTouchTooltip();
     });
   } else {
     runEnhancer();
     setupObserver();
+    setupTouchTooltip();
   }
 
 })();

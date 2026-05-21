@@ -73,7 +73,7 @@ function redshirtHtml(copy) {
   if (copy.redshirt) {
     const yr = String(copy.redshirt.year).padStart(2, '0');
     html += `<span class="redshirt-badge redshirt-badge--traditional" title="Traditional Redshirt, 20${yr}">` +
-      `<span class="redshirt-badge__icon" aria-hidden="true">\u{1F6E1}</span>` +
+      `<span class="redshirt-badge__icon" aria-hidden="true"></span>` +
       `<span class="redshirt-badge__label">RS</span>` +
       `<span class="redshirt-badge__year">'${yr}</span>` +
       `</span>`;
@@ -81,7 +81,7 @@ function redshirtHtml(copy) {
   if (copy.medicalRedshirt) {
     const yr = String(copy.medicalRedshirt.year).padStart(2, '0');
     html += `<span class="redshirt-badge redshirt-badge--medical" title="Medical Redshirt, 20${yr}">` +
-      `<span class="redshirt-badge__icon" aria-hidden="true">\u{1F6E1}</span>` +
+      `<span class="redshirt-badge__icon" aria-hidden="true"></span>` +
       `<span class="redshirt-badge__label">MRS</span>` +
       `<span class="redshirt-badge__year">'${yr}</span>` +
       `</span>`;
