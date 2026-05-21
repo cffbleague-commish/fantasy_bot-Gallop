@@ -1207,17 +1207,15 @@
   }
 
   // ==================================================================
-  //  TOUCH TOOLTIP — tap-to-show for title attributes on mobile
+  //  CLICK TOOLTIP — click/tap-to-show for title attributes
   //
-  //  On touch devices, creates a floating tooltip when a badge with
-  //  a title attribute is tapped.  Dismisses on outside tap or timeout.
+  //  Creates a floating tooltip when a badge with a title attribute
+  //  is clicked or tapped.  Dismisses on outside click or timeout.
   //  Uses event delegation on document.body for efficiency.
+  //  Works on both desktop (complements hover) and mobile.
   // ==================================================================
 
   function setupTouchTooltip() {
-    // Only activate on touch-capable devices
-    if (!("ontouchstart" in window)) return;
-
     var tooltip = document.createElement("div");
     tooltip.className = "cffb-touch-tooltip";
     tooltip.setAttribute("role", "tooltip");
