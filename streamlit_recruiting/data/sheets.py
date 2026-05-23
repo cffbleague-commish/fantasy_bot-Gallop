@@ -236,8 +236,14 @@ def load_franchise_lookup() -> pd.DataFrame:
     df = pd.DataFrame(rows, columns=headers)
 
     c = FRANCHISE_LOOKUP_COLS
-    # Strip leading zeros to normalize IDs (sheet may store "1" vs MFL's "0001")
-    df["FranchiseID"] = df.iloc[:, c["FranchiseID"]].astype(str).str.lstrip("0").replace("", "0")
+    # Normalize IDs to plain integer strings ("0001" -> "1", 1.0 -> "1")
+    def _normalize_fid(val):
+        try:
+            return str(int(float(val)))
+        except (ValueError, TypeError):
+            s = str(val).lstrip("0")
+            return s or "0"
+    df["FranchiseID"] = df.iloc[:, c["FranchiseID"]].apply(_normalize_fid)
     df["TeamName"] = df.iloc[:, c["TeamName"]].astype(str)
     df["Conference"] = df.iloc[:, c["Conference"]].astype(str)
     df["Abbreviation"] = df.iloc[:, c["Abbreviation"]].astype(str)

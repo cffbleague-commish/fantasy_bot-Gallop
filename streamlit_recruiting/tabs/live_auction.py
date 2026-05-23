@@ -168,14 +168,24 @@ def _build_logo_lookup() -> dict:
 
 
 def _build_franchise_id_to_name() -> dict:
-    """Build FranchiseID -> TeamName mapping."""
+    """Build FranchiseID -> TeamName mapping.
+
+    Normalizes IDs to match MFL API format (plain integer strings like "1").
+    Google Sheets may return IDs as floats ("1.0") or zero-padded ("0001").
+    """
     fl = load_franchise_lookup()
     if fl.empty:
         return {}
-    return {
-        row["FranchiseID"]: row["TeamName"]
-        for _, row in fl.iterrows()
-    }
+    result = {}
+    for _, row in fl.iterrows():
+        raw = str(row["FranchiseID"])
+        # Handle float-like strings ("1.0" -> "1") and zero-padding ("0001" -> "1")
+        try:
+            normalized = str(int(float(raw)))
+        except (ValueError, TypeError):
+            normalized = raw.lstrip("0") or "0"
+        result[normalized] = row["TeamName"]
+    return result
 
 
 def _build_headshot_lookup(year: int) -> dict:
