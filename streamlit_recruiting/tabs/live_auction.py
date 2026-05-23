@@ -563,6 +563,34 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                 bid = row["_bid_num"]
                 allocated_by_team[team] = allocated_by_team.get(team, 0) + bid
 
+            # --- Conference KPI Row ---
+            conf_won = conf_df[conf_df["TransactionType"] == "AUCTION_WON"]
+            conf_spent = conf_won["BidAmount"].sum() if not conf_won.empty else 0
+            conf_allocated = sum(allocated_by_team.values())
+
+            # Sum budgets for all franchises in this conference
+            fl = load_franchise_lookup()
+            if not fl.empty:
+                conf_team_names = fl[fl["Conference"] == conf]["TeamName"].tolist()
+            else:
+                conf_team_names = list(conf_df["FranchiseName"].unique())
+            conf_total_budget = sum(
+                auction_budgets.get(name, 0) for name in conf_team_names
+            )
+            conf_remaining = conf_total_budget - conf_spent - conf_allocated
+            pct_available = (
+                f"{conf_remaining / conf_total_budget * 100:.0f}%"
+                if conf_total_budget > 0 else "—"
+            )
+
+            render_kpi_row([
+                {"label": "Total Budget", "value": f"${conf_total_budget:,.0f}" if conf_total_budget > 0 else "—"},
+                {"label": "Total Spent", "value": f"${conf_spent:,.0f}"},
+                {"label": "Available", "value": f"${conf_remaining:,.0f}" if conf_total_budget > 0 else "—",
+                 "sub": pct_available, "sub_type": ""},
+                {"label": "On the Board", "value": str(len(active_rows))},
+            ])
+
             # --- Side-by-side: Active Auctions + Team Budgets ---
             col_active, col_budget = st.columns([60, 40], gap="medium")
 
