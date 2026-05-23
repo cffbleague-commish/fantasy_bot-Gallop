@@ -22,7 +22,10 @@ var AUCTION_TRANS_TYPES = ["AUCTION_INIT", "AUCTION_BID", "AUCTION_WON"];
  */
 function fetchLiveAuctionTransactions(yearOverride) {
   var config = getConfig();
-  var year = yearOverride || config.mfl.currentYear;
+  if (yearOverride && typeof yearOverride !== "string" && typeof yearOverride !== "number") {
+    yearOverride = null;
+  }
+  var year = yearOverride ? String(yearOverride) : config.mfl.currentYear;
   var allResults = [];
 
   AUCTION_TRANS_TYPES.forEach(function(transType) {
@@ -71,7 +74,12 @@ function fetchLiveAuctionTransactions(yearOverride) {
  */
 function importLiveAuction(yearOverride) {
   var config = getConfig();
-  var yearStr = yearOverride || config.mfl.currentYear;
+  // When called from a timed trigger, Apps Script passes an event object as the
+  // first argument — ignore it and fall back to the configured year.
+  if (yearOverride && typeof yearOverride !== "string" && typeof yearOverride !== "number") {
+    yearOverride = null;
+  }
+  var yearStr = yearOverride ? String(yearOverride) : config.mfl.currentYear;
 
   Logger.log("=== IMPORTING LIVE AUCTION DATA ===");
   Logger.log("  Year: " + yearStr);
