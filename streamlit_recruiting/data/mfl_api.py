@@ -42,33 +42,36 @@ def _mfl_fetch(year: int, type_param: str, extra_params: dict = None) -> Optiona
 
 
 @st.cache_data(ttl=300)
-def fetch_salary_caps(year: int) -> dict[str, float]:
-    """Fetch per-franchise salary cap amounts from MFL league settings.
+def fetch_auction_budgets(year: int) -> dict[str, float]:
+    """Fetch per-franchise auction starting budgets from MFL league settings.
 
-    Returns dict mapping FranchiseID (normalized, no leading zeros) to salary cap amount.
-    Falls back to the league-level salaryCapAmount if per-franchise caps aren't set.
-    Returns empty dict if the league doesn't use salaries or the API call fails.
+    Reads the ``auctionStartAmount`` field from the TYPE=league endpoint.
+    Each franchise may have its own starting amount; falls back to the
+    league-level default when a per-franchise value isn't set.
+
+    Returns dict mapping FranchiseID (normalized, no leading zeros) to budget.
+    Returns empty dict if the league doesn't use auctions or the API call fails.
     """
     data = _mfl_fetch(year, "league")
     if not data:
         return {}
 
     league = data.get("league", {})
-    league_cap = _safe_num(league.get("salaryCapAmount"))
+    league_budget = _safe_num(league.get("auctionStartAmount"))
 
     franchises = league.get("franchises", {}).get("franchise", [])
     if isinstance(franchises, dict):
         franchises = [franchises]
 
-    caps = {}
+    budgets = {}
     for f in franchises:
         fid = f.get("id", "").lstrip("0") or "0"
-        franchise_cap = _safe_num(f.get("salaryCapAmount"))
-        cap = franchise_cap if franchise_cap is not None else league_cap
-        if cap is not None:
-            caps[fid] = cap
+        franchise_budget = _safe_num(f.get("auctionStartAmount"))
+        budget = franchise_budget if franchise_budget is not None else league_budget
+        if budget is not None:
+            budgets[fid] = budget
 
-    return caps
+    return budgets
 
 
 def _safe_num(val) -> float | None:
