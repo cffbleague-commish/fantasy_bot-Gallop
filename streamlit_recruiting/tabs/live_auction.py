@@ -500,42 +500,50 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "_ts": pd.to_datetime(latest_ts, errors="coerce"),
                     })
 
-            # --- Team Budget Summary ---
-            if auction_budgets:
-                _render_team_budget(conf_df, conf, auction_budgets, logo_lookup)
+            # --- Side-by-side: Active Auctions + Team Budgets ---
+            has_budget = bool(auction_budgets)
 
-            # --- Active Auctions ---
-            if active_rows:
-                st.markdown(
-                    f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
-                    f'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;'
-                    f'background:#2D7A4E;animation:pulse 2s infinite;"></span>'
-                    f'<span style="color:#f0f0ed;font-weight:600;">Active Auctions</span>'
-                    f'<span style="color:#9A9A9A;">({len(active_rows)})</span>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-                active_df = pd.DataFrame(active_rows)
-                active_df = active_df.sort_values("_bid_num", ascending=False)
-                display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
-                                "Current Bid", "High Bidder", "Team", "Bids"]
-                active_display = active_df[display_cols]
-
-                col_config = {
-                    "Photo": st.column_config.ImageColumn("", width="small"),
-                    "Pos": st.column_config.ImageColumn("Pos", width="small"),
-                    "NFL": st.column_config.ImageColumn("", width="small"),
-                    "High Bidder": st.column_config.ImageColumn("High Bidder", width="small"),
-                }
-                st.dataframe(
-                    active_display,
-                    column_config=col_config,
-                    hide_index=True,
-                    use_container_width=True,
-                    height=min(400, 38 + len(active_rows) * 35),
-                )
+            if has_budget:
+                col_active, col_budget = st.columns([60, 40], gap="medium")
             else:
-                st.info(f"No active auctions in {conf}.")
+                col_active = st.container()
+
+            with col_active:
+                if active_rows:
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+                        f'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;'
+                        f'background:#2D7A4E;animation:pulse 2s infinite;"></span>'
+                        f'<span style="color:#f0f0ed;font-weight:600;">Active Auctions</span>'
+                        f'<span style="color:#9A9A9A;">({len(active_rows)})</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+                    active_df = pd.DataFrame(active_rows)
+                    active_df = active_df.sort_values("_bid_num", ascending=False)
+                    display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
+                                    "Current Bid", "High Bidder", "Team", "Bids"]
+                    active_display = active_df[display_cols]
+
+                    col_config = {
+                        "Photo": st.column_config.ImageColumn("", width="small"),
+                        "Pos": st.column_config.ImageColumn("Pos", width="small"),
+                        "NFL": st.column_config.ImageColumn("", width="small"),
+                        "High Bidder": st.column_config.ImageColumn("High Bidder", width="small"),
+                    }
+                    st.dataframe(
+                        active_display,
+                        column_config=col_config,
+                        hide_index=True,
+                        use_container_width=True,
+                        height=min(400, 38 + len(active_rows) * 35),
+                    )
+                else:
+                    st.info(f"No active auctions in {conf}.")
+
+            if has_budget:
+                with col_budget:
+                    _render_team_budget(conf_df, conf, auction_budgets, logo_lookup)
 
             # --- Recent Completions ---
             if completed_rows:
