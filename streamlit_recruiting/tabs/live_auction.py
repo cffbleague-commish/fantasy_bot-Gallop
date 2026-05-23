@@ -560,12 +560,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                     })
 
             # --- Side-by-side: Active Auctions + Team Budgets ---
-            has_budget = bool(auction_budgets)
-
-            if has_budget:
-                col_active, col_budget = st.columns([60, 40], gap="medium")
-            else:
-                col_active = st.container()
+            col_active, col_budget = st.columns([60, 40], gap="medium")
 
             with col_active:
                 if active_rows:
@@ -600,9 +595,8 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                 else:
                     st.info(f"No active auctions in {conf}.")
 
-            if has_budget:
-                with col_budget:
-                    _render_team_budget(conf_df, conf, auction_budgets, logo_lookup)
+            with col_budget:
+                _render_team_budget(conf_df, conf, auction_budgets, logo_lookup)
 
             # --- Recent Completions ---
             if completed_rows:
@@ -635,37 +629,61 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
 
 
 def _render_team_budget(conf_df: pd.DataFrame, conf: str, auction_budgets: dict, logo_lookup: dict):
-    """Render team budget summary for a conference showing starting budget, spent, and remaining."""
-    # Get all franchises that have activity in this conference
+    """Render team budget summary for a conference.
+
+    Shows every franchise in the conference (from FranchiseLookup) with their
+    spending derived from auction data.  When MFL budget data is available,
+    Starting $ and Remaining columns are included.
+    """
+    # Get all franchises in this conference from the lookup table
+    fl = load_franchise_lookup()
+    if fl.empty:
+        # Fall back to franchises that appear in the auction data
+        conf_franchises = sorted(conf_df["FranchiseName"].unique().tolist())
+    else:
+        conf_fl = fl[fl["Conference"] == conf]
+        conf_franchises = sorted(conf_fl["TeamName"].unique().tolist())
+        # Include any franchises in the auction data not in the lookup
+        for name in conf_df["FranchiseName"].unique():
+            if name not in conf_franchises:
+                conf_franchises.append(name)
+
+    if not conf_franchises:
+        return
+
     won_df = conf_df[conf_df["TransactionType"] == "AUCTION_WON"]
-    all_franchises = conf_df["FranchiseName"].unique()
+    has_budgets = bool(auction_budgets)
 
     budget_rows = []
-    for franchise in sorted(all_franchises):
-        budget = auction_budgets.get(franchise)
-        if budget is None:
-            continue
-
+    for franchise in conf_franchises:
         team_won = won_df[won_df["FranchiseName"] == franchise]
         spent = team_won["BidAmount"].sum() if not team_won.empty else 0
-        remaining = budget - spent
         players_won = len(team_won)
 
-        remaining_pct = (remaining / budget * 100) if budget > 0 else 0
-
-        budget_rows.append({
+        row = {
             "Logo": logo_lookup.get(franchise, ""),
             "Team": franchise,
-            "Starting $": f"${budget:.0f}",
             "Spent": f"${spent:.0f}",
-            "Remaining": f"${remaining:.0f}",
-            "% Left": f"{remaining_pct:.0f}%",
             "Won": players_won,
-            "_remaining": remaining,
-        })
+            "_spent_num": spent,
+        }
 
-    if not budget_rows:
-        return
+        if has_budgets:
+            budget = auction_budgets.get(franchise)
+            if budget is not None:
+                remaining = budget - spent
+                remaining_pct = (remaining / budget * 100) if budget > 0 else 0
+                row["Starting $"] = f"${budget:.0f}"
+                row["Remaining"] = f"${remaining:.0f}"
+                row["% Left"] = f"{remaining_pct:.0f}%"
+                row["_remaining"] = remaining
+            else:
+                row["Starting $"] = "—"
+                row["Remaining"] = "—"
+                row["% Left"] = "—"
+                row["_remaining"] = 0
+
+        budget_rows.append(row)
 
     st.markdown(
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
@@ -674,8 +692,14 @@ def _render_team_budget(conf_df: pd.DataFrame, conf: str, auction_budgets: dict,
         unsafe_allow_html=True,
     )
     budget_df = pd.DataFrame(budget_rows)
-    budget_df = budget_df.sort_values("_remaining", ascending=True)
-    display_cols = ["Logo", "Team", "Starting $", "Spent", "Remaining", "% Left", "Won"]
+
+    if has_budgets:
+        budget_df = budget_df.sort_values("_remaining", ascending=True)
+        display_cols = ["Logo", "Team", "Starting $", "Spent", "Remaining", "% Left", "Won"]
+    else:
+        budget_df = budget_df.sort_values("_spent_num", ascending=False)
+        display_cols = ["Logo", "Team", "Spent", "Won"]
+
     budget_display = budget_df[display_cols]
 
     col_config = {
