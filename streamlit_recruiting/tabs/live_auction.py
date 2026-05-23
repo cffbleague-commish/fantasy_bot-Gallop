@@ -608,7 +608,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                     active_df = pd.DataFrame(active_rows)
                     active_df = active_df.sort_values("_bid_num", ascending=False)
                     display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
-                                    "Current Bid", "High Bidder", "Team", "Bids"]
+                                    "Current Bid", "High Bidder", "Bids"]
                     active_display = active_df[display_cols]
 
                     col_config = {
@@ -642,7 +642,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                 completed_df = pd.DataFrame(completed_rows)
                 completed_df = completed_df.sort_values("_ts", ascending=False, na_position="last")
                 display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
-                                "Price", "Winner", "Team", "Bids"]
+                                "Price", "Winner", "Bids"]
                 completed_display = completed_df[display_cols]
 
                 col_config = {
