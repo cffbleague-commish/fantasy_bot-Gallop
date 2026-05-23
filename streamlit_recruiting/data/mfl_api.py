@@ -15,19 +15,24 @@ MFL_BASE_URL = "https://api.myfantasyleague.com"
 
 
 def _mfl_fetch(year: int, type_param: str, extra_params: dict = None) -> Optional[dict]:
-    """Generic MFL API fetch."""
-    api_key = st.secrets.get("mfl_api_key", "")
-    league_id = st.secrets.get("mfl_league_id", "")
+    """Generic MFL API fetch.
 
-    if not api_key or not league_id:
+    Only ``mfl_league_id`` is required in secrets.  The API key is optional —
+    many MFL endpoints (league settings, rosters, players) are public.
+    """
+    league_id = st.secrets.get("mfl_league_id", "")
+    if not league_id:
         return None
+
+    api_key = st.secrets.get("mfl_api_key", "")
 
     params = {
         "TYPE": type_param,
         "L": league_id,
-        "APIKEY": api_key,
         "JSON": "1",
     }
+    if api_key:
+        params["APIKEY"] = api_key
     if extra_params:
         params.update(extra_params)
 
