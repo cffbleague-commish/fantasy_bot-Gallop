@@ -240,10 +240,10 @@ def render():
 
     st.markdown("---")
 
-    # --- 24-Hour Activity Summary ---
-    st.markdown("#### Daily Activity Summary")
-    st.caption("Transactions bundled into 24-hour windows per player copy.")
-    _render_daily_summary(filtered)
+    # --- Conference Auction Board ---
+    st.markdown("#### Conference Auction Board")
+    st.caption("Live auction state per conference — active nominations with current bids and recent completions.")
+    _render_auction_board(df, logo_lookup)
 
     # --- Player Deep Dive ---
     st.markdown("---")
@@ -382,77 +382,165 @@ def _render_summary_panels(filtered: pd.DataFrame):
         st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_daily_summary(filtered: pd.DataFrame):
-    """Render a 24-hour activity summary grouped by player copy per day."""
-    work = filtered.copy()
-    work["DateTime"] = pd.to_datetime(work["Timestamp"], errors="coerce")
-    work = work.dropna(subset=["DateTime"])
-    if work.empty:
-        st.info("No timestamped transactions to summarise.")
+def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
+    """Render per-conference auction boards showing active auctions and recent completions."""
+    if df.empty:
+        st.info("No auction data available.")
         return
 
-    work["Date"] = work["DateTime"].dt.date
-
-    # Group by day + player + conference + copy session
-    group_cols = ["Date", "PlayerName", "Conference", "CopySession"]
-    rows = []
-    for keys, grp in work.groupby(group_cols, sort=False):
-        date, player_name, conf, copy_num = keys
-        if copy_num <= 0:
-            continue
-
-        copy_label = f"{conf} #{int(copy_num)}"
-
-        init_rows = grp[grp["TransactionType"] == "AUCTION_INIT"]
-        bid_rows = grp[grp["TransactionType"] == "AUCTION_BID"]
-        won_rows = grp[grp["TransactionType"] == "AUCTION_WON"]
-
-        # Player metadata (consistent across group)
-        first = grp.iloc[0]
-        photo = first.get("PlayerPhoto", "")
-        pos_badge = first.get("PosBadge", "")
-        nfl_logo = first.get("NFLLogo", "")
-
-        # Status + single price (context-dependent)
-        num_bids = len(bid_rows)
-        if not won_rows.empty:
-            status = "Sold"
-            price = f"${won_rows.iloc[0]['BidAmount']:.0f}"
-        elif not bid_rows.empty:
-            status = "Bidding"
-            price = f"${bid_rows['BidAmount'].max():.0f}"
-        elif not init_rows.empty:
-            status = "Nominated"
-            price = f"${init_rows.iloc[0]['BidAmount']:.0f}"
-        else:
-            status = ""
-            price = ""
-
-        rows.append({
-            "Date": date,
-            "Photo": photo,
-            "Player": player_name,
-            "Pos": pos_badge,
-            "NFL": nfl_logo,
-            "Copy": copy_label,
-            "Status": status,
-            "Bids": num_bids,
-            "Price": price,
-        })
-
-    if not rows:
-        st.info("No copy-level activity to summarise.")
+    # Determine which conferences have data
+    conferences_with_data = sorted(
+        [c for c in CONFERENCE_LIST if c in df["Conference"].unique()]
+    )
+    if not conferences_with_data:
+        st.info("No conference-specific auction data available.")
         return
 
-    summary_df = pd.DataFrame(rows)
-    summary_df = summary_df.sort_values("Date", ascending=False)
+    conf_tabs = st.tabs(conferences_with_data)
 
-    col_config = {
-        "Photo": st.column_config.ImageColumn("", width="small"),
-        "Pos": st.column_config.ImageColumn("Pos", width="small"),
-        "NFL": st.column_config.ImageColumn("", width="small"),
-    }
-    st.dataframe(summary_df, column_config=col_config, hide_index=True, use_container_width=True, height=500)
+    for conf_tab, conf in zip(conf_tabs, conferences_with_data):
+        with conf_tab:
+            conf_df = df[df["Conference"] == conf].copy()
+            if conf_df.empty:
+                st.info(f"No auction activity in {conf}.")
+                continue
+
+            # --- Identify active vs completed copy sessions ---
+            # A copy session is "active" if it has an INIT but no WON yet
+            # Group by PlayerID + CopySession to determine lifecycle state
+            group_cols = ["PlayerID", "PlayerName", "CopySession"]
+            active_rows = []
+            completed_rows = []
+
+            for (pid, pname, copy_num), grp in conf_df.groupby(group_cols, sort=False):
+                if copy_num <= 0:
+                    continue
+
+                types = set(grp["TransactionType"].unique())
+                init_rows = grp[grp["TransactionType"] == "AUCTION_INIT"]
+                bid_rows = grp[grp["TransactionType"] == "AUCTION_BID"]
+                won_rows = grp[grp["TransactionType"] == "AUCTION_WON"]
+
+                first = grp.iloc[0]
+                photo = first.get("PlayerPhoto", "")
+                pos_badge = first.get("PosBadge", "")
+                nfl_logo = first.get("NFLLogo", "")
+                position = first.get("Position", "")
+
+                if "AUCTION_WON" in types:
+                    # Completed auction
+                    won_row = won_rows.iloc[0]
+                    winner_logo = logo_lookup.get(won_row["FranchiseName"], "")
+                    completed_rows.append({
+                        "Photo": photo,
+                        "Player": pname,
+                        "Pos": pos_badge,
+                        "NFL": nfl_logo,
+                        "Copy #": f"#{int(copy_num)}",
+                        "Price": f"${won_row['BidAmount']:.0f}",
+                        "Winner": winner_logo,
+                        "Team": won_row["FranchiseName"],
+                        "Bids": len(bid_rows),
+                        "Timestamp": won_row.get("Timestamp", ""),
+                        "_price_num": won_row["BidAmount"],
+                        "_ts": pd.to_datetime(won_row.get("Timestamp", ""), errors="coerce"),
+                    })
+                else:
+                    # Active auction — find current high bid
+                    if not bid_rows.empty:
+                        high_bid_idx = bid_rows["BidAmount"].idxmax()
+                        high_bid_row = bid_rows.loc[high_bid_idx]
+                        current_bid = high_bid_row["BidAmount"]
+                        current_bidder = high_bid_row["FranchiseName"]
+                        bidder_logo = logo_lookup.get(current_bidder, "")
+                    elif not init_rows.empty:
+                        init_row = init_rows.iloc[0]
+                        current_bid = init_row["BidAmount"]
+                        current_bidder = init_row["FranchiseName"]
+                        bidder_logo = logo_lookup.get(current_bidder, "")
+                    else:
+                        current_bid = 0
+                        current_bidder = ""
+                        bidder_logo = ""
+
+                    # Latest activity timestamp
+                    latest_ts = grp["Timestamp"].max()
+
+                    active_rows.append({
+                        "Photo": photo,
+                        "Player": pname,
+                        "Pos": pos_badge,
+                        "NFL": nfl_logo,
+                        "Copy #": f"#{int(copy_num)}",
+                        "Current Bid": f"${current_bid:.0f}",
+                        "High Bidder": bidder_logo,
+                        "Team": current_bidder,
+                        "Bids": len(bid_rows),
+                        "_bid_num": current_bid,
+                        "_ts": pd.to_datetime(latest_ts, errors="coerce"),
+                    })
+
+            # --- Active Auctions ---
+            if active_rows:
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+                    f'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;'
+                    f'background:#2D7A4E;animation:pulse 2s infinite;"></span>'
+                    f'<span style="color:#f0f0ed;font-weight:600;">Active Auctions</span>'
+                    f'<span style="color:#9A9A9A;">({len(active_rows)})</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                active_df = pd.DataFrame(active_rows)
+                active_df = active_df.sort_values("_bid_num", ascending=False)
+                display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
+                                "Current Bid", "High Bidder", "Team", "Bids"]
+                active_display = active_df[display_cols]
+
+                col_config = {
+                    "Photo": st.column_config.ImageColumn("", width="small"),
+                    "Pos": st.column_config.ImageColumn("Pos", width="small"),
+                    "NFL": st.column_config.ImageColumn("", width="small"),
+                    "High Bidder": st.column_config.ImageColumn("High Bidder", width="small"),
+                }
+                st.dataframe(
+                    active_display,
+                    column_config=col_config,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=min(400, 38 + len(active_rows) * 35),
+                )
+            else:
+                st.info(f"No active auctions in {conf}.")
+
+            # --- Recent Completions ---
+            if completed_rows:
+                st.markdown(
+                    f'<div style="display:flex;align-items:center;gap:8px;margin-top:16px;margin-bottom:4px;">'
+                    f'<span style="color:#f0f0ed;font-weight:600;">Completed</span>'
+                    f'<span style="color:#9A9A9A;">({len(completed_rows)})</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                completed_df = pd.DataFrame(completed_rows)
+                completed_df = completed_df.sort_values("_ts", ascending=False, na_position="last")
+                display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
+                                "Price", "Winner", "Team", "Bids"]
+                completed_display = completed_df[display_cols]
+
+                col_config = {
+                    "Photo": st.column_config.ImageColumn("", width="small"),
+                    "Pos": st.column_config.ImageColumn("Pos", width="small"),
+                    "NFL": st.column_config.ImageColumn("", width="small"),
+                    "Winner": st.column_config.ImageColumn("Winner", width="small"),
+                }
+                st.dataframe(
+                    completed_display,
+                    column_config=col_config,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=min(500, 38 + len(completed_rows) * 35),
+                )
 
 
 def _render_team_spending(filtered: pd.DataFrame, logo_lookup: dict):
