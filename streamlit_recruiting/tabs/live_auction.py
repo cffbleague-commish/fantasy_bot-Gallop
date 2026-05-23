@@ -537,12 +537,11 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "Pos": pos_badge,
                         "NFL": nfl_logo,
                         "Copy #": f"#{int(copy_num)}",
-                        "Price": f"${won_row['BidAmount']:.0f}",
+                        "Price": won_row["BidAmount"],
                         "Winner": winner_logo,
                         "Team": won_row["FranchiseName"],
                         "Bids": len(bid_rows),
                         "Timestamp": won_row.get("Timestamp", ""),
-                        "_price_num": won_row["BidAmount"],
                         "_ts": pd.to_datetime(won_row.get("Timestamp", ""), errors="coerce"),
                     })
                 else:
@@ -568,7 +567,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "Pos": pos_badge,
                         "NFL": nfl_logo,
                         "Copy #": f"#{int(copy_num)}",
-                        "Current Bid": f"${current_bid:.0f}",
+                        "Current Bid": current_bid,
                         "High Bidder": bidder_logo,
                         "Team": current_bidder,
                         "Bids": len(bid_rows),
@@ -637,6 +636,9 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "Pos": st.column_config.ImageColumn("Pos", width="small"),
                         "NFL": st.column_config.ImageColumn("", width="small"),
                         "High Bidder": st.column_config.ImageColumn("High Bidder", width="small"),
+                        "Current Bid": st.column_config.NumberColumn(
+                            "Current Bid", format="$%.0f",
+                        ),
                     }
                     st.dataframe(
                         active_display,
@@ -671,6 +673,9 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                     "Pos": st.column_config.ImageColumn("Pos", width="small"),
                     "NFL": st.column_config.ImageColumn("", width="small"),
                     "Winner": st.column_config.ImageColumn("Winner", width="small"),
+                    "Price": st.column_config.NumberColumn(
+                        "Price", format="$%.0f",
+                    ),
                 }
                 st.dataframe(
                     completed_display,
@@ -738,14 +743,14 @@ def _render_team_budget(
     conf_total_remaining = sum(r["_remaining"] for r in budget_rows)
 
     for row in budget_rows:
-        row["Budget"] = f"${row['_budget']:.0f}" if has_budgets else "—"
-        row["Allocated"] = f"${row['_allocated']:.0f}"
-        row["Spent"] = f"${row['_spent']:.0f}"
-        row["Remaining"] = f"${row['_remaining']:.0f}" if has_budgets else "—"
-        if has_budgets and conf_total_remaining > 0:
-            row["Conf %"] = f"{row['_remaining'] / conf_total_remaining * 100:.0f}%"
+        row["Budget"] = row["_budget"]
+        row["Allocated"] = row["_allocated"]
+        row["Spent"] = row["_spent"]
+        row["Remaining"] = row["_remaining"]
+        if conf_total_remaining > 0:
+            row["Conf %"] = row["_remaining"] / conf_total_remaining
         else:
-            row["Conf %"] = "—"
+            row["Conf %"] = 0.0
 
     st.markdown(
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
@@ -765,6 +770,13 @@ def _render_team_budget(
 
     col_config = {
         "Logo": st.column_config.ImageColumn("", width="small"),
+        "Budget": st.column_config.NumberColumn("Budget", format="$%.0f"),
+        "Allocated": st.column_config.NumberColumn("Allocated", format="$%.0f"),
+        "Spent": st.column_config.NumberColumn("Spent", format="$%.0f"),
+        "Remaining": st.column_config.NumberColumn("Remaining", format="$%.0f"),
+        "Conf %": st.column_config.ProgressColumn(
+            "Conf %", min_value=0, max_value=1, format="%.0f%%",
+        ),
     }
     st.dataframe(
         budget_display,
