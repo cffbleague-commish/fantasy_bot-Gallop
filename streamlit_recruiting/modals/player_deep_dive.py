@@ -167,12 +167,14 @@ def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
     """Assign CopySession numbers per conference using INIT/WON lifecycle.
 
     Each conference auctions its copies independently (max 1 active at a time).
-    Rules:
-    - AUCTION_INIT always opens a new session (increments counter).
-    - AUCTION_WON closes the current session.
-    - Any transaction after a closed session (even without an explicit INIT)
-      opens a new session.  This prevents two WON events from sharing a session
-      and ensures Copy #1 is always resolved before Copy #2 begins.
+    A new copy session starts only when there is no session currently open —
+    i.e. after an AUCTION_WON closes the previous session (or at the very
+    start when no session exists yet).
+
+    Key rule: AUCTION_INIT does NOT unconditionally start a new session.
+    If a session is already open (no WON yet), a subsequent INIT is treated
+    as a re-nomination of the same copy (e.g. the player passed and was
+    put back up) and stays in the current session.
 
     Within the same timestamp the sort order is WON → INIT → BID so that
     a closing WON is processed before the next copy's opening INIT.
@@ -191,18 +193,12 @@ def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
         counter = 0
         session_closed = True  # no active session at start
         for i in idx_sorted:
-            txn_type = df.at[i, "TransactionType"]
-            if txn_type == "AUCTION_INIT":
-                # Explicit nomination — always starts a new copy session
-                counter += 1
-                session_closed = False
-            elif session_closed:
-                # Previous session was closed (won) or we haven't started yet;
-                # this transaction implicitly opens the next copy session.
+            if session_closed:
+                # No active session — open a new copy session.
                 counter += 1
                 session_closed = False
             df.at[i, "CopySession"] = counter
-            if txn_type == "AUCTION_WON":
+            if df.at[i, "TransactionType"] == "AUCTION_WON":
                 session_closed = True
     df.drop(columns=["_txn_sort"], inplace=True)
     return df
