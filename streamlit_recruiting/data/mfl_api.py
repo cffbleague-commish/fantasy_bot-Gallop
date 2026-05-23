@@ -41,6 +41,46 @@ def _mfl_fetch(year: int, type_param: str, extra_params: dict = None) -> Optiona
         return None
 
 
+@st.cache_data(ttl=300)
+def fetch_salary_caps(year: int) -> dict[str, float]:
+    """Fetch per-franchise salary cap amounts from MFL league settings.
+
+    Returns dict mapping FranchiseID (normalized, no leading zeros) to salary cap amount.
+    Falls back to the league-level salaryCapAmount if per-franchise caps aren't set.
+    Returns empty dict if the league doesn't use salaries or the API call fails.
+    """
+    data = _mfl_fetch(year, "league")
+    if not data:
+        return {}
+
+    league = data.get("league", {})
+    league_cap = _safe_num(league.get("salaryCapAmount"))
+
+    franchises = league.get("franchises", {}).get("franchise", [])
+    if isinstance(franchises, dict):
+        franchises = [franchises]
+
+    caps = {}
+    for f in franchises:
+        fid = f.get("id", "").lstrip("0") or "0"
+        franchise_cap = _safe_num(f.get("salaryCapAmount"))
+        cap = franchise_cap if franchise_cap is not None else league_cap
+        if cap is not None:
+            caps[fid] = cap
+
+    return caps
+
+
+def _safe_num(val) -> float | None:
+    """Convert a value to float, returning None for empty/invalid."""
+    if val is None or val == "":
+        return None
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return None
+
+
 @st.cache_data(ttl=3600)
 def fetch_players(year: int) -> pd.DataFrame:
     """Fetch all players from MFL. Returns DataFrame with PlayerID, Name, Position, Team."""
