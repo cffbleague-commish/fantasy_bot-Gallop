@@ -36,6 +36,12 @@ TRANS_TYPE_COLORS = {
     "Won": "#2D7A4E",
 }
 
+# Sort priority for tie-breaking when transactions share the same timestamp.
+# WON first (closes current copy session), then INIT (opens the next), then BID.
+# This ensures a closing WON is processed before the next copy's opening INIT
+# when both events land on the same MFL timestamp (same Unix second).
+_TXN_SORT_ORDER = {"AUCTION_WON": 0, "AUCTION_INIT": 1, "AUCTION_BID": 2}
+
 CONFERENCE_LIST = sorted(CONFERENCES.keys())
 
 
@@ -44,21 +50,62 @@ CONFERENCE_LIST = sorted(CONFERENCES.keys())
 # ---------------------------------------------------------------------------
 
 def _resolve_winning_prices(df: pd.DataFrame) -> pd.DataFrame:
-    """Resolve AUCTION_WON prices from AUCTION_BID history."""
+    """Resolve AUCTION_WON prices from AUCTION_BID history.
+
+    MFL stores $0 in AUCTION_WON records — the actual winning price is the
+    highest AUCTION_BID for the same player+franchise.  When CopySession is
+    available the lookup is scoped to the same conference and copy session so
+    that bids from a different copy (or a different conference) cannot leak in.
+    """
     bids = df[df["TransactionType"] == "AUCTION_BID"]
     if bids.empty:
         return df
-    max_bids = bids.groupby(["PlayerID", "FranchiseID"])["BidAmount"].max()
+
+    has_sessions = "CopySession" in df.columns and (df["CopySession"] > 0).any()
+
+    if has_sessions:
+        max_bids = bids.groupby(
+            ["PlayerID", "FranchiseID", "Conference", "CopySession"]
+        )["BidAmount"].max()
+    else:
+        max_bids = bids.groupby(["PlayerID", "FranchiseID"])["BidAmount"].max()
 
     def _resolve(row):
         if row["TransactionType"] != "AUCTION_WON" or row["BidAmount"] > 0:
             return row["BidAmount"]
-        key = (row["PlayerID"], row["FranchiseID"])
+
+        # 1. Exact match scoped to conference + copy session (if available)
+        if has_sessions:
+            key = (row["PlayerID"], row["FranchiseID"],
+                   row["Conference"], row["CopySession"])
+        else:
+            key = (row["PlayerID"], row["FranchiseID"])
         if key in max_bids.index:
             return max_bids[key]
+
+        # 2. Any franchise in the same conference + copy session
+        if has_sessions:
+            session_bids = bids[
+                (bids["PlayerID"] == row["PlayerID"])
+                & (bids["Conference"] == row["Conference"])
+                & (bids["CopySession"] == row["CopySession"])
+            ]
+            if not session_bids.empty:
+                return session_bids["BidAmount"].max()
+
+        # 3. Same conference, any session (covers nominator-won w/ no BID)
+        conf_bids = bids[
+            (bids["PlayerID"] == row["PlayerID"])
+            & (bids["Conference"] == row["Conference"])
+        ]
+        if not conf_bids.empty:
+            return conf_bids["BidAmount"].max()
+
+        # 4. Last resort — any bid for this player (cross-conference)
         player_bids = bids[bids["PlayerID"] == row["PlayerID"]]
         if not player_bids.empty:
             return player_bids["BidAmount"].max()
+
         return row["BidAmount"]
 
     df = df.copy()
@@ -77,15 +124,21 @@ def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
     - Any transaction after a closed session (even without an explicit INIT)
       opens a new session.  This prevents two WON events from sharing a session
       and ensures Copy #1 is always resolved before Copy #2 begins.
+
+    Within the same timestamp the sort order is WON → INIT → BID so that
+    a closing WON is processed before the next copy's opening INIT.
     """
     if df.empty:
         return df
     df = df.copy()
     df["CopySession"] = 0
+    df["_txn_sort"] = df["TransactionType"].map(_TXN_SORT_ORDER).fillna(1)
     for (_, conference), group in df.groupby(["PlayerID", "Conference"]):
         if not conference or str(conference) == "nan":
             continue
-        idx_sorted = group.sort_values("Timestamp", ascending=True).index
+        idx_sorted = group.sort_values(
+            ["Timestamp", "_txn_sort"], ascending=[True, True]
+        ).index
         counter = 0
         session_closed = True  # no active session at start
         for i in idx_sorted:
@@ -102,6 +155,7 @@ def _assign_copy_sessions(df: pd.DataFrame) -> pd.DataFrame:
             df.at[i, "CopySession"] = counter
             if txn_type == "AUCTION_WON":
                 session_closed = True
+    df.drop(columns=["_txn_sort"], inplace=True)
     return df
 
 
@@ -141,11 +195,16 @@ def _build_headshot_lookup(year: int) -> dict:
 
 
 def _prepare_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Resolve prices, add labels, assign copy sessions."""
-    df = _resolve_winning_prices(df)
+    """Assign copy sessions, resolve prices, add labels.
+
+    Copy sessions are assigned *before* winning-price resolution so that the
+    resolver can scope its bid lookup to the correct conference + copy session.
+    This prevents cross-session and cross-conference price contamination.
+    """
     df["BidAmount"] = pd.to_numeric(df["BidAmount"], errors="coerce").fillna(0)
-    df["Type"] = df["TransactionType"].map(TRANS_TYPE_LABELS).fillna(df["TransactionType"])
     df = _assign_copy_sessions(df)
+    df = _resolve_winning_prices(df)
+    df["Type"] = df["TransactionType"].map(TRANS_TYPE_LABELS).fillna(df["TransactionType"])
     return df
 
 
