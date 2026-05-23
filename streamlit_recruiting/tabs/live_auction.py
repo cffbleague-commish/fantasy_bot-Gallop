@@ -333,6 +333,17 @@ def render():
             if fid in fid_to_name
         }
 
+    # --- DEBUG: Remove this expander once budgets are confirmed working ---
+    with st.expander("🔍 Budget Debug (remove later)", expanded=False):
+        st.write(f"**auction_year:** `{auction_year}`")
+        st.write(f"**raw_budgets count:** `{len(raw_budgets) if auction_year else 'skipped (no auction_year)'}`")
+        if auction_year:
+            st.write(f"**raw_budgets sample (first 5):** `{dict(list(raw_budgets.items())[:5])}`")
+            st.write(f"**fid_to_name count:** `{len(fid_to_name)}`")
+            st.write(f"**fid_to_name sample (first 5):** `{dict(list(fid_to_name.items())[:5])}`")
+        st.write(f"**auction_budgets count (after re-key):** `{len(auction_budgets)}`")
+        st.write(f"**auction_budgets sample (first 5):** `{dict(list(auction_budgets.items())[:5])}`")
+
     _render_auction_board(df, logo_lookup, auction_budgets)
 
     # --- Player Deep Dive ---
