@@ -12,6 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from data.sheets import load_live_auction, load_recruiting_board, load_franchise_lookup
+from data.mfl_api import fetch_salary_caps
 from models.config import POSITIONS, CONFERENCES, COPIES_PER_CONFERENCE, get_league_year
 from components import (
     render_kpi_row,
@@ -113,6 +114,17 @@ def _build_logo_lookup() -> dict:
         row["TeamName"]: row["Logo"]
         for _, row in fl.iterrows()
         if row.get("Logo") and str(row["Logo"]).startswith("http")
+    }
+
+
+def _build_franchise_id_to_name() -> dict:
+    """Build FranchiseID -> TeamName mapping."""
+    fl = load_franchise_lookup()
+    if fl.empty:
+        return {}
+    return {
+        row["FranchiseID"]: row["TeamName"]
+        for _, row in fl.iterrows()
     }
 
 
@@ -243,7 +255,20 @@ def render():
     # --- Conference Auction Board ---
     st.markdown("#### Conference Auction Board")
     st.caption("Live auction state per conference — active nominations with current bids and recent completions.")
-    _render_auction_board(df, logo_lookup)
+
+    # Fetch salary cap data from MFL API for budget tracking
+    salary_caps = {}
+    if auction_year:
+        fid_to_name = _build_franchise_id_to_name()
+        raw_caps = fetch_salary_caps(auction_year)
+        # Re-key from FranchiseID → FranchiseName for easy lookup
+        salary_caps = {
+            fid_to_name.get(fid, fid): cap
+            for fid, cap in raw_caps.items()
+            if fid in fid_to_name
+        }
+
+    _render_auction_board(df, logo_lookup, salary_caps)
 
     # --- Player Deep Dive ---
     st.markdown("---")
@@ -382,11 +407,14 @@ def _render_summary_panels(filtered: pd.DataFrame):
         st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
-    """Render per-conference auction boards showing active auctions and recent completions."""
+def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, salary_caps: dict | None = None):
+    """Render per-conference auction boards showing active auctions, budget, and completions."""
     if df.empty:
         st.info("No auction data available.")
         return
+
+    if salary_caps is None:
+        salary_caps = {}
 
     # Determine which conferences have data
     conferences_with_data = sorted(
@@ -406,8 +434,6 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
                 continue
 
             # --- Identify active vs completed copy sessions ---
-            # A copy session is "active" if it has an INIT but no WON yet
-            # Group by PlayerID + CopySession to determine lifecycle state
             group_cols = ["PlayerID", "PlayerName", "CopySession"]
             active_rows = []
             completed_rows = []
@@ -425,10 +451,8 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
                 photo = first.get("PlayerPhoto", "")
                 pos_badge = first.get("PosBadge", "")
                 nfl_logo = first.get("NFLLogo", "")
-                position = first.get("Position", "")
 
                 if "AUCTION_WON" in types:
-                    # Completed auction
                     won_row = won_rows.iloc[0]
                     winner_logo = logo_lookup.get(won_row["FranchiseName"], "")
                     completed_rows.append({
@@ -446,24 +470,20 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
                         "_ts": pd.to_datetime(won_row.get("Timestamp", ""), errors="coerce"),
                     })
                 else:
-                    # Active auction — find current high bid
                     if not bid_rows.empty:
                         high_bid_idx = bid_rows["BidAmount"].idxmax()
                         high_bid_row = bid_rows.loc[high_bid_idx]
                         current_bid = high_bid_row["BidAmount"]
                         current_bidder = high_bid_row["FranchiseName"]
-                        bidder_logo = logo_lookup.get(current_bidder, "")
                     elif not init_rows.empty:
                         init_row = init_rows.iloc[0]
                         current_bid = init_row["BidAmount"]
                         current_bidder = init_row["FranchiseName"]
-                        bidder_logo = logo_lookup.get(current_bidder, "")
                     else:
                         current_bid = 0
                         current_bidder = ""
-                        bidder_logo = ""
 
-                    # Latest activity timestamp
+                    bidder_logo = logo_lookup.get(current_bidder, "")
                     latest_ts = grp["Timestamp"].max()
 
                     active_rows.append({
@@ -479,6 +499,10 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
                         "_bid_num": current_bid,
                         "_ts": pd.to_datetime(latest_ts, errors="coerce"),
                     })
+
+            # --- Team Budget Summary ---
+            if salary_caps:
+                _render_team_budget(conf_df, conf, salary_caps, logo_lookup)
 
             # --- Active Auctions ---
             if active_rows:
@@ -541,6 +565,62 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict):
                     use_container_width=True,
                     height=min(500, 38 + len(completed_rows) * 35),
                 )
+
+
+def _render_team_budget(conf_df: pd.DataFrame, conf: str, salary_caps: dict, logo_lookup: dict):
+    """Render team budget summary for a conference showing cap, spent, and remaining."""
+    # Get all franchises that have activity in this conference
+    won_df = conf_df[conf_df["TransactionType"] == "AUCTION_WON"]
+    all_franchises = conf_df["FranchiseName"].unique()
+
+    budget_rows = []
+    for franchise in sorted(all_franchises):
+        cap = salary_caps.get(franchise)
+        if cap is None:
+            continue
+
+        team_won = won_df[won_df["FranchiseName"] == franchise]
+        spent = team_won["BidAmount"].sum() if not team_won.empty else 0
+        remaining = cap - spent
+        players_won = len(team_won)
+
+        remaining_pct = (remaining / cap * 100) if cap > 0 else 0
+
+        budget_rows.append({
+            "Logo": logo_lookup.get(franchise, ""),
+            "Team": franchise,
+            "Budget": f"${cap:.0f}",
+            "Spent": f"${spent:.0f}",
+            "Remaining": f"${remaining:.0f}",
+            "% Left": f"{remaining_pct:.0f}%",
+            "Won": players_won,
+            "_remaining": remaining,
+        })
+
+    if not budget_rows:
+        return
+
+    st.markdown(
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+        '<span style="color:#f0f0ed;font-weight:600;">Team Budgets</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    budget_df = pd.DataFrame(budget_rows)
+    budget_df = budget_df.sort_values("_remaining", ascending=True)
+    display_cols = ["Logo", "Team", "Budget", "Spent", "Remaining", "% Left", "Won"]
+    budget_display = budget_df[display_cols]
+
+    col_config = {
+        "Logo": st.column_config.ImageColumn("", width="small"),
+    }
+    st.dataframe(
+        budget_display,
+        column_config=col_config,
+        hide_index=True,
+        use_container_width=True,
+        height=min(400, 38 + len(budget_rows) * 35),
+    )
 
 
 def _render_team_spending(filtered: pd.DataFrame, logo_lookup: dict):
