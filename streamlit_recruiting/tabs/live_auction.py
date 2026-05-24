@@ -349,15 +349,27 @@ def render():
         }
 
     # --- DEBUG: Remove this expander once budgets are confirmed working ---
-    with st.expander("🔍 Budget Debug (remove later)", expanded=False):
-        st.write(f"**auction_year:** `{auction_year}`")
-        st.write(f"**raw_budgets count:** `{len(raw_budgets) if auction_year else 'skipped (no auction_year)'}`")
+    with st.expander("Budget Debug (remove later)", expanded=False):
         if auction_year:
-            st.write(f"**raw_budgets sample (first 5):** `{dict(list(raw_budgets.items())[:5])}`")
-            st.write(f"**fid_to_name count:** `{len(fid_to_name)}`")
-            st.write(f"**fid_to_name sample (first 5):** `{dict(list(fid_to_name.items())[:5])}`")
-        st.write(f"**auction_budgets count (after re-key):** `{len(auction_budgets)}`")
-        st.write(f"**auction_budgets sample (first 5):** `{dict(list(auction_budgets.items())[:5])}`")
+            from data.mfl_api import _mfl_fetch
+            raw_league = _mfl_fetch(auction_year, "league") or {}
+            league_obj = raw_league.get("league", {})
+            # Show all league-level keys so we can find the budget field
+            st.write("**League-level keys:**", sorted(league_obj.keys()))
+            # Show any key containing 'auction', 'salary', 'cap', or 'budget'
+            budget_keys = {k: league_obj[k] for k in league_obj
+                          if any(w in k.lower() for w in ["auction", "salary", "cap", "budget", "amount"])}
+            st.write("**Budget-related fields:**", budget_keys)
+            # Show first franchise's keys too
+            franchises = league_obj.get("franchises", {}).get("franchise", [])
+            if isinstance(franchises, dict):
+                franchises = [franchises]
+            if franchises:
+                st.write("**First franchise keys:**", sorted(franchises[0].keys()))
+                fran_budget_keys = {k: franchises[0][k] for k in franchises[0]
+                                   if any(w in k.lower() for w in ["auction", "salary", "cap", "budget", "amount"])}
+                st.write("**First franchise budget fields:**", fran_budget_keys)
+        st.write(f"**auction_budgets count:** `{len(auction_budgets)}`")
 
     _render_auction_board(df, logo_lookup, auction_budgets)
 
