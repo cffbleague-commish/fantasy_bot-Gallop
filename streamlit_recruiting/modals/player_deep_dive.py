@@ -355,7 +355,9 @@ def _render_auction_context(player_name: str, year: int):
         return
 
     df["BidAmount"] = pd.to_numeric(df["BidAmount"], errors="coerce").fillna(0)
-    df = _assign_copy_sessions(df)
+    has_precomputed = "CopySession" in df.columns and (df["CopySession"] > 0).any()
+    if not has_precomputed:
+        df = _assign_copy_sessions(df)
     df = _resolve_winning_prices(df)
 
     TRANS_TYPE_LABELS = {"AUCTION_INIT": "Nomination", "AUCTION_BID": "Bid", "AUCTION_WON": "Won"}

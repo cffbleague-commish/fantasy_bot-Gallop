@@ -347,7 +347,28 @@ def load_live_auction() -> pd.DataFrame:
     df["Note"] = df.iloc[:, c["Note"]].astype(str).replace("", pd.NA) if c["Note"] < len(df.columns) else ""
     df["Timestamp"] = df.iloc[:, c["Timestamp"]].astype(str)
 
+    # Read precomputed PlayerCopyID (from Apps Script assignRookieCopyIds) if present.
+    # Derives CopySession integer from the ordinal suffix (e.g. "PC-17502-AAC-1" → 1).
+    pcid_idx = c.get("PlayerCopyID")
+    if pcid_idx is not None and pcid_idx < len(df.columns):
+        df["PlayerCopyID"] = df.iloc[:, pcid_idx].fillna("").astype(str)
+        df["CopySession"] = df["PlayerCopyID"].apply(_extract_copy_ordinal)
+
     return df
+
+
+def _extract_copy_ordinal(pcid) -> int:
+    """Extract the ordinal number from a PlayerCopyID string.
+
+    'PC-17502-AAC-1' → 1, empty/invalid → 0.
+    """
+    if not pcid or not isinstance(pcid, str) or not pcid.startswith("PC-"):
+        return 0
+    parts = pcid.rsplit("-", 1)
+    try:
+        return int(parts[-1])
+    except (ValueError, IndexError):
+        return 0
 
 
 @st.cache_data(ttl=300)

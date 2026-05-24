@@ -147,6 +147,7 @@ LIVE_AUCTION_COLS = {
     "NFLTeam": 4, "DraftYear": 5, "DraftRound": 6, "DraftPick": 7,
     "FranchiseID": 8, "FranchiseName": 9, "Conference": 10,
     "BidAmount": 11, "IsRookie": 12, "TransactionType": 13, "Note": 14, "Timestamp": 15,
+    "PlayerCopyID": 16,
 }
 
 # Sheet tab names

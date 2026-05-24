@@ -206,9 +206,15 @@ def _prepare_data(df: pd.DataFrame) -> pd.DataFrame:
     Copy sessions are assigned *before* winning-price resolution so that the
     resolver can scope its bid lookup to the correct conference + copy session.
     This prevents cross-session and cross-conference price contamination.
+
+    When the sheet already contains a precomputed PlayerCopyID column (written
+    by Apps Script ``assignRookieCopyIds``), the CopySession is derived from
+    it and the runtime ``_assign_copy_sessions`` is skipped.
     """
     df["BidAmount"] = pd.to_numeric(df["BidAmount"], errors="coerce").fillna(0)
-    df = _assign_copy_sessions(df)
+    has_precomputed = "CopySession" in df.columns and (df["CopySession"] > 0).any()
+    if not has_precomputed:
+        df = _assign_copy_sessions(df)
     df = _resolve_winning_prices(df)
     df["Type"] = df["TransactionType"].map(TRANS_TYPE_LABELS).fillna(df["TransactionType"])
     return df
