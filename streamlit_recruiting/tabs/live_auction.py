@@ -351,24 +351,56 @@ def render():
     # --- DEBUG: Remove this expander once budgets are confirmed working ---
     with st.expander("Budget Debug (remove later)", expanded=False):
         if auction_year:
-            from data.mfl_api import _mfl_fetch
-            raw_league = _mfl_fetch(auction_year, "league") or {}
-            league_obj = raw_league.get("league", {})
-            # Show all league-level keys so we can find the budget field
-            st.write("**League-level keys:**", sorted(league_obj.keys()))
-            # Show any key containing 'auction', 'salary', 'cap', or 'budget'
-            budget_keys = {k: league_obj[k] for k in league_obj
-                          if any(w in k.lower() for w in ["auction", "salary", "cap", "budget", "amount"])}
-            st.write("**Budget-related fields:**", budget_keys)
-            # Show first franchise's keys too
-            franchises = league_obj.get("franchises", {}).get("franchise", [])
-            if isinstance(franchises, dict):
-                franchises = [franchises]
-            if franchises:
-                st.write("**First franchise keys:**", sorted(franchises[0].keys()))
-                fran_budget_keys = {k: franchises[0][k] for k in franchises[0]
-                                   if any(w in k.lower() for w in ["auction", "salary", "cap", "budget", "amount"])}
-                st.write("**First franchise budget fields:**", fran_budget_keys)
+            import requests as _req
+            league_id = st.secrets.get("mfl_league_id", "")
+            api_key = st.secrets.get("mfl_api_key", "")
+            st.write(f"**league_id:** `{league_id}`")
+            st.write(f"**api_key present:** `{bool(api_key)}`")
+
+            # Build and show the actual URL
+            params = {"TYPE": "league", "L": league_id, "JSON": "1"}
+            if api_key:
+                params["APIKEY"] = api_key
+            url = f"https://api.myfantasyleague.com/{auction_year}/export"
+            st.write(f"**URL:** `{url}`")
+            st.write(f"**params:** `{params}`")
+
+            # Make the raw request and show the response
+            try:
+                resp = _req.get(url, params=params, timeout=30)
+                st.write(f"**HTTP status:** `{resp.status_code}`")
+                raw_json = resp.json()
+                st.write(f"**Top-level keys:** `{sorted(raw_json.keys())}`")
+
+                league_obj = raw_json.get("league", {})
+                if league_obj:
+                    st.write(f"**League keys ({len(league_obj)}):**", sorted(league_obj.keys()))
+                    budget_keys = {k: league_obj[k] for k in league_obj
+                                  if any(w in k.lower() for w in ["auction", "salary", "cap", "budget", "amount"])}
+                    st.write("**Budget-related fields:**", budget_keys)
+                    franchises = league_obj.get("franchises", {}).get("franchise", [])
+                    if isinstance(franchises, dict):
+                        franchises = [franchises]
+                    if franchises:
+                        st.write(f"**First franchise keys:** `{sorted(franchises[0].keys())}`")
+                else:
+                    st.warning("League object is empty — showing full raw response (first 2000 chars):")
+                    st.code(resp.text[:2000])
+
+                    # Try year-1 as a comparison
+                    prev_year = auction_year - 1
+                    params2 = {"TYPE": "league", "L": league_id, "JSON": "1"}
+                    if api_key:
+                        params2["APIKEY"] = api_key
+                    url2 = f"https://api.myfantasyleague.com/{prev_year}/export"
+                    resp2 = _req.get(url2, params=params2, timeout=30)
+                    raw2 = resp2.json()
+                    league2 = raw2.get("league", {})
+                    st.write(f"**Fallback year {prev_year} — league keys ({len(league2)}):**",
+                             sorted(league2.keys()) if league2 else "ALSO EMPTY")
+            except Exception as e:
+                st.error(f"Raw request failed: {e}")
+
         st.write(f"**auction_budgets count:** `{len(auction_budgets)}`")
 
     _render_auction_board(df, logo_lookup, auction_budgets)
