@@ -348,41 +348,6 @@ def render():
             if fid in fid_to_name
         }
 
-    # --- DEBUG: Remove this expander once budgets are confirmed working ---
-    with st.expander("Budget Debug (remove later)", expanded=False):
-        if auction_year:
-            from data.mfl_api import _mfl_fetch
-
-            # Show which year's data was actually used
-            for try_year in [auction_year, auction_year - 1]:
-                data = _mfl_fetch(try_year, "league") or {}
-                league_obj = data.get("league", {})
-                if league_obj:
-                    st.write(f"**Data source year:** `{try_year}`")
-                    # League-level budget fields
-                    budget_fields = ["salaryCapAmount", "auctionStartAmount", "salary",
-                                     "usesSalaries", "minBid", "bidIncrement"]
-                    league_budget_info = {k: league_obj.get(k) for k in budget_fields if league_obj.get(k) is not None}
-                    st.write("**League budget fields:**", league_budget_info)
-
-                    # Franchise-level details
-                    franchises = league_obj.get("franchises", {}).get("franchise", [])
-                    if isinstance(franchises, dict):
-                        franchises = [franchises]
-                    if franchises:
-                        st.write(f"**First franchise keys:** `{sorted(franchises[0].keys())}`")
-                        f0_budget = {k: franchises[0].get(k) for k in budget_fields if franchises[0].get(k) is not None}
-                        st.write("**First franchise budget fields:**", f0_budget)
-                        st.write(f"**Franchise count:** `{len(franchises)}`")
-                    break
-                else:
-                    st.write(f"**Year {try_year}:** no league data (API key may be invalid for this year)")
-
-        st.write(f"**auction_budgets count:** `{len(auction_budgets)}`")
-        if auction_budgets:
-            sample = dict(list(auction_budgets.items())[:5])
-            st.write("**Sample budgets:**", sample)
-
     _render_auction_board(df, logo_lookup, auction_budgets)
 
     # --- Player Deep Dive ---
@@ -703,7 +668,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                             "Current Bid", format="$%.0f",
                         ),
                         "_time_left_frac": st.column_config.ProgressColumn(
-                            "Timer", min_value=0, max_value=1, format=" ",
+                            "Timer", min_value=0, max_value=1, format=" ", width="small",
                         ),
                     }
                     st.dataframe(
@@ -841,7 +806,7 @@ def _render_team_budget(
         "Spent": st.column_config.NumberColumn("Spent", format="$%.0f"),
         "Remaining": st.column_config.NumberColumn("Remaining", format="$%.0f"),
         "Conf %": st.column_config.ProgressColumn(
-            "Conf %", min_value=0, max_value=1, format="%.0f%%",
+            "Conf %", min_value=0, max_value=1, format="%.0f%%", width="small",
         ),
     }
     st.dataframe(
