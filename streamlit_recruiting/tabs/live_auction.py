@@ -6,6 +6,8 @@ Live mode (current year): st.fragment polling, live indicator, auto-refresh.
 Historical mode (past year): static cached data, no animations.
 """
 
+from zoneinfo import ZoneInfo
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -44,6 +46,10 @@ _TXN_SORT_ORDER = {"AUCTION_WON": 0, "AUCTION_INIT": 1, "AUCTION_BID": 2}
 
 # Auction hold rule: highest bidder must hold for this many hours to win.
 AUCTION_HOLD_HOURS = 12
+
+# Timezone the Apps Script writes timestamps in (Session.getScriptTimeZone()).
+# Must match so the countdown compares apples-to-apples regardless of server TZ.
+AUCTION_TZ = ZoneInfo("US/Eastern")
 
 CONFERENCE_LIST = sorted(CONFERENCES.keys())
 
@@ -571,11 +577,15 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                     latest_ts = grp["Timestamp"].max()
                     last_ts = pd.to_datetime(latest_ts, errors="coerce")
 
-                    # Compute 12-hour hold countdown
+                    # Compute 12-hour hold countdown.
+                    # Localize both sides to the auction timezone so the delta
+                    # is correct regardless of what TZ the server clock runs in.
                     time_left_str = ""
                     time_left_frac = 0.0
                     if pd.notna(last_ts):
-                        elapsed = pd.Timestamp.now() - last_ts
+                        now_aware = pd.Timestamp.now(tz=AUCTION_TZ)
+                        last_ts_aware = last_ts.tz_localize(AUCTION_TZ)
+                        elapsed = now_aware - last_ts_aware
                         remaining = pd.Timedelta(hours=AUCTION_HOLD_HOURS) - elapsed
                         total_secs = remaining.total_seconds()
                         if total_secs > 0:
