@@ -671,10 +671,10 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                     active_display = active_df[display_cols]
 
                     col_config = {
-                        "Photo": st.column_config.ImageColumn("", width="small"),
-                        "Pos": st.column_config.ImageColumn("Pos", width="small"),
-                        "NFL": st.column_config.ImageColumn("", width="small"),
-                        "High Bidder": st.column_config.ImageColumn("High Bidder", width="small"),
+                        "Photo": st.column_config.ImageColumn("", width=50),
+                        "Pos": st.column_config.ImageColumn("Pos", width=50),
+                        "NFL": st.column_config.ImageColumn("", width=50),
+                        "High Bidder": st.column_config.ImageColumn("High Bidder", width=50),
                         "Current Bid": st.column_config.NumberColumn(
                             "Current Bid", format="$%.0f",
                         ),
@@ -711,10 +711,10 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                 completed_display = completed_df[display_cols]
 
                 col_config = {
-                    "Photo": st.column_config.ImageColumn("", width="small"),
-                    "Pos": st.column_config.ImageColumn("Pos", width="small"),
-                    "NFL": st.column_config.ImageColumn("", width="small"),
-                    "Winner": st.column_config.ImageColumn("Winner", width="small"),
+                    "Photo": st.column_config.ImageColumn("", width=50),
+                    "Pos": st.column_config.ImageColumn("Pos", width=50),
+                    "NFL": st.column_config.ImageColumn("", width=50),
+                    "Winner": st.column_config.ImageColumn("Winner", width=50),
                     "Price": st.column_config.NumberColumn(
                         "Price", format="$%.0f",
                     ),
@@ -811,7 +811,7 @@ def _render_team_budget(
     budget_display = budget_df[display_cols]
 
     col_config = {
-        "Logo": st.column_config.ImageColumn("", width="small"),
+        "Logo": st.column_config.ImageColumn("", width=50),
         "Budget": st.column_config.NumberColumn("Budget", format="$%.0f"),
         "Allocated": st.column_config.NumberColumn("Allocated", format="$%.0f"),
         "Spent": st.column_config.NumberColumn("Spent", format="$%.0f"),
@@ -851,7 +851,7 @@ def _render_team_spending(filtered: pd.DataFrame, logo_lookup: dict):
     for col in ["Total", "Avg", "Max"]:
         team_display[col] = team_display[col].apply(lambda x: f"${x:.0f}")
 
-    team_col_config = {"Logo": st.column_config.ImageColumn("", width="small")}
+    team_col_config = {"Logo": st.column_config.ImageColumn("", width=50)}
     st.dataframe(team_display, column_config=team_col_config, hide_index=True, use_container_width=True)
 
 
@@ -923,14 +923,14 @@ def _render_top_acquisitions(filtered: pd.DataFrame, logo_lookup: dict):
         )
 
     top_col_config = {
-        "Franchise": st.column_config.ImageColumn("", width="small"),
+        "Franchise": st.column_config.ImageColumn("", width=50),
     }
     if "Photo" in top_display.columns:
-        top_col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+        top_col_config["Photo"] = st.column_config.ImageColumn("", width=50)
     if "Pos" in top_display.columns:
-        top_col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
+        top_col_config["Pos"] = st.column_config.ImageColumn("Pos", width=50)
     if "NFL" in top_display.columns:
-        top_col_config["NFL"] = st.column_config.ImageColumn("", width="small")
+        top_col_config["NFL"] = st.column_config.ImageColumn("", width=50)
     st.dataframe(top_display, column_config=top_col_config, hide_index=True, use_container_width=True)
 
 
