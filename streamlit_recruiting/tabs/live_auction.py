@@ -663,13 +663,16 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "Photo": st.column_config.ImageColumn("", width=50),
                         "Pos": st.column_config.ImageColumn("Pos", width=50),
                         "NFL": st.column_config.ImageColumn("", width=50),
-                        "High Bidder": st.column_config.ImageColumn("High Bidder", width=50),
+                        "High Bidder": st.column_config.ImageColumn("Bidder", width=50),
                         "Current Bid": st.column_config.NumberColumn(
-                            "Current Bid", format="$%.0f",
+                            "Bid", format="$%.0f", width="small",
                         ),
+                        "Bids": st.column_config.NumberColumn("Bids", width="small"),
                         "_time_left_frac": st.column_config.ProgressColumn(
                             "Timer", min_value=0, max_value=1, format=" ", width="small",
                         ),
+                        "Time Left": st.column_config.TextColumn("Left", width="small"),
+                        "Copy #": st.column_config.TextColumn("Copy", width="small"),
                     }
                     st.dataframe(
                         active_display,
@@ -801,10 +804,10 @@ def _render_team_budget(
 
     col_config = {
         "Logo": st.column_config.ImageColumn("", width=50),
-        "Budget": st.column_config.NumberColumn("Budget", format="$%.0f"),
-        "Allocated": st.column_config.NumberColumn("Allocated", format="$%.0f"),
-        "Spent": st.column_config.NumberColumn("Spent", format="$%.0f"),
-        "Remaining": st.column_config.NumberColumn("Remaining", format="$%.0f"),
+        "Budget": st.column_config.NumberColumn("Bgt", format="$%.0f", width="small"),
+        "Allocated": st.column_config.NumberColumn("Alloc", format="$%.0f", width="small"),
+        "Spent": st.column_config.NumberColumn("Spent", format="$%.0f", width="small"),
+        "Remaining": st.column_config.NumberColumn("Rem", format="$%.0f", width="small"),
         "Conf %": st.column_config.ProgressColumn(
             "Conf %", min_value=0, max_value=1, format="%.0f%%", width="small",
         ),
