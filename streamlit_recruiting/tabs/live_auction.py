@@ -42,6 +42,9 @@ TRANS_TYPE_COLORS = {
 # when both events land on the same MFL timestamp (same Unix second).
 _TXN_SORT_ORDER = {"AUCTION_WON": 0, "AUCTION_INIT": 1, "AUCTION_BID": 2}
 
+# Auction hold rule: highest bidder must hold for this many hours to win.
+AUCTION_HOLD_HOURS = 12
+
 CONFERENCE_LIST = sorted(CONFERENCES.keys())
 
 
@@ -566,6 +569,23 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
 
                     bidder_logo = logo_lookup.get(current_bidder, "")
                     latest_ts = grp["Timestamp"].max()
+                    last_ts = pd.to_datetime(latest_ts, errors="coerce")
+
+                    # Compute 12-hour hold countdown
+                    time_left_str = ""
+                    time_left_frac = 0.0
+                    if pd.notna(last_ts):
+                        elapsed = pd.Timestamp.now() - last_ts
+                        remaining = pd.Timedelta(hours=AUCTION_HOLD_HOURS) - elapsed
+                        total_secs = remaining.total_seconds()
+                        if total_secs > 0:
+                            hrs = int(total_secs // 3600)
+                            mins = int((total_secs % 3600) // 60)
+                            time_left_str = f"{hrs}h {mins}m"
+                            time_left_frac = total_secs / (AUCTION_HOLD_HOURS * 3600)
+                        else:
+                            time_left_str = "Closing"
+                            time_left_frac = 0.0
 
                     active_rows.append({
                         "Photo": photo,
@@ -577,8 +597,10 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "High Bidder": bidder_logo,
                         "Team": current_bidder,
                         "Bids": len(bid_rows),
+                        "Time Left": time_left_str,
+                        "_time_left_frac": time_left_frac,
                         "_bid_num": current_bid,
-                        "_ts": pd.to_datetime(latest_ts, errors="coerce"),
+                        "_ts": last_ts,
                     })
 
             # --- Build per-franchise allocated amounts from active bids ---
@@ -634,7 +656,8 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                     active_df = pd.DataFrame(active_rows)
                     active_df = active_df.sort_values("_bid_num", ascending=False)
                     display_cols = ["Photo", "Player", "Pos", "NFL", "Copy #",
-                                    "Current Bid", "High Bidder", "Bids"]
+                                    "Current Bid", "High Bidder", "Bids",
+                                    "_time_left_frac", "Time Left"]
                     active_display = active_df[display_cols]
 
                     col_config = {
@@ -644,6 +667,9 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         "High Bidder": st.column_config.ImageColumn("High Bidder", width="small"),
                         "Current Bid": st.column_config.NumberColumn(
                             "Current Bid", format="$%.0f",
+                        ),
+                        "_time_left_frac": st.column_config.ProgressColumn(
+                            "Timer", min_value=0, max_value=1, format=" ",
                         ),
                     }
                     st.dataframe(
