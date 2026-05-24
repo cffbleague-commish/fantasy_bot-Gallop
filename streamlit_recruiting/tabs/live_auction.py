@@ -49,7 +49,7 @@ AUCTION_HOLD_HOURS = 12
 
 # Timezone the Apps Script writes timestamps in (Session.getScriptTimeZone()).
 # Must match so the countdown compares apples-to-apples regardless of server TZ.
-AUCTION_TZ = ZoneInfo("US/Eastern")
+AUCTION_TZ = ZoneInfo("America/New_York")
 
 CONFERENCE_LIST = sorted(CONFERENCES.keys())
 
