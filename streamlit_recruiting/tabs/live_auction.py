@@ -650,7 +650,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
             ])
 
             # --- Side-by-side: Active Auctions + Team Budgets ---
-            col_active, col_budget = st.columns([60, 40], gap="medium")
+            col_active, col_budget = st.columns([70, 30], gap="medium")
 
             with col_active:
                 if active_rows:
@@ -687,7 +687,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
                         column_config=col_config,
                         hide_index=True,
                         use_container_width=True,
-                        height=min(400, 38 + len(active_rows) * 35),
+                        height=min(38 + 16 * 35, 38 + len(active_rows) * 35),
                     )
                 else:
                     st.info(f"No active auctions in {conf}.")
