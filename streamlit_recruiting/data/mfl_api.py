@@ -19,6 +19,10 @@ def _mfl_fetch(year: int, type_param: str, extra_params: dict = None) -> Optiona
 
     Only ``mfl_league_id`` is required in secrets.  The API key is optional —
     many MFL endpoints (league settings, rosters, players) are public.
+
+    MFL API keys are year-bound.  If a request with an API key returns an
+    in-band error (HTTP 200 but ``"error"`` in the JSON body), the request is
+    retried without the key since most export endpoints are publicly readable.
     """
     league_id = st.secrets.get("mfl_league_id", "")
     if not league_id:
@@ -40,7 +44,17 @@ def _mfl_fetch(year: int, type_param: str, extra_params: dict = None) -> Optiona
     try:
         resp = requests.get(url, params=params, timeout=30)
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+
+        # MFL returns HTTP 200 with an "error" key when the API key is invalid
+        # for the requested year.  Retry without the key for public endpoints.
+        if "error" in data and api_key:
+            params.pop("APIKEY", None)
+            resp = requests.get(url, params=params, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+
+        return data
     except Exception as e:
         st.warning(f"MFL API error: {e}")
         return None
@@ -50,50 +64,58 @@ def _mfl_fetch(year: int, type_param: str, extra_params: dict = None) -> Optiona
 def fetch_auction_budgets(year: int) -> dict[str, float]:
     """Fetch per-franchise auction starting budgets from MFL league settings.
 
-    Reads the ``auctionStartAmount`` field from the TYPE=league endpoint.
-    Each franchise may have its own starting amount; falls back to the
-    league-level default when a per-franchise value isn't set.
+    Checks several MFL field names for the budget amount:
+    ``salaryCapAmount``, ``auctionStartAmount``, and ``salary`` — the exact
+    field depends on league configuration (salary-cap vs. auction-only).
 
-    Makes a direct HTTP request (the league endpoint is public) so this
-    works even when ``mfl_api_key`` is not configured.
+    If the requested *year* has no league data (common before the season is
+    rolled over in MFL), automatically falls back to ``year - 1``.
 
     Returns dict mapping FranchiseID (normalized, no leading zeros) to budget.
     Returns empty dict if the league doesn't use auctions or the API call fails.
     """
-    league_id = st.secrets.get("mfl_league_id", "")
-    if not league_id:
-        return {}
+    # Budget field names MFL may use (checked in priority order)
+    _BUDGET_FIELDS = ["salaryCapAmount", "auctionStartAmount", "salary"]
 
-    params = {"TYPE": "league", "L": league_id, "JSON": "1"}
-    api_key = st.secrets.get("mfl_api_key", "")
-    if api_key:
-        params["APIKEY"] = api_key
+    def _extract(data: dict) -> dict[str, float]:
+        league = data.get("league", {})
+        if not league:
+            return {}
 
-    url = f"{MFL_BASE_URL}/{year}/export"
-    try:
-        resp = requests.get(url, params=params, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as e:
-        st.warning(f"MFL budget fetch error: {e}")
-        return {}
+        # League-level default budget (first matching field wins)
+        league_budget = None
+        for field in _BUDGET_FIELDS:
+            league_budget = _safe_num(league.get(field))
+            if league_budget is not None:
+                break
 
-    league = data.get("league", {})
-    league_budget = _safe_num(league.get("auctionStartAmount"))
+        franchises = league.get("franchises", {}).get("franchise", [])
+        if isinstance(franchises, dict):
+            franchises = [franchises]
 
-    franchises = league.get("franchises", {}).get("franchise", [])
-    if isinstance(franchises, dict):
-        franchises = [franchises]
+        budgets: dict[str, float] = {}
+        for f in franchises:
+            fid = f.get("id", "").lstrip("0") or "0"
+            # Per-franchise override
+            franchise_budget = None
+            for field in _BUDGET_FIELDS:
+                franchise_budget = _safe_num(f.get(field))
+                if franchise_budget is not None:
+                    break
+            budget = franchise_budget if franchise_budget is not None else league_budget
+            if budget is not None:
+                budgets[fid] = budget
+        return budgets
 
-    budgets = {}
-    for f in franchises:
-        fid = f.get("id", "").lstrip("0") or "0"
-        franchise_budget = _safe_num(f.get("auctionStartAmount"))
-        budget = franchise_budget if franchise_budget is not None else league_budget
-        if budget is not None:
-            budgets[fid] = budget
+    # Try requested year first, then fall back to year-1
+    for attempt_year in [year, year - 1]:
+        data = _mfl_fetch(attempt_year, "league")
+        if data and data.get("league"):
+            result = _extract(data)
+            if result:
+                return result
 
-    return budgets
+    return {}
 
 
 def _safe_num(val) -> float | None:
