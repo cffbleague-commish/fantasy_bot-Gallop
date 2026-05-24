@@ -54,11 +54,28 @@ def fetch_auction_budgets(year: int) -> dict[str, float]:
     Each franchise may have its own starting amount; falls back to the
     league-level default when a per-franchise value isn't set.
 
+    Makes a direct HTTP request (the league endpoint is public) so this
+    works even when ``mfl_api_key`` is not configured.
+
     Returns dict mapping FranchiseID (normalized, no leading zeros) to budget.
     Returns empty dict if the league doesn't use auctions or the API call fails.
     """
-    data = _mfl_fetch(year, "league")
-    if not data:
+    league_id = st.secrets.get("mfl_league_id", "")
+    if not league_id:
+        return {}
+
+    params = {"TYPE": "league", "L": league_id, "JSON": "1"}
+    api_key = st.secrets.get("mfl_api_key", "")
+    if api_key:
+        params["APIKEY"] = api_key
+
+    url = f"{MFL_BASE_URL}/{year}/export"
+    try:
+        resp = requests.get(url, params=params, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        st.warning(f"MFL budget fetch error: {e}")
         return {}
 
     league = data.get("league", {})

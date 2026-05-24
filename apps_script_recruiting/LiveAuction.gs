@@ -67,6 +67,78 @@ function fetchLiveAuctionTransactions(yearOverride) {
 
 
 /**
+ * Assign PlayerCopyID codes to rookie auction transactions.
+ * Processes transactions chronologically to track which copy of a rookie
+ * is "on the board" in each conference.
+ *
+ * Rules:
+ *   - Each conference has 2 copies of a rookie (ordinals 1 and 2).
+ *   - Only one copy can be on the board at a time per player+conference.
+ *   - AUCTION_INIT  → assigns the next available ordinal for that player+conference.
+ *   - AUCTION_BID   → inherits the copy ID currently on the board.
+ *   - AUCTION_WON   → inherits the copy ID, then clears the board for the next copy.
+ *   - A 3rd+ ordinal is possible if a previously won copy is dropped and re-nominated.
+ *
+ * Mutates each row in enrichedRows by pushing the PlayerCopyID as a new element.
+ *
+ * @param {Array[]} enrichedRows - Rows with 16 columns (indices 0-15).
+ *        Index 1 = PlayerID, 10 = Conference, 12 = IsRookie ("TRUE"/"FALSE"),
+ *        13 = TransactionType, 15 = Timestamp.
+ */
+function assignRookieCopyIds(enrichedRows) {
+  // Sort a shallow copy chronologically (timestamp ascending) for processing.
+  // The inner row arrays are shared references, so pushing to them here
+  // also updates the rows in the caller's enrichedRows array.
+  var chronological = enrichedRows.slice().sort(function(a, b) {
+    return (a[15] || "").localeCompare(b[15] || "");
+  });
+
+  var nextOrdinal = {}; // "playerId-conference" → next ordinal to assign
+  var boardCopy = {};   // "playerId-conference" → copy ID currently on the board
+
+  chronological.forEach(function(row) {
+    var isRookie = (row[12] === "TRUE");
+    if (!isRookie) {
+      row.push("");
+      return;
+    }
+
+    var playerId = String(row[1]);
+    var conference = String(row[10]);
+    var transType = String(row[13]);
+
+    if (!conference) {
+      row.push("");
+      return;
+    }
+
+    var key = playerId + "-" + conference;
+
+    if (transType === "AUCTION_INIT") {
+      // New nomination — assign the next copy ordinal
+      if (!nextOrdinal[key]) nextOrdinal[key] = 1;
+      var ordinal = nextOrdinal[key]++;
+      var copyId = "PC-" + playerId + "-" + conference + "-" + ordinal;
+      boardCopy[key] = copyId;
+      row.push(copyId);
+
+    } else if (transType === "AUCTION_BID") {
+      // Bid — use whatever copy is currently on the board
+      row.push(boardCopy[key] || "");
+
+    } else if (transType === "AUCTION_WON") {
+      // Won — use the board copy, then take it off the board
+      row.push(boardCopy[key] || "");
+      boardCopy[key] = null;
+
+    } else {
+      row.push("");
+    }
+  });
+}
+
+
+/**
  * Import live auction data to the LiveAuction sheet.
  * Enriches with player data and franchise names.
  * Uses full-replace strategy (clears and rewrites all data).
@@ -145,6 +217,9 @@ function importLiveAuction(yearOverride) {
     ]);
   });
 
+  // Assign PlayerCopyID codes to rookie transactions (pushes a 17th element to each row)
+  assignRookieCopyIds(enrichedRows);
+
   // Sort by timestamp descending (most recent first)
   enrichedRows.sort(function(a, b) {
     return (b[15] || "").localeCompare(a[15] || "");
@@ -163,7 +238,8 @@ function importLiveAuction(yearOverride) {
   var headers = [
     "AuctionYear", "PlayerID", "PlayerName", "Position", "NFLTeam",
     "DraftYear", "DraftRound", "DraftPick", "FranchiseID", "FranchiseName",
-    "Conference", "BidAmount", "IsRookie", "TransactionType", "Note", "Timestamp"
+    "Conference", "BidAmount", "IsRookie", "TransactionType", "Note", "Timestamp",
+    "PlayerCopyID"
   ];
 
   sheet.appendRow(headers);
