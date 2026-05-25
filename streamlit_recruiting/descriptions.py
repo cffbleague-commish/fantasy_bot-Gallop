@@ -79,11 +79,10 @@ cross-validated to avoid overfitting.\
 historical prices, it distributes a conference's total auction budget based \
 on each player's "value above replacement."
 
-Each position has a threshold ADP where players become freely available \
-(e.g., QB at ADP 240, RB/WR at ADP 200, TE at ADP 300). Players below \
-that threshold get $0. The remaining budget is split proportionally — the \
-bigger your edge over the replacement level, the more you should be willing \
-to pay.\
+All positions share a fixed replacement threshold at ADP 240 (the end of \
+typical startup rankings). Players beyond that threshold get $0. The \
+remaining budget is split proportionally — the bigger your edge over the \
+replacement level, the more you should be willing to pay.\
 """,
 
     "confidence_labels": """\
@@ -147,9 +146,8 @@ meaningful corrections.\
 It answers: "If a conference has $X to spend on rookies, how should that \
 money be split?"
 
-1. Each position has a "replacement ADP" threshold — players drafted beyond \
-that point in startups are considered freely available. You can adjust these \
-thresholds with the sliders above.
+1. A fixed replacement threshold of ADP 240 (the end of typical startup rankings) \
+is used for all positions — players beyond that point are considered freely available.
 2. For each player, we compute "Value Above Replacement" (VAR) = their ADP \
 score minus the replacement-level score. Players at or below replacement \
 get $0.

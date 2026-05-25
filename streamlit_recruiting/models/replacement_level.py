@@ -1,6 +1,7 @@
 """
 Option 3: Replacement-Level Surplus Value pricing.
 Prices players based on their value above a replacement-level baseline.
+Includes both static (pre-auction) and dynamic (live-adjusted) modes.
 """
 
 import pandas as pd
@@ -14,35 +15,24 @@ from models.scoring import calc_adp_score
 from models.current_model import get_copy_discount_ratio
 
 
-# Default replacement-level ADP per position (end of "Depth" tier)
-# Configurable via UI sliders
-DEFAULT_REPLACEMENT_ADP = {
-    "QB": 240,
-    "RB": 200,
-    "WR": 200,
-    "TE": 300,
-}
+# Fixed replacement-level ADP for all positions (end of startup ADP range).
+REPLACEMENT_ADP = 240
 
 
 def calc_var_score(
     adp: Optional[float],
     position: str,
-    replacement_adps: dict = None,
 ) -> float:
     """
     Calculate Value Above Replacement (VAR) score for a player.
 
     VAR = max(0, playerADPScore - replacementADPScore)
     Players at or below replacement level get VAR = 0.
+    Uses a fixed replacement threshold of ADP 240 for all positions.
     """
-    if replacement_adps is None:
-        replacement_adps = DEFAULT_REPLACEMENT_ADP
-
     effective_adp = adp if adp else DEFAULT_ADP
     player_score = calc_adp_score(effective_adp, ADP_SCORE_DECAY_RATE)
-
-    replacement_adp = replacement_adps.get(position, 200)
-    replacement_score = calc_adp_score(replacement_adp, ADP_SCORE_DECAY_RATE)
+    replacement_score = calc_adp_score(REPLACEMENT_ADP, ADP_SCORE_DECAY_RATE)
 
     return max(0.0, player_score - replacement_score)
 
@@ -51,7 +41,6 @@ def calc_replacement_prices(
     board_df: pd.DataFrame,
     conference_budgets: dict,
     copy_discount_curve: dict,
-    replacement_adps: dict = None,
     is_pre_draft: bool = False,
 ) -> pd.DataFrame:
     """
@@ -65,9 +54,6 @@ def calc_replacement_prices(
 
     Returns DataFrame with: Player, var_score, copy1_16, copy2_16, copy1_20, copy2_20
     """
-    if replacement_adps is None:
-        replacement_adps = DEFAULT_REPLACEMENT_ADP
-
     if not conference_budgets:
         return pd.DataFrame()
 
@@ -83,7 +69,7 @@ def calc_replacement_prices(
             score = row.get("RecruitScore") or row.get("recruitScore") or 0
             var = max(0, score - 10)  # floor at 2-star threshold
         else:
-            var = calc_var_score(adp, position, replacement_adps)
+            var = calc_var_score(adp, position)
 
         players.append({"name": name, "position": position, "var": var})
 
@@ -128,5 +114,176 @@ def calc_replacement_prices(
                 entry["copy2_20"] = max(0, round(copy2))
 
         results.append(entry)
+
+    return pd.DataFrame(results)
+
+
+# ---------------------------------------------------------------------------
+# Live-adjusted dynamic pricing
+# ---------------------------------------------------------------------------
+
+
+def calc_conference_budget_remaining(
+    live_auction_df: pd.DataFrame,
+    conference: str,
+    auction_budgets: dict,
+    franchise_lookup_df: pd.DataFrame,
+) -> tuple:
+    """Calculate remaining budget for a conference from live auction state.
+
+    Parameters
+    ----------
+    live_auction_df : DataFrame with TransactionType, Conference, BidAmount, etc.
+    conference : Conference code (e.g. "SEC")
+    auction_budgets : mapping franchise_name -> starting budget
+    franchise_lookup_df : DataFrame with TeamName, Conference columns
+
+    Returns
+    -------
+    (conference_total, conference_remaining, per_franchise_remaining)
+    per_franchise_remaining is a dict: franchise_name -> remaining budget
+    """
+    # Total conference budget from all franchises
+    if not franchise_lookup_df.empty:
+        conf_teams = franchise_lookup_df[
+            franchise_lookup_df["Conference"] == conference
+        ]["TeamName"].tolist()
+    else:
+        conf_teams = []
+
+    conf_total = sum(auction_budgets.get(name, 0) for name in conf_teams)
+
+    # Filter live data to this conference
+    conf_df = live_auction_df[live_auction_df["Conference"] == conference]
+    won_df = conf_df[conf_df["TransactionType"] == "AUCTION_WON"]
+    conf_spent = won_df["BidAmount"].sum() if not won_df.empty else 0.0
+    conf_remaining = conf_total - conf_spent
+
+    # Per-franchise breakdown
+    per_franchise = {}
+    for name in conf_teams:
+        team_budget = auction_budgets.get(name, 0)
+        team_won = won_df[won_df["FranchiseName"] == name]
+        team_spent = team_won["BidAmount"].sum() if not team_won.empty else 0.0
+        per_franchise[name] = team_budget - team_spent
+
+    return conf_total, conf_remaining, per_franchise
+
+
+def calc_dynamic_replacement_prices(
+    board_df: pd.DataFrame,
+    live_auction_df: pd.DataFrame,
+    conference: str,
+    conference_budget_remaining: float,
+    copy_discount_curve: dict,
+) -> pd.DataFrame:
+    """Calculate live-adjusted replacement-level prices for a specific conference.
+
+    Adjusts the static model by:
+    - Removing already-won copies from the VAR pool
+    - Distributing only the remaining conference budget
+    - Marking players as on_board / taken based on live state
+
+    Parameters
+    ----------
+    board_df : Full recruiting board (all players).
+    live_auction_df : Live auction transactions (all types) already filtered
+                      to current year. Must have CopySession assigned.
+    conference : Conference code to calculate prices for.
+    conference_budget_remaining : Remaining budget for this conference.
+    copy_discount_curve : Empirical copy discount ratios.
+
+    Returns
+    -------
+    DataFrame with columns: Player, var_score, live_price, copies_remaining, status
+    """
+    if conference_budget_remaining <= 0:
+        return pd.DataFrame()
+
+    # Filter live data to this conference
+    conf_df = live_auction_df[live_auction_df["Conference"] == conference]
+    won_df = conf_df[conf_df["TransactionType"] == "AUCTION_WON"]
+
+    # Count copies won per player (by PlayerName since board uses name-based keys)
+    copies_won = {}
+    if not won_df.empty:
+        copies_won = won_df.groupby("PlayerName")["CopySession"].nunique().to_dict()
+
+    # Identify players currently on the board (open auction session: has INIT/BID
+    # but no WON yet in the current copy session for this conference)
+    on_board_players = set()
+    if not conf_df.empty:
+        for player_name, group in conf_df.groupby("PlayerName"):
+            # Check if there's an open session (last transaction isn't WON)
+            sorted_group = group.sort_values("Timestamp", ascending=True)
+            last_txn = sorted_group["TransactionType"].iloc[-1]
+            if last_txn in ("AUCTION_INIT", "AUCTION_BID"):
+                on_board_players.add(player_name)
+
+    # Compute VAR and remaining copies for each player
+    players = []
+    for _, row in board_df.iterrows():
+        name = row.get("Player") or row.get("name", "")
+        position = row.get("Position") or row.get("position", "")
+        adp = row.get("StartupADP") or row.get("startupADP")
+
+        var = calc_var_score(adp, position)
+        won_count = copies_won.get(name, 0)
+        remaining = max(0, COPIES_PER_CONFERENCE - won_count)
+
+        if remaining == 0:
+            status = "taken"
+        elif name in on_board_players:
+            status = "on_board"
+        else:
+            status = "available"
+
+        players.append({
+            "name": name,
+            "var": var,
+            "copies_remaining": remaining,
+            "status": status,
+        })
+
+    # Total remaining VAR (weighted by copies still available)
+    total_remaining_var = sum(p["var"] * p["copies_remaining"] for p in players)
+    if total_remaining_var <= 0:
+        return pd.DataFrame()
+
+    # Distribute remaining budget across remaining VAR
+    results = []
+    for p in players:
+        if p["var"] <= 0 or p["copies_remaining"] == 0:
+            results.append({
+                "Player": p["name"],
+                "var_score": round(p["var"], 2),
+                "live_price": 0,
+                "copies_remaining": p["copies_remaining"],
+                "status": p["status"],
+            })
+            continue
+
+        player_share = (
+            (p["var"] * p["copies_remaining"]) / total_remaining_var
+        ) * conference_budget_remaining
+
+        # If both copies remain, split using discount curve
+        if p["copies_remaining"] == COPIES_PER_CONFERENCE:
+            avg_price = player_share / COPIES_PER_CONFERENCE
+            ratio = get_copy_discount_ratio(
+                avg_price, copy_discount_curve, COPY_DISCOUNT_BINS
+            )
+            copy1_price = player_share / (1 + ratio)
+        else:
+            # Only one copy remains — full share goes to that copy
+            copy1_price = player_share
+
+        results.append({
+            "Player": p["name"],
+            "var_score": round(p["var"], 2),
+            "live_price": max(0, round(copy1_price)),
+            "copies_remaining": p["copies_remaining"],
+            "status": p["status"],
+        })
 
     return pd.DataFrame(results)

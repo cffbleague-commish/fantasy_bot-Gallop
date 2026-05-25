@@ -1,6 +1,7 @@
 """
 Pricing Predictor tab — surface pricing model predictions.
 Preparation mode: KPI row, model metrics, per-player comparison table, scatter plots.
+Live mode: conference-aware dynamic pricing using live auction state.
 Preserves all existing model code from models/ package.
 """
 
@@ -9,13 +10,24 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from data.sheets import load_recruiting_board, load_auction_data, load_dlf_adp, load_espn_prospects, get_available_years
+from data.sheets import (
+    load_recruiting_board, load_auction_data, load_dlf_adp,
+    load_espn_prospects, get_available_years, load_live_auction,
+    load_franchise_lookup,
+)
+from data.mfl_api import fetch_auction_budgets
 from models.current_model import build_pricing_model
 from models.gradient_boosting import train_gradient_boosting, predict_gb
-from models.replacement_level import calc_replacement_prices, DEFAULT_REPLACEMENT_ADP
-from models.config import POSITIONS, get_league_year
+from models.replacement_level import (
+    calc_replacement_prices, calc_dynamic_replacement_prices,
+    calc_conference_budget_remaining,
+)
+from models.config import POSITIONS, CONFERENCES, get_league_year
 from components import render_kpi_row, plotly_layout_defaults, _html, college_logo_url, position_badge_url
 from descriptions import DESCRIPTIONS
+
+# Import copy session assignment from live auction tab
+from tabs.live_auction import _assign_copy_sessions, _resolve_winning_prices
 
 
 def render():
@@ -55,22 +67,100 @@ def render():
     if position_filter != "All":
         board_df = board_df[board_df["Position"] == position_filter]
 
-    # --- Replacement-level ADP sliders ---
-    st.markdown("#### Replacement-Level Thresholds")
-    st.caption("Adjust the ADP where a player becomes 'freely available' at each position.")
-
-    slider_cols = st.columns(4)
-    replacement_adps = {}
-    for i, pos in enumerate(POSITIONS):
-        default = DEFAULT_REPLACEMENT_ADP[pos]
-        replacement_adps[pos] = slider_cols[i].slider(
-            f"{pos}", min_value=50, max_value=400, value=default,
-            step=10, key=f"repl_{pos}",
-        )
-
     # --- Build/train models ---
     pricing_model = build_pricing_model(auction_df, adp_df, espn_df)
     gb_model, gb_metrics = train_gradient_boosting(auction_df, adp_df, espn_df)
+
+    # --- Replacement-Level Mode Toggle ---
+    st.markdown("#### Replacement-Level Pricing Mode")
+    repl_mode = st.radio(
+        "Mode", ["Static", "Live"],
+        horizontal=True, key="repl_mode",
+        help="Static: pre-auction baseline. Live: adjusts based on auction activity.",
+    )
+
+    # Live mode controls
+    live_prices = {}
+    live_statuses = {}
+    franchise_remaining_budget = None
+
+    if repl_mode == "Live":
+        conf_list = sorted(CONFERENCES.keys())
+        col_conf, col_fran = st.columns(2)
+        selected_conf = col_conf.selectbox(
+            "Conference", conf_list, key="pricing_conf",
+        )
+
+        # Load franchise data for this conference
+        fl_df = load_franchise_lookup()
+        if not fl_df.empty:
+            conf_franchises = fl_df[fl_df["Conference"] == selected_conf]["TeamName"].tolist()
+        else:
+            conf_franchises = []
+
+        selected_franchise = col_fran.selectbox(
+            "Your Team", conf_franchises if conf_franchises else ["(none)"],
+            key="pricing_franchise",
+        )
+
+        # Load live auction data and budgets
+        live_df = load_live_auction()
+        raw_budgets = fetch_auction_budgets(league_year)
+
+        # Re-key budgets from FranchiseID → FranchiseName (same pattern as live_auction tab)
+        fid_to_name = {}
+        if not fl_df.empty:
+            for _, fr_row in fl_df.iterrows():
+                raw_id = str(fr_row["FranchiseID"])
+                try:
+                    normalized = str(int(float(raw_id)))
+                except (ValueError, TypeError):
+                    normalized = raw_id.lstrip("0") or "0"
+                fid_to_name[normalized] = fr_row["TeamName"]
+        auction_budgets = {
+            fid_to_name.get(fid, fid): budget
+            for fid, budget in raw_budgets.items()
+            if fid in fid_to_name
+        }
+
+        if not live_df.empty:
+            # Filter to current year rookies
+            live_df = live_df[live_df["AuctionYear"] == league_year]
+            live_df = live_df[live_df["IsRookie"]]
+
+            # Assign copy sessions if not precomputed
+            if "CopySession" not in live_df.columns or (live_df["CopySession"] == 0).all():
+                live_df = _assign_copy_sessions(live_df)
+
+            # Resolve winning prices (MFL stores $0 in WON records)
+            live_df = _resolve_winning_prices(live_df)
+
+            # Calculate remaining budget
+            conf_total, conf_remaining, per_franchise = calc_conference_budget_remaining(
+                live_df, selected_conf, auction_budgets, fl_df,
+            )
+            franchise_remaining_budget = per_franchise.get(selected_franchise, 0)
+
+            # Show live budget KPIs
+            pct_avail = f"{conf_remaining / conf_total * 100:.0f}%" if conf_total > 0 else "\u2014"
+            render_kpi_row([
+                {"label": "Conf Budget", "value": f"${conf_total:,.0f}" if conf_total > 0 else "\u2014"},
+                {"label": "Conf Remaining", "value": f"${conf_remaining:,.0f}", "sub": pct_avail},
+                {"label": "Your Budget Left", "value": f"${franchise_remaining_budget:,.0f}" if franchise_remaining_budget else "\u2014"},
+            ])
+
+            # Calculate dynamic prices
+            copy_curve = pricing_model.get("copy_discount_curve", {}) if pricing_model else {}
+            dynamic_df = calc_dynamic_replacement_prices(
+                full_board_df, live_df, selected_conf,
+                conf_remaining, copy_curve,
+            )
+            if not dynamic_df.empty:
+                for _, r in dynamic_df.iterrows():
+                    live_prices[r["Player"]] = r["live_price"]
+                    live_statuses[r["Player"]] = r["status"]
+        else:
+            st.caption("No live auction data available for this year.")
 
     # --- KPI Row: Model Performance ---
     avg_r2 = 0.0
@@ -111,13 +201,12 @@ def render():
                 row.get("OverallPick"), copy_number=1,
             )
 
-    # Replacement-level predictions (use full board)
+    # Replacement-level predictions (static — use full board)
     repl_df = pd.DataFrame()
     if pricing_model:
         repl_df = calc_replacement_prices(
             full_board_df, pricing_model["conference_budgets"],
             pricing_model.get("copy_discount_curve", {}),
-            replacement_adps,
         )
     replacement_prices = {}
     if not repl_df.empty:
@@ -144,19 +233,42 @@ def render():
                 "Stars": f"{'★' * int(player['Rating'])}{'☆' * (5 - int(player['Rating']))}" if pd.notna(player.get("Rating")) else "",
                 "Current": f"${current_prices[name]:.0f}" if name in current_prices else "",
                 "Multi-Feature": f"${gb_prices[name]:.0f}" if name in gb_prices else "",
-                "Replacement": f"${replacement_prices[name]:.0f}" if name in replacement_prices else "",
             })
+
+            # Replacement column: Live or Static
+            if repl_mode == "Live" and live_prices:
+                price = live_prices.get(name, 0)
+                status = live_statuses.get(name, "available")
+                if status == "taken":
+                    row_data["Replacement"] = "TAKEN"
+                elif price > 0:
+                    row_data["Replacement"] = f"${price:.0f}"
+                else:
+                    row_data["Replacement"] = "$0"
+                row_data["_status"] = status
+            else:
+                row_data["Replacement"] = f"${replacement_prices[name]:.0f}" if name in replacement_prices else ""
+                row_data["_status"] = "available"
+
             rows.append(row_data)
 
         comparison_df = pd.DataFrame(rows)
-        col_config = {}
-        if "Photo" in comparison_df.columns:
-            col_config["Photo"] = st.column_config.ImageColumn("", width="small")
-        if "Pos" in comparison_df.columns:
-            col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
-        if "School" in comparison_df.columns:
-            col_config["School"] = st.column_config.ImageColumn("", width="small")
-        st.dataframe(comparison_df, column_config=col_config, hide_index=True, use_container_width=True, height=600)
+
+        # Apply visual styling for Live mode
+        if repl_mode == "Live" and live_prices and not comparison_df.empty:
+            # Build styled HTML table for Live mode (supports per-cell coloring)
+            _render_live_comparison_table(comparison_df, franchise_remaining_budget)
+        else:
+            # Standard st.dataframe for Static mode
+            display_df = comparison_df.drop(columns=["_status"], errors="ignore")
+            col_config = {}
+            if "Photo" in display_df.columns:
+                col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+            if "Pos" in display_df.columns:
+                col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
+            if "School" in display_df.columns:
+                col_config["School"] = st.column_config.ImageColumn("", width="small")
+            st.dataframe(display_df, column_config=col_config, hide_index=True, use_container_width=True, height=600)
 
     with col_right:
         # Model Performance Cards
@@ -259,3 +371,86 @@ def render():
             )
             fig.update_layout(**layout)
             st.plotly_chart(fig, use_container_width=True)
+
+
+def _render_live_comparison_table(
+    comparison_df: pd.DataFrame,
+    franchise_remaining_budget: float = None,
+):
+    """Render the comparison table with color-coded Replacement column for Live mode.
+
+    Colors:
+    - Yellow (#C9A227): player currently on the board (active auction)
+    - Grey (#6A6A6A): both copies taken
+    - Red border: price exceeds your team's remaining budget
+    - Default white: available
+    """
+    STATUS_COLORS = {
+        "on_board": "#C9A227",
+        "taken": "#6A6A6A",
+        "available": "#f0f0ed",
+    }
+
+    # Build HTML table
+    html_parts = []
+    html_parts.append(
+        '<div style="overflow-x:auto;max-height:600px;overflow-y:auto;">'
+        '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">'
+    )
+
+    # Header
+    display_cols = [c for c in comparison_df.columns if not c.startswith("_")]
+    html_parts.append('<thead><tr style="border-bottom:1px solid #333;">')
+    for col in display_cols:
+        html_parts.append(
+            f'<th style="padding:6px 8px;text-align:left;color:#9A9A9A;'
+            f'font-weight:600;font-size:0.75rem;text-transform:uppercase;">{col}</th>'
+        )
+    html_parts.append('</tr></thead><tbody>')
+
+    # Rows
+    for _, row in comparison_df.iterrows():
+        status = row.get("_status", "available")
+        html_parts.append('<tr style="border-bottom:1px solid #222;">')
+
+        for col in display_cols:
+            val = row.get(col, "")
+            style = "padding:6px 8px;color:#f0f0ed;"
+
+            if col == "Photo":
+                if val and str(val).startswith("http"):
+                    cell = f'<img src="{val}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">'
+                else:
+                    cell = ""
+            elif col in ("Pos", "School"):
+                if val and str(val).startswith("http"):
+                    cell = f'<img src="{val}" style="height:20px;">'
+                else:
+                    cell = str(val) if val else ""
+            elif col == "Replacement":
+                color = STATUS_COLORS.get(status, "#f0f0ed")
+                style += f"color:{color};font-weight:600;"
+
+                # Budget warning: red if price exceeds franchise budget
+                if (
+                    franchise_remaining_budget is not None
+                    and status == "available"
+                    and val and val.startswith("$")
+                ):
+                    try:
+                        price_val = float(val.replace("$", "").replace(",", ""))
+                        if price_val > franchise_remaining_budget:
+                            style += "border:1px solid #e74c3c;border-radius:4px;padding:4px 6px;"
+                    except ValueError:
+                        pass
+
+                cell = str(val)
+            else:
+                cell = str(val) if val is not None else ""
+
+            html_parts.append(f'<td style="{style}">{cell}</td>')
+
+        html_parts.append('</tr>')
+
+    html_parts.append('</tbody></table></div>')
+    _html("".join(html_parts))
