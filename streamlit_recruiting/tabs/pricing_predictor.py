@@ -418,12 +418,12 @@ def _render_live_comparison_table(
             style = "padding:6px 8px;color:#f0f0ed;"
 
             if col == "Photo":
-                if val and str(val).startswith("http"):
+                if val and (str(val).startswith("http") or str(val).startswith("data:")):
                     cell = f'<img src="{val}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">'
                 else:
                     cell = ""
             elif col in ("Pos", "School"):
-                if val and str(val).startswith("http"):
+                if val and (str(val).startswith("http") or str(val).startswith("data:")):
                     cell = f'<img src="{val}" style="height:20px;">'
                 else:
                     cell = str(val) if val else ""
