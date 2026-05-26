@@ -291,12 +291,13 @@ def calc_dynamic_replacement_prices(
                 "live_price": 0,
                 "copies_remaining": p["copies_remaining"],
                 "status": p["status"],
+                "pool_pct": 0.0,
+                "total_share": 0.0,
             })
             continue
 
-        player_share = (
-            (p["var"] * p["copies_remaining"]) / total_remaining_var
-        ) * conference_budget_remaining
+        pool_pct = (p["var"] * p["copies_remaining"]) / total_remaining_var
+        player_share = pool_pct * conference_budget_remaining
 
         # If both copies remain, split using discount curve
         if p["copies_remaining"] == COPIES_PER_CONFERENCE:
@@ -315,6 +316,8 @@ def calc_dynamic_replacement_prices(
             "live_price": max(0, round(copy1_price)),
             "copies_remaining": p["copies_remaining"],
             "status": p["status"],
+            "pool_pct": round(pool_pct * 100, 1),
+            "total_share": round(player_share),
         })
 
     return pd.DataFrame(results)

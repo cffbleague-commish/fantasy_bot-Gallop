@@ -82,6 +82,7 @@ def render():
     # Live mode controls
     live_prices = {}
     live_statuses = {}
+    live_breakdowns = {}  # player -> breakdown dict for tooltip
     franchise_remaining_budget = None
 
     if repl_mode == "Live":
@@ -162,6 +163,12 @@ def render():
                 for _, r in dynamic_df.iterrows():
                     live_prices[r["Player"]] = r["live_price"]
                     live_statuses[r["Player"]] = r["status"]
+                    live_breakdowns[r["Player"]] = {
+                        "var": r["var_score"],
+                        "pool_pct": r.get("pool_pct", 0),
+                        "total_share": r.get("total_share", 0),
+                        "copies": r["copies_remaining"],
+                    }
 
             # Identify rookie players the selected franchise is currently
             # the high bidder on (for highlighting in the table)
@@ -262,10 +269,21 @@ def render():
             if repl_mode == "Live" and live_prices:
                 price = live_prices.get(name, 0)
                 status = live_statuses.get(name, "available")
+                bd = live_breakdowns.get(name, {})
                 if status == "taken":
                     row_data["Replacement"] = "TAKEN"
                 elif price > 0:
-                    row_data["Replacement"] = f"${price:.0f}"
+                    # Format with breakdown details that show on hover
+                    # (Streamlit shows full cell content as tooltip when truncated)
+                    tooltip = (
+                        f"${price:.0f}"
+                        f"   \u2502 VAR: {bd.get('var', 0)}"
+                        f" \u2022 Pool: {bd.get('pool_pct', 0)}%"
+                        f" \u2022 Share: ${bd.get('total_share', 0):.0f}"
+                        f" \u2022 Copies left: {bd.get('copies', 0)}"
+                        f" \u2022 Budget: ${conf_remaining:,.0f}"
+                    )
+                    row_data["Replacement"] = tooltip
                 else:
                     row_data["Replacement"] = "$0"
                 row_data["_status"] = status
@@ -312,12 +330,13 @@ def render():
                     elif status == "taken":
                         styles[repl_idx] = "color: #6A6A6A; font-weight: 600"
                     else:
-                        # Check budget warning
-                        val = row.get("Replacement", "")
-                        if franchise_remaining_budget is not None and val and str(val).startswith("$"):
+                        # Check budget warning — price is the first token before the pipe
+                        val = str(row.get("Replacement", ""))
+                        price_str = val.split("\u2502")[0].strip() if "\u2502" in val else val
+                        if franchise_remaining_budget is not None and price_str.startswith("$"):
                             try:
-                                price = float(str(val).replace("$", "").replace(",", ""))
-                                if price > franchise_remaining_budget:
+                                price_num = float(price_str.replace("$", "").replace(",", ""))
+                                if price_num > franchise_remaining_budget:
                                     styles[repl_idx] = "color: #e74c3c; font-weight: 600"
                             except ValueError:
                                 pass
