@@ -150,14 +150,26 @@ def render():
                 {"label": "Conf Budget", "value": f"${conf_total:,.0f}" if conf_total > 0 else "\u2014"},
                 {"label": "Conf Remaining", "value": f"${conf_remaining:,.0f}", "sub": pct_avail},
                 {"label": "Your Budget Left", "value": f"${franchise_remaining_budget:,.0f}" if franchise_remaining_budget else "\u2014"},
+                {"label": "Price Ceiling", "value": f"${sorted(per_franchise.values(), reverse=True)[1]:,.0f}" if len(per_franchise) >= 2 else "\u2014", "sub": "2nd-highest budget"},
             ])
+
+            # Market cap: 2nd-highest remaining franchise budget — you need
+            # two bidders to drive a price up, so the runner-up's budget is
+            # the realistic ceiling for any single auction.
+            sorted_budgets = sorted(per_franchise.values(), reverse=True)
+            if len(sorted_budgets) >= 2:
+                market_cap = sorted_budgets[1]
+            elif sorted_budgets:
+                market_cap = sorted_budgets[0]
+            else:
+                market_cap = None
 
             # Calculate dynamic prices using rookie data for VAR pool,
             # but conference_remaining already reflects all spending
             copy_curve = pricing_model.get("copy_discount_curve", {}) if pricing_model else {}
             dynamic_df = calc_dynamic_replacement_prices(
                 full_board_df, rookie_df, selected_conf,
-                conf_remaining, copy_curve,
+                conf_remaining, copy_curve, market_cap=market_cap,
             )
             if not dynamic_df.empty:
                 for _, r in dynamic_df.iterrows():
@@ -259,7 +271,7 @@ def render():
                 "Player": name,
                 "Pos": position_badge_url(player["Position"]),
                 "School": college_logo_url(player.get("College", "")),
-                "ADP": player.get("StartupADP"),
+                "ADP": round(player.get("StartupADP"), 2) if pd.notna(player.get("StartupADP")) else "",
                 "Stars": f"{'★' * int(player['Rating'])}{'☆' * (5 - int(player['Rating']))}" if pd.notna(player.get("Rating")) else "",
                 "Current": f"${current_prices[name]:.0f}" if name in current_prices else "",
                 "Multi-Feature": f"${gb_prices[name]:.0f}" if name in gb_prices else "",
@@ -277,7 +289,7 @@ def render():
                 else:
                     row_data["Replacement"] = "$0"
                 # Breakdown columns (Live mode only)
-                row_data["VAR"] = bd.get("var", 0)
+                row_data["VAR"] = round(bd.get("var", 0), 2)
                 row_data["Pool%"] = f"{bd.get('pool_pct', 0)}%"
                 row_data["Share"] = f"${bd.get('total_share', 0):.0f}" if bd.get("total_share") else ""
                 row_data["Copies"] = bd.get("copies", "")

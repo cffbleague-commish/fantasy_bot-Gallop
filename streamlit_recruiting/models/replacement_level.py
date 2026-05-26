@@ -207,6 +207,7 @@ def calc_dynamic_replacement_prices(
     conference: str,
     conference_budget_remaining: float,
     copy_discount_curve: dict,
+    market_cap: Optional[float] = None,
 ) -> pd.DataFrame:
     """Calculate live-adjusted replacement-level prices for a specific conference.
 
@@ -214,6 +215,7 @@ def calc_dynamic_replacement_prices(
     - Removing already-won copies from the VAR pool
     - Distributing only the remaining conference budget
     - Marking players as on_board / taken based on live state
+    - Capping prices at market_cap and redistributing excess
 
     Parameters
     ----------
@@ -223,6 +225,10 @@ def calc_dynamic_replacement_prices(
     conference : Conference code to calculate prices for.
     conference_budget_remaining : Remaining budget for this conference.
     copy_discount_curve : Empirical copy discount ratios.
+    market_cap : Maximum realistic price any single copy can reach, based on
+                 the 2nd-highest remaining franchise budget (you need two
+                 bidders to drive the price up). Excess is redistributed
+                 to other players. None = no cap.
 
     Returns
     -------
@@ -319,5 +325,37 @@ def calc_dynamic_replacement_prices(
             "pool_pct": round(pool_pct * 100, 1),
             "total_share": round(player_share),
         })
+
+    # --- Market cap: iterative redistribution ---
+    # If no two teams can afford a player's price, cap it and push the
+    # excess money down to other players.  Repeat until stable.
+    if market_cap is not None and market_cap > 0:
+        for _ in range(20):  # converges quickly; hard-stop to be safe
+            excess = 0.0
+            uncapped_var_weight = 0.0
+            for r in results:
+                if r["live_price"] > market_cap:
+                    excess += r["live_price"] - market_cap
+                    r["live_price"] = market_cap
+                    r["_capped"] = True
+                elif r["live_price"] > 0 and not r.get("_capped"):
+                    uncapped_var_weight += r["var_score"] * r["copies_remaining"]
+
+            if excess <= 0 or uncapped_var_weight <= 0:
+                break
+
+            # Redistribute excess proportionally to uncapped players
+            for r in results:
+                if r["live_price"] > 0 and not r.get("_capped") and uncapped_var_weight > 0:
+                    share = (r["var_score"] * r["copies_remaining"]) / uncapped_var_weight
+                    r["live_price"] = max(0, round(r["live_price"] + excess * share))
+
+        # Recalculate pool_pct and total_share to reflect final prices
+        total_price = sum(r["live_price"] for r in results)
+        for r in results:
+            if total_price > 0 and r["live_price"] > 0:
+                r["pool_pct"] = round(r["live_price"] / total_price * 100, 1)
+                r["total_share"] = r["live_price"]
+            r.pop("_capped", None)
 
     return pd.DataFrame(results)

@@ -157,7 +157,30 @@ divided proportionally by VAR across all players.
 copy discount curve.
 
 **No training required** — this is a purely arithmetic model. The budget \
-amounts come from historical conference spending averages.\
+amounts come from historical conference spending averages.
+
+---
+
+**Live Mode Columns** (visible when Live is selected):
+
+- **VAR** — Value Above Replacement score. Higher = more valuable relative \
+to the ADP 240 replacement baseline.
+- **Pool%** — The player's share of the remaining conference budget pool, \
+weighted by VAR × copies still available.
+- **Share** — Total dollar allocation for this player before the copy split \
+(Pool% × remaining budget).
+- **Copies** — How many copies remain unsold in the selected conference (max 2). \
+Fewer remaining copies means more budget concentrates on each.
+- **Replacement** — The projected next-copy price. If both copies remain, \
+this is the Copy 1 price after applying the discount curve. If only one \
+copy remains, the full share goes to that copy.
+
+**Price Ceiling (Market Cap):** Prices are capped at the 2nd-highest \
+remaining franchise budget in the conference. An auction needs at least \
+two bidders to drive the price up, so no player can realistically exceed \
+what the runner-up can afford. Any excess is redistributed proportionally \
+to other players, which may push additional players to the cap — the \
+model iterates until all prices stabilize.\
 """,
 
     "copy_scarcity_detail": """\
