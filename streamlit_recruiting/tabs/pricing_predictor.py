@@ -146,30 +146,25 @@ def render():
 
             # Show live budget KPIs
             pct_avail = f"{conf_remaining / conf_total * 100:.0f}%" if conf_total > 0 else "\u2014"
+            # Default ceiling (before per-player adjustments) = 2nd-highest budget
+            _sorted_b = sorted(per_franchise.values(), reverse=True)
+            default_ceiling = _sorted_b[1] if len(_sorted_b) >= 2 else (_sorted_b[0] if _sorted_b else 0)
             render_kpi_row([
                 {"label": "Conf Budget", "value": f"${conf_total:,.0f}" if conf_total > 0 else "\u2014"},
                 {"label": "Conf Remaining", "value": f"${conf_remaining:,.0f}", "sub": pct_avail},
                 {"label": "Your Budget Left", "value": f"${franchise_remaining_budget:,.0f}" if franchise_remaining_budget else "\u2014"},
-                {"label": "Price Ceiling", "value": f"${sorted(per_franchise.values(), reverse=True)[1]:,.0f}" if len(per_franchise) >= 2 else "\u2014", "sub": "2nd-highest budget"},
+                {"label": "Base Ceiling", "value": f"${default_ceiling:,.0f}" if default_ceiling else "\u2014", "sub": "per-player caps vary"},
             ])
 
-            # Market cap: 2nd-highest remaining franchise budget — you need
-            # two bidders to drive a price up, so the runner-up's budget is
-            # the realistic ceiling for any single auction.
-            sorted_budgets = sorted(per_franchise.values(), reverse=True)
-            if len(sorted_budgets) >= 2:
-                market_cap = sorted_budgets[1]
-            elif sorted_budgets:
-                market_cap = sorted_budgets[0]
-            else:
-                market_cap = None
-
             # Calculate dynamic prices using rookie data for VAR pool,
-            # but conference_remaining already reflects all spending
+            # but conference_remaining already reflects all spending.
+            # Pass per_franchise so each player gets an individual market cap
+            # that excludes the budgets of teams already owning a copy.
             copy_curve = pricing_model.get("copy_discount_curve", {}) if pricing_model else {}
             dynamic_df = calc_dynamic_replacement_prices(
                 full_board_df, rookie_df, selected_conf,
-                conf_remaining, copy_curve, market_cap=market_cap,
+                conf_remaining, copy_curve,
+                per_franchise_remaining=per_franchise,
             )
             if not dynamic_df.empty:
                 for _, r in dynamic_df.iterrows():
@@ -180,16 +175,22 @@ def render():
                         "pool_pct": r.get("pool_pct", 0),
                         "total_share": r.get("total_share", 0),
                         "copies": r["copies_remaining"],
+                        "cap": r.get("market_cap", 0),
                     }
 
             # Identify rookie players the selected franchise is currently
-            # the high bidder on (for highlighting in the table)
+            # the high bidder on, or already owns a copy of
             conf_rookie_df = rookie_df[rookie_df["Conference"] == selected_conf]
             won_keys = set()
+            my_owned_players = set()
             conf_won = conf_rookie_df[conf_rookie_df["TransactionType"] == "AUCTION_WON"]
             if not conf_won.empty:
                 for _, w in conf_won.iterrows():
                     won_keys.add((w["PlayerID"], w.get("CopySession", 0)))
+                    # Track players the selected franchise already owns
+                    if w["FranchiseName"] == selected_franchise:
+                        my_owned_players.add(w["PlayerName"])
+
             bids_df = conf_rookie_df[conf_rookie_df["TransactionType"] == "AUCTION_BID"]
             if not bids_df.empty:
                 for (pid, cs), group in bids_df.groupby(["PlayerID", "CopySession"]):
@@ -201,6 +202,11 @@ def render():
                         pname = top_row["PlayerName"]
                         if pname in live_statuses:
                             live_statuses[pname] = "my_bid"
+
+            # Mark players already owned by the selected franchise
+            for pname in my_owned_players:
+                if pname in live_statuses and live_statuses[pname] not in ("my_bid",):
+                    live_statuses[pname] = "owned"
         else:
             st.caption("No live auction data available for this year.")
 
@@ -284,6 +290,8 @@ def render():
                 bd = live_breakdowns.get(name, {})
                 if status == "taken":
                     row_data["Replacement"] = "TAKEN"
+                elif status == "owned":
+                    row_data["Replacement"] = "OWNED"
                 elif price > 0:
                     row_data["Replacement"] = f"${price:.0f}"
                 else:
@@ -293,6 +301,7 @@ def render():
                 row_data["Pool%"] = f"{bd.get('pool_pct', 0)}%"
                 row_data["Share"] = f"${bd.get('total_share', 0):.0f}" if bd.get("total_share") else ""
                 row_data["Copies"] = bd.get("copies", "")
+                row_data["Cap"] = f"${bd.get('cap', 0):.0f}" if bd.get("cap") else ""
                 row_data["_status"] = status
             else:
                 row_data["Replacement"] = f"${replacement_prices[name]:.0f}" if name in replacement_prices else ""
@@ -320,9 +329,10 @@ def render():
                 """Apply color to the Replacement cell based on auction status.
 
                 Colors:
-                - Yellow (#C9A227): player on the board (active auction)
                 - Green (#2D7A4E): you are the current high bidder
-                - Grey (#6A6A6A): both copies taken
+                - Yellow (#C9A227): player on the board (active auction)
+                - Blue (#5B9BD5): you already own a copy (can't acquire again)
+                - Grey (#6A6A6A): both copies taken in this conference
                 - Red (#e74c3c): price exceeds your remaining budget
                 """
                 styles = [""] * len(row)
@@ -332,6 +342,8 @@ def render():
                 if repl_idx is not None:
                     if status == "my_bid":
                         styles[repl_idx] = "color: #2D7A4E; font-weight: 600"
+                    elif status == "owned":
+                        styles[repl_idx] = "color: #5B9BD5; font-weight: 600"
                     elif status == "on_board":
                         styles[repl_idx] = "color: #C9A227; font-weight: 600"
                     elif status == "taken":

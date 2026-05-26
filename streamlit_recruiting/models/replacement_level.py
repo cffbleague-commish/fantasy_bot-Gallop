@@ -207,7 +207,7 @@ def calc_dynamic_replacement_prices(
     conference: str,
     conference_budget_remaining: float,
     copy_discount_curve: dict,
-    market_cap: Optional[float] = None,
+    per_franchise_remaining: Optional[dict] = None,
 ) -> pd.DataFrame:
     """Calculate live-adjusted replacement-level prices for a specific conference.
 
@@ -215,7 +215,8 @@ def calc_dynamic_replacement_prices(
     - Removing already-won copies from the VAR pool
     - Distributing only the remaining conference budget
     - Marking players as on_board / taken based on live state
-    - Capping prices at market_cap and redistributing excess
+    - Per-player market cap: excludes budgets of teams that already own a
+      copy (they can't bid again), so the ceiling reflects only eligible buyers.
 
     Parameters
     ----------
@@ -225,14 +226,14 @@ def calc_dynamic_replacement_prices(
     conference : Conference code to calculate prices for.
     conference_budget_remaining : Remaining budget for this conference.
     copy_discount_curve : Empirical copy discount ratios.
-    market_cap : Maximum realistic price any single copy can reach, based on
-                 the 2nd-highest remaining franchise budget (you need two
-                 bidders to drive the price up). Excess is redistributed
-                 to other players. None = no cap.
+    per_franchise_remaining : Dict of franchise_name -> remaining budget.
+                             Used to compute per-player market caps.
+                             None = no cap applied.
 
     Returns
     -------
-    DataFrame with columns: Player, var_score, live_price, copies_remaining, status
+    DataFrame with columns: Player, var_score, live_price, copies_remaining,
+                            status, pool_pct, total_share, market_cap
     """
     if conference_budget_remaining <= 0:
         return pd.DataFrame()
@@ -245,6 +246,12 @@ def calc_dynamic_replacement_prices(
     copies_won = {}
     if not won_df.empty:
         copies_won = won_df.groupby("PlayerName")["CopySession"].nunique().to_dict()
+
+    # Track which franchises own each player (for per-player market caps)
+    player_owners: dict = {}  # player_name -> set of franchise names
+    if not won_df.empty:
+        for player_name, group in won_df.groupby("PlayerName"):
+            player_owners[player_name] = set(group["FranchiseName"].unique())
 
     # Identify players currently on the board (open auction session: has INIT/BID
     # but no WON yet in the current copy session for this conference)
@@ -287,6 +294,32 @@ def calc_dynamic_replacement_prices(
     if total_remaining_var <= 0:
         return pd.DataFrame()
 
+    # Compute per-player market caps (exclude owners' budgets)
+    player_caps: dict = {}  # player_name -> cap value
+    if per_franchise_remaining:
+        all_budgets = sorted(per_franchise_remaining.values(), reverse=True)
+        # Default cap (no ownership info) = 2nd-highest budget
+        default_cap = all_budgets[1] if len(all_budgets) >= 2 else (
+            all_budgets[0] if all_budgets else None
+        )
+        for p in players:
+            owners = player_owners.get(p["name"], set())
+            if owners:
+                # Exclude owners — they can't bid on this player again
+                eligible_budgets = sorted(
+                    [b for fn, b in per_franchise_remaining.items() if fn not in owners],
+                    reverse=True,
+                )
+                # Need 2 eligible bidders to drive price up
+                if len(eligible_budgets) >= 2:
+                    player_caps[p["name"]] = eligible_budgets[1]
+                elif eligible_budgets:
+                    player_caps[p["name"]] = eligible_budgets[0]
+                else:
+                    player_caps[p["name"]] = 0
+            else:
+                player_caps[p["name"]] = default_cap
+
     # Distribute remaining budget across remaining VAR
     results = []
     for p in players:
@@ -299,6 +332,7 @@ def calc_dynamic_replacement_prices(
                 "status": p["status"],
                 "pool_pct": 0.0,
                 "total_share": 0.0,
+                "market_cap": player_caps.get(p["name"], 0),
             })
             continue
 
@@ -324,19 +358,21 @@ def calc_dynamic_replacement_prices(
             "status": p["status"],
             "pool_pct": round(pool_pct * 100, 1),
             "total_share": round(player_share),
+            "market_cap": player_caps.get(p["name"], 0),
         })
 
-    # --- Market cap: iterative redistribution ---
-    # If no two teams can afford a player's price, cap it and push the
-    # excess money down to other players.  Repeat until stable.
-    if market_cap is not None and market_cap > 0:
+    # --- Per-player market cap: iterative redistribution ---
+    # Each player has their own ceiling based on which teams can still bid.
+    # Cap prices and push excess down to other players until stable.
+    if per_franchise_remaining and player_caps:
         for _ in range(20):  # converges quickly; hard-stop to be safe
             excess = 0.0
             uncapped_var_weight = 0.0
             for r in results:
-                if r["live_price"] > market_cap:
-                    excess += r["live_price"] - market_cap
-                    r["live_price"] = market_cap
+                cap = player_caps.get(r["Player"])
+                if cap is not None and r["live_price"] > cap:
+                    excess += r["live_price"] - cap
+                    r["live_price"] = cap
                     r["_capped"] = True
                 elif r["live_price"] > 0 and not r.get("_capped"):
                     uncapped_var_weight += r["var_score"] * r["copies_remaining"]

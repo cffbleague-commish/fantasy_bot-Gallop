@@ -175,12 +175,25 @@ Fewer remaining copies means more budget concentrates on each.
 this is the Copy 1 price after applying the discount curve. If only one \
 copy remains, the full share goes to that copy.
 
-**Price Ceiling (Market Cap):** Prices are capped at the 2nd-highest \
-remaining franchise budget in the conference. An auction needs at least \
-two bidders to drive the price up, so no player can realistically exceed \
-what the runner-up can afford. Any excess is redistributed proportionally \
-to other players, which may push additional players to the cap — the \
-model iterates until all prices stabilize.\
+**Price Ceiling (Per-Player Market Cap):** Each player has an individual \
+price ceiling based on who can still bid on them. Teams that already own \
+a copy cannot bid again, so their budgets are excluded from that player's \
+cap. The ceiling = 2nd-highest remaining budget among *eligible* teams \
+(you need two bidders to drive price up). Excess redistributes to other \
+players iteratively until stable.
+
+- **Cap** column shows each player's individual ceiling.
+
+**Ownership:** Players you already own are marked "OWNED" in blue — you \
+cannot acquire another copy, and your budget is excluded from their cap \
+calculation (your dollars will go to other players instead).
+
+**Color Legend:**
+- **Green** — You are the current high bidder
+- **Yellow** — Player has an active/open auction
+- **Blue** — You already own a copy (ineligible)
+- **Grey** — Both copies sold in this conference
+- **Red** — Price exceeds your remaining budget\
 """,
 
     "copy_scarcity_detail": """\
