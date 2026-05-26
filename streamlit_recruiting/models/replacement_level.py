@@ -131,9 +131,14 @@ def calc_conference_budget_remaining(
 ) -> tuple:
     """Calculate remaining budget for a conference from live auction state.
 
+    Accounts for both completed spending (WON) and money currently allocated
+    as the high bidder on active auctions. Uses all transactions (rookies +
+    upperclassmen) since the budget is a single shared pool.
+
     Parameters
     ----------
-    live_auction_df : DataFrame with TransactionType, Conference, BidAmount, etc.
+    live_auction_df : DataFrame with TransactionType, Conference, BidAmount,
+                      FranchiseName, PlayerID, CopySession, etc.
     conference : Conference code (e.g. "SEC")
     auction_budgets : mapping franchise_name -> starting budget
     franchise_lookup_df : DataFrame with TeamName, Conference columns
@@ -155,9 +160,34 @@ def calc_conference_budget_remaining(
 
     # Filter live data to this conference
     conf_df = live_auction_df[live_auction_df["Conference"] == conference]
+
+    # Spent = sum of all AUCTION_WON amounts
     won_df = conf_df[conf_df["TransactionType"] == "AUCTION_WON"]
     conf_spent = won_df["BidAmount"].sum() if not won_df.empty else 0.0
-    conf_remaining = conf_total - conf_spent
+
+    # Allocated = current high bids on open auctions (not yet won)
+    # An open auction = player+copy session with INIT/BID but no WON
+    allocated_by_team: dict = {}
+    if not conf_df.empty:
+        won_keys = set()
+        if not won_df.empty:
+            for _, w in won_df.iterrows():
+                won_keys.add((w["PlayerID"], w.get("CopySession", 0)))
+
+        # Find active auctions and their highest bid per player+copy
+        bids_df = conf_df[conf_df["TransactionType"] == "AUCTION_BID"]
+        if not bids_df.empty:
+            for (pid, cs), group in bids_df.groupby(["PlayerID", "CopySession"]):
+                if (pid, cs) in won_keys:
+                    continue  # Already closed
+                # Highest bid is the current high bidder
+                top_bid_row = group.loc[group["BidAmount"].idxmax()]
+                team = top_bid_row["FranchiseName"]
+                bid = top_bid_row["BidAmount"]
+                allocated_by_team[team] = allocated_by_team.get(team, 0) + bid
+
+    conf_allocated = sum(allocated_by_team.values())
+    conf_remaining = conf_total - conf_spent - conf_allocated
 
     # Per-franchise breakdown
     per_franchise = {}
@@ -165,7 +195,8 @@ def calc_conference_budget_remaining(
         team_budget = auction_budgets.get(name, 0)
         team_won = won_df[won_df["FranchiseName"] == name]
         team_spent = team_won["BidAmount"].sum() if not team_won.empty else 0.0
-        per_franchise[name] = team_budget - team_spent
+        team_allocated = allocated_by_team.get(name, 0)
+        per_franchise[name] = team_budget - team_spent - team_allocated
 
     return conf_total, conf_remaining, per_franchise
 

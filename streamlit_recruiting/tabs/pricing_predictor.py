@@ -124,20 +124,22 @@ def render():
         }
 
         if not live_df.empty:
-            # Filter to current year rookies
+            # Filter to current year
             live_df = live_df[live_df["AuctionYear"] == league_year]
-            live_df = live_df[live_df["IsRookie"]]
 
-            # Assign copy sessions if not precomputed
-            if "CopySession" not in live_df.columns or (live_df["CopySession"] == 0).all():
-                live_df = _assign_copy_sessions(live_df)
+            # Full feed (all players) for budget calculations — budget is shared
+            # across rookies and upperclassmen
+            all_df = live_df.copy()
+            if "CopySession" not in all_df.columns or (all_df["CopySession"] == 0).all():
+                all_df = _assign_copy_sessions(all_df)
+            all_df = _resolve_winning_prices(all_df)
 
-            # Resolve winning prices (MFL stores $0 in WON records)
-            live_df = _resolve_winning_prices(live_df)
+            # Rookie-only feed for VAR pool and pricing
+            rookie_df = all_df[all_df["IsRookie"]].copy()
 
-            # Calculate remaining budget
+            # Calculate remaining budget using ALL spending (rookies + upperclassmen)
             conf_total, conf_remaining, per_franchise = calc_conference_budget_remaining(
-                live_df, selected_conf, auction_budgets, fl_df,
+                all_df, selected_conf, auction_budgets, fl_df,
             )
             franchise_remaining_budget = per_franchise.get(selected_franchise, 0)
 
@@ -149,16 +151,37 @@ def render():
                 {"label": "Your Budget Left", "value": f"${franchise_remaining_budget:,.0f}" if franchise_remaining_budget else "\u2014"},
             ])
 
-            # Calculate dynamic prices
+            # Calculate dynamic prices using rookie data for VAR pool,
+            # but conference_remaining already reflects all spending
             copy_curve = pricing_model.get("copy_discount_curve", {}) if pricing_model else {}
             dynamic_df = calc_dynamic_replacement_prices(
-                full_board_df, live_df, selected_conf,
+                full_board_df, rookie_df, selected_conf,
                 conf_remaining, copy_curve,
             )
             if not dynamic_df.empty:
                 for _, r in dynamic_df.iterrows():
                     live_prices[r["Player"]] = r["live_price"]
                     live_statuses[r["Player"]] = r["status"]
+
+            # Identify rookie players the selected franchise is currently
+            # the high bidder on (for highlighting in the table)
+            conf_rookie_df = rookie_df[rookie_df["Conference"] == selected_conf]
+            won_keys = set()
+            conf_won = conf_rookie_df[conf_rookie_df["TransactionType"] == "AUCTION_WON"]
+            if not conf_won.empty:
+                for _, w in conf_won.iterrows():
+                    won_keys.add((w["PlayerID"], w.get("CopySession", 0)))
+            bids_df = conf_rookie_df[conf_rookie_df["TransactionType"] == "AUCTION_BID"]
+            if not bids_df.empty:
+                for (pid, cs), group in bids_df.groupby(["PlayerID", "CopySession"]):
+                    if (pid, cs) in won_keys:
+                        continue
+                    top_row = group.loc[group["BidAmount"].idxmax()]
+                    if top_row["FranchiseName"] == selected_franchise:
+                        # Mark this player as "my_bid" for highlighting
+                        pname = top_row["PlayerName"]
+                        if pname in live_statuses:
+                            live_statuses[pname] = "my_bid"
         else:
             st.caption("No live auction data available for this year.")
 
@@ -269,13 +292,22 @@ def render():
         # Apply per-cell styling for Live mode
         if repl_mode == "Live" and live_prices and not display_df.empty:
             def _style_row(row):
-                """Apply color to the Replacement cell based on auction status."""
+                """Apply color to the Replacement cell based on auction status.
+
+                Colors:
+                - Yellow (#C9A227): player on the board (active auction)
+                - Green (#2D7A4E): you are the current high bidder
+                - Grey (#6A6A6A): both copies taken
+                - Red (#e74c3c): price exceeds your remaining budget
+                """
                 styles = [""] * len(row)
                 player = row.get("Player", "")
                 status = status_map.get(player, "available")
                 repl_idx = row.index.get_loc("Replacement") if "Replacement" in row.index else None
                 if repl_idx is not None:
-                    if status == "on_board":
+                    if status == "my_bid":
+                        styles[repl_idx] = "color: #2D7A4E; font-weight: 600"
+                    elif status == "on_board":
                         styles[repl_idx] = "color: #C9A227; font-weight: 600"
                     elif status == "taken":
                         styles[repl_idx] = "color: #6A6A6A; font-weight: 600"
