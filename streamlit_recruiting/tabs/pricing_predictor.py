@@ -273,19 +273,14 @@ def render():
                 if status == "taken":
                     row_data["Replacement"] = "TAKEN"
                 elif price > 0:
-                    # Format with breakdown details that show on hover
-                    # (Streamlit shows full cell content as tooltip when truncated)
-                    tooltip = (
-                        f"${price:.0f}"
-                        f"   \u2502 VAR: {bd.get('var', 0)}"
-                        f" \u2022 Pool: {bd.get('pool_pct', 0)}%"
-                        f" \u2022 Share: ${bd.get('total_share', 0):.0f}"
-                        f" \u2022 Copies left: {bd.get('copies', 0)}"
-                        f" \u2022 Budget: ${conf_remaining:,.0f}"
-                    )
-                    row_data["Replacement"] = tooltip
+                    row_data["Replacement"] = f"${price:.0f}"
                 else:
                     row_data["Replacement"] = "$0"
+                # Breakdown columns (Live mode only)
+                row_data["VAR"] = bd.get("var", 0)
+                row_data["Pool%"] = f"{bd.get('pool_pct', 0)}%"
+                row_data["Share"] = f"${bd.get('total_share', 0):.0f}" if bd.get("total_share") else ""
+                row_data["Copies"] = bd.get("copies", "")
                 row_data["_status"] = status
             else:
                 row_data["Replacement"] = f"${replacement_prices[name]:.0f}" if name in replacement_prices else ""
@@ -330,12 +325,11 @@ def render():
                     elif status == "taken":
                         styles[repl_idx] = "color: #6A6A6A; font-weight: 600"
                     else:
-                        # Check budget warning — price is the first token before the pipe
+                        # Check budget warning
                         val = str(row.get("Replacement", ""))
-                        price_str = val.split("\u2502")[0].strip() if "\u2502" in val else val
-                        if franchise_remaining_budget is not None and price_str.startswith("$"):
+                        if franchise_remaining_budget is not None and val.startswith("$"):
                             try:
-                                price_num = float(price_str.replace("$", "").replace(",", ""))
+                                price_num = float(val.replace("$", "").replace(",", ""))
                                 if price_num > franchise_remaining_budget:
                                     styles[repl_idx] = "color: #e74c3c; font-weight: 600"
                             except ValueError:
