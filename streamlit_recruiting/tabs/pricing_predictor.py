@@ -23,7 +23,7 @@ from models.replacement_level import (
     calc_conference_budget_remaining,
 )
 from models.config import POSITIONS, CONFERENCES, get_league_year
-from components import render_kpi_row, plotly_layout_defaults, _html, college_logo_url, position_badge_url
+from components import render_kpi_row, plotly_layout_defaults, college_logo_url, position_badge_url
 from descriptions import DESCRIPTIONS
 
 # Import copy session assignment from live auction tab
@@ -254,20 +254,46 @@ def render():
 
         comparison_df = pd.DataFrame(rows)
 
-        # Apply visual styling for Live mode
-        if repl_mode == "Live" and live_prices and not comparison_df.empty:
-            # Build styled HTML table for Live mode (supports per-cell coloring)
-            _render_live_comparison_table(comparison_df, franchise_remaining_budget)
+        # Prepare display dataframe (drop internal columns)
+        status_map = comparison_df.set_index("Player")["_status"].to_dict() if "_status" in comparison_df.columns else {}
+        display_df = comparison_df.drop(columns=["_status"], errors="ignore")
+
+        col_config = {}
+        if "Photo" in display_df.columns:
+            col_config["Photo"] = st.column_config.ImageColumn("", width="small")
+        if "Pos" in display_df.columns:
+            col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
+        if "School" in display_df.columns:
+            col_config["School"] = st.column_config.ImageColumn("", width="small")
+
+        # Apply per-cell styling for Live mode
+        if repl_mode == "Live" and live_prices and not display_df.empty:
+            def _style_row(row):
+                """Apply color to the Replacement cell based on auction status."""
+                styles = [""] * len(row)
+                player = row.get("Player", "")
+                status = status_map.get(player, "available")
+                repl_idx = row.index.get_loc("Replacement") if "Replacement" in row.index else None
+                if repl_idx is not None:
+                    if status == "on_board":
+                        styles[repl_idx] = "color: #C9A227; font-weight: 600"
+                    elif status == "taken":
+                        styles[repl_idx] = "color: #6A6A6A; font-weight: 600"
+                    else:
+                        # Check budget warning
+                        val = row.get("Replacement", "")
+                        if franchise_remaining_budget is not None and val and str(val).startswith("$"):
+                            try:
+                                price = float(str(val).replace("$", "").replace(",", ""))
+                                if price > franchise_remaining_budget:
+                                    styles[repl_idx] = "color: #e74c3c; font-weight: 600"
+                            except ValueError:
+                                pass
+                return styles
+
+            styled = display_df.style.apply(_style_row, axis=1)
+            st.dataframe(styled, column_config=col_config, hide_index=True, use_container_width=True, height=600)
         else:
-            # Standard st.dataframe for Static mode
-            display_df = comparison_df.drop(columns=["_status"], errors="ignore")
-            col_config = {}
-            if "Photo" in display_df.columns:
-                col_config["Photo"] = st.column_config.ImageColumn("", width="small")
-            if "Pos" in display_df.columns:
-                col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
-            if "School" in display_df.columns:
-                col_config["School"] = st.column_config.ImageColumn("", width="small")
             st.dataframe(display_df, column_config=col_config, hide_index=True, use_container_width=True, height=600)
 
     with col_right:
@@ -373,84 +399,3 @@ def render():
             st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_live_comparison_table(
-    comparison_df: pd.DataFrame,
-    franchise_remaining_budget: float = None,
-):
-    """Render the comparison table with color-coded Replacement column for Live mode.
-
-    Colors:
-    - Yellow (#C9A227): player currently on the board (active auction)
-    - Grey (#6A6A6A): both copies taken
-    - Red border: price exceeds your team's remaining budget
-    - Default white: available
-    """
-    STATUS_COLORS = {
-        "on_board": "#C9A227",
-        "taken": "#6A6A6A",
-        "available": "#f0f0ed",
-    }
-
-    # Build HTML table
-    html_parts = []
-    html_parts.append(
-        '<div style="overflow-x:auto;max-height:600px;overflow-y:auto;">'
-        '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">'
-    )
-
-    # Header
-    display_cols = [c for c in comparison_df.columns if not c.startswith("_")]
-    html_parts.append('<thead><tr style="border-bottom:1px solid #333;">')
-    for col in display_cols:
-        html_parts.append(
-            f'<th style="padding:6px 8px;text-align:left;color:#9A9A9A;'
-            f'font-weight:600;font-size:0.75rem;text-transform:uppercase;">{col}</th>'
-        )
-    html_parts.append('</tr></thead><tbody>')
-
-    # Rows
-    for _, row in comparison_df.iterrows():
-        status = row.get("_status", "available")
-        html_parts.append('<tr style="border-bottom:1px solid #222;">')
-
-        for col in display_cols:
-            val = row.get(col, "")
-            style = "padding:6px 8px;color:#f0f0ed;"
-
-            if col == "Photo":
-                if val and (str(val).startswith("http") or str(val).startswith("data:")):
-                    cell = f'<img src="{val}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">'
-                else:
-                    cell = ""
-            elif col in ("Pos", "School"):
-                if val and (str(val).startswith("http") or str(val).startswith("data:")):
-                    cell = f'<img src="{val}" style="height:20px;">'
-                else:
-                    cell = str(val) if val else ""
-            elif col == "Replacement":
-                color = STATUS_COLORS.get(status, "#f0f0ed")
-                style += f"color:{color};font-weight:600;"
-
-                # Budget warning: red if price exceeds franchise budget
-                if (
-                    franchise_remaining_budget is not None
-                    and status == "available"
-                    and val and val.startswith("$")
-                ):
-                    try:
-                        price_val = float(val.replace("$", "").replace(",", ""))
-                        if price_val > franchise_remaining_budget:
-                            style += "border:1px solid #e74c3c;border-radius:4px;padding:4px 6px;"
-                    except ValueError:
-                        pass
-
-                cell = str(val)
-            else:
-                cell = str(val) if val is not None else ""
-
-            html_parts.append(f'<td style="{style}">{cell}</td>')
-
-        html_parts.append('</tr>')
-
-    html_parts.append('</tbody></table></div>')
-    _html("".join(html_parts))
