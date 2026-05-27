@@ -1,0 +1,243 @@
+<!-- CFFB · RecruitingTake
+     A pull-quote card for a recruiting class grade, anchored by an
+     analyst-persona avatar in the upper-left and a grade badge in the
+     upper-right. Two personality variants share the same structure:
+
+       • --headgear  · "The Headgear Pick" — gut-take energy.
+         Brick-red accent, italic Saira pull-quote, mascot-head silhouette.
+
+       • --analyst   · "The Analyst" — technical breakdown.
+         Slate-blue accent, measured Inter body, headset silhouette.
+
+     Drop a <span class="cffb-grade …">A+</span> into __grade.
+     Body copy lives in __quote. Replace persona name in __byline. -->
+<style>
+.cffb-take {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  grid-template-areas:
+    "avatar header  grade"
+    "avatar quote   quote"
+    "avatar byline  byline";
+  gap: 14px 20px;
+  padding: 24px 28px 24px 24px;
+  background: #141414;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F5F5F5;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Accent stripe on the left edge — color set per variant. */
+.cffb-take::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--take-accent, #C9A227);
+}
+
+.cffb-take__avatar {
+  grid-area: avatar;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #1C1C1C;
+  border: 1.5px solid var(--take-accent, #C9A227);
+  color: var(--take-accent, #C9A227);
+  align-self: start;
+  position: relative;
+}
+.cffb-take__avatar svg { width: 44px; height: 44px; display: block; }
+
+.cffb-take__header {
+  grid-area: header;
+  display: flex; flex-direction: column; gap: 4px;
+  align-self: end;
+}
+.cffb-take__persona {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 14px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--take-accent, #C9A227);
+  line-height: 1;
+}
+.cffb-take__subject {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 24px;
+  letter-spacing: -0.005em; text-transform: uppercase;
+  color: #F5F5F5; line-height: 1.05;
+}
+.cffb-take__sub {
+  font-size: 12px; color: #9A9A9A;
+  font-weight: 500;
+}
+
+.cffb-take__grade { grid-area: grade; align-self: start; }
+
+.cffb-take__quote {
+  grid-area: quote;
+  font-size: 15px; line-height: 1.5;
+  color: #F5F5F5;
+  margin: 0;
+  position: relative;
+  padding-left: 14px;
+  border-left: 2px solid #2A2A2A;
+}
+.cffb-take__quote::before {
+  content: "“";
+  position: absolute; left: 6px; top: -6px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-size: 32px; line-height: 1;
+  color: var(--take-accent, #C9A227);
+  opacity: 0.55;
+}
+
+.cffb-take__byline {
+  grid-area: byline;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; font-weight: 600;
+  color: #9A9A9A;
+}
+.cffb-take__byline-rule { flex: 1; height: 1px; background: #2A2A2A; }
+
+/* =========== Variant: Headgear Pick (gut take) =========== */
+.cffb-take--headgear {
+  --take-accent: #C46A3E;   /* burnt-orange / brick — louder */
+  background:
+    radial-gradient(60% 100% at 0% 0%, rgba(196,106,62,0.10), transparent 55%),
+    #141414;
+}
+.cffb-take--headgear .cffb-take__quote {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 22px; line-height: 1.2;
+  font-style: italic;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  padding-top: 4px;
+}
+
+/* =========== Variant: Analyst (technical) =============== */
+.cffb-take--analyst {
+  --take-accent: #6B8FB0;   /* slate blue — measured */
+  background:
+    radial-gradient(60% 100% at 0% 0%, rgba(107,143,176,0.08), transparent 55%),
+    #141414;
+}
+.cffb-take--analyst .cffb-take__quote {
+  font-size: 14px; line-height: 1.6;
+}
+
+/* =========== Reused grade-badge from GradeBadge.html ===== */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: 4px; padding: 4px 10px 5px; color: #F5F5F5;
+  font-size: 20px;
+}
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: #2D7A4E; color: #F5F5F5; }
+
+.cffb-take__row { display: flex; flex-direction: column; gap: 16px; }
+</style>
+
+<!-- Inline SVG sprite with the two persona heads -->
+<svg style="position:absolute;width:0;height:0" aria-hidden="true">
+  <defs>
+    <!-- THE HEADGEAR PICK — person wearing an oversized mascot head -->
+    <symbol id="cffb-icon-take-headgear" viewBox="0 0 48 48">
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+        <!-- shoulders (smaller — head dominates) -->
+        <path d="M9 46 C9 42 13 38 16 38 L32 38 C35 38 39 42 39 46"/>
+        <!-- neck -->
+        <path d="M19 32 L19 38 M29 32 L29 38"/>
+        <!-- giant mascot head (oversized vs shoulders, the bit) -->
+        <path d="M7 18 C7 9 14 4 24 4 C34 4 41 9 41 18 L41 26 C41 30 38 33 34 33 L14 33 C10 33 7 30 7 26 Z"/>
+        <!-- horns curling outward -->
+        <path d="M11 8 C8 4 5 4 4 7"/>
+        <path d="M37 8 C40 4 43 4 44 7"/>
+        <!-- face cutout (where the real person peeks out) -->
+        <ellipse cx="24" cy="22" rx="10" ry="6.5" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.2"/>
+        <!-- eyes peeking through -->
+        <circle cx="20" cy="22" r="1.2" fill="currentColor"/>
+        <circle cx="28" cy="22" r="1.2" fill="currentColor"/>
+        <!-- mascot grin -->
+        <path d="M20 27 Q24 29 28 27"/>
+      </g>
+    </symbol>
+
+    <!-- THE ANALYST — head with broadcast headset -->
+    <symbol id="cffb-icon-take-analyst" viewBox="0 0 48 48">
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+        <!-- shoulders + suit -->
+        <path d="M6 46 C6 38 14 34 20 34 L28 34 C34 34 42 38 42 46"/>
+        <!-- suit lapels -->
+        <path d="M20 34 L24 42 L28 34"/>
+        <path d="M17 36 L20 46 M31 36 L28 46"/>
+        <!-- tie knot -->
+        <path d="M23 42 L24 44 L25 42 Z" fill="currentColor"/>
+        <!-- head -->
+        <circle cx="24" cy="20" r="9"/>
+        <!-- hair line -->
+        <path d="M17 16 Q24 11 31 16"/>
+        <!-- headset band -->
+        <path d="M13 20 C13 7 35 7 35 20"/>
+        <!-- ear cup -->
+        <ellipse cx="13" cy="22" rx="2" ry="3.5" fill="currentColor" fill-opacity="0.25"/>
+        <!-- mic boom curving forward -->
+        <path d="M13 25 C10 32 20 33 23 28"/>
+        <!-- mic capsule -->
+        <ellipse cx="23" cy="28" rx="1.8" ry="1.1" fill="currentColor" fill-opacity="0.4"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="cffb-take__row">
+
+  <!-- ============= HEADGEAR PICK ============= -->
+  <article class="cffb-take cffb-take--headgear">
+    <div class="cffb-take__avatar">
+      <svg><use href="#cffb-icon-take-headgear"/></svg>
+    </div>
+    <header class="cffb-take__header">
+      <div class="cffb-take__persona">The Headgear Pick</div>
+      <div class="cffb-take__subject">Texas · 2026 Class</div>
+      <div class="cffb-take__sub">14 commits · 4 five-stars · #3 nationally</div>
+    </header>
+    <span class="cffb-grade cffb-grade--lg cffb-grade--a cffb-take__grade">A+</span>
+    <blockquote class="cffb-take__quote">
+      Not so fast my friend. They got the skill positions wrapped up — the trenches? Hold on a second. But you don't put up this kind of class without somebody believing. I am all in.
+    </blockquote>
+    <footer class="cffb-take__byline">
+      <span>Gut Take · Week 7</span>
+      <span class="cffb-take__byline-rule"></span>
+      <span>The Headgear</span>
+    </footer>
+  </article>
+
+  <!-- ============= ANALYST TAKE ============= -->
+  <article class="cffb-take cffb-take--analyst">
+    <div class="cffb-take__avatar">
+      <svg><use href="#cffb-icon-take-analyst"/></svg>
+    </div>
+    <header class="cffb-take__header">
+      <div class="cffb-take__persona">The Analyst</div>
+      <div class="cffb-take__subject">Texas · 2026 Class</div>
+      <div class="cffb-take__sub">14 commits · 4 five-stars · #3 nationally</div>
+    </header>
+    <span class="cffb-grade cffb-grade--lg cffb-grade--b cffb-take__grade">B+</span>
+    <blockquote class="cffb-take__quote">
+      The skill-position grades are real — three top-50 receivers and a true RB1 — but the offensive line class is a half-class behind the rest of the SEC top-five. If they sign one more tackle out of Houston in December, this jumps a full letter.
+    </blockquote>
+    <footer class="cffb-take__byline">
+      <span>Breakdown · Week 7</span>
+      <span class="cffb-take__byline-rule"></span>
+      <span>The Analyst</span>
+    </footer>
+  </article>
+
+</div>

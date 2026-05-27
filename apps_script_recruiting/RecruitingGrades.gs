@@ -135,6 +135,7 @@ function generateRecruitingGradesForYear(year) {
 
   // --- 6. Write output ---
   writeRecruitingGrades(yearStr, franchises, config);
+  writeRecruitingWriteups(yearStr, franchises, config);
 
   Logger.log("\n=== RECRUITING GRADES COMPLETE ===");
 }
