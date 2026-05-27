@@ -139,7 +139,15 @@ RECRUITING_GRADES_COLS = {
 PLAYER_GRADES_COLS = {
     "DraftYear": 0, "Franchise": 1, "Player": 2, "Position": 3,
     "Stars": 4, "RecruitScore": 5, "BidAmount": 6, "PredictedCost": 7,
-    "LeagueAvgPrice": 8, "Savings": 9, "PlayerGrade": 10,
+    "LeagueAvgPrice": 8,
+    "SavingsVsPredicted": 9, "SavingsVsLeagueAvg": 10, "BlendedSavings": 11,
+    "PlayerGrade": 12,
+}
+
+RECRUITING_WRITEUPS_COLS = {
+    "DraftYear": 0, "Franchise": 1, "Conference": 2,
+    "OverallGrade": 3, "HerbstreitGrade": 4, "CorsoGrade": 5,
+    "HerbstreitAnalysis": 6, "CorsoAnalysis": 7,
 }
 
 LIVE_AUCTION_COLS = {
@@ -157,6 +165,7 @@ SHEET_NAMES = {
     "recruitingBoard": "RecruitingBoard",
     "recruitingGrades": "RecruitingGrades",
     "playerGrades": "PlayerGrades",
+    "recruitingWriteups": "RecruitingWriteups",
     "franchiseLookup": "FranchiseLookup",
     "espnProspects": "ESPNProspects",
     "dlfRookieStartupADP": "DLF Rookie Startup ADP",

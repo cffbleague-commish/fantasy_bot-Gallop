@@ -13,7 +13,7 @@ from models.config import (
     SHEET_NAMES, EXCLUDE_YEARS,
     RECRUITING_BOARD_COLS, AUCTION_DATA_COLS, ESPN_PROSPECTS_COLS,
     DLF_ADP_COLS, FRANCHISE_LOOKUP_COLS, RECRUITING_GRADES_COLS,
-    PLAYER_GRADES_COLS, LIVE_AUCTION_COLS,
+    PLAYER_GRADES_COLS, RECRUITING_WRITEUPS_COLS, LIVE_AUCTION_COLS,
 )
 from utils.parsing import parse_dollar, parse_dollar_savings, parse_confidence
 
@@ -309,8 +309,39 @@ def load_player_grades(year: int | None = None) -> pd.DataFrame:
     df["BidAmount"] = df.iloc[:, c["BidAmount"]].apply(parse_dollar)
     df["PredictedCost"] = df.iloc[:, c["PredictedCost"]].apply(parse_dollar)
     df["LeagueAvgPrice"] = df.iloc[:, c["LeagueAvgPrice"]].apply(parse_dollar)
-    df["Savings"] = df.iloc[:, c["Savings"]].apply(parse_dollar_savings)
+    df["SavingsVsPredicted"] = df.iloc[:, c["SavingsVsPredicted"]].apply(parse_dollar_savings)
+    df["SavingsVsLeagueAvg"] = df.iloc[:, c["SavingsVsLeagueAvg"]].apply(parse_dollar_savings)
+    df["BlendedSavings"] = df.iloc[:, c["BlendedSavings"]].apply(parse_dollar_savings)
+    # Back-compat alias: existing consumers (Best/Worst Value KPIs, etc.) read "Savings"
+    df["Savings"] = df["BlendedSavings"]
     df["PlayerGrade"] = df.iloc[:, c["PlayerGrade"]].astype(str)
+
+    if year is not None:
+        df = df[df["DraftYear"] == year].copy()
+
+    return df
+
+
+@st.cache_data(ttl=300)
+def load_recruiting_writeups(year: int | None = None) -> pd.DataFrame:
+    """Load RecruitingWriteups sheet — dual-analyst narratives per team/year."""
+    data = _get_sheet_data(SHEET_NAMES["recruitingWriteups"])
+    if len(data) <= 1:
+        return pd.DataFrame()
+
+    headers = data[0]
+    rows = data[1:]
+    df = pd.DataFrame(rows, columns=headers)
+
+    c = RECRUITING_WRITEUPS_COLS
+    df["DraftYear"] = df.iloc[:, c["DraftYear"]].apply(_safe_int)
+    df["Franchise"] = df.iloc[:, c["Franchise"]].astype(str)
+    df["Conference"] = df.iloc[:, c["Conference"]].astype(str)
+    df["OverallGrade"] = df.iloc[:, c["OverallGrade"]].astype(str)
+    df["HerbstreitGrade"] = df.iloc[:, c["HerbstreitGrade"]].astype(str)
+    df["CorsoGrade"] = df.iloc[:, c["CorsoGrade"]].astype(str)
+    df["HerbstreitAnalysis"] = df.iloc[:, c["HerbstreitAnalysis"]].astype(str)
+    df["CorsoAnalysis"] = df.iloc[:, c["CorsoAnalysis"]].astype(str)
 
     if year is not None:
         df = df[df["DraftYear"] == year].copy()

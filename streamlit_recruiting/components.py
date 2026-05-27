@@ -198,10 +198,12 @@ def position_badge_url(position: str) -> str:
 
 
 # Grade badge colors (bg, text) — mirrors CSS .cffb-grade--{mod}
+# A-tier uses a metallic gold gradient (rendered inline as <linearGradient>); the
+# flat color here is the mid-stop and acts only as a fallback if the gradient ref fails.
 _GRADE_COLORS = {
-    "a": ("#C9A227", "#0A0A0A"),  # gold bg, dark text
+    "a": ("#C9A227", "#0A0A0A"),  # gold (mid-stop fallback), dark text
     "b": ("#2D7A4E", "#F5F5F5"),  # green bg, light text
-    "c": ("#C9A227", "#0A0A0A"),  # gold bg, dark text
+    "c": ("#4A6680", "#F5F5F5"),  # slate-blue bg, light text
     "d": ("#B84545", "#F5F5F5"),  # red bg, light text
     "f": ("#B84545", "#F5F5F5"),  # red bg, light text
 }
@@ -222,9 +224,35 @@ def grade_badge_url(grade: str) -> str:
     bg, fg = _GRADE_COLORS.get(mod, ("#6A6A6A", "#F5F5F5"))
     # Wider pill for grades with + or - suffix
     w = 42 if len(g) <= 1 else 48
+
+    if mod == "a":
+        # Metallic gold gradient + soft glow for A-tier (matches GradeBadge.html)
+        gid = f"gA{w}"
+        fid = f"glow{w}"
+        defs = (
+            f'<defs>'
+            f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">'
+            f'<stop offset="0%" stop-color="#E8C547"/>'
+            f'<stop offset="50%" stop-color="#C9A227"/>'
+            f'<stop offset="100%" stop-color="#8B6F1F"/>'
+            f'</linearGradient>'
+            f'<filter id="{fid}" x="-20%" y="-20%" width="140%" height="140%">'
+            f'<feGaussianBlur stdDeviation="1.2" result="b"/>'
+            f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+            f'</filter>'
+            f'</defs>'
+        )
+        rect_fill = f'url(#{gid})'
+        rect_filter = f' filter="url(#{fid})"'
+    else:
+        defs = ""
+        rect_fill = bg
+        rect_filter = ""
+
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="22">'
-        f'<rect width="{w}" height="22" rx="6" fill="{bg}"/>'
+        f'{defs}'
+        f'<rect width="{w}" height="22" rx="6" fill="{rect_fill}"{rect_filter}/>'
         f'<text x="{w // 2}" y="15.5" text-anchor="middle" font-family="Inter,system-ui,sans-serif" '
         f'font-size="12" font-weight="700" fill="{fg}">{g}</text>'
         f'</svg>'
@@ -307,11 +335,17 @@ def render_player_card_compact(
     delta: float | None = None,
     headshot_url: str = "",
     college_abbrev: str = "",
+    paid: float | None = None,
+    savings: float | None = None,
+    grade: str | None = None,
 ) -> str:
     """Render a compact player card row.
 
-    Returns HTML string. Includes team chip, position badge, name,
-    stars, bid amount, and optional value delta.
+    Args:
+        paid: Actual bid amount. When provided, becomes the prominent bid
+            and `predicted_cost` collapses to a small subtitle.
+        savings: Blended savings dollars. Overrides `delta` when provided.
+        grade: Letter grade for the rightmost pill (empty cell if omitted).
     """
     # Team chip
     abbrev = college_abbrev or (college[:3].upper() if college else "???")
@@ -333,22 +367,35 @@ def render_player_card_compact(
         for i in range(5)
     )
 
-    # Bid amount
-    bid_str = f"${predicted_cost:.0f}" if predicted_cost is not None else "\u2014"
-    bid_html = f'<div class="cffb-pc-c__bid">{bid_str}</div>'
+    # Bid amount \u2014 show `paid` prominently when available, with predicted as sub-label.
+    primary = paid if paid is not None else predicted_cost
+    primary_str = f"${primary:.0f}" if primary is not None else "\u2014"
+    sub_html = ""
+    if paid is not None and predicted_cost is not None:
+        sub_html = f'<span class="cffb-pc-c__bid-sub">Pred ${predicted_cost:.0f}</span>'
+    bid_html = f'<div class="cffb-pc-c__bid">{primary_str}{sub_html}</div>'
 
-    # Delta
+    # Delta \u2014 prefer explicit `savings` when present.
+    delta_value = savings if savings is not None else delta
     delta_html = ""
-    if delta is not None and delta != 0:
-        cls = "cffb-pc-c__delta--pos" if delta > 0 else "cffb-pc-c__delta--neg"
-        arrow = "\u25B2" if delta > 0 else "\u25BC"
-        sign = "+" if delta > 0 else "\u2212"
+    if delta_value is not None and delta_value != 0:
+        cls = "cffb-pc-c__delta--pos" if delta_value > 0 else "cffb-pc-c__delta--neg"
+        arrow = "\u25B2" if delta_value > 0 else "\u25BC"
+        sign = "+" if delta_value > 0 else "\u2212"
         delta_html = (
             f'<div class="cffb-pc-c__delta {cls}">'
-            f'{arrow} {sign}${abs(delta):.0f}</div>'
+            f'{arrow} {sign}${abs(delta_value):.0f}</div>'
         )
-    elif delta is not None:
+    elif delta_value is not None:
         delta_html = '<div class="cffb-pc-c__delta" style="color:#5A5A5A;">\u00B1$0</div>'
+    else:
+        delta_html = '<div class="cffb-pc-c__delta"></div>'
+
+    # Grade pill (placeholder div if no grade so the 7-col grid stays aligned).
+    if grade and str(grade).strip() and str(grade).strip().upper() not in ("N/A", "NAN"):
+        grade_html = render_grade_badge(grade, size="sm")
+    else:
+        grade_html = '<span></span>'
 
     return (
         f'<div class="cffb-pc-c">'
@@ -361,6 +408,7 @@ def render_player_card_compact(
         f'<div class="cffb-pc-c__stars">{stars_html}</div>'
         f'{bid_html}'
         f'{delta_html}'
+        f'{grade_html}'
         f'</div>'
     )
 
@@ -527,6 +575,133 @@ def render_grade_badge(grade: str, size: str = "md") -> str:
     return (
         f'<span class="cffb-grade cffb-grade--{size} cffb-grade--{mod}">'
         f'{_esc(grade_upper)}</span>'
+    )
+
+
+# ---------------------------------------------------------------------------
+# 5b. Recruiting Take — dual-analyst pull-quote card
+# ---------------------------------------------------------------------------
+
+_TAKE_VARIANTS = {
+    "headgear": {
+        "accent": "#C46A3E",
+        "tint": "rgba(196,106,62,0.10)",
+        "quote_style": (
+            "font-family:'Saira Condensed',system-ui,sans-serif;"
+            "font-weight:600;font-size:18px;line-height:1.25;"
+            "font-style:italic;letter-spacing:-0.005em;text-transform:none;"
+        ),
+    },
+    "analyst": {
+        "accent": "#6B8FB0",
+        "tint": "rgba(107,143,176,0.08)",
+        "quote_style": "font-size:14px;line-height:1.6;",
+    },
+}
+
+# Avatar SVG paths — inlined per-card so they render reliably across Streamlit iframes.
+_TAKE_AVATAR_SVG = {
+    "headgear": (
+        '<svg viewBox="0 0 48 48" width="44" height="44" xmlns="http://www.w3.org/2000/svg">'
+        '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">'
+        '<path d="M9 46 C9 42 13 38 16 38 L32 38 C35 38 39 42 39 46"/>'
+        '<path d="M19 32 L19 38 M29 32 L29 38"/>'
+        '<path d="M7 18 C7 9 14 4 24 4 C34 4 41 9 41 18 L41 26 C41 30 38 33 34 33 L14 33 C10 33 7 30 7 26 Z"/>'
+        '<path d="M11 8 C8 4 5 4 4 7"/>'
+        '<path d="M37 8 C40 4 43 4 44 7"/>'
+        '<ellipse cx="24" cy="22" rx="10" ry="6.5" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.2"/>'
+        '<circle cx="20" cy="22" r="1.2" fill="currentColor"/>'
+        '<circle cx="28" cy="22" r="1.2" fill="currentColor"/>'
+        '<path d="M20 27 Q24 29 28 27"/>'
+        '</g></svg>'
+    ),
+    "analyst": (
+        '<svg viewBox="0 0 48 48" width="44" height="44" xmlns="http://www.w3.org/2000/svg">'
+        '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">'
+        '<path d="M6 46 C6 38 14 34 20 34 L28 34 C34 34 42 38 42 46"/>'
+        '<path d="M20 34 L24 42 L28 34"/>'
+        '<path d="M17 36 L20 46 M31 36 L28 46"/>'
+        '<path d="M23 42 L24 44 L25 42 Z" fill="currentColor"/>'
+        '<circle cx="24" cy="20" r="9"/>'
+        '<path d="M17 16 Q24 11 31 16"/>'
+        '<path d="M13 20 C13 7 35 7 35 20"/>'
+        '<ellipse cx="13" cy="22" rx="2" ry="3.5" fill="currentColor" fill-opacity="0.25"/>'
+        '<path d="M13 25 C10 32 20 33 23 28"/>'
+        '<ellipse cx="23" cy="28" rx="1.8" ry="1.1" fill="currentColor" fill-opacity="0.4"/>'
+        '</g></svg>'
+    ),
+}
+
+
+def render_recruiting_take(
+    variant: str,
+    persona: str,
+    subject: str,
+    sub: str,
+    grade: str,
+    quote: str,
+    byline_label: str = "",
+) -> str:
+    """Render a dual-analyst pull-quote card for a recruiting class.
+
+    Args:
+        variant: "headgear" (Corso, brick accent) or "analyst" (Herbstreit, slate accent).
+        persona: Uppercased persona label ("The Headgear Pick", "The Analyst").
+        subject: Bold subject line (e.g., "Texas · 2026 Class").
+        sub: Smaller meta line below subject (e.g., "14 commits · #3 nationally").
+        grade: Letter grade for the upper-right pill.
+        quote: The body copy.
+        byline_label: Optional left-side byline tag (defaults to persona).
+    """
+    cfg = _TAKE_VARIANTS.get(variant, _TAKE_VARIANTS["analyst"])
+    accent = cfg["accent"]
+    tint = cfg["tint"]
+    quote_style = cfg["quote_style"]
+    avatar_svg = _TAKE_AVATAR_SVG.get(variant, _TAKE_AVATAR_SVG["analyst"])
+    byline = byline_label or persona
+
+    grade_html = render_grade_badge(grade, size="lg")
+
+    return (
+        f'<article style="'
+        f'display:grid;'
+        f'grid-template-columns:72px 1fr auto;'
+        f'grid-template-areas:\'avatar header grade\' \'avatar quote quote\' \'avatar byline byline\';'
+        f'gap:14px 20px;padding:24px 28px 24px 24px;'
+        f'background:radial-gradient(60% 100% at 0% 0%, {tint}, transparent 55%), #141414;'
+        f'border:1px solid #2A2A2A;border-left:3px solid {accent};border-radius:8px;'
+        f'font-family:Inter,system-ui,sans-serif;color:#F5F5F5;'
+        f'margin:0 0 12px 0;">'
+        # Avatar
+        f'<div style="grid-area:avatar;width:64px;height:64px;border-radius:50%;'
+        f'display:flex;align-items:center;justify-content:center;'
+        f'background:#1C1C1C;border:1.5px solid {accent};color:{accent};align-self:start;">'
+        f'{avatar_svg}'
+        f'</div>'
+        # Header
+        f'<header style="grid-area:header;display:flex;flex-direction:column;gap:4px;align-self:end;">'
+        f'<div style="font-family:\'Saira Condensed\',system-ui,sans-serif;'
+        f'font-weight:700;font-size:14px;letter-spacing:0.16em;text-transform:uppercase;'
+        f'color:{accent};line-height:1;">{_esc(persona)}</div>'
+        f'<div style="font-family:\'Saira Condensed\',system-ui,sans-serif;'
+        f'font-weight:700;font-size:22px;letter-spacing:-0.005em;text-transform:uppercase;'
+        f'color:#F5F5F5;line-height:1.05;">{_esc(subject)}</div>'
+        f'<div style="font-size:12px;color:#9A9A9A;font-weight:500;">{_esc(sub)}</div>'
+        f'</header>'
+        # Grade pill
+        f'<div style="grid-area:grade;align-self:start;">{grade_html}</div>'
+        # Quote
+        f'<blockquote style="grid-area:quote;{quote_style}'
+        f'color:#F5F5F5;margin:0;position:relative;padding-left:14px;'
+        f'border-left:2px solid #2A2A2A;">{_esc(quote)}</blockquote>'
+        # Byline
+        f'<footer style="grid-area:byline;display:flex;align-items:center;gap:10px;'
+        f'font-size:11px;letter-spacing:0.12em;text-transform:uppercase;'
+        f'font-weight:600;color:#9A9A9A;">'
+        f'<span>{_esc(byline)}</span>'
+        f'<span style="flex:1;height:1px;background:#2A2A2A;"></span>'
+        f'</footer>'
+        f'</article>'
     )
 
 

@@ -7,16 +7,15 @@ import pandas as pd
 import numpy as np
 
 
-# Grade distribution (cumulative percentiles, top-down)
-# A+ = top 10%, A = next 15%, B+ = next 15%, B = next 20%, C = next 20%, D = next 15%, F = bottom 5%
+# Grade ladder — mirrors Apps Script applyGradeThresholds() in RecruitingGrades.gs.
+# Thresholds are cumulative percentiles (0.0–1.0); thresholds in Apps Script use
+# 0–100 minPct, so each minPct is divided by 100 here.
 _GRADE_THRESHOLDS = [
-    ("A+", 0.90),   # top 10%
-    ("A",  0.75),   # 75th - 90th
-    ("B+", 0.60),   # 60th - 75th
-    ("B",  0.40),   # 40th - 60th
-    ("C",  0.20),   # 20th - 40th
-    ("D",  0.05),   # 5th - 20th
-    ("F",  0.00),   # bottom 5%
+    ("A+", 0.95), ("A", 0.90), ("A-", 0.85),
+    ("B+", 0.75), ("B", 0.65), ("B-", 0.55),
+    ("C+", 0.45), ("C", 0.35), ("C-", 0.25),
+    ("D+", 0.15), ("D", 0.08), ("D-", 0.03),
+    ("F",  0.00),
 ]
 
 

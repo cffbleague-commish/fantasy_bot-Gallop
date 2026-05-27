@@ -228,18 +228,18 @@ the leaderboard, with elite classes scoring significantly above the mean.\
     "overall_grade": """\
 **Overall Grade** converts the Class Score into a letter grade using a \
 league-wide curve. We compute each team's z-score (how many standard \
-deviations above or below the league average) and map it to a percentile:
+deviations above or below the league average) and map it to a percentile, \
+then onto a 13-tier ladder:
 
-- **A+** — Top 10% of teams
-- **A** — 75th to 90th percentile
-- **B+** — 60th to 75th percentile
-- **B** — 40th to 60th percentile (league average)
-- **C** — 20th to 40th percentile
-- **D** — 5th to 20th percentile
-- **F** — Bottom 5% of teams
+- **A tier (A+, A, A-)** — top 15% of teams (95th / 90th / 85th percentile)
+- **B tier (B+, B, B-)** — 55th to 75th percentile
+- **C tier (C+, C, C-)** — 25th to 45th percentile
+- **D tier (D+, D, D-)** — 3rd to 15th percentile
+- **F** — bottom 3%
 
-This is a relative grade — it compares you to other teams in the same \
-draft class, not to an absolute standard.\
+Pluses and minuses subdivide each letter tier into thirds. This is a relative \
+grade — it compares you to other teams in the same draft class, not to an \
+absolute standard.\
 """,
 
     "efficiency_grade": """\

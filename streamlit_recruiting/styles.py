@@ -45,7 +45,7 @@ GLOBAL_CSS = """
   /* === Grade scale ========================================= */
   --grade-a: #2D7A4E;
   --grade-b: #4A9968;
-  --grade-c: #C9A227;
+  --grade-c: #4A6680;
   --grade-d: #B84545;
   --grade-f: #B84545;
 
@@ -655,7 +655,7 @@ GLOBAL_CSS = """
 .cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
 .cffb-grade--a  { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
 .cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
-.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--c  { background: var(--grade-c); color: var(--fg-primary); }
 .cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
 .cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
 
@@ -815,7 +815,7 @@ GLOBAL_CSS = """
    ============================================================ */
 .cffb-pc-c {
   display: grid;
-  grid-template-columns: 40px 32px 1fr auto auto auto;
+  grid-template-columns: 40px 32px 1fr auto auto auto auto;
   align-items: center;
   gap: 16px;
   padding: 12px 16px 12px 18px;
@@ -873,6 +873,14 @@ GLOBAL_CSS = """
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
   min-width: 64px; text-align: right;
+  display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05;
+}
+.cffb-pc-c__bid-sub {
+  font-family: var(--font-body);
+  font-size: 10px; font-weight: 500;
+  color: var(--fg-secondary);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  margin-top: 2px;
 }
 .cffb-pc-c__delta {
   font-size: 12px; font-weight: 600;

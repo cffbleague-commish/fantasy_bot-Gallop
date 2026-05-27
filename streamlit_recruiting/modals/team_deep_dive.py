@@ -13,7 +13,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from data.sheets import load_player_grades, load_recruiting_board, load_franchise_lookup
+from data.sheets import (
+    load_player_grades,
+    load_recruiting_board,
+    load_franchise_lookup,
+    load_recruiting_writeups,
+)
 from descriptions import DESCRIPTIONS
 from components import (
     render_kpi_row,
@@ -21,13 +26,11 @@ from components import (
     render_rank_badge,
     render_conference_badge,
     render_commit_composition_bar,
-    render_star_rating,
-    render_value_delta,
+    render_player_card_compact,
+    render_recruiting_take,
     plotly_layout_defaults,
     _html,
     college_logo_url,
-    grade_badge_url,
-    position_badge_url,
 )
 
 
@@ -129,6 +132,40 @@ def show_team_deep_dive(
     }
     _html(render_commit_composition_bar(stars_dict, show_legend=True))
 
+    # --- Dual-analyst writeups ---
+    writeups = load_recruiting_writeups(year)
+    if not writeups.empty:
+        team_writeup = writeups[writeups["Franchise"] == team_name]
+        if not team_writeup.empty:
+            row = team_writeup.iloc[0]
+            total_players = int(team.get("TotalPlayers", 0) or 0)
+            sub_line = f"{total_players} commits · Class Rank #{rank}"
+            subject = f"{team_name} · {year} Class"
+
+            corso_quote = str(row.get("CorsoAnalysis", "") or "").strip()
+            herb_quote = str(row.get("HerbstreitAnalysis", "") or "").strip()
+
+            if corso_quote:
+                _html(render_recruiting_take(
+                    variant="headgear",
+                    persona="The Headgear Pick",
+                    subject=subject,
+                    sub=sub_line,
+                    grade=str(row.get("CorsoGrade", "") or ""),
+                    quote=corso_quote,
+                    byline_label="Corso",
+                ))
+            if herb_quote:
+                _html(render_recruiting_take(
+                    variant="analyst",
+                    persona="The Analyst",
+                    subject=subject,
+                    sub=sub_line,
+                    grade=str(row.get("HerbstreitGrade", "") or ""),
+                    quote=herb_quote,
+                    byline_label="Herbstreit",
+                ))
+
     with st.expander("How are value and efficiency measured?", expanded=False):
         st.markdown(DESCRIPTIONS["savings"])
         st.markdown("---")
@@ -145,58 +182,25 @@ def show_team_deep_dive(
     # --- Player Acquisitions ---
     st.markdown("#### Player Acquisitions")
 
-    # Add position badge column
-    if "Position" in team_players.columns:
-        team_players["PosBadge"] = team_players["Position"].apply(position_badge_url)
+    def _maybe(value):
+        return value if pd.notna(value) else None
 
-    display_cols = ["HeadshotURL", "Player", "PosBadge", "CollegeLogo", "Stars", "RecruitScore", "BidAmount", "PredictedCost", "Savings", "PlayerGrade"]
-    available = [c for c in display_cols if c in team_players.columns]
-    display = team_players[available].copy()
-
-    # Format columns
-    if "HeadshotURL" in display.columns:
-        display.rename(columns={"HeadshotURL": "Photo"}, inplace=True)
-    if "PosBadge" in display.columns:
-        display.rename(columns={"PosBadge": "Pos"}, inplace=True)
-    if "CollegeLogo" in display.columns:
-        display.rename(columns={"CollegeLogo": "School"}, inplace=True)
-    if "RecruitScore" in display.columns:
-        display.rename(columns={"RecruitScore": "Score"}, inplace=True)
-    if "BidAmount" in display.columns:
-        display["BidAmount"] = display["BidAmount"].apply(
-            lambda x: f"${x:.0f}" if pd.notna(x) else ""
-        )
-        display.rename(columns={"BidAmount": "Paid"}, inplace=True)
-    if "PredictedCost" in display.columns:
-        display["PredictedCost"] = display["PredictedCost"].apply(
-            lambda x: f"${x:.0f}" if pd.notna(x) else ""
-        )
-        display.rename(columns={"PredictedCost": "Predicted"}, inplace=True)
-    if "Savings" in display.columns:
-        display["Savings"] = display["Savings"].apply(
-            lambda x: f"${x:+.1f}" if pd.notna(x) else ""
-        )
-    if "PlayerGrade" in display.columns:
-        display["PlayerGrade"] = display["PlayerGrade"].apply(
-            lambda x: grade_badge_url(x) if pd.notna(x) else ""
-        )
-        display.rename(columns={"PlayerGrade": "Grade"}, inplace=True)
-    if "Stars" in display.columns:
-        display["Stars"] = display["Stars"].apply(
-            lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
-        )
-
-    col_config = {}
-    if "Photo" in display.columns:
-        col_config["Photo"] = st.column_config.ImageColumn("", width="small")
-    if "Pos" in display.columns:
-        col_config["Pos"] = st.column_config.ImageColumn("Pos", width="small")
-    if "School" in display.columns:
-        col_config["School"] = st.column_config.ImageColumn("", width="small")
-    if "Grade" in display.columns:
-        col_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
-
-    st.dataframe(display, column_config=col_config, hide_index=True, use_container_width=True)
+    for _, p in team_players.iterrows():
+        stars_val = p.get("Stars")
+        try:
+            stars_int = int(stars_val) if pd.notna(stars_val) else 0
+        except (TypeError, ValueError):
+            stars_int = 0
+        _html(render_player_card_compact(
+            name=str(p.get("Player", "") or ""),
+            position=str(p.get("Position", "") or ""),
+            college=str(p.get("College", "") or ""),
+            stars=stars_int,
+            predicted_cost=_maybe(p.get("PredictedCost")),
+            paid=_maybe(p.get("BidAmount")),
+            savings=_maybe(p.get("BlendedSavings")),
+            grade=str(p.get("PlayerGrade", "") or ""),
+        ))
 
     # --- Value Analysis (below acquisitions) ---
     if "RecruitScore" in team_players.columns and "BidAmount" in team_players.columns:
