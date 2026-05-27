@@ -19,6 +19,7 @@ from data.sheets import (
     load_franchise_lookup,
     load_recruiting_writeups,
 )
+from utils.parsing import normalize_name
 from descriptions import DESCRIPTIONS
 from components import (
     render_kpi_row,
@@ -78,18 +79,19 @@ def show_team_deep_dive(
     worst_value_name = ""
 
     if not player_grades.empty:
-        # Join headshot URLs and college names from the recruiting board
+        # Join headshot URLs and college names from the recruiting board.
+        # PlayerGrades names are MFL format ("Last, First"); RecruitingBoard
+        # names are ESPN format ("First Last") — `normalize_name` collapses both
+        # to a common key so the lookup actually hits.
         board_df = load_recruiting_board(None)
         if not board_df.empty:
-            # Build lookup dicts keyed by stripped player name
             brd = board_df.copy()
-            brd["_key"] = brd["Player"].str.strip()
-            brd = brd.drop_duplicates(subset="_key", keep="last")
-            pg_key = player_grades["Player"].str.strip()
+            brd["_key"] = brd["Player"].apply(normalize_name)
+            brd = brd[brd["_key"] != ""].drop_duplicates(subset="_key", keep="last")
+            pg_key = player_grades["Player"].apply(normalize_name)
             if "HeadshotURL" in brd.columns:
                 headshot_map = dict(zip(brd["_key"], brd["HeadshotURL"]))
                 player_grades["HeadshotURL"] = pg_key.map(headshot_map).fillna("")
-                # Clean up non-URL values
                 player_grades.loc[~player_grades["HeadshotURL"].str.startswith("http", na=False), "HeadshotURL"] = ""
             if "College" in brd.columns and "College" not in player_grades.columns:
                 college_map = dict(zip(brd["_key"], brd["College"]))
