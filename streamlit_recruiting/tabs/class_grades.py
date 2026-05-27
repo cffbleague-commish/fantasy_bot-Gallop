@@ -193,33 +193,36 @@ def render():
         st.plotly_chart(fig, use_container_width=True)
 
 
+_ALL_GRADES = [
+    "A+", "A", "A-",
+    "B+", "B", "B-",
+    "C+", "C", "C-",
+    "D+", "D", "D-",
+    "F",
+]
+
+
 def _render_league_overview(grades_df: pd.DataFrame):
-    """Render league overview inline — grade distribution + top spenders."""
-    col_grades, col_spenders = st.columns(2)
+    """Render league overview — full 13-tier grade distribution."""
+    if "OverallGrade" not in grades_df.columns:
+        return
 
-    with col_grades:
-        st.markdown("**Grade Distribution**")
-        if "OverallGrade" in grades_df.columns:
-            grade_counts = grades_df["OverallGrade"].value_counts()
-            badges_html = ""
-            for grade in ["A+", "A", "B+", "B", "C", "D", "F"]:
-                count = grade_counts.get(grade, 0)
-                if count > 0:
-                    badge = render_grade_badge(grade, size="sm")
-                    badges_html += (
-                        f'<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;">'
-                        f'{badge} <span style="color:#9A9A9A;font-size:13px;">{count}</span></span>'
-                    )
-            if badges_html:
-                _html(f'<div style="display:flex;flex-wrap:wrap;gap:4px 0;">{badges_html}</div>')
-
-    with col_spenders:
-        if "TotalSpent" in grades_df.columns:
-            st.markdown("**Top Spenders**")
-            top = grades_df.nlargest(3, "TotalSpent")
-            for _, row in top.iterrows():
-                spent = row.get("TotalSpent", 0)
-                st.caption(f"{row.get('Franchise', '')} — ${spent:.0f}")
+    st.markdown("**Grade Distribution**")
+    grade_counts = grades_df["OverallGrade"].value_counts()
+    badges_html = ""
+    for grade in _ALL_GRADES:
+        count = int(grade_counts.get(grade, 0))
+        badge = render_grade_badge(grade, size="sm")
+        # Dim zero-count grades so the distribution shape stays legible.
+        opacity = "1" if count > 0 else "0.28"
+        count_color = "#F5F5F5" if count > 0 else "#5A5A5A"
+        badges_html += (
+            f'<span style="display:inline-flex;align-items:center;gap:4px;'
+            f'margin-right:14px;opacity:{opacity};">'
+            f'{badge} <span style="color:{count_color};font-size:13px;font-variant-numeric:tabular-nums;">{count}</span>'
+            f'</span>'
+        )
+    _html(f'<div style="display:flex;flex-wrap:wrap;gap:6px 0;">{badges_html}</div>')
 
 
 def _show_team_deep_dive(team_name: str, grades_df: pd.DataFrame, year: int):
