@@ -1055,6 +1055,177 @@ GLOBAL_CSS = """
   0%   { background-color: rgba(201,162,39,0.3); }
   100% { background-color: transparent; }
 }
+
+/* ============================================================
+   Mobile Player Card (compact horizontal list item)
+   ============================================================ */
+.cffb-pc-m {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+  color: var(--fg-primary);
+  position: relative;
+  overflow: hidden;
+}
+.cffb-pc-m::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #E8C547, #C9A227 50%, #8B6F1F);
+}
+.cffb-pc-m__photo {
+  flex: 0 0 60px;
+  width: 60px; height: 75px;
+  border-radius: 4px;
+  background: var(--bg-surface-elev);
+  position: relative;
+  overflow: hidden;
+}
+.cffb-pc-m__photo img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cffb-pc-m__body {
+  flex: 1 1 auto;
+  display: flex; flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.cffb-pc-m__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 15px;
+  line-height: 1.15;
+  color: var(--fg-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cffb-pc-m__meta {
+  font-size: 11px;
+  color: var(--fg-secondary);
+  letter-spacing: 0.04em;
+}
+.cffb-pc-m__stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.cffb-pc-m__stat {
+  display: flex; flex-direction: column;
+  line-height: 1.1;
+}
+.cffb-pc-m__stat-label {
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-pc-m__stat-val {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 14px;
+  color: var(--fg-primary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-pc-m__stat-val--hero {
+  background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   Responsive — Tablet (<=768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* KPI tiles: 2 per row, smaller */
+  .cffb-kpi {
+    min-width: calc(50% - 6px);
+    flex: 1 1 calc(50% - 6px);
+    padding: 12px 14px;
+  }
+  .cffb-kpi__value { font-size: 30px; }
+  .cffb-kpi__label { font-size: 10px; letter-spacing: 0.08em; }
+  .cffb-kpi__sub { font-size: 11px; }
+
+  /* Player deep-dive: stack photo above info */
+  .cffb-pc-e {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  .cffb-pc-e__photo {
+    width: 140px;
+    margin: 0 auto;
+  }
+  .cffb-pc-e__name { font-size: 28px; }
+  .cffb-pc-e__facts {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .cffb-pc-e__fact-val { font-size: 18px; }
+
+  /* Force Streamlit horizontal blocks to stack */
+  [data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; }
+  [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Swipe hint on retained dataframes */
+  [data-testid="stDataFrame"] {
+    position: relative;
+  }
+  [data-testid="stDataFrame"]::after {
+    content: "swipe \\2192";
+    position: absolute; top: 6px; right: 8px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-secondary);
+    background: rgba(0,0,0,0.7);
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 5;
+  }
+}
+
+/* ============================================================
+   Responsive — Phone (<=480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  /* KPI tiles: 1 per row */
+  .cffb-kpi {
+    min-width: 100%;
+    flex: 1 1 100%;
+    padding: 10px 12px;
+  }
+  .cffb-kpi__value { font-size: 24px; }
+
+  /* Player deep-dive: even smaller */
+  .cffb-pc-e__name { font-size: 22px; }
+  .cffb-pc-e__photo { width: 120px; }
+  .cffb-pc-e__facts { gap: 10px; }
+  .cffb-pc-e__fact-val { font-size: 16px; }
+  .cffb-pc-e__fact-label { font-size: 8.5px; }
+
+  /* Streamlit tab labels */
+  button[data-baseweb="tab"] {
+    font-size: 13px !important;
+    padding: 8px 10px !important;
+  }
+
+  /* App title */
+  h1 { font-size: 24px !important; }
+  h2 { font-size: 20px !important; }
+  h3 { font-size: 17px !important; }
+}
 """
 
 

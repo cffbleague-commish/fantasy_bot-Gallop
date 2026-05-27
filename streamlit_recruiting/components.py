@@ -574,6 +574,77 @@ def render_player_card_expanded(
 
 
 # ---------------------------------------------------------------------------
+# 3b. Player Card (mobile list item) — vertical card alternative to dataframe
+# ---------------------------------------------------------------------------
+
+def render_player_card_mobile(
+    name: str,
+    position: str,
+    college: str,
+    stars: int,
+    headshot_url: str = "",
+    stats: list[dict] | None = None,
+) -> str:
+    """Render a compact horizontal player card for mobile board view.
+
+    Args:
+        stats: Up to 4 dicts of {"label", "value", "hero" (optional)}.
+
+    Returns HTML string.
+    """
+    pos_color = _POS_COLORS.get(position, "#6A6A6A")
+
+    if headshot_url and str(headshot_url).startswith("http"):
+        photo_inner = f'<img src="{headshot_url}" alt="{_esc(name)}" loading="lazy" onerror="this.style.display=\'none\'">'
+    else:
+        photo_inner = (
+            '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#3A3A3A;">'
+            '<svg viewBox="0 0 56 56" style="width:30px;height:30px;stroke:#3A3A3A;fill:none;stroke-width:1.5">'
+            '<circle cx="28" cy="20" r="9"/>'
+            '<path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"/>'
+            '</svg>'
+            '</div>'
+        )
+
+    star_color = {5: "#C9A227", 4: "#3B82C4", 3: "#7BA4C9"}.get(stars, "#6A6A6A")
+    stars_html = "".join(
+        f'<span style="color:{star_color};font-size:12px;">★</span>' if i < stars
+        else f'<span style="color:#2A2A2A;font-size:12px;">★</span>'
+        for i in range(5)
+    )
+
+    stats_html = ""
+    if stats:
+        items = ""
+        for s in stats:
+            hero_cls = " cffb-pc-m__stat-val--hero" if s.get("hero") else ""
+            items += (
+                f'<div class="cffb-pc-m__stat">'
+                f'<span class="cffb-pc-m__stat-label">{_esc(s["label"])}</span>'
+                f'<span class="cffb-pc-m__stat-val{hero_cls}">{_esc(str(s["value"]))}</span>'
+                f'</div>'
+            )
+        stats_html = f'<div class="cffb-pc-m__stats">{items}</div>'
+
+    pos_chip = (
+        f'<span style="background:{pos_color};color:#0A0A0A;font-family:var(--font-display);'
+        f'font-weight:700;font-size:10px;padding:2px 5px;border-radius:3px;margin-right:6px;">'
+        f'{_esc(position)}</span>'
+    )
+
+    return (
+        f'<div class="cffb-pc-m">'
+        f'  <div class="cffb-pc-m__photo">{photo_inner}</div>'
+        f'  <div class="cffb-pc-m__body">'
+        f'    <div class="cffb-pc-m__name">{_esc(name)}</div>'
+        f'    <div class="cffb-pc-m__meta">{pos_chip}{_esc(college)} &middot; {stars_html}</div>'
+        f'    {stats_html}'
+        f'  </div>'
+        f'</div>'
+    )
+
+
+# ---------------------------------------------------------------------------
 # 4. Team Logo / Chip
 # ---------------------------------------------------------------------------
 

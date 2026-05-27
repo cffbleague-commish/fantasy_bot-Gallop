@@ -24,6 +24,7 @@ from components import (
     position_badge_url,
     _html,
 )
+from utils.viewport import responsive_columns
 
 # Human-readable labels for MFL transaction types
 TRANS_TYPE_LABELS = {
@@ -296,7 +297,7 @@ def render():
     st.markdown("")
 
     # --- Filters ---
-    col_f1, col_f2, col_f3 = st.columns(3)
+    col_f1, col_f2, col_f3 = responsive_columns(3)
     type_filter = col_f1.selectbox(
         "Transaction Type",
         ["All", "Nomination", "Bid", "Won"],
@@ -322,7 +323,7 @@ def render():
         return
 
     # --- Two-column layout: timeline + summary panels ---
-    col_left, col_right = st.columns([60, 40], gap="medium")
+    col_left, col_right = responsive_columns([60, 40], gap="medium")
 
     with col_left:
         _render_auction_timeline(filtered)
@@ -639,7 +640,7 @@ def _render_auction_board(df: pd.DataFrame, logo_lookup: dict, auction_budgets: 
             ])
 
             # --- Side-by-side: Active Auctions + Team Budgets ---
-            col_active, col_budget = st.columns([70, 30], gap="medium")
+            col_active, col_budget = responsive_columns([70, 30], gap="medium")
 
             with col_active:
                 if active_rows:
@@ -865,7 +866,7 @@ def _render_position_spending(filtered: pd.DataFrame):
         return
 
     pos_colors = {"QB": "#C9A227", "RB": "#3B82C4", "WR": "#7BA4C9", "TE": "#6A6A6A"}
-    col1, col2 = st.columns(2)
+    col1, col2 = responsive_columns(2)
 
     with col1:
         fig = px.bar(

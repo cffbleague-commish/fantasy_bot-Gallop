@@ -25,6 +25,7 @@ from models.replacement_level import (
 from models.config import POSITIONS, CONFERENCES, get_league_year
 from components import render_kpi_row, plotly_layout_defaults, college_logo_url, position_badge_url
 from descriptions import DESCRIPTIONS
+from utils.viewport import responsive_columns
 
 # Import copy session assignment from live auction tab
 from tabs.live_auction import _assign_copy_sessions, _resolve_winning_prices
@@ -38,7 +39,7 @@ def render():
         st.info("No data found.")
         return
 
-    col_y, col_p = st.columns(2)
+    col_y, col_p = responsive_columns(2)
     league_year = get_league_year()
     year_options = ["All Years"] + years
     default_idx = year_options.index(league_year) if league_year in year_options else 0
@@ -87,7 +88,7 @@ def render():
 
     if repl_mode == "Live":
         conf_list = sorted(CONFERENCES.keys())
-        col_conf, col_fran = st.columns(2)
+        col_conf, col_fran = responsive_columns(2)
         selected_conf = col_conf.selectbox(
             "Conference", conf_list, key="pricing_conf",
         )
@@ -262,7 +263,7 @@ def render():
             replacement_prices[row["Player"]] = row.get("copy1_16", 0)
 
     # --- Two-column layout: table + charts ---
-    col_left, col_right = st.columns([60, 40], gap="medium")
+    col_left, col_right = responsive_columns([60, 40], gap="medium")
 
     with col_left:
         st.markdown("#### Per-Player Price Comparison")

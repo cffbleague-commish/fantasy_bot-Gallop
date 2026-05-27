@@ -21,6 +21,7 @@ from components import (
     grade_badge_url,
     _html,
 )
+from utils.viewport import responsive_columns
 
 
 def render():
@@ -31,7 +32,7 @@ def render():
         st.info("No data found.")
         return
 
-    col_y, col_c = st.columns(2)
+    col_y, col_c = responsive_columns(2)
     year_options = ["All Years"] + years
     year_selection = col_y.selectbox("Draft Year", year_options, key="grades_year")
     show_all_years = year_selection == "All Years"
@@ -85,7 +86,7 @@ def render():
     st.markdown("---")
 
     # --- Two-column layout: leaderboard + team deep dive ---
-    col_left, col_right = st.columns([45, 55], gap="medium")
+    col_left, col_right = responsive_columns([45, 55], gap="medium")
 
     with col_left:
         st.markdown("#### Class Leaderboard")

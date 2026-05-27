@@ -8,8 +8,16 @@ import pandas as pd
 
 from data.sheets import load_recruiting_board, get_available_years
 from models.config import POSITIONS, CONFERENCES
-from components import render_kpi_row, college_logo_url, nfl_logo_url, position_badge_url
+from components import (
+    render_kpi_row,
+    college_logo_url,
+    nfl_logo_url,
+    position_badge_url,
+    render_player_card_mobile,
+    _html,
+)
 from descriptions import DESCRIPTIONS
+from utils.viewport import responsive_columns, is_mobile
 
 
 def render():
@@ -20,7 +28,7 @@ def render():
         st.info("No data found. Check your Google Sheet connection.")
         return
 
-    col_y, col_p, col_c = st.columns(3)
+    col_y, col_p, col_c = responsive_columns(3)
     year_options = ["All Years"] + years
     year_selection = col_y.selectbox("Draft Year", year_options, key="board_year")
     show_all_years = year_selection == "All Years"
@@ -132,6 +140,25 @@ def render():
             lambda x: f"{'★' * int(x)}{'☆' * (5 - int(x))}" if pd.notna(x) else ""
         )
 
+    if is_mobile():
+        _render_mobile_card_list(filtered_df, show_all_years)
+        # Mobile: use a selectbox to open the deep dive
+        player_options = ["—"] + filtered_df["Player"].tolist()
+        chosen = st.selectbox(
+            "View player details",
+            player_options,
+            key="board_mobile_pick",
+        )
+        if chosen and chosen != "—":
+            match = filtered_df[filtered_df["Player"] == chosen]
+            if not match.empty:
+                dive_year = year
+                if show_all_years and "DraftYear" in match.columns:
+                    dive_year = match.iloc[0].get("DraftYear")
+                with player_detail_slot.container():
+                    _show_player_deep_dive(chosen, df, dive_year)
+        return
+
     column_config = {}
     if "Photo" in display_df.columns:
         column_config["Photo"] = st.column_config.ImageColumn("", width="small")
@@ -163,6 +190,42 @@ def render():
                 dive_year = filtered_df.iloc[row_idx].get("DraftYear")
             with player_detail_slot.container():
                 _show_player_deep_dive(player_name, df, dive_year)
+
+
+def _render_mobile_card_list(filtered_df: pd.DataFrame, show_all_years: bool):
+    """Render the filtered board as a vertical card list for phone screens."""
+    for _, row in filtered_df.iterrows():
+        stats: list[dict] = []
+        if "RecruitScore" in row and pd.notna(row["RecruitScore"]):
+            stats.append({
+                "label": "Score",
+                "value": f"{row['RecruitScore']:.2f}",
+                "hero": True,
+            })
+        if "PredictedCost" in row and pd.notna(row["PredictedCost"]):
+            stats.append({
+                "label": "Pred",
+                "value": f"${row['PredictedCost']:.0f}",
+            })
+        if "ESPNGrade" in row and pd.notna(row["ESPNGrade"]):
+            stats.append({
+                "label": "ESPN",
+                "value": f"{row['ESPNGrade']:.0f}",
+            })
+        if show_all_years and "DraftYear" in row and pd.notna(row.get("DraftYear")):
+            stats.append({
+                "label": "Year",
+                "value": str(int(row["DraftYear"])),
+            })
+
+        _html(render_player_card_mobile(
+            name=str(row.get("Player", "")),
+            position=str(row.get("Position", "")),
+            college=str(row.get("College", "")),
+            stars=int(row["Rating"]) if pd.notna(row.get("Rating")) else 0,
+            headshot_url=str(row.get("HeadshotURL", "")),
+            stats=stats,
+        ))
 
 
 
