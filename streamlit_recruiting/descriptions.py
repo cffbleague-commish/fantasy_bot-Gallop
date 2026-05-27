@@ -260,17 +260,19 @@ players they did acquire.\
     # ===== Team Deep Dive =====
 
     "savings": """\
-**Savings** for each player is the difference between the predicted auction \
-price and what the team actually paid:
+Each acquisition card carries three savings figures. They all answer the \
+same question — "did the team get a deal?" — but use different baselines:
 
-- **Positive savings** means the team got a bargain — they paid less than \
-the model expected.
-- **Negative savings** means the team overpaid relative to the model's \
-prediction.
+- **Blended Savings** — A weighted combination of the two below. This is the \
+primary number; it's what drives Best Value and Biggest Overpay on the KPI row.
+- **vs Predicted Cost** — Bid Amount compared to the pricing model's predicted \
+cost for that player. Captures whether the team beat (or overpaid) the model.
+- **vs League Avg** — Bid Amount compared to the league-wide average price paid \
+for that player across other conferences. Captures whether the team paid more \
+or less than peers who already bought the same prospect.
 
-**Best Value** is the player with the highest positive savings on the team. \
-**Biggest Overpay** is the player with the most negative savings. These help \
-identify the team's best and worst deals at a glance.\
+**Positive (green ▲)** means the team paid less than the baseline — a bargain. \
+**Negative (red ▼)** means they overpaid relative to that baseline.\
 """,
 
 }

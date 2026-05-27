@@ -887,6 +887,26 @@ GLOBAL_CSS = """
   font-variant-numeric: tabular-nums;
   min-width: 54px; text-align: right;
 }
+.cffb-pc-c__savings {
+  display: grid; grid-template-columns: auto auto; gap: 2px 10px;
+  align-items: baseline; justify-items: end;
+  font-variant-numeric: tabular-nums;
+  min-width: 150px;
+}
+.cffb-pc-c__savings-lbl {
+  font-family: var(--font-body);
+  font-size: 9px; font-weight: 600;
+  color: var(--fg-secondary);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  justify-self: start;
+}
+.cffb-pc-c__savings-val {
+  font-size: 12px; font-weight: 600;
+}
+.cffb-pc-c__savings-val--primary { font-size: 13px; }
+.cffb-pc-c__savings-val--pos { color: var(--delta-pos); }
+.cffb-pc-c__savings-val--neg { color: var(--delta-neg); }
+.cffb-pc-c__savings-val--flat { color: #5A5A5A; }
 .cffb-pc-c__delta--pos { color: var(--delta-pos); }
 .cffb-pc-c__delta--neg { color: var(--delta-neg); }
 

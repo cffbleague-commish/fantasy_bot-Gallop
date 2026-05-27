@@ -338,6 +338,8 @@ def render_player_card_compact(
     paid: float | None = None,
     savings: float | None = None,
     grade: str | None = None,
+    savings_vs_predicted: float | None = None,
+    savings_vs_league_avg: float | None = None,
 ) -> str:
     """Render a compact player card row.
 
@@ -345,15 +347,27 @@ def render_player_card_compact(
         paid: Actual bid amount. When provided, becomes the prominent bid
             and `predicted_cost` collapses to a small subtitle.
         savings: Blended savings dollars. Overrides `delta` when provided.
+            If `savings_vs_predicted` / `savings_vs_league_avg` are also
+            provided, a labeled 3-row breakdown is rendered instead of a
+            single delta arrow.
         grade: Letter grade for the rightmost pill (empty cell if omitted).
     """
-    # Team chip
-    abbrev = college_abbrev or (college[:3].upper() if college else "???")
+    # Team chip — headshot when we have one, otherwise college abbreviation
     pos_color = _POS_COLORS.get(position, "#6A6A6A")
-    team_html = (
-        f'<div class="cffb-pc-c__team" style="background:{pos_color}; color:#fff;">'
-        f'{abbrev}</div>'
-    )
+    if headshot_url and str(headshot_url).startswith("http"):
+        team_html = (
+            f'<div class="cffb-pc-c__team" style="background:#1C1C1C; padding:0; overflow:hidden;">'
+            f'<img src="{_esc(headshot_url)}" alt="{_esc(name)}" '
+            f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;" '
+            f'loading="lazy"/>'
+            f'</div>'
+        )
+    else:
+        abbrev = college_abbrev or (college[:3].upper() if college else "???")
+        team_html = (
+            f'<div class="cffb-pc-c__team" style="background:{pos_color}; color:#fff;">'
+            f'{abbrev}</div>'
+        )
 
     # Position badge
     pos_html = f'<div class="cffb-pc-c__pos" style="background:{pos_color};">{position}</div>'
@@ -375,21 +389,55 @@ def render_player_card_compact(
         sub_html = f'<span class="cffb-pc-c__bid-sub">Pred ${predicted_cost:.0f}</span>'
     bid_html = f'<div class="cffb-pc-c__bid">{primary_str}{sub_html}</div>'
 
-    # Delta \u2014 prefer explicit `savings` when present.
-    delta_value = savings if savings is not None else delta
-    delta_html = ""
-    if delta_value is not None and delta_value != 0:
-        cls = "cffb-pc-c__delta--pos" if delta_value > 0 else "cffb-pc-c__delta--neg"
-        arrow = "\u25B2" if delta_value > 0 else "\u25BC"
-        sign = "+" if delta_value > 0 else "\u2212"
+    # Savings breakdown \u2014 if any of the three are provided, render a 3-row
+    # labeled stack (Blend / vs Pred / vs Avg). Otherwise fall back to the
+    # legacy single-delta render driven by `savings` or `delta`.
+    has_breakdown = (
+        savings_vs_predicted is not None
+        or savings_vs_league_avg is not None
+    )
+
+    def _savings_cell(value, primary: bool = False) -> str:
+        if value is None:
+            return '<span class="cffb-pc-c__savings-val cffb-pc-c__savings-val--flat">\u2014</span>'
+        primary_cls = " cffb-pc-c__savings-val--primary" if primary else ""
+        if value > 0:
+            return (
+                f'<span class="cffb-pc-c__savings-val cffb-pc-c__savings-val--pos{primary_cls}">'
+                f'\u25B2 +${abs(value):.1f}</span>'
+            )
+        if value < 0:
+            return (
+                f'<span class="cffb-pc-c__savings-val cffb-pc-c__savings-val--neg{primary_cls}">'
+                f'\u25BC \u2212${abs(value):.1f}</span>'
+            )
+        return f'<span class="cffb-pc-c__savings-val cffb-pc-c__savings-val--flat{primary_cls}">\u00B1$0</span>'
+
+    if has_breakdown:
         delta_html = (
-            f'<div class="cffb-pc-c__delta {cls}">'
-            f'{arrow} {sign}${abs(delta_value):.0f}</div>'
+            f'<div class="cffb-pc-c__savings">'
+            f'<span class="cffb-pc-c__savings-lbl" title="Weighted blend of the two savings baselines below — the primary value-versus-cost number.">Blended Savings</span>'
+            f'{_savings_cell(savings, primary=True)}'
+            f'<span class="cffb-pc-c__savings-lbl" title="Bid Amount vs the pricing model\'s predicted cost. Positive = bought below the model\'s expectation.">vs Predicted</span>'
+            f'{_savings_cell(savings_vs_predicted)}'
+            f'<span class="cffb-pc-c__savings-lbl" title="Bid Amount vs the league-wide average paid for this player across conferences. Positive = paid less than peers.">vs League Avg</span>'
+            f'{_savings_cell(savings_vs_league_avg)}'
+            f'</div>'
         )
-    elif delta_value is not None:
-        delta_html = '<div class="cffb-pc-c__delta" style="color:#5A5A5A;">\u00B1$0</div>'
     else:
-        delta_html = '<div class="cffb-pc-c__delta"></div>'
+        delta_value = savings if savings is not None else delta
+        if delta_value is not None and delta_value != 0:
+            cls = "cffb-pc-c__delta--pos" if delta_value > 0 else "cffb-pc-c__delta--neg"
+            arrow = "\u25B2" if delta_value > 0 else "\u25BC"
+            sign = "+" if delta_value > 0 else "\u2212"
+            delta_html = (
+                f'<div class="cffb-pc-c__delta {cls}">'
+                f'{arrow} {sign}${abs(delta_value):.0f}</div>'
+            )
+        elif delta_value is not None:
+            delta_html = '<div class="cffb-pc-c__delta" style="color:#5A5A5A;">\u00B1$0</div>'
+        else:
+            delta_html = '<div class="cffb-pc-c__delta"></div>'
 
     # Grade pill (placeholder div if no grade so the 7-col grid stays aligned).
     if grade and str(grade).strip() and str(grade).strip().upper() not in ("N/A", "NAN"):

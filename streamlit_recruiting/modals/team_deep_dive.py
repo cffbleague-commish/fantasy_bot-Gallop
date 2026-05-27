@@ -199,7 +199,10 @@ def show_team_deep_dive(
             predicted_cost=_maybe(p.get("PredictedCost")),
             paid=_maybe(p.get("BidAmount")),
             savings=_maybe(p.get("BlendedSavings")),
+            savings_vs_predicted=_maybe(p.get("SavingsVsPredicted")),
+            savings_vs_league_avg=_maybe(p.get("SavingsVsLeagueAvg")),
             grade=str(p.get("PlayerGrade", "") or ""),
+            headshot_url=str(p.get("HeadshotURL", "") or ""),
         ))
 
     # --- Value Analysis (below acquisitions) ---
