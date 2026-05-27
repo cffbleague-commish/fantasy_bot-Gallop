@@ -5,13 +5,12 @@ Shows:
 - Team header with logo, grade, rank
 - KPI row (Total Spent, Score, Efficiency, Rank, Best Value, Biggest Overpay)
 - Star composition bar
-- Single player acquisition table with position badges
-- Value analysis scatter chart
+- Player acquisitions as a list of compact cards
+- Analyst takes (Corso/Herbstreit dual writeups)
 """
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
 from data.sheets import (
     load_player_grades,
@@ -20,6 +19,11 @@ from data.sheets import (
     load_recruiting_writeups,
 )
 from utils.parsing import normalize_name
+
+
+# Avatar photos for the two analyst personas. Swap these out to refresh imagery.
+_CORSO_PHOTO_URL = "https://www.elevenwarriors.com/sites/default/files/styles/904x490/public/c/2023/09/141056_h.jpg?itok=y0da6yGF"
+_HERBSTREIT_PHOTO_URL = "https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2024/12/1200/675/kirk-herbstreit.jpg?ve=1&tl=1"
 from descriptions import DESCRIPTIONS
 from components import (
     render_kpi_row,
@@ -29,7 +33,6 @@ from components import (
     render_commit_composition_bar,
     render_player_card_compact,
     render_recruiting_take,
-    plotly_layout_defaults,
     _html,
     college_logo_url,
 )
@@ -134,40 +137,6 @@ def show_team_deep_dive(
     }
     _html(render_commit_composition_bar(stars_dict, show_legend=True))
 
-    # --- Dual-analyst writeups ---
-    writeups = load_recruiting_writeups(year)
-    if not writeups.empty:
-        team_writeup = writeups[writeups["Franchise"] == team_name]
-        if not team_writeup.empty:
-            row = team_writeup.iloc[0]
-            total_players = int(team.get("TotalPlayers", 0) or 0)
-            sub_line = f"{total_players} commits · Class Rank #{rank}"
-            subject = f"{team_name} · {year} Class"
-
-            corso_quote = str(row.get("CorsoAnalysis", "") or "").strip()
-            herb_quote = str(row.get("HerbstreitAnalysis", "") or "").strip()
-
-            if corso_quote:
-                _html(render_recruiting_take(
-                    variant="headgear",
-                    persona="The Headgear Pick",
-                    subject=subject,
-                    sub=sub_line,
-                    grade=str(row.get("CorsoGrade", "") or ""),
-                    quote=corso_quote,
-                    byline_label="Corso",
-                ))
-            if herb_quote:
-                _html(render_recruiting_take(
-                    variant="analyst",
-                    persona="The Analyst",
-                    subject=subject,
-                    sub=sub_line,
-                    grade=str(row.get("HerbstreitGrade", "") or ""),
-                    quote=herb_quote,
-                    byline_label="Herbstreit",
-                ))
-
     with st.expander("How are value and efficiency measured?", expanded=False):
         st.markdown(DESCRIPTIONS["savings"])
         st.markdown("---")
@@ -198,6 +167,7 @@ def show_team_deep_dive(
             position=str(p.get("Position", "") or ""),
             college=str(p.get("College", "") or ""),
             stars=stars_int,
+            recruit_score=_maybe(p.get("RecruitScore")),
             predicted_cost=_maybe(p.get("PredictedCost")),
             paid=_maybe(p.get("BidAmount")),
             savings=_maybe(p.get("BlendedSavings")),
@@ -207,25 +177,40 @@ def show_team_deep_dive(
             headshot_url=str(p.get("HeadshotURL", "") or ""),
         ))
 
-    # --- Value Analysis (below acquisitions) ---
-    if "RecruitScore" in team_players.columns and "BidAmount" in team_players.columns:
-        scatter_df = team_players.dropna(subset=["RecruitScore", "BidAmount"])
-        if not scatter_df.empty:
-            st.markdown("#### Value Analysis")
-            fig = px.scatter(
-                scatter_df,
-                x="RecruitScore",
-                y="BidAmount",
-                color="Position",
-                hover_name="Player",
-                color_discrete_map={"QB": "#C9A227", "RB": "#3B82C4", "WR": "#7BA4C9", "TE": "#6A6A6A"},
-            )
-            layout = plotly_layout_defaults()
-            layout.update(
-                height=350,
-                xaxis_title="Recruit Score",
-                yaxis_title="Price Paid ($)",
-                title="Score vs Price",
-            )
-            fig.update_layout(**layout)
-            st.plotly_chart(fig, use_container_width=True)
+    # --- Analyst Takes (dual-analyst writeups) ---
+    writeups = load_recruiting_writeups(year)
+    if not writeups.empty:
+        team_writeup = writeups[writeups["Franchise"] == team_name]
+        if not team_writeup.empty:
+            row = team_writeup.iloc[0]
+            corso_quote = str(row.get("CorsoAnalysis", "") or "").strip()
+            herb_quote = str(row.get("HerbstreitAnalysis", "") or "").strip()
+
+            if corso_quote or herb_quote:
+                st.markdown("#### Analyst Takes")
+                total_players = int(team.get("TotalPlayers", 0) or 0)
+                sub_line = f"{total_players} commits · Class Rank #{rank}"
+                subject = f"{team_name} · {year} Class"
+
+                if corso_quote:
+                    _html(render_recruiting_take(
+                        variant="headgear",
+                        persona="The Headgear Pick",
+                        subject=subject,
+                        sub=sub_line,
+                        grade=str(row.get("CorsoGrade", "") or ""),
+                        quote=corso_quote,
+                        byline_label="Corso",
+                        image_url=_CORSO_PHOTO_URL,
+                    ))
+                if herb_quote:
+                    _html(render_recruiting_take(
+                        variant="analyst",
+                        persona="The Analyst",
+                        subject=subject,
+                        sub=sub_line,
+                        grade=str(row.get("HerbstreitGrade", "") or ""),
+                        quote=herb_quote,
+                        byline_label="Herbstreit",
+                        image_url=_HERBSTREIT_PHOTO_URL,
+                    ))

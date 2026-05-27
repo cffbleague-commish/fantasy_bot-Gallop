@@ -815,7 +815,7 @@ GLOBAL_CSS = """
    ============================================================ */
 .cffb-pc-c {
   display: grid;
-  grid-template-columns: 40px 32px 1fr auto auto auto auto;
+  grid-template-columns: 40px 32px 1fr auto auto auto auto auto;
   align-items: center;
   gap: 16px;
   padding: 12px 16px 12px 18px;
@@ -862,6 +862,22 @@ GLOBAL_CSS = """
 .cffb-pc-c__meta {
   font-size: 12px; color: var(--fg-secondary); margin-top: 2px;
   display: flex; gap: 6px; align-items: center;
+}
+.cffb-pc-c__score {
+  display: flex; flex-direction: column; align-items: center; line-height: 1.05;
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 22px;
+  color: var(--fg-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  min-width: 52px;
+}
+.cffb-pc-c__score-sub {
+  font-family: var(--font-body);
+  font-size: 10px; font-weight: 500;
+  color: var(--fg-secondary);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-top: 2px;
 }
 .cffb-pc-c__stars { display: inline-flex; gap: 1px; }
 .cffb-pc-c__star { color: var(--gold); font-size: 14px; line-height: 1; }

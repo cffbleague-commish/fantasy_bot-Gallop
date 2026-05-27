@@ -340,6 +340,7 @@ def render_player_card_compact(
     grade: str | None = None,
     savings_vs_predicted: float | None = None,
     savings_vs_league_avg: float | None = None,
+    recruit_score: float | None = None,
 ) -> str:
     """Render a compact player card row.
 
@@ -371,6 +372,17 @@ def render_player_card_compact(
 
     # Position badge
     pos_html = f'<div class="cffb-pc-c__pos" style="background:{pos_color};">{position}</div>'
+
+    # Recruit score panel (sits between name block and stars to break up the row)
+    if recruit_score is not None:
+        score_html = (
+            f'<div class="cffb-pc-c__score">'
+            f'{recruit_score:.1f}'
+            f'<span class="cffb-pc-c__score-sub">Score</span>'
+            f'</div>'
+        )
+    else:
+        score_html = '<span></span>'
 
     # Stars
     star_color = {5: "#C9A227", 4: "#3B82C4", 3: "#7BA4C9"}.get(stars, "#6A6A6A")
@@ -453,6 +465,7 @@ def render_player_card_compact(
         f'  <div class="cffb-pc-c__name">{_esc(name)}</div>'
         f'  <div class="cffb-pc-c__meta">{_esc(college)}</div>'
         f'</div>'
+        f'{score_html}'
         f'<div class="cffb-pc-c__stars">{stars_html}</div>'
         f'{bid_html}'
         f'{delta_html}'
@@ -689,6 +702,7 @@ def render_recruiting_take(
     grade: str,
     quote: str,
     byline_label: str = "",
+    image_url: str = "",
 ) -> str:
     """Render a dual-analyst pull-quote card for a recruiting class.
 
@@ -700,6 +714,8 @@ def render_recruiting_take(
         grade: Letter grade for the upper-right pill.
         quote: The body copy.
         byline_label: Optional left-side byline tag (defaults to persona).
+        image_url: Optional photo URL. When provided, replaces the SVG avatar
+            with a circular cropped headshot.
     """
     cfg = _TAKE_VARIANTS.get(variant, _TAKE_VARIANTS["analyst"])
     accent = cfg["accent"]
@@ -709,6 +725,17 @@ def render_recruiting_take(
     byline = byline_label or persona
 
     grade_html = render_grade_badge(grade, size="lg")
+
+    if image_url and str(image_url).startswith("http"):
+        avatar_inner = (
+            f'<img src="{_esc(image_url)}" alt="{_esc(persona)}" '
+            f'style="width:100%;height:100%;object-fit:cover;border-radius:50%;" '
+            f'loading="lazy"/>'
+        )
+        avatar_padding = "padding:0;overflow:hidden;"
+    else:
+        avatar_inner = avatar_svg
+        avatar_padding = ""
 
     return (
         f'<article style="'
@@ -722,9 +749,9 @@ def render_recruiting_take(
         f'margin:0 0 12px 0;">'
         # Avatar
         f'<div style="grid-area:avatar;width:64px;height:64px;border-radius:50%;'
-        f'display:flex;align-items:center;justify-content:center;'
+        f'display:flex;align-items:center;justify-content:center;{avatar_padding}'
         f'background:#1C1C1C;border:1.5px solid {accent};color:{accent};align-self:start;">'
-        f'{avatar_svg}'
+        f'{avatar_inner}'
         f'</div>'
         # Header
         f'<header style="grid-area:header;display:flex;flex-direction:column;gap:4px;align-self:end;">'
