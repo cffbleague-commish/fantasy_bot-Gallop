@@ -17,9 +17,9 @@ function pickRandom(arr) {
 }
 
 function gradeTier(grade) {
-  if (grade === "A+" || grade === "A") return "elite";
-  if (grade === "B+" || grade === "B") return "good";
-  if (grade === "C+" || grade === "C") return "mixed";
+  if (grade === "A+" || grade === "A" || grade === "A-") return "elite";
+  if (grade === "B+" || grade === "B" || grade === "B-") return "good";
+  if (grade === "C+" || grade === "C" || grade === "C-") return "mixed";
   return "poor";
 }
 
@@ -83,12 +83,17 @@ function calcCorsoGrade(franchise) {
 function applyGradeThresholds(score) {
   var thresholds = [
     { grade: "A+", minPct: 95 },
-    { grade: "A",  minPct: 85 },
-    { grade: "B+", minPct: 70 },
-    { grade: "B",  minPct: 50 },
-    { grade: "C+", minPct: 30 },
-    { grade: "C",  minPct: 15 },
-    { grade: "D",  minPct: 5 },
+    { grade: "A",  minPct: 90 },
+    { grade: "A-", minPct: 85 },
+    { grade: "B+", minPct: 75 },
+    { grade: "B",  minPct: 65 },
+    { grade: "B-", minPct: 55 },
+    { grade: "C+", minPct: 45 },
+    { grade: "C",  minPct: 35 },
+    { grade: "C-", minPct: 25 },
+    { grade: "D+", minPct: 15 },
+    { grade: "D",  minPct: 8 },
+    { grade: "D-", minPct: 3 },
     { grade: "F",  minPct: 0 }
   ];
   for (var i = 0; i < thresholds.length; i++) {

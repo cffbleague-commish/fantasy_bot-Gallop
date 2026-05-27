@@ -16,25 +16,34 @@ var STAR_MULTIPLIERS = { 5: 1.5, 4: 1.2, 3: 1.0, 2: 0.6, 1: 0.3 };
 
 var PLAYER_GRADE_THRESHOLDS = [
   { grade: "A+", minSavings: 15 },
-  { grade: "A",  minSavings: 10 },
-  { grade: "B+", minSavings: 6 },
+  { grade: "A",  minSavings: 11 },
+  { grade: "A-", minSavings: 8 },
+  { grade: "B+", minSavings: 5 },
   { grade: "B",  minSavings: 3 },
-  { grade: "C+", minSavings: -3 },
-  { grade: "C",  minSavings: -6 },
-  { grade: "D+", minSavings: -10 },
-  { grade: "D",  minSavings: -15 },
+  { grade: "B-", minSavings: 1 },
+  { grade: "C+", minSavings: -1 },
+  { grade: "C",  minSavings: -3 },
+  { grade: "C-", minSavings: -5 },
+  { grade: "D+", minSavings: -8 },
+  { grade: "D",  minSavings: -11 },
+  { grade: "D-", minSavings: -14 },
   { grade: "F",  minSavings: -Infinity }
 ];
 
 var OVERALL_GRADE_THRESHOLDS = [
-  { grade: "A+", minPct: 95 },
-  { grade: "A",  minPct: 85 },
-  { grade: "B+", minPct: 70 },
-  { grade: "B",  minPct: 50 },
-  { grade: "C+", minPct: 30 },
-  { grade: "C",  minPct: 15 },
-  { grade: "D",  minPct: 5 },
-  { grade: "F",  minPct: 0 }
+  { grade: "A+", minZ: 1.50 },
+  { grade: "A",  minZ: 1.00 },
+  { grade: "A-", minZ: 0.70 },
+  { grade: "B+", minZ: 0.40 },
+  { grade: "B",  minZ: 0.00 },
+  { grade: "B-", minZ: -0.40 },
+  { grade: "C+", minZ: -0.70 },
+  { grade: "C",  minZ: -1.00 },
+  { grade: "C-", minZ: -1.50 },
+  { grade: "D+", minZ: -1.85 },
+  { grade: "D",  minZ: -2.25 },
+  { grade: "D-", minZ: -2.75 },
+  { grade: "F",  minZ: -Infinity }
 ];
 
 // ============================================================================
@@ -84,8 +93,12 @@ function generateRecruitingGradesForYear(year) {
   matched.forEach(function(m) {
     var avgPrice = leagueAvgPrices[normalizeNameForMatch(m.playerName)] || null;
     m.leagueAvgPrice = avgPrice;
-    m.playerGrade = calcPlayerGrade(m.bidAmount, m.predictedCost, avgPrice);
+    m.savingsVsPredicted = (m.predictedCost !== null && m.predictedCost > 0)
+      ? m.predictedCost - m.bidAmount : null;
+    m.savingsVsLeagueAvg = (avgPrice !== null && avgPrice > 0)
+      ? avgPrice - m.bidAmount : null;
     m.savingsDollars = calcBlendedSavings(m.bidAmount, m.predictedCost, avgPrice);
+    m.playerGrade = calcPlayerGrade(m.bidAmount, m.predictedCost, avgPrice);
   });
 
   // --- 4. Compute class scores per franchise ---
@@ -122,8 +135,10 @@ function generateRecruitingGradesForYear(year) {
     return f;
   });
 
-  // --- 5. Compute overall grades (percentile-based) ---
-  calcOverallGrades(franchises);
+  // --- 5. Compute overall grades (z-score vs historical class scores) ---
+  var historicalScores = loadHistoricalClassScores(yearStr, config);
+  Logger.log("  Historical benchmark classes loaded: " + historicalScores.length);
+  calcOverallGrades(franchises, historicalScores);
 
   // Log summary
   franchises.sort(function(a, b) { return b.classScore - a.classScore; });
@@ -266,6 +281,44 @@ function loadFranchiseLookup(config) {
   return lookup;
 }
 
+/**
+ * Load historical class scores from the RecruitingGrades sheet for z-score benchmarking.
+ * Excludes the year currently being graded (it will be replaced).
+ *
+ * @param {String} currentYearStr - Year being graded (excluded from results)
+ * @param {Object} config - From getConfig()
+ * @returns {Array<Number>} - Class scores from prior years
+ */
+function loadHistoricalClassScores(currentYearStr, config) {
+  var ss = SpreadsheetApp.getActive();
+  var sheet = ss.getSheetByName(config.sheets.recruitingGrades);
+  if (!sheet) return [];
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  var scores = [];
+  data.slice(1).forEach(function(row) {
+    if (String(row[0]) === currentYearStr) return;
+    var classScore = Number(row[3]) || 0;
+    if (classScore > 0) scores.push(classScore);
+  });
+
+  return scores;
+}
+
+/**
+ * Parse formatted dollar strings like "+$5.0" or "-$3.2" back to numbers.
+ * @param {String} str - Formatted dollar string
+ * @returns {Number|null}
+ */
+function parseFormattedDollars(str) {
+  if (!str || str === "N/A") return null;
+  var cleaned = str.replace(/[$+]/g, "");
+  var val = Number(cleaned);
+  return isNaN(val) ? null : val;
+}
+
 // ============================================================================
 // MATCHING & GRADING
 // ============================================================================
@@ -344,7 +397,7 @@ function calcBlendedSavings(bidAmount, predictedCost, leagueAvgPrice) {
   var savingsA = hasA ? (predictedCost - bidAmount) : 0;
   var savingsB = hasB ? (leagueAvgPrice - bidAmount) : 0;
 
-  if (hasA && hasB) return savingsA * 0.60 + savingsB * 0.40;
+  if (hasA && hasB) return savingsA * 0.25 + savingsB * 0.75;
   if (hasA) return savingsA;
   return savingsB;
 }
@@ -409,21 +462,23 @@ function calcClassScore(players) {
 // ============================================================================
 
 /**
- * Calculate overall auction grades for all franchises using percentile rankings.
- * Mutates each franchise object to add: classRank, efficiencyGrade, overallGrade.
+ * Calculate overall auction grades for all franchises.
+ * Class rank and conf rank are year-relative.
+ * Overall grade uses z-score against historical class scores for bell-curve distribution.
+ * Talent/efficiency percentiles are kept for analyst write-up grades.
  *
  * @param {Array} franchises - Array of franchise objects with classScore and avgSavings
+ * @param {Array<Number>} historicalScores - Class scores from prior years
  */
-function calcOverallGrades(franchises) {
+function calcOverallGrades(franchises, historicalScores) {
   if (franchises.length === 0) return;
 
   var n = franchises.length;
 
-  // Rank by class score (desc) — overall and per conference
+  // --- Year-relative ranks ---
   var byScore = franchises.slice().sort(function(a, b) { return b.classScore - a.classScore; });
   byScore.forEach(function(f, i) { f.classRank = i + 1; });
 
-  // Conference rank: rank each team within their conference by class score
   var confGroups = {};
   byScore.forEach(function(f) {
     if (!confGroups[f.conference]) confGroups[f.conference] = [];
@@ -433,13 +488,11 @@ function calcOverallGrades(franchises) {
     confGroups[conf].forEach(function(f, i) { f.confRank = i + 1; });
   });
 
-  // Talent percentile (higher class score = higher percentile)
+  // --- Year-relative percentiles (kept for analyst grades in RecruitingWriteups) ---
   byScore.forEach(function(f, i) {
     f.talentPct = ((n - 1 - i) / Math.max(1, n - 1)) * 100;
   });
 
-  // Efficiency percentile (higher avg savings = higher percentile)
-  // Teams with no graded players get 0 percentile
   var byEfficiency = franchises.slice().sort(function(a, b) {
     var aVal = a.avgSavings !== null ? a.avgSavings : -Infinity;
     var bVal = b.avgSavings !== null ? b.avgSavings : -Infinity;
@@ -449,7 +502,7 @@ function calcOverallGrades(franchises) {
     f.efficiencyPct = ((i) / Math.max(1, n - 1)) * 100;
   });
 
-  // Assign efficiency letter grade (using same player grade thresholds on avg dollar savings)
+  // --- Efficiency letter grade (standalone metric, dollar-based) ---
   franchises.forEach(function(f) {
     if (f.avgSavings === null) {
       f.efficiencyGrade = "N/A";
@@ -464,12 +517,22 @@ function calcOverallGrades(franchises) {
     }
   });
 
-  // Blend: 60% talent + 40% efficiency → overall grade (percentile-based)
+  // --- Overall grade: z-score against historical class scores ---
+  var currentScores = franchises.map(function(f) { return f.classScore; });
+  var allScores = historicalScores.concat(currentScores);
+
+  var mean = allScores.reduce(function(s, v) { return s + v; }, 0) / allScores.length;
+  var variance = allScores.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0) / allScores.length;
+  var sd = Math.sqrt(variance);
+
+  Logger.log("  Historical + current pool: " + allScores.length + " classes, mean=" +
+    mean.toFixed(1) + ", sd=" + sd.toFixed(1));
+
   franchises.forEach(function(f) {
-    var overallScore = f.talentPct * 0.60 + f.efficiencyPct * 0.40;
+    f.classScoreZScore = sd > 0 ? (f.classScore - mean) / sd : 0;
     f.overallGrade = "F";
     for (var i = 0; i < OVERALL_GRADE_THRESHOLDS.length; i++) {
-      if (overallScore >= OVERALL_GRADE_THRESHOLDS[i].minPct) {
+      if (f.classScoreZScore >= OVERALL_GRADE_THRESHOLDS[i].minZ) {
         f.overallGrade = OVERALL_GRADE_THRESHOLDS[i].grade;
         break;
       }
@@ -588,7 +651,8 @@ function writeRecruitingGrades(yearStr, franchises, config) {
   var playerHeaders = [
     "DraftYear", "Franchise", "Player", "Position", "Stars",
     "Recruit Score", "Bid Amount", "Predicted Cost", "League Avg Price",
-    "Savings $", "Player Grade"
+    "Savings vs Predicted", "Savings vs League Avg", "Blended Savings",
+    "Player Grade"
   ];
 
   if (isNewPlayerSheet) {
@@ -611,6 +675,8 @@ function writeRecruitingGrades(yearStr, franchises, config) {
         "$" + p.bidAmount,
         p.predictedCost !== null ? "$" + p.predictedCost : "",
         p.leagueAvgPrice !== null ? "$" + (Math.round(p.leagueAvgPrice * 10) / 10) : "",
+        p.savingsVsPredicted !== null ? formatDollarSavings(p.savingsVsPredicted) : "N/A",
+        p.savingsVsLeagueAvg !== null ? formatDollarSavings(p.savingsVsLeagueAvg) : "N/A",
         p.savingsDollars !== null ? formatDollarSavings(p.savingsDollars) : "N/A",
         p.playerGrade || "N/A"
       ]);
@@ -632,8 +698,10 @@ function writeRecruitingGrades(yearStr, franchises, config) {
     playerSheet.setColumnWidth(7, 80);    // Bid Amount
     playerSheet.setColumnWidth(8, 95);    // Predicted Cost
     playerSheet.setColumnWidth(9, 105);   // League Avg Price
-    playerSheet.setColumnWidth(10, 80);   // Savings %
-    playerSheet.setColumnWidth(11, 90);   // Player Grade
+    playerSheet.setColumnWidth(10, 120);  // Savings vs Predicted
+    playerSheet.setColumnWidth(11, 130);  // Savings vs League Avg
+    playerSheet.setColumnWidth(12, 105);  // Blended Savings
+    playerSheet.setColumnWidth(13, 90);   // Player Grade
   }
 
   Logger.log("  Wrote " + teamRows.length + " team summaries to " + config.sheets.recruitingGrades);
