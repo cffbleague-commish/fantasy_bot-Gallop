@@ -1,65 +1,53 @@
 """
 Class Grades tab — leaderboard of team recruiting class grades.
-Evaluation mode: KPI row + league overview up top, leaderboard + team detail side-by-side below.
+Renders the CFFB design-system RecruitingClassTable component; team-click
+opens the right-column deep dive.
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from data.sheets import load_recruiting_grades, load_player_grades, load_franchise_lookup, get_available_years
-from models.config import CONFERENCES
+from data.sheets import load_recruiting_grades, get_available_years
 from grading import compute_class_grades
 from descriptions import DESCRIPTIONS
 from components import (
     render_kpi_row,
     render_grade_badge,
-    render_rank_badge,
-    render_conference_badge,
-    render_commit_composition_bar,
     plotly_layout_defaults,
-    grade_badge_url,
     _html,
 )
+from components_html.recruiting_class_table import render_recruiting_class_table
 from utils.viewport import responsive_columns
+
+
+# Conference code mapping: Sheet/Config key → component dropdown code.
+_CONF_CODE = {
+    "ACC": "acc",
+    "B10": "b1g",
+    "B12": "big12",
+    "P12": "pac",
+    "SEC": "sec",
+    "AAC": "aac",
+}
 
 
 def render():
     """Render the Class Grades tab."""
-    # --- Inline filters ---
     years = get_available_years()
     if not years:
         st.info("No data found.")
         return
 
-    col_y, col_c = responsive_columns(2)
-    year_options = ["All Years"] + years
-    year_selection = col_y.selectbox("Draft Year", year_options, key="grades_year")
-    show_all_years = year_selection == "All Years"
-    year = None if show_all_years else year_selection
-    conference_filter = col_c.selectbox("Conference", ["All"] + sorted(CONFERENCES.keys()), key="grades_conf")
-
-    grades_df = load_recruiting_grades(year)
-
+    grades_df = load_recruiting_grades(None)
     if grades_df.empty:
-        st.info(f"No recruiting grades available{'' if show_all_years else f' for {year}'}. Generate them in Google Sheets first.")
+        st.info("No recruiting grades available. Generate them in Google Sheets first.")
         return
 
-    # Ensure grades are computed
     grades_df = compute_class_grades(grades_df)
-
-    # Apply conference filter
-    if conference_filter != "All":
-        grades_df = grades_df[grades_df["Conference"] == conference_filter]
-
-    if grades_df.empty:
-        st.info("No teams match the current conference filter.")
-        return
-
-    # Sort by ClassScore descending (leaderboard)
     grades_df = grades_df.sort_values("ClassScore", ascending=False).reset_index(drop=True)
 
-    # --- KPI Row + League Overview (inline, top section) ---
+    # --- KPI Row ---
     total_five = int(grades_df["FiveStar"].sum()) if "FiveStar" in grades_df.columns else 0
     total_four = int(grades_df["FourStar"].sum()) if "FourStar" in grades_df.columns else 0
     avg_score = grades_df["ClassScore"].mean() if "ClassScore" in grades_df.columns else 0
@@ -80,7 +68,6 @@ def render():
         st.markdown("---")
         st.markdown(DESCRIPTIONS["efficiency_grade"])
 
-    # League overview: grade distribution + top spenders inline
     _render_league_overview(grades_df)
 
     st.markdown("---")
@@ -89,82 +76,38 @@ def render():
     col_left, col_right = responsive_columns([45, 55], gap="medium")
 
     with col_left:
-        st.markdown("#### Class Leaderboard")
-
-        # Build display table
-        display_rows = []
-        for idx, row in grades_df.iterrows():
-            five = int(row.get("FiveStar", 0) or 0)
-            four = int(row.get("FourStar", 0) or 0)
-            three = int(row.get("ThreeStar", 0) or 0)
-            two = int(row.get("TwoStar", 0) or 0)
-
-            row_data = {"Rank": idx + 1}
-            if show_all_years:
-                row_data["Year"] = int(row["DraftYear"]) if pd.notna(row.get("DraftYear")) else ""
-            row_data.update({
-                "Team": row.get("FranchiseLogo", ""),
-                "Grade": grade_badge_url(row.get("OverallGrade", "")),
-                "Score": round(row.get("ClassScore", 0) or 0, 2),
-                "5\u2605": five,
-                "4\u2605": four,
-                "3\u2605": three,
-                "2\u2605": two,
-            })
-            display_rows.append(row_data)
-
-        display_df = pd.DataFrame(display_rows)
-
-        column_config = {
-            "Rank": st.column_config.NumberColumn("#", width=50),
-            "Score": st.column_config.NumberColumn("Score", width=65),
-            "5\u2605": st.column_config.NumberColumn("5\u2605", width=50),
-            "4\u2605": st.column_config.NumberColumn("4\u2605", width=50),
-            "3\u2605": st.column_config.NumberColumn("3\u2605", width=50),
-            "2\u2605": st.column_config.NumberColumn("2\u2605", width=50),
-        }
-        if show_all_years:
-            column_config["Year"] = st.column_config.NumberColumn("Year", width=60, format="%d")
-        if "Team" in display_df.columns:
-            column_config["Team"] = st.column_config.ImageColumn("Team", width="medium")
-        if "Grade" in display_df.columns:
-            column_config["Grade"] = st.column_config.ImageColumn("Grade", width="small")
-
-        # Row-selectable dataframe
-        selection = st.dataframe(
-            display_df,
-            column_config=column_config,
-            hide_index=True,
-            use_container_width=True,
-            height=min(len(display_df) * 35 + 38, 700),
-            on_select="rerun",
-            selection_mode="single-row",
-            key="grades_leaderboard",
+        component_rows = _build_component_rows(grades_df)
+        selected = render_recruiting_class_table(
+            component_rows,
+            selected_team=st.session_state.get("grades_selected_team"),
+            key="grades_class_table",
         )
-
-        # Get selected row index
-        selected_rows = selection.selection.rows if selection and selection.selection else []
+        # Sync selection into session state and rerun so the right column updates.
+        if selected != st.session_state.get("grades_selected_team"):
+            st.session_state["grades_selected_team"] = selected
+            st.rerun()
 
     with col_right:
-        if selected_rows:
-            row_idx = selected_rows[0]
-            if row_idx < len(grades_df):
-                team_name = grades_df.iloc[row_idx]["Franchise"]
-                dive_year = year
-                if show_all_years:
-                    dive_year = grades_df.iloc[row_idx].get("DraftYear")
-                year_label = int(dive_year) if dive_year and pd.notna(dive_year) else ""
+        team_name = st.session_state.get("grades_selected_team")
+        if team_name:
+            team_rows = grades_df[grades_df["Franchise"] == team_name]
+            if not team_rows.empty:
+                team_rows = team_rows.sort_values("DraftYear", ascending=False)
+                dive_year = team_rows.iloc[0].get("DraftYear")
+                year_label = int(dive_year) if pd.notna(dive_year) else ""
                 st.markdown(f"#### {year_label} Class Detail" if year_label else "#### Class Detail")
                 _show_team_deep_dive(team_name, grades_df, dive_year)
+            else:
+                st.caption(f"No grade data found for {team_name}.")
         else:
-            st.caption("Select a team from the leaderboard to view their recruiting detail.")
+            st.caption("Click a team logo in the leaderboard to view their recruiting detail.")
 
-    # --- Conference Comparison Chart (below fold) ---
-    if conference_filter == "All" and len(grades_df) > 5:
+    # --- Conference Comparison Chart ---
+    if len(grades_df) > 5:
         st.markdown("---")
         st.markdown("#### Conference Comparison")
 
-        if show_all_years and "DraftYear" in grades_df.columns:
+        if "DraftYear" in grades_df.columns and grades_df["DraftYear"].nunique() > 1:
             conf_avg = grades_df.groupby(["Conference", "DraftYear"])["ClassScore"].mean().reset_index()
             conf_avg.columns = ["Conference", "Year", "Avg Score"]
             conf_avg["Year"] = conf_avg["Year"].astype(str)
@@ -203,6 +146,59 @@ _ALL_GRADES = [
 ]
 
 
+def _build_component_rows(grades_df: pd.DataFrame) -> list[dict]:
+    """Transform the grades DataFrame into row dicts for the iframe component."""
+    if grades_df.empty:
+        return []
+
+    # Per-year top flag: rank #1 by ClassScore within each DraftYear gets the gold treatment.
+    top_idx = (
+        grades_df.groupby("DraftYear")["ClassScore"].idxmax()
+        if "DraftYear" in grades_df.columns and "ClassScore" in grades_df.columns
+        else pd.Series(dtype="int64")
+    )
+    top_set = set(top_idx.tolist())
+
+    out: list[dict] = []
+    for idx, row in grades_df.iterrows():
+        out.append({
+            "rank": _to_int(row.get("ClassRank")),
+            "team": str(row.get("Franchise", "")),
+            "abbr": "",
+            "conf": _CONF_CODE.get(str(row.get("Conference", "")).strip(), ""),
+            "year": _to_int(row.get("DraftYear")),
+            "confRank": _to_int(row.get("ConfRank")),
+            "s5": _to_int(row.get("FiveStar")),
+            "s4": _to_int(row.get("FourStar")),
+            "s3": _to_int(row.get("ThreeStar")),
+            "s2": _to_int(row.get("TwoStar")),
+            "total": _to_int(row.get("TotalPlayers")),
+            "score": _to_float(row.get("ClassScore")),
+            "grade": str(row.get("OverallGrade", "")).strip(),
+            "logo": str(row.get("FranchiseLogo", "")).strip(),
+            "isTop": idx in top_set,
+        })
+    return out
+
+
+def _to_int(v) -> int:
+    try:
+        if v is None or (isinstance(v, float) and pd.isna(v)):
+            return 0
+        return int(float(v))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _to_float(v) -> float:
+    try:
+        if v is None or (isinstance(v, float) and pd.isna(v)):
+            return 0.0
+        return float(v)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def _render_league_overview(grades_df: pd.DataFrame):
     """Render league overview — full 13-tier grade distribution."""
     if "OverallGrade" not in grades_df.columns:
@@ -214,7 +210,6 @@ def _render_league_overview(grades_df: pd.DataFrame):
     for grade in _ALL_GRADES:
         count = int(grade_counts.get(grade, 0))
         badge = render_grade_badge(grade, size="sm")
-        # Dim zero-count grades so the distribution shape stays legible.
         opacity = "1" if count > 0 else "0.28"
         count_color = "#F5F5F5" if count > 0 else "#5A5A5A"
         badges_html += (
@@ -226,7 +221,7 @@ def _render_league_overview(grades_df: pd.DataFrame):
     _html(f'<div style="display:flex;flex-wrap:wrap;gap:6px 0;">{badges_html}</div>')
 
 
-def _show_team_deep_dive(team_name: str, grades_df: pd.DataFrame, year: int):
-    """Open the Team Deep Dive modal."""
+def _show_team_deep_dive(team_name: str, grades_df: pd.DataFrame, year):
+    """Open the Team Deep Dive."""
     from modals.team_deep_dive import show_team_deep_dive
     show_team_deep_dive(team_name, grades_df, year)

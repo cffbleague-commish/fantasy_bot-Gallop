@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recruiting Class Table</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0A0A0A;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.cffb-rct {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F5F5F5;
+  background: #141414;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Heading bar */
+.cffb-rct__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-rct__title {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  margin: 0;
+}
+.cffb-rct__eyebrow {
+  font-weight: 700; font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #C9A227;
+  margin-right: 8px;
+}
+.cffb-rct__count {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 13px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #9A9A9A;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-rct__count strong { color: #F5F5F5; font-weight: 700; }
+
+/* Filter row */
+.cffb-rct__filters {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #141414;
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-rct__search {
+  position: relative; flex: 1 1 220px; min-width: 180px;
+}
+.cffb-rct__search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  color: #F5F5F5;
+  font: 500 13px/1.2 'Inter', system-ui, sans-serif;
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+  box-sizing: border-box;
+}
+.cffb-rct__search input::placeholder { color: #5A5A5A; }
+.cffb-rct__search input:focus {
+  border-color: #C9A227;
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+.cffb-rct__search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px;
+  stroke: #5A5A5A; fill: none; stroke-width: 2;
+  pointer-events: none;
+}
+.cffb-rct__select { position: relative; display: inline-flex; align-items: center; }
+.cffb-rct__select select {
+  appearance: none; -webkit-appearance: none;
+  padding: 8px 28px 8px 12px;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  color: #F5F5F5;
+  font: 500 13px/1.2 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+  min-width: 110px;
+}
+.cffb-rct__select select:hover { background: #1F1F1F; }
+.cffb-rct__select select:focus {
+  border-color: #C9A227;
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+.cffb-rct__select::after {
+  content: ""; position: absolute; right: 10px; top: 50%;
+  width: 8px; height: 8px;
+  border-right: 1.5px solid #9A9A9A;
+  border-bottom: 1.5px solid #9A9A9A;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+.cffb-rct__reset {
+  margin-left: auto;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  color: #9A9A9A;
+  font: 600 11px/1.2 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+.cffb-rct__reset:hover { color: #F5F5F5; border-color: #3A3A3A; }
+
+/* Active-team pill */
+.cffb-rct__pill-row {
+  display: none;
+  align-items: center; gap: 10px;
+  padding: 10px 20px;
+  background: rgba(201,162,39,0.06);
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-rct.is-team-filtered .cffb-rct__pill-row { display: flex; }
+.cffb-rct__pill-label {
+  font: 700 10px/1 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #9A9A9A;
+}
+.cffb-rct__pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 6px 5px 10px;
+  background: #1C1C1C;
+  border: 1px solid rgba(201,162,39,0.40);
+  border-radius: 999px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 13px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #F5F5F5;
+}
+.cffb-rct__pill-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #2A2A2A;
+  color: #F5F5F5;
+  font: 700 11px/1 'Inter', system-ui, sans-serif;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms;
+}
+.cffb-rct__pill-x:hover { background: #B84545; }
+
+/* Scroll wrapper */
+.cffb-rct__scroll {
+  max-height: 620px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #2A2A2A #0A0A0A;
+}
+.cffb-rct__scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.cffb-rct__scroll::-webkit-scrollbar-track { background: #0A0A0A; }
+.cffb-rct__scroll::-webkit-scrollbar-thumb {
+  background: #2A2A2A; border-radius: 6px; border: 2px solid #0A0A0A;
+}
+.cffb-rct__scroll::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
+
+/* Table */
+.cffb-rct__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-rct__table th,
+.cffb-rct__table td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid #1F1F1F;
+}
+.cffb-rct__table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: #1C1C1C;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600; font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #9A9A9A;
+  border-bottom: 1px solid #2A2A2A;
+  user-select: none;
+}
+.cffb-rct__table thead th.is-sortable { cursor: pointer; }
+.cffb-rct__table thead th.is-sortable:hover { color: #F5F5F5; }
+.cffb-rct__table thead th.is-sortable::after {
+  content: " ▾"; opacity: 0; color: #C9A227; margin-left: 2px;
+  font-size: 9px;
+}
+.cffb-rct__table thead th.is-sorted-asc::after  { content: " ▴"; opacity: 1; }
+.cffb-rct__table thead th.is-sorted-desc::after { content: " ▾"; opacity: 1; }
+.cffb-rct__table thead th.is-sortable:not(.is-sorted-asc):not(.is-sorted-desc):hover::after { opacity: 0.4; }
+
+/* Sticky rank column */
+.cffb-rct__table th.cffb-rct__col-rank,
+.cffb-rct__table td.cffb-rct__col-rank {
+  position: sticky; left: 0;
+  background: #141414;
+  z-index: 1;
+  padding-left: 20px;
+  width: 56px;
+}
+.cffb-rct__table thead th.cffb-rct__col-rank {
+  background: #1C1C1C;
+  z-index: 4;
+}
+.cffb-rct__table tbody tr:hover td.cffb-rct__col-rank { background: #1F1F1F; }
+
+/* Sticky team column */
+.cffb-rct__table th.cffb-rct__col-team,
+.cffb-rct__table td.cffb-rct__col-team {
+  position: sticky; left: 56px;
+  background: #141414;
+  z-index: 1;
+  width: 144px;
+  padding-left: 4px; padding-right: 4px;
+}
+.cffb-rct__table thead th.cffb-rct__col-team {
+  background: #1C1C1C;
+  z-index: 4;
+}
+.cffb-rct__table tbody tr:hover td.cffb-rct__col-team { background: #1F1F1F; }
+
+/* Body rows */
+.cffb-rct__table tbody tr {
+  position: relative;
+  transition: background 120ms;
+}
+.cffb-rct__table tbody tr:hover td:not(.cffb-rct__col-rank):not(.cffb-rct__col-team) { background: #1F1F1F; }
+.cffb-rct__table tbody tr.is-top td.cffb-rct__col-rank::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+}
+.cffb-rct__table tbody tr:last-child td { border-bottom: none; }
+.cffb-rct__table tbody tr.is-hidden { display: none; }
+.cffb-rct__table tbody tr.is-team-active td { background: rgba(201,162,39,0.05); }
+.cffb-rct__table tbody tr.is-team-active td.cffb-rct__col-rank,
+.cffb-rct__table tbody tr.is-team-active td.cffb-rct__col-team { background: #1A1607; }
+
+/* Cells */
+.cffb-rct__rank {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 18px;
+  color: #9A9A9A;
+}
+.cffb-rct__rank.is-top { color: #C9A227; }
+
+.cffb-rct__chip-btn {
+  background: none; border: 0; padding: 4px; margin: 0;
+  cursor: pointer; display: inline-flex; align-items: center;
+  border-radius: 8px;
+  transition: transform 120ms cubic-bezier(0.2,0.8,0.2,1),
+              background 120ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-rct__chip-btn:hover { transform: translateX(2px); background: rgba(201,162,39,0.06); }
+.cffb-rct__chip-btn:focus { outline: none; }
+.cffb-rct__chip-btn:focus-visible { box-shadow: 0 0 0 2px #0A0A0A, 0 0 0 4px #C9A227; }
+
+.cffb-rct__logo {
+  display: block;
+  height: 28px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  transition: filter 120ms;
+}
+.cffb-rct__chip-btn:hover .cffb-rct__logo {
+  filter: drop-shadow(0 0 6px rgba(201,162,39,0.45)) brightness(1.06);
+}
+
+.cffb-rct__year {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 14px;
+  color: #9A9A9A;
+  letter-spacing: 0.04em;
+  width: 40px;
+}
+
+.cffb-rct__confrank {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 15px;
+  color: #F5F5F5;
+  text-align: center;
+  width: 60px;
+}
+.cffb-rct__confrank.is-empty { color: #5A5A5A; font-weight: 500; }
+
+.cffb-rct__stars { text-align: center; width: 52px; }
+.cffb-rct__star-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 4px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 15px;
+  min-width: 32px;
+}
+.cffb-rct__star-count::before {
+  content: "★"; font-size: 11px; line-height: 1;
+}
+.cffb-rct__star-count.is-zero            { color: #3A3A3A; }
+.cffb-rct__star-count.is-zero::before    { color: #3A3A3A; }
+.cffb-rct__star-count--5                  { color: #E8C547; }
+.cffb-rct__star-count--5::before          { color: #C9A227; }
+.cffb-rct__star-count--4                  { color: #7DA8D6; }
+.cffb-rct__star-count--4::before          { color: #3B82C4; }
+.cffb-rct__star-count--3                  { color: #A8C5DC; }
+.cffb-rct__star-count--3::before          { color: #7BA4C9; }
+.cffb-rct__star-count--2                  { color: #9A9A9A; }
+.cffb-rct__star-count--2::before          { color: #6A6A6A; }
+
+.cffb-rct__total {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 15px;
+  color: #F5F5F5;
+  text-align: center;
+}
+.cffb-rct__score {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 17px;
+  color: #F5F5F5;
+  text-align: right;
+  letter-spacing: -0.005em;
+}
+.cffb-rct__score.is-top {
+  background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cffb-rct__grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 14px;
+  letter-spacing: -0.01em;
+  border-radius: 4px;
+  padding: 3px 9px 4px;
+  min-width: 36px;
+  color: #F5F5F5;
+}
+.cffb-rct__grade--ap { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; box-shadow: 0 0 10px rgba(201,162,39,0.30); }
+.cffb-rct__grade--a  { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; }
+.cffb-rct__grade--am { background: rgba(201,162,39,0.85); color: #0A0A0A; }
+.cffb-rct__grade--bp { background: #4A9968; }
+.cffb-rct__grade--b  { background: #2D7A4E; }
+.cffb-rct__grade--bm { background: #226A42; }
+.cffb-rct__grade--cp { background: #5A7A98; }
+.cffb-rct__grade--c  { background: #4A6680; }
+.cffb-rct__grade--cm { background: #3A5670; }
+.cffb-rct__grade--dp { background: #B84545; }
+.cffb-rct__grade--d  { background: #A03A3A; }
+.cffb-rct__grade--f  { background: #7A2A2A; }
+
+/* Empty state */
+.cffb-rct__empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #5A5A5A;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 16px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  display: none;
+}
+.cffb-rct.is-empty .cffb-rct__empty { display: block; }
+.cffb-rct.is-empty .cffb-rct__table tbody { display: none; }
+
+/* Footer */
+.cffb-rct__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #141414;
+  border-top: 1px solid #2A2A2A;
+  font-size: 11px; color: #5A5A5A;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 600;
+}
+.cffb-rct__foot-legend { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cffb-rct__foot-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.cffb-rct__foot-legend i {
+  font-style: normal; font-size: 11px;
+  font-family: 'Saira Condensed', system-ui, sans-serif; font-weight: 700;
+}
+.cffb-rct__hint {
+  font-style: normal;
+  letter-spacing: 0.08em;
+}
+.cffb-rct__hint strong { color: #9A9A9A; font-weight: 700; }
+
+/* MOBILE (≤720px) */
+@media (max-width: 720px) {
+  .cffb-rct__head { padding: 14px 16px 10px; }
+  .cffb-rct__title { font-size: 17px; }
+  .cffb-rct__filters { padding: 10px 12px; gap: 6px; }
+  .cffb-rct__select select { min-width: 0; padding: 8px 26px 8px 10px; font-size: 12px; }
+  .cffb-rct__reset { width: 100%; margin-left: 0; order: 99; }
+  .cffb-rct__search { flex-basis: 100%; }
+  .cffb-rct__pill-row { padding: 10px 14px; }
+  .cffb-rct__scroll { max-height: 620px; padding: 10px 0 6px; }
+  .cffb-rct__foot { padding: 10px 14px; flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  .cffb-rct__table,
+  .cffb-rct__table tbody { display: block; }
+  .cffb-rct__table thead { display: none; }
+
+  .cffb-rct__table tr {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-areas:
+      "rank logo logo logo year year score score"
+      "cr   s5   s4   s3   s2   tot  grade grade";
+    gap: 8px 4px;
+    align-items: center;
+    padding: 12px 14px;
+    margin: 0 12px 8px;
+    background: #141414;
+    border: 1px solid #2A2A2A;
+    border-radius: 8px;
+    position: relative;
+  }
+  .cffb-rct__table tr.is-top {
+    border-color: rgba(201,162,39,0.45);
+    box-shadow: 0 0 18px rgba(201,162,39,0.14);
+  }
+  .cffb-rct__table tr.is-team-active {
+    border-color: rgba(201,162,39,0.55);
+    background: #1A1607;
+  }
+  .cffb-rct__table tr.is-top td.cffb-rct__col-rank::before { display: none; }
+
+  .cffb-rct__table td {
+    position: static !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    white-space: nowrap;
+    text-align: left !important;
+  }
+  .cffb-rct__table tbody td::before {
+    display: block;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5A5A5A;
+    margin-bottom: 2px;
+    line-height: 1;
+  }
+
+  .cffb-rct__table td.cffb-rct__col-team {
+    grid-area: logo;
+    align-self: center; justify-self: start;
+    margin-left: -1px;
+  }
+  .cffb-rct__table td.cffb-rct__col-team::before { display: none; }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__logo {
+    height: 26px; max-width: 100px;
+  }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__chip-btn { padding: 2px; }
+
+  .cffb-rct__table td.cffb-rct__col-rank {
+    grid-area: rank;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px; line-height: 1;
+    color: #9A9A9A;
+    align-self: center;
+  }
+  .cffb-rct__table td.cffb-rct__col-rank::before { content: "Rank"; }
+  .cffb-rct__table td.cffb-rct__col-rank.is-top { color: #C9A227; }
+  .cffb-rct__table td.cffb-rct__col-rank::after { content: none; }
+
+  .cffb-rct__table td.cffb-rct__year {
+    grid-area: year;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #F5F5F5;
+    letter-spacing: 0;
+    justify-self: start;
+    align-self: center;
+    text-align: left !important;
+  }
+  .cffb-rct__table td.cffb-rct__year::before { content: "Year"; text-align: left; }
+
+  .cffb-rct__table td.cffb-rct__confrank {
+    grid-area: cr;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    text-align: left !important;
+    align-self: start;
+  }
+  .cffb-rct__table td.cffb-rct__confrank::before { content: "Conf #"; }
+  .cffb-rct__table td.cffb-rct__confrank.is-empty::before { content: "Conf"; }
+
+  .cffb-rct__table tr > td:nth-child(10) {
+    grid-area: score;
+    text-align: right !important;
+    font-size: 15px;
+    line-height: 1;
+    align-self: center;
+    justify-self: end;
+  }
+  .cffb-rct__table tr > td:nth-child(10)::before {
+    content: "Score";
+    text-align: right;
+  }
+  .cffb-rct__table tr > td.cffb-rct__score.is-top {
+    background-image: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%) !important;
+    background-color: transparent !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+  .cffb-rct__table tr > td.cffb-rct__score.is-top::before {
+    -webkit-text-fill-color: #5A5A5A;
+    background: none !important;
+  }
+
+  .cffb-rct__table tr > td:nth-child(11) {
+    grid-area: grade;
+    text-align: right !important;
+    justify-self: end;
+    align-self: center;
+  }
+  .cffb-rct__table tr > td:nth-child(11)::before {
+    content: "Grade";
+    text-align: right;
+  }
+  .cffb-rct__table tr > td:nth-child(11) .cffb-rct__grade {
+    font-size: 14px;
+    padding: 3px 8px 4px;
+  }
+
+  .cffb-rct__table tr > td:nth-child(5) { grid-area: s5; }
+  .cffb-rct__table tr > td:nth-child(6) { grid-area: s4; }
+  .cffb-rct__table tr > td:nth-child(7) { grid-area: s3; }
+  .cffb-rct__table tr > td:nth-child(8) { grid-area: s2; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(5)::before { content: "5★"; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(6)::before { content: "4★"; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(7)::before { content: "3★"; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(8)::before { content: "2★"; }
+
+  .cffb-rct__table tr > td.cffb-rct__total {
+    grid-area: tot;
+    justify-self: center;
+    align-self: start;
+    text-align: center !important;
+    font-size: 15px;
+  }
+  .cffb-rct__table tr > td.cffb-rct__total::before {
+    content: "TOT";
+    text-align: center;
+  }
+
+  .cffb-rct__table tr > td.cffb-rct__stars {
+    display: block;
+    text-align: center !important;
+    justify-self: center;
+  }
+  .cffb-rct__table tr > td.cffb-rct__stars .cffb-rct__star-count {
+    font-size: 15px; gap: 3px; min-width: 0;
+    justify-content: center;
+  }
+  .cffb-rct__table tr > td.cffb-rct__stars .cffb-rct__star-count::before {
+    content: none;
+  }
+  .cffb-rct__table tr > td.cffb-rct__stars::before {
+    text-align: center;
+  }
+
+  .cffb-rct__empty { padding: 32px 16px; font-size: 14px; }
+}
+
+@media (max-width: 380px) {
+  .cffb-rct__table tr {
+    gap: 6px 3px; padding: 10px 8px;
+  }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__logo { height: 20px; max-width: 84px; }
+  .cffb-rct__table td.cffb-rct__col-rank { font-size: 20px; }
+  .cffb-rct__table td.cffb-rct__year { font-size: 12px; }
+  .cffb-rct__table tr > td:nth-child(10) { font-size: 13px; }
+  .cffb-rct__table tbody td::before { font-size: 7px; letter-spacing: 0.06em; }
+  .cffb-rct__table tr > td.cffb-rct__stars .cffb-rct__star-count { font-size: 12px; }
+  .cffb-rct__table tr > td:nth-child(11) .cffb-rct__grade { font-size: 12px; padding: 2px 6px 3px; min-width: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="cffb-rct" data-cffb-rct>
+  <div class="cffb-rct__head">
+    <h3 class="cffb-rct__title">
+      <span class="cffb-rct__eyebrow">CFFB ·</span>Recruiting Class Grades
+    </h3>
+    <div class="cffb-rct__count">
+      <strong data-count-visible>0</strong> / <span data-count-total>0</span> classes
+    </div>
+  </div>
+
+  <div class="cffb-rct__filters">
+    <div class="cffb-rct__search">
+      <svg class="cffb-rct__search-icon" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="16.5" y1="16.5" x2="21" y2="21" stroke-linecap="round"></line>
+      </svg>
+      <input type="text" placeholder="Search team…" data-filter="search">
+    </div>
+
+    <div class="cffb-rct__select">
+      <select data-filter="year">
+        <option value="">All draft years</option>
+      </select>
+    </div>
+
+    <div class="cffb-rct__select">
+      <select data-filter="conf">
+        <option value="">All conferences</option>
+      </select>
+    </div>
+
+    <button class="cffb-rct__reset" type="button" data-reset>Reset</button>
+  </div>
+
+  <div class="cffb-rct__pill-row" data-pill-row>
+    <span class="cffb-rct__pill-label">Filtering on</span>
+    <span class="cffb-rct__pill">
+      <span data-pill-team>Team</span>
+      <button class="cffb-rct__pill-x" type="button" data-team-clear aria-label="Clear team filter">✕</button>
+    </span>
+  </div>
+
+  <div class="cffb-rct__scroll">
+    <table class="cffb-rct__table">
+      <thead>
+        <tr>
+          <th class="cffb-rct__col-rank is-sortable is-sorted-asc" data-sort="rank">#</th>
+          <th class="cffb-rct__col-team">Team</th>
+          <th class="is-sortable" data-sort="year">Yr</th>
+          <th class="is-sortable" data-sort="confrank" style="text-align:center;">Conf #</th>
+          <th class="is-sortable" data-sort="s5" style="text-align:center;">5★</th>
+          <th class="is-sortable" data-sort="s4" style="text-align:center;">4★</th>
+          <th class="is-sortable" data-sort="s3" style="text-align:center;">3★</th>
+          <th class="is-sortable" data-sort="s2" style="text-align:center;">2★</th>
+          <th class="is-sortable" data-sort="total" style="text-align:center;">Commits</th>
+          <th class="is-sortable" data-sort="score" style="text-align:right;">Score</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="cffb-rct__empty">No classes match those filters.</div>
+  </div>
+
+  <div class="cffb-rct__foot">
+    <div class="cffb-rct__foot-legend">
+      <span><i style="color:#C9A227;">★</i> 5-STAR</span>
+      <span><i style="color:#3B82C4;">★</i> 4-STAR</span>
+      <span><i style="color:#7BA4C9;">★</i> 3-STAR</span>
+      <span><i style="color:#6A6A6A;">★</i> 2-STAR</span>
+    </div>
+    <div class="cffb-rct__hint"><strong>Click a logo</strong> to filter on that team</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---------- Streamlit iframe bridge ----------
+  function streamlitSend(type, data) {
+    var msg = Object.assign({isStreamlitMessage: true, type: type}, data || {});
+    window.parent.postMessage(msg, "*");
+  }
+  function setComponentValue(value) {
+    streamlitSend("streamlit:setComponentValue", {value: value, dataType: "json"});
+  }
+  function setFrameHeight() {
+    streamlitSend("streamlit:setFrameHeight", {height: document.documentElement.scrollHeight});
+  }
+
+  // ---------- DOM refs ----------
+  var root     = document.querySelector('[data-cffb-rct]');
+  var tbody    = root.querySelector('tbody');
+  var search   = root.querySelector('[data-filter="search"]');
+  var fYear    = root.querySelector('[data-filter="year"]');
+  var fConf    = root.querySelector('[data-filter="conf"]');
+  var reset    = root.querySelector('[data-reset]');
+  var visTxt   = root.querySelector('[data-count-visible]');
+  var totalTxt = root.querySelector('[data-count-total]');
+  var heads    = root.querySelectorAll('thead th.is-sortable');
+  var pillRow  = root.querySelector('[data-pill-row]');
+  var pillTeam = root.querySelector('[data-pill-team]');
+  var pillX    = root.querySelector('[data-team-clear]');
+
+  var rows = [];
+  var teamFilter = '';
+  var sortKey = 'rank', sortDir = 'asc';
+
+  // ---------- Row HTML builder ----------
+  var GRADE_CLASS = {
+    'A+': 'ap', 'A': 'a',  'A-': 'am', 'A−': 'am',
+    'B+': 'bp', 'B': 'b',  'B-': 'bm', 'B−': 'bm',
+    'C+': 'cp', 'C': 'c',  'C-': 'cm', 'C−': 'cm',
+    'D+': 'dp', 'D': 'd',  'D-': 'd',  'D−': 'd',
+    'F':  'f'
+  };
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function starCell(tier, count) {
+    var n = Number(count) || 0;
+    var cls = 'cffb-rct__star-count cffb-rct__star-count--' + tier + (n === 0 ? ' is-zero' : '');
+    return '<td class="cffb-rct__stars"><span class="' + cls + '">' + n + '</span></td>';
+  }
+  function buildRow(r) {
+    var rank = Number(r.rank) || 0;
+    var rankStr = rank < 10 ? '0' + rank : String(rank);
+    var isTop = !!r.isTop;
+    var rankCls = 'cffb-rct__col-rank cffb-rct__rank' + (isTop ? ' is-top' : '');
+    var year2 = (r.year != null) ? "'" + String(r.year).slice(-2) : '';
+    var confRankHas = r.confRank != null && r.confRank !== '' && Number(r.confRank) < 90;
+    var crCls = 'cffb-rct__confrank' + (confRankHas ? '' : ' is-empty');
+    var crVal = confRankHas ? r.confRank : '—';
+    var gradeRaw = r.grade || '';
+    var gradeMod = GRADE_CLASS[gradeRaw] || 'c';
+    var scoreCls = 'cffb-rct__score' + (isTop ? ' is-top' : '');
+    var scoreVal = (r.score == null || isNaN(r.score)) ? '' : Number(r.score).toFixed(1);
+
+    var logoHtml = r.logo
+      ? '<img class="cffb-rct__logo" src="' + esc(r.logo) + '" alt="' + esc(r.team) + '">'
+      : '<span class="cffb-rct__logo" style="display:inline-block;height:28px;line-height:28px;color:#9A9A9A;font-family:Saira Condensed,system-ui;font-weight:700;">' + esc(r.team) + '</span>';
+
+    var dataAttrs =
+      ' data-team="' + esc(r.team) + '"' +
+      ' data-team-abbr="' + esc(r.abbr || '') + '"' +
+      ' data-conf="' + esc(r.conf || '') + '"' +
+      ' data-grade="' + esc(gradeRaw) + '"' +
+      ' data-year="' + esc(r.year || '') + '"' +
+      ' data-rank="' + esc(rank) + '"' +
+      ' data-confrank="' + esc(r.confRank == null ? 99 : r.confRank) + '"' +
+      ' data-s5="' + esc(r.s5 || 0) + '"' +
+      ' data-s4="' + esc(r.s4 || 0) + '"' +
+      ' data-s3="' + esc(r.s3 || 0) + '"' +
+      ' data-s2="' + esc(r.s2 || 0) + '"' +
+      ' data-total="' + esc(r.total || 0) + '"' +
+      ' data-score="' + esc(r.score || 0) + '"';
+
+    return '<tr' + dataAttrs + '>' +
+      '<td class="' + rankCls + '">' + rankStr + '</td>' +
+      '<td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="' + esc(r.team) + '" title="Open ' + esc(r.team) + '">' + logoHtml + '</button></td>' +
+      '<td class="cffb-rct__year">' + esc(year2) + '</td>' +
+      '<td class="' + crCls + '">' + esc(crVal) + '</td>' +
+      starCell(5, r.s5) +
+      starCell(4, r.s4) +
+      starCell(3, r.s3) +
+      starCell(2, r.s2) +
+      '<td class="cffb-rct__total">' + esc(r.total || 0) + '</td>' +
+      '<td class="' + scoreCls + '">' + esc(scoreVal) + '</td>' +
+      '<td><span class="cffb-rct__grade cffb-rct__grade--' + gradeMod + '">' + esc(gradeRaw) + '</span></td>' +
+    '</tr>';
+  }
+
+  // ---------- Filter dropdown population ----------
+  var CONF_LABELS = {
+    sec: 'SEC', b1g: 'Big Ten', acc: 'ACC',
+    big12: 'Big 12', pac: 'Pac-12', aac: 'AAC',
+    mw: 'Mtn West', ind: 'Independent'
+  };
+  function populateYearFilter(years) {
+    fYear.innerHTML = '<option value="">All draft years</option>';
+    years.sort(function (a, b) { return b - a; }).forEach(function (y) {
+      var opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = y + ' Draft';
+      fYear.appendChild(opt);
+    });
+  }
+  function populateConfFilter(confs) {
+    fConf.innerHTML = '<option value="">All conferences</option>';
+    confs.forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = CONF_LABELS[c] || c.toUpperCase();
+      fConf.appendChild(opt);
+    });
+  }
+
+  // ---------- Filter + sort logic ----------
+  function applyFilters() {
+    var q = (search.value || '').trim().toLowerCase();
+    var yr = fYear.value, cf = fConf.value;
+    var visible = 0;
+    rows.forEach(function (tr) {
+      var teamMatch = !q || (tr.dataset.team || '').toLowerCase().indexOf(q) !== -1;
+      var yearMatch = !yr || tr.dataset.year === yr;
+      var confMatch = !cf || tr.dataset.conf === cf;
+      var pickMatch = !teamFilter || tr.dataset.team === teamFilter;
+      var ok = teamMatch && yearMatch && confMatch && pickMatch;
+      tr.classList.toggle('is-hidden', !ok);
+      tr.classList.toggle('is-team-active', !!(teamFilter && tr.dataset.team === teamFilter));
+      if (ok) visible++;
+    });
+    visTxt.textContent = visible;
+    root.classList.toggle('is-empty', visible === 0);
+    root.classList.toggle('is-team-filtered', !!teamFilter);
+    if (teamFilter) pillTeam.textContent = teamFilter;
+    setFrameHeight();
+  }
+  function applySort() {
+    var numeric = sortKey !== 'team' && sortKey !== 'year';
+    var sorted = rows.slice().sort(function (a, b) {
+      var av = a.dataset[sortKey], bv = b.dataset[sortKey];
+      if (numeric) { av = parseFloat(av); bv = parseFloat(bv); }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ?  1 : -1;
+      return 0;
+    });
+    sorted.forEach(function (tr) { tbody.appendChild(tr); });
+    heads.forEach(function (th) {
+      th.classList.remove('is-sorted-asc', 'is-sorted-desc');
+      if (th.dataset.sort === sortKey) th.classList.add('is-sorted-' + sortDir);
+    });
+  }
+  function pickTeam(name) {
+    teamFilter = (teamFilter === name) ? '' : name;
+    applyFilters();
+    setComponentValue(teamFilter || null);
+  }
+  function clearTeam() {
+    teamFilter = '';
+    applyFilters();
+    setComponentValue(null);
+  }
+
+  // ---------- Wire static listeners (once) ----------
+  tbody.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-team-pick]');
+    if (!btn) return;
+    pickTeam(btn.getAttribute('data-team-pick'));
+  });
+  pillX.addEventListener('click', clearTeam);
+  heads.forEach(function (th) {
+    th.addEventListener('click', function () {
+      var key = th.dataset.sort;
+      if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortKey = key; sortDir = (key === 'team' || key === 'rank' || key === 'confrank') ? 'asc' : 'desc'; }
+      applySort();
+    });
+  });
+  [search, fYear, fConf].forEach(function (el) {
+    el.addEventListener('input',  applyFilters);
+    el.addEventListener('change', applyFilters);
+  });
+  reset.addEventListener('click', function () {
+    search.value = ''; fYear.value = ''; fConf.value = '';
+    teamFilter = '';
+    sortKey = 'rank'; sortDir = 'asc';
+    applyFilters(); applySort();
+    setComponentValue(null);
+  });
+
+  // ---------- Render handler ----------
+  function render(args) {
+    var data = (args && args.rows) || [];
+    var initialTeam = args && args.selectedTeam;
+
+    // Build tbody
+    tbody.innerHTML = data.map(buildRow).join('');
+    rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+    totalTxt.textContent = rows.length;
+
+    // Populate dropdowns from data
+    var yearSet = {}, confSet = {};
+    data.forEach(function (r) {
+      if (r.year) yearSet[r.year] = true;
+      if (r.conf) confSet[r.conf] = true;
+    });
+    var prevYear = fYear.value, prevConf = fConf.value;
+    populateYearFilter(Object.keys(yearSet).map(Number));
+    populateConfFilter(Object.keys(confSet));
+    fYear.value = prevYear;
+    fConf.value = prevConf;
+
+    // Restore selected team from Python (if present)
+    if (initialTeam && initialTeam !== teamFilter) {
+      teamFilter = String(initialTeam);
+    }
+
+    applyFilters();
+    applySort();
+  }
+
+  // ---------- Streamlit message handshake ----------
+  window.addEventListener('message', function (ev) {
+    if (!ev.data || ev.data.type !== 'streamlit:render') return;
+    render(ev.data.args || {});
+  });
+
+  // Signal ready + initial height
+  streamlitSend('streamlit:componentReady', {apiVersion: 1});
+  setFrameHeight();
+})();
+</script>
+</body>
+</html>
