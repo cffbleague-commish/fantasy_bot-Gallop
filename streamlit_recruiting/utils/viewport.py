@@ -14,13 +14,20 @@ def get_viewport_width() -> int:
     Result is cached in session_state thereafter. Defaults to 1200 (desktop)
     before the JS value arrives, so first paint matches desktop.
     """
-    if "viewport_width" not in st.session_state:
+    if "viewport_width" in st.session_state:
+        return st.session_state.viewport_width
+    # streamlit_js_eval registers an element keyed "vw". A second call within
+    # the same script run (e.g. another tab also asking is_mobile()) raises
+    # StreamlitDuplicateElementKey on newer Streamlit versions — fall back to
+    # the desktop default until the JS value arrives on a later rerun.
+    try:
         w = streamlit_js_eval(js_expressions="window.innerWidth", key="vw")
-        if w:
-            st.session_state.viewport_width = int(w)
-        else:
-            return 1200
-    return st.session_state.viewport_width
+    except Exception:
+        return 1200
+    if w:
+        st.session_state.viewport_width = int(w)
+        return st.session_state.viewport_width
+    return 1200
 
 
 def is_mobile() -> bool:
