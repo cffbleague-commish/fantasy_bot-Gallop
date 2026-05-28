@@ -32,10 +32,12 @@ from components import (
     render_conference_badge,
     render_commit_composition_bar,
     render_player_card_compact,
+    render_player_card_mobile,
     render_recruiting_take,
     _html,
     college_logo_url,
 )
+from utils.viewport import is_mobile
 
 
 def show_team_deep_dive(
@@ -156,26 +158,54 @@ def show_team_deep_dive(
     def _maybe(value):
         return value if pd.notna(value) else None
 
+    mobile = is_mobile()
+
     for _, p in team_players.iterrows():
         stars_val = p.get("Stars")
         try:
             stars_int = int(stars_val) if pd.notna(stars_val) else 0
         except (TypeError, ValueError):
             stars_int = 0
-        _html(render_player_card_compact(
-            name=str(p.get("Player", "") or ""),
-            position=str(p.get("Position", "") or ""),
-            college=str(p.get("College", "") or ""),
-            stars=stars_int,
-            recruit_score=_maybe(p.get("RecruitScore")),
-            predicted_cost=_maybe(p.get("PredictedCost")),
-            paid=_maybe(p.get("BidAmount")),
-            savings=_maybe(p.get("BlendedSavings")),
-            savings_vs_predicted=_maybe(p.get("SavingsVsPredicted")),
-            savings_vs_league_avg=_maybe(p.get("SavingsVsLeagueAvg")),
-            grade=str(p.get("PlayerGrade", "") or ""),
-            headshot_url=str(p.get("HeadshotURL", "") or ""),
-        ))
+
+        if mobile:
+            stats: list[dict] = []
+            paid = _maybe(p.get("BidAmount"))
+            if paid is not None:
+                stats.append({"label": "Paid", "value": f"${paid:.0f}", "hero": True})
+            pred = _maybe(p.get("PredictedCost"))
+            if pred is not None:
+                stats.append({"label": "Pred", "value": f"${pred:.0f}"})
+            savings = _maybe(p.get("BlendedSavings"))
+            if savings is not None:
+                sign = "+" if savings > 0 else ("−" if savings < 0 else "±")
+                stats.append({"label": "Save", "value": f"{sign}${abs(savings):.0f}"})
+            grade = str(p.get("PlayerGrade", "") or "").strip()
+            if grade and grade.upper() not in ("N/A", "NAN"):
+                stats.append({"label": "Grade", "value": grade})
+
+            _html(render_player_card_mobile(
+                name=str(p.get("Player", "") or ""),
+                position=str(p.get("Position", "") or ""),
+                college=str(p.get("College", "") or ""),
+                stars=stars_int,
+                headshot_url=str(p.get("HeadshotURL", "") or ""),
+                stats=stats,
+            ))
+        else:
+            _html(render_player_card_compact(
+                name=str(p.get("Player", "") or ""),
+                position=str(p.get("Position", "") or ""),
+                college=str(p.get("College", "") or ""),
+                stars=stars_int,
+                recruit_score=_maybe(p.get("RecruitScore")),
+                predicted_cost=_maybe(p.get("PredictedCost")),
+                paid=_maybe(p.get("BidAmount")),
+                savings=_maybe(p.get("BlendedSavings")),
+                savings_vs_predicted=_maybe(p.get("SavingsVsPredicted")),
+                savings_vs_league_avg=_maybe(p.get("SavingsVsLeagueAvg")),
+                grade=str(p.get("PlayerGrade", "") or ""),
+                headshot_url=str(p.get("HeadshotURL", "") or ""),
+            ))
 
     # --- Analyst Takes (dual-analyst writeups) ---
     writeups = load_recruiting_writeups(year)
