@@ -149,15 +149,19 @@ _ALL_GRADES = [
 def _build_component_rows(grades_df: pd.DataFrame) -> list[dict]:
     """Transform the grades DataFrame into row dicts for the iframe component.
 
-    Rank is recomputed client-side based on the currently visible rows, so we
-    don't ship a baked rank from here.
+    The `rank` we ship here is the overall rank across all rows (sorted by
+    ClassScore desc). The component re-numbers ranks client-side as filters
+    change so a year-filtered view shows 1..N within that year.
     """
     if grades_df.empty:
         return []
 
+    df = grades_df.sort_values("ClassScore", ascending=False).reset_index(drop=True)
+
     out: list[dict] = []
-    for _, row in grades_df.iterrows():
+    for idx, row in df.iterrows():
         out.append({
+            "rank": int(idx) + 1,
             "team": str(row.get("Franchise", "")),
             "abbr": "",
             "conf": _CONF_CODE.get(str(row.get("Conference", "")).strip(), ""),
