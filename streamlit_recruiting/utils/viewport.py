@@ -31,14 +31,15 @@ def is_tablet() -> bool:
     return get_viewport_width() <= _TABLET_BREAKPOINT
 
 
-def responsive_columns(desktop_spec, mobile_count: int = 1, **kwargs):
-    """st.columns wrapper that collapses on tablet/phone.
+def responsive_columns(desktop_spec, **kwargs):
+    """st.columns wrapper that collapses widths on tablet/phone.
 
-    Args:
-        desktop_spec: int or list passed to st.columns on desktop.
-        mobile_count: column count when viewport <= 768px.
-        **kwargs: forwarded to st.columns (e.g. gap, vertical_alignment).
+    Always returns the same number of column slots as desktop_spec implies,
+    so callers can unpack the result the same way regardless of viewport.
+    On mobile, uses equal weights so the CSS-driven stack looks even when
+    the @media rule forces each slot to width: 100%.
     """
     if is_tablet():
-        return st.columns(mobile_count, **kwargs)
+        n = desktop_spec if isinstance(desktop_spec, int) else len(desktop_spec)
+        return st.columns(n, **kwargs)
     return st.columns(desktop_spec, **kwargs)
