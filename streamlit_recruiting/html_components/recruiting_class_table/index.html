@@ -813,7 +813,7 @@ html, body {
   function applyFilters() {
     var q = (search.value || '').trim().toLowerCase();
     var yr = fYear.value, cf = fConf.value;
-    var visible = 0;
+    var visibleRows = [];
     rows.forEach(function (tr) {
       var teamMatch = !q || (tr.dataset.team || '').toLowerCase().indexOf(q) !== -1;
       var yearMatch = !yr || tr.dataset.year === yr;
@@ -822,10 +822,30 @@ html, body {
       var ok = teamMatch && yearMatch && confMatch && pickMatch;
       tr.classList.toggle('is-hidden', !ok);
       tr.classList.toggle('is-team-active', !!(teamFilter && tr.dataset.team === teamFilter));
-      if (ok) visible++;
+      if (ok) visibleRows.push(tr);
     });
-    visTxt.textContent = visible;
-    root.classList.toggle('is-empty', visible === 0);
+
+    // Dynamic rank: number visible rows by ClassScore desc (1..N).
+    // Filter to one year → year ranks. No year filter → overall ranks.
+    var scoreSorted = visibleRows.slice().sort(function (a, b) {
+      return parseFloat(b.dataset.score) - parseFloat(a.dataset.score);
+    });
+    scoreSorted.forEach(function (tr, i) {
+      var rank = i + 1;
+      var rankStr = rank < 10 ? '0' + rank : String(rank);
+      tr.dataset.rank = String(rank);
+      var rankTd = tr.querySelector('td.cffb-rct__col-rank');
+      var scoreTd = tr.querySelector('td.cffb-rct__score');
+      if (rankTd) {
+        rankTd.textContent = rankStr;
+        rankTd.classList.toggle('is-top', rank === 1);
+      }
+      if (scoreTd) scoreTd.classList.toggle('is-top', rank === 1);
+      tr.classList.toggle('is-top', rank === 1);
+    });
+
+    visTxt.textContent = visibleRows.length;
+    root.classList.toggle('is-empty', visibleRows.length === 0);
     root.classList.toggle('is-team-filtered', !!teamFilter);
     if (teamFilter) pillTeam.textContent = teamFilter;
     setFrameHeight();

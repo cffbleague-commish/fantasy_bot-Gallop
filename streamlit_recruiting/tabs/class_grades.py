@@ -147,22 +147,17 @@ _ALL_GRADES = [
 
 
 def _build_component_rows(grades_df: pd.DataFrame) -> list[dict]:
-    """Transform the grades DataFrame into row dicts for the iframe component."""
+    """Transform the grades DataFrame into row dicts for the iframe component.
+
+    Rank is recomputed client-side based on the currently visible rows, so we
+    don't ship a baked rank from here.
+    """
     if grades_df.empty:
         return []
 
-    # Per-year top flag: rank #1 by ClassScore within each DraftYear gets the gold treatment.
-    top_idx = (
-        grades_df.groupby("DraftYear")["ClassScore"].idxmax()
-        if "DraftYear" in grades_df.columns and "ClassScore" in grades_df.columns
-        else pd.Series(dtype="int64")
-    )
-    top_set = set(top_idx.tolist())
-
     out: list[dict] = []
-    for idx, row in grades_df.iterrows():
+    for _, row in grades_df.iterrows():
         out.append({
-            "rank": _to_int(row.get("ClassRank")),
             "team": str(row.get("Franchise", "")),
             "abbr": "",
             "conf": _CONF_CODE.get(str(row.get("Conference", "")).strip(), ""),
@@ -176,7 +171,6 @@ def _build_component_rows(grades_df: pd.DataFrame) -> list[dict]:
             "score": _to_float(row.get("ClassScore")),
             "grade": str(row.get("OverallGrade", "")).strip(),
             "logo": str(row.get("FranchiseLogo", "")).strip(),
-            "isTop": idx in top_set,
         })
     return out
 
