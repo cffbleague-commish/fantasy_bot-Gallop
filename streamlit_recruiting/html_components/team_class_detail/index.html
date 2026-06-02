@@ -108,12 +108,24 @@ html, body {
   box-shadow: 0 0 24px rgba(201,162,39,0.28);
 }
 
-/* Year selector inline w/ identity */
+/* Year selector — own band beneath the header, above the stat rail */
+.cffb-tcd__subhead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  background: #161616;
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-tcd__subhead-label {
+  font: 700 10px/1 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #9A9A9A;
+}
 .cffb-tcd__years {
   display: inline-flex; gap: 4px; align-items: center;
   background: #1C1C1C; border: 1px solid #2A2A2A;
   border-radius: 4px; padding: 3px;
-  margin-left: auto;
 }
 .cffb-tcd__year-btn {
   font-family: 'Saira Condensed', system-ui, sans-serif;
@@ -592,10 +604,8 @@ html, body {
   .cffb-tcd__name-block { width: 100%; gap: 6px; }
   .cffb-tcd__name { font-size: 28px; line-height: 1; }
 
-  .cffb-tcd__years {
-    margin: 0;
-    align-self: flex-start;
-  }
+  .cffb-tcd__subhead { padding: 8px 14px; gap: 10px; }
+  .cffb-tcd__subhead-label { font-size: 9px; letter-spacing: 0.12em; }
 
   .cffb-tcd__grade-eyebrow { display: none; }
   .cffb-tcd__grade { font-size: 32px; padding: 4px 14px 6px; line-height: 1; }
@@ -674,7 +684,6 @@ html, body {
       <div class="cffb-tcd__name-block">
         <h2 class="cffb-tcd__name" data-tcd-name>—</h2>
       </div>
-      <div class="cffb-tcd__years" role="tablist" aria-label="Draft year" data-tcd-years></div>
     </div>
 
     <div class="cffb-tcd__grade-block">
@@ -682,6 +691,11 @@ html, body {
       <span class="cffb-tcd__grade" data-tcd-grade>—</span>
     </div>
   </header>
+
+  <div class="cffb-tcd__subhead">
+    <span class="cffb-tcd__subhead-label">Draft Year</span>
+    <div class="cffb-tcd__years" role="tablist" aria-label="Draft year" data-tcd-years></div>
+  </div>
 
   <section class="cffb-tcd__rail" aria-label="Class summary stats" data-tcd-rail></section>
 
