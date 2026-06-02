@@ -1065,6 +1065,85 @@ def plotly_layout_defaults() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# InfoDisclosure — pure-CSS collapsible methodology card
+# ---------------------------------------------------------------------------
+
+ICON_CALCULATOR = (
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+    'stroke-linecap="round" stroke-linejoin="round">'
+    '<rect x="4" y="2" width="16" height="20" rx="2"/>'
+    '<line x1="8" y1="6" x2="16" y2="6"/>'
+    '<line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/>'
+    '<line x1="16" y1="10" x2="16" y2="10"/>'
+    '<line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/>'
+    '<line x1="16" y1="14" x2="16" y2="18"/><line x1="8" y1="18" x2="12" y2="18"/>'
+    '</svg>'
+)
+
+ICON_HELP = (
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+    'stroke-linecap="round" stroke-linejoin="round">'
+    '<circle cx="12" cy="12" r="10"/>'
+    '<path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/>'
+    '<line x1="12" y1="17" x2="12" y2="17"/>'
+    '</svg>'
+)
+
+_CHEVRON_SVG = (
+    '<svg class="cffb-disc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<polyline points="6 9 12 15 18 9"/></svg>'
+)
+
+
+def render_info_disclosure_card(
+    *,
+    card_id: str,
+    title: str,
+    body_html: str,
+    eyebrow: str = "",
+    icon_svg: str = "",
+    featured: bool = False,
+    open_by_default: bool = False,
+) -> str:
+    """Render one CFFB InfoDisclosure card (pure-CSS collapsible).
+
+    Each card needs a unique `card_id` (used for the hidden checkbox + label).
+    `body_html` is injected verbatim inside .cffb-disc__inner — callers are
+    responsible for HTML-safety of any user-supplied content.
+    """
+    card_classes = "cffb-disc cffb-disc--featured" if featured else "cffb-disc"
+    checked_attr = " checked" if open_by_default else ""
+    icon_html = icon_svg or ICON_HELP
+    eyebrow_html = (
+        f'<span class="cffb-disc__eyebrow">{_esc(eyebrow)}</span>'
+        if eyebrow else ""
+    )
+    return (
+        f'<div class="{card_classes}">'
+        f'<input type="checkbox" class="cffb-disc__toggle" id="cffb-disc-{_esc(card_id)}"{checked_attr}>'
+        f'<label class="cffb-disc__summary" for="cffb-disc-{_esc(card_id)}">'
+        f'<span class="cffb-disc__icon" aria-hidden="true">{icon_html}</span>'
+        f'<span class="cffb-disc__heading">'
+        f'{eyebrow_html}'
+        f'<span class="cffb-disc__title">{_esc(title)}</span>'
+        f'</span>'
+        f'{_CHEVRON_SVG}'
+        f'</label>'
+        f'<div class="cffb-disc__panel">'
+        f'<div class="cffb-disc__body">'
+        f'<div class="cffb-disc__inner">{body_html}</div>'
+        f'</div></div>'
+        f'</div>'
+    )
+
+
+def render_info_disclosure_group(cards_html: list[str]) -> str:
+    """Stack a list of pre-rendered InfoDisclosure cards inside the group container."""
+    return f'<div class="cffb-disc-group">{"".join(cards_html)}</div>'
+
+
+# ---------------------------------------------------------------------------
 # Internal
 # ---------------------------------------------------------------------------
 

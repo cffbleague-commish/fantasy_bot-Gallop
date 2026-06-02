@@ -16,12 +16,13 @@ from data.sheets import (
     get_available_years,
 )
 from grading import compute_class_grades
-from descriptions import DESCRIPTIONS
 from components import (
-    render_kpi_row,
-    render_grade_badge,
     plotly_layout_defaults,
     _html,
+    ICON_CALCULATOR,
+    ICON_HELP,
+    render_info_disclosure_card,
+    render_info_disclosure_group,
 )
 from components_html.recruiting_class_table import render_recruiting_class_table
 from components_html.team_class_detail import render_team_class_detail
@@ -55,36 +56,14 @@ def render():
     grades_df = compute_class_grades(grades_df)
     grades_df = grades_df.sort_values("ClassScore", ascending=False).reset_index(drop=True)
 
-    # --- KPI Row ---
-    total_five = int(grades_df["FiveStar"].sum()) if "FiveStar" in grades_df.columns else 0
-    total_four = int(grades_df["FourStar"].sum()) if "FourStar" in grades_df.columns else 0
-    avg_score = grades_df["ClassScore"].mean() if "ClassScore" in grades_df.columns else 0
-
-    render_kpi_row([
-        {"label": "Teams Graded", "value": str(len(grades_df))},
-        {"label": "Avg Class Score", "value": f"{avg_score:.2f}" if pd.notna(avg_score) else "N/A", "hero": True},
-        {"label": "Total 5-Stars", "value": str(total_five)},
-        {"label": "Total 4-Stars", "value": str(total_four)},
-    ])
-
-    st.markdown("")
-
-    with st.expander("How are class grades calculated?", expanded=False):
-        st.markdown(DESCRIPTIONS["class_score"])
-        st.markdown("---")
-        st.markdown(DESCRIPTIONS["overall_grade"])
-        st.markdown("---")
-        st.markdown(DESCRIPTIONS["efficiency_grade"])
-
-    _render_league_overview(grades_df)
-
-    st.markdown("---")
-
     # --- Two-column layout: leaderboard + team deep dive ---
     # The whole row lives inside a fragment so team-logo clicks only re-execute
-    # this section — not the other three tabs, not the KPI row above, not the
-    # conference chart below.
+    # this section — not the other three tabs, not the conference chart below.
     _leaderboard_and_detail(grades_df)
+
+    # --- Methodology disclosure (under the section it explains) ---
+    st.markdown("")
+    _html(_render_methodology_disclosure())
 
     # --- Conference Comparison Chart ---
     if len(grades_df) > 5:
@@ -119,15 +98,6 @@ def render():
         layout.update(height=350)
         fig.update_layout(**layout)
         st.plotly_chart(fig, use_container_width=True)
-
-
-_ALL_GRADES = [
-    "A+", "A", "A-",
-    "B+", "B", "B-",
-    "C+", "C", "C-",
-    "D+", "D", "D-",
-    "F",
-]
 
 
 def _build_component_rows(grades_df: pd.DataFrame) -> list[dict]:
@@ -174,28 +144,6 @@ def _to_float(v) -> float:
         return float(v)
     except (ValueError, TypeError):
         return 0.0
-
-
-def _render_league_overview(grades_df: pd.DataFrame):
-    """Render league overview — full 13-tier grade distribution."""
-    if "OverallGrade" not in grades_df.columns:
-        return
-
-    st.markdown("**Grade Distribution**")
-    grade_counts = grades_df["OverallGrade"].value_counts()
-    badges_html = ""
-    for grade in _ALL_GRADES:
-        count = int(grade_counts.get(grade, 0))
-        badge = render_grade_badge(grade, size="sm")
-        opacity = "1" if count > 0 else "0.28"
-        count_color = "#F5F5F5" if count > 0 else "#5A5A5A"
-        badges_html += (
-            f'<span style="display:inline-flex;align-items:center;gap:4px;'
-            f'margin-right:14px;opacity:{opacity};">'
-            f'{badge} <span style="color:{count_color};font-size:13px;font-variant-numeric:tabular-nums;">{count}</span>'
-            f'</span>'
-        )
-    _html(f'<div style="display:flex;flex-wrap:wrap;gap:6px 0;">{badges_html}</div>')
 
 
 # ---------------------------------------------------------------------------
@@ -565,3 +513,73 @@ def _board_join_maps() -> tuple[dict[str, str], dict[str, str]]:
     hs = dict(zip(brd["_key"], brd["HeadshotURL"])) if "HeadshotURL" in brd.columns else {}
     co = dict(zip(brd["_key"], brd["College"])) if "College" in brd.columns else {}
     return hs, co
+
+
+# ---------------------------------------------------------------------------
+# Methodology disclosure (under the leaderboard section)
+# ---------------------------------------------------------------------------
+
+_CLASS_SCORE_BODY = (
+    "<p><strong>Class Score</strong> is a team-level metric pulled from the "
+    "league's official grading system. It reflects the overall quality of a "
+    "team's recruiting class based on the prospects they acquired — factoring "
+    "in star ratings, recruit scores, and class size.</p>"
+    "<p>Higher is better. The league average typically falls around the middle "
+    "of the leaderboard, with elite classes scoring significantly above the mean.</p>"
+)
+
+_OVERALL_GRADE_BODY = (
+    "<p><strong>Overall Grade</strong> converts the Class Score into a letter "
+    "grade using a league-wide curve. We compute each team's z-score (how many "
+    "standard deviations above or below the league average) and map it to a "
+    "percentile, then onto a 13-tier ladder:</p>"
+    "<ul>"
+    "<li><strong>A tier (A+, A, A-)</strong> — top 15% of teams (95th / 90th / 85th percentile)</li>"
+    "<li><strong>B tier (B+, B, B-)</strong> — 55th to 75th percentile</li>"
+    "<li><strong>C tier (C+, C, C-)</strong> — 25th to 45th percentile</li>"
+    "<li><strong>D tier (D+, D, D-)</strong> — 3rd to 15th percentile</li>"
+    "<li><strong>F</strong> — bottom 3%</li>"
+    "</ul>"
+    "<p>Pluses and minuses subdivide each letter tier into thirds. This is a "
+    "relative grade — it compares you to other teams in the same draft class, "
+    "not to an absolute standard.</p>"
+)
+
+_EFFICIENCY_GRADE_BODY = (
+    "<p><strong>Efficiency Grade</strong> measures how well a team spent its "
+    "auction budget, separate from the raw quality of players acquired.</p>"
+    "<p>It is based on <strong>Average Savings</strong> — the average difference "
+    "between what a team was predicted to pay for each player and what they "
+    "actually paid. Positive savings means the team consistently bought players "
+    "below their expected price (bargain hunting). Negative means they overpaid.</p>"
+    "<p>The letter grade uses the same z-score curve as the Overall Grade, "
+    "applied to Average Savings instead of Class Score. A team can have a "
+    "mediocre class grade but an excellent efficiency grade if they got great "
+    "deals on the players they did acquire.</p>"
+)
+
+
+def _render_methodology_disclosure() -> str:
+    """Three-card InfoDisclosure stack explaining the grading methodology."""
+    return render_info_disclosure_group([
+        render_info_disclosure_card(
+            card_id="cls-score",
+            eyebrow="Methodology",
+            title="How is Class Score calculated?",
+            icon_svg=ICON_CALCULATOR,
+            featured=True,
+            body_html=_CLASS_SCORE_BODY,
+        ),
+        render_info_disclosure_card(
+            card_id="cls-overall",
+            title="How is the Overall Grade calculated?",
+            icon_svg=ICON_HELP,
+            body_html=_OVERALL_GRADE_BODY,
+        ),
+        render_info_disclosure_card(
+            card_id="cls-eff",
+            title="How is the Efficiency Grade calculated?",
+            icon_svg=ICON_HELP,
+            body_html=_EFFICIENCY_GRADE_BODY,
+        ),
+    ])

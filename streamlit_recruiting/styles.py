@@ -1226,6 +1226,174 @@ GLOBAL_CSS = """
   h2 { font-size: 20px !important; }
   h3 { font-size: 17px !important; }
 }
+
+/* ============================================================
+   InfoDisclosure — pure-CSS collapsible methodology card
+   Hidden checkbox + grid-template-rows 0fr→1fr drives the
+   animated open/close; survives Streamlit's <script> stripping.
+   Featured variant adds the gold left-accent + gold icon chip.
+   ============================================================ */
+.cffb-disc {
+  background: #141414;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F5F5F5;
+  position: relative;
+  transition: border-color 180ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-disc:hover { border-color: #3A3A3A; }
+
+.cffb-disc__toggle {
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cffb-disc__summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background 120ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-disc__summary:hover { background: #1C1C1C; }
+.cffb-disc__toggle:focus-visible ~ .cffb-disc__summary {
+  outline: 2px solid #C9A227;
+  outline-offset: -2px;
+}
+
+.cffb-disc__icon {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  color: #9A9A9A;
+  transition: color 120ms, border-color 120ms;
+}
+.cffb-disc__icon svg { width: 17px; height: 17px; display: block; }
+.cffb-disc__summary:hover .cffb-disc__icon { color: #C9A227; border-color: #3A3A3A; }
+
+.cffb-disc__heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cffb-disc__eyebrow {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5A5A5A;
+  line-height: 1;
+}
+.cffb-disc__title {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.005em;
+  color: #F5F5F5;
+  line-height: 1.1;
+}
+
+.cffb-disc__chev {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+  color: #5A5A5A;
+  transition: transform 240ms cubic-bezier(0.2,0.8,0.2,1), color 120ms;
+}
+.cffb-disc__summary:hover .cffb-disc__chev { color: #9A9A9A; }
+.cffb-disc__toggle:checked ~ .cffb-disc__summary .cffb-disc__chev {
+  transform: rotate(180deg);
+  color: #C9A227;
+}
+
+.cffb-disc__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-disc__toggle:checked ~ .cffb-disc__panel {
+  grid-template-rows: 1fr;
+}
+.cffb-disc__body {
+  overflow: hidden;
+  min-height: 0;
+}
+.cffb-disc__inner {
+  padding: 2px 18px 18px 64px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #9A9A9A;
+}
+.cffb-disc__inner p { margin: 0 0 10px; }
+.cffb-disc__inner p:last-child { margin-bottom: 0; }
+.cffb-disc__inner strong { color: #F5F5F5; font-weight: 600; }
+.cffb-disc__inner ul {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+}
+.cffb-disc__inner ul li {
+  margin-bottom: 6px;
+}
+.cffb-disc__inner ul li:last-child { margin-bottom: 0; }
+.cffb-disc__divider { height: 1px; background: #2A2A2A; margin: 14px 0; }
+
+.cffb-disc--featured { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+.cffb-disc--featured::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #E8C547 0%, #C9A227 55%, #8B6F1F 100%);
+  z-index: 1;
+}
+.cffb-disc--featured .cffb-disc__icon {
+  background: rgba(201,162,39,0.12);
+  border-color: rgba(201,162,39,0.4);
+  color: #C9A227;
+}
+.cffb-disc--featured .cffb-disc__eyebrow { color: #C9A227; }
+
+.cffb-disc__note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #2A2A2A;
+  font-size: 12px;
+  color: #5A5A5A;
+}
+.cffb-disc__note::before {
+  content: "★";
+  color: #C9A227;
+  font-size: 11px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.cffb-disc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* No max-width in Streamlit — fill the column the group is dropped into. */
+}
+
+@media (max-width: 640px) {
+  .cffb-disc__summary { padding: 14px 14px; gap: 12px; }
+  .cffb-disc__title { font-size: 16px; }
+  .cffb-disc__inner { padding: 2px 14px 16px 14px; font-size: 13px; }
+}
 """
 
 
