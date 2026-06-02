@@ -342,8 +342,12 @@ html, body {
   text-align: right;
   letter-spacing: -0.005em;
 }
-.cffb-rct__score.is-top {
-  background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+/* Gradient lives on the inner span so the row's background (hover, team-active
+   filter highlight) can change without nuking the gradient that backgound-clip
+   is painting through. */
+.cffb-rct__score-text { display: inline; }
+.cffb-rct__score.is-top .cffb-rct__score-text {
+  background-image: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -528,7 +532,7 @@ html, body {
     content: "Score";
     text-align: right;
   }
-  .cffb-rct__table tr > td.cffb-rct__score.is-top {
+  .cffb-rct__table tr > td.cffb-rct__score.is-top .cffb-rct__score-text {
     background-image: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%) !important;
     background-color: transparent !important;
     -webkit-background-clip: text !important;
@@ -779,7 +783,7 @@ html, body {
       starCell(3, r.s3) +
       starCell(2, r.s2) +
       '<td class="cffb-rct__total">' + esc(r.total || 0) + '</td>' +
-      '<td class="' + scoreCls + '">' + esc(scoreVal) + '</td>' +
+      '<td class="' + scoreCls + '"><span class="cffb-rct__score-text">' + esc(scoreVal) + '</span></td>' +
       '<td><span class="cffb-rct__grade cffb-rct__grade--' + gradeMod + '">' + esc(gradeRaw) + '</span></td>' +
     '</tr>';
   }
