@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CFFB Copy Tracker</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-canvas: #0A0A0A;
+  --bg-surface: #141414;
+  --bg-surface-elev: #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border: #2A2A2A;
+  --border-strong: #3A3A3A;
+  --fg-primary: #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary: #5A5A5A;
+  --gold: #C9A227;
+  --gold-light: #E8C547;
+  --gold-dark: #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  --live: #2D7A4E;
+  --font-display: 'Saira Condensed', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.6);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic: inset 0 1px 0 rgba(255,255,255,0.06);
+  --dur-fast: 120ms; --dur-base: 180ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg-canvas); color: var(--fg-primary); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; color: inherit; cursor: pointer; }
+img { display: block; }
+@keyframes cffb-live-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.7); opacity: 0.5; } }
+
+.ct-frame { container-type: inline-size; container-name: ct; background: var(--bg-canvas); }
+.ct-root { max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
+.ct-context { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary); margin-bottom: 14px; }
+.ct-context__here { color: var(--gold); }
+.ct-context__sep { color: var(--border-strong); }
+
+.ct-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-4); overflow: hidden; }
+.ct-panel__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 22px 24px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #161616, #121212); flex-wrap: wrap; }
+.ct-panel__h2 { font-family: var(--font-display); font-weight: 700; font-size: 30px; margin: 0; line-height: 1; letter-spacing: -0.005em; text-transform: uppercase; }
+.ct-panel__desc { margin: 7px 0 0; font-size: 13px; color: var(--fg-secondary); max-width: 42ch; }
+
+/* SEARCH */
+.ct-search { position: relative; width: 340px; max-width: 100%; flex-shrink: 0; }
+.ct-search__field { display: flex; align-items: center; gap: 10px; background: #0D0D0D; border: 1px solid var(--border); border-radius: var(--r-2); padding: 10px 12px; transition: border-color var(--dur-fast); }
+.ct-search__field.is-open, .ct-search__field:focus-within { border-color: var(--gold-dark); }
+.ct-search__ic { color: var(--fg-tertiary); font-size: 17px; line-height: 1; }
+.ct-search__field input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--fg-primary); font-family: inherit; font-size: 14px; }
+.ct-search__field input::placeholder { color: var(--fg-tertiary); }
+.ct-search__clear { background: transparent; border: 0; color: var(--fg-secondary); font-size: 17px; line-height: 1; padding: 0 2px; }
+.ct-search__clear:hover { color: var(--fg-primary); }
+.ct-search__menu { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40; background: var(--bg-surface-elev); border: 1px solid var(--border-strong); border-radius: var(--r-3); box-shadow: var(--shadow-md); padding: 6px; max-height: 360px; overflow-y: auto; }
+.ct-opt { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 11px; width: 100%; text-align: left; background: transparent; border: 0; padding: 8px 9px; border-radius: var(--r-2); transition: background var(--dur-fast); }
+.ct-opt.is-hi { background: var(--bg-surface-hover); }
+.ct-opt.is-cur { box-shadow: inset 2px 0 0 var(--gold); }
+.ct-opt__id { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ct-opt__name { font-family: var(--font-display); font-weight: 700; font-size: 17px; line-height: 1; text-transform: uppercase; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-opt__meta { display: flex; align-items: center; gap: 7px; }
+.ct-opt__rank { font-size: 11px; font-weight: 600; color: var(--fg-secondary); font-variant-numeric: tabular-nums; }
+.ct-opt__roll { display: flex; gap: 12px; }
+.ct-opt__roll-n { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+.ct-opt__roll-n b { font-family: var(--font-display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+.ct-opt__roll-n span { font-size: 8.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary); margin-top: 2px; }
+.ct-opt-empty { padding: 18px; text-align: center; font-size: 13px; color: var(--fg-tertiary); }
+
+/* ATOMS */
+.ct-shot { position: relative; flex-shrink: 0; overflow: hidden; border-radius: 50%; background: repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 8px), linear-gradient(160deg, #242D39 0%, #161A20 60%, #101216 100%); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
+.ct-shot__initials { font-family: var(--font-display); font-weight: 700; color: rgba(184,202,222,0.92); line-height: 1; }
+.ct-shot__accent { position: absolute; left: 12%; right: 12%; bottom: 0; height: 3px; border-radius: 2px 2px 0 0; }
+.ct-shot__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ct-pos-tag { font-family: var(--font-display); font-weight: 700; font-size: 12px; padding: 2px 6px; border-radius: var(--r-1); text-align: center; letter-spacing: 0.02em; line-height: 1.25; display: inline-block; flex-shrink: 0; }
+.ct-stars { display: inline-flex; gap: 1px; line-height: 1; letter-spacing: 0.5px; }
+.ct-conf { display: inline-flex; align-items: center; gap: 9px; min-width: 0; flex-shrink: 0; }
+.ct-conf__mark { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-family: var(--font-display); font-weight: 700; font-size: 10px; color: #0A0A0A; flex-shrink: 0; }
+.ct-conf__name { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+
+.ct-pill { display: inline-flex; align-items: stretch; vertical-align: middle; overflow: hidden; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+.ct-pill--img { border-radius: 4px; }
+.ct-pill--img img { height: 100%; width: auto; }
+.ct-pill--fb { border: 1px solid rgba(0,0,0,0.5); }
+.ct-pill__edge { flex-shrink: 0; }
+.ct-pill__body { display: flex; align-items: center; padding: 0 8px; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; border-left: 2px solid rgba(245,245,245,0.85); white-space: nowrap; }
+
+.ct-status { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.ct-status__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ct-status--live .ct-status__dot { box-shadow: var(--shadow-glow-live); animation: cffb-live-pulse 1.4s ease-in-out infinite; }
+.ct-status--open .ct-status__dot { background: transparent !important; border: 1.5px solid var(--fg-tertiary); }
+.ct-status__label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-secondary); white-space: nowrap; }
+.ct-status--sold .ct-status__label { color: var(--gold); }
+.ct-status--live .ct-status__label { color: #5FB07E; }
+
+.ct-delta { font-family: var(--font-body); font-weight: 600; font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 5px; border-radius: var(--r-1); }
+.ct-delta.is-pos { color: #5FB07E; background: rgba(45,122,78,0.14); }
+.ct-delta.is-neg { color: #D07070; background: rgba(184,69,69,0.14); }
+.ct-delta.is-flat { color: var(--fg-tertiary); }
+
+/* PROFILE */
+.ct-profile { display: grid; grid-template-columns: 132px minmax(0,1fr) 300px; gap: 28px; align-items: stretch; padding: 24px; border-bottom: 1px solid var(--border); }
+.ct-portrait { width: 132px; aspect-ratio: 4 / 5; border-radius: var(--r-3); background: #1C1C1C; position: relative; overflow: hidden; outline: 1px dashed rgba(201,162,39,0.30); outline-offset: -7px; align-self: start; }
+.ct-portrait__bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; z-index: 3; }
+.ct-portrait__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ct-portrait__empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.ct-portrait__empty svg { width: 46px; height: 46px; stroke: #3A3A3A; fill: none; stroke-width: 1.5; }
+.ct-portrait__label { font-weight: 700; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: #5A5A5A; }
+.ct-portrait__initials { position: absolute; bottom: 6px; right: 10px; z-index: 4; font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 0.9; color: rgba(245,245,245,0.20); }
+
+.ct-profile__id { display: flex; flex-direction: column; min-width: 0; }
+.ct-profile__tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ct-profile__pr { font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-secondary); }
+.ct-profile__offered { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 3px 10px; margin-left: 2px; }
+.ct-profile__name { font-family: var(--font-display); font-weight: 700; font-size: 46px; line-height: 0.96; text-transform: uppercase; letter-spacing: -0.015em; margin: 10px 0 8px; }
+.ct-profile__sub { display: flex; align-items: center; gap: 12px; }
+.ct-profile__cls { font-size: 13px; color: var(--fg-secondary); }
+.ct-profile__facts { display: flex; gap: 30px; margin-top: auto; padding-top: 18px; }
+.ct-fact__label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-secondary); }
+.ct-fact__val { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; margin-top: 5px; font-variant-numeric: tabular-nums; }
+.ct-fact__val.is-hero { background: var(--gold-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+.ct-profile__meter { align-self: stretch; }
+.ct-meter { background: var(--bg-surface-elev); border: 1px solid var(--border); border-radius: var(--r-3); padding: 16px 18px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+.ct-meter__head { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.ct-meter__title { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); }
+.ct-meter__count { font-size: 12px; color: var(--fg-secondary); font-variant-numeric: tabular-nums; }
+.ct-meter__count b { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--fg-primary); }
+.ct-meter__bar { display: flex; height: 12px; border-radius: var(--r-pill); overflow: hidden; background: #0D0D0D; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04); }
+.ct-meter__seg { height: 100%; transition: width var(--dur-base) var(--ease-out); }
+.ct-meter__seg.is-sold { background: var(--gold-gradient); }
+.ct-meter__seg.is-live { background: #2D7A4E; }
+.ct-meter__seg.is-open { background: #2E2E2E; }
+.ct-meter__legend { display: flex; gap: 16px; margin-top: 12px; }
+.ct-meter__legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--fg-secondary); }
+.ct-meter__legend i { width: 9px; height: 9px; border-radius: 2px; }
+.ct-meter__legend i.is-sold { background: var(--gold); }
+.ct-meter__legend i.is-live { background: #2D7A4E; }
+.ct-meter__legend i.is-open { background: #2E2E2E; }
+
+/* SUMMARY */
+.ct-summary { padding: 22px 24px 26px; }
+.ct-summary__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding-bottom: 11px; border-bottom: 1px solid var(--border); }
+.ct-summary__title { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
+.ct-summary__hint { font-size: 12px; color: var(--fg-tertiary); }
+
+.ct-confroll { display: inline-flex; gap: 6px; margin-left: auto; }
+.ct-confroll__chip { font-size: 9.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: var(--r-pill); white-space: nowrap; }
+.ct-confroll__chip.is-sold { color: var(--gold); background: rgba(201,162,39,0.10); border: 1px solid rgba(201,162,39,0.30); }
+.ct-confroll__chip.is-live { color: #5FB07E; background: rgba(45,122,78,0.12); border: 1px solid rgba(45,122,78,0.32); }
+.ct-confroll__chip.is-open { color: var(--fg-secondary); background: #1A1A1A; border: 1px solid var(--border); }
+
+/* ROWS */
+.ct-rows { display: flex; flex-direction: column; gap: 14px; }
+.ct-confgroup { border: 1px solid var(--border); border-radius: var(--r-3); overflow: hidden; background: var(--bg-surface); }
+.ct-confgroup__head { display: flex; align-items: center; gap: 14px; position: relative; padding: 11px 16px 11px 18px; background: #161616; border-bottom: 1px solid var(--border); }
+.ct-confgroup__edge { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+.ct-confgroup__count { font-size: 11px; color: var(--fg-secondary); font-variant-numeric: tabular-nums; flex-shrink: 0; white-space: nowrap; }
+.ct-confgroup__count::before { content: '· '; color: var(--border-strong); }
+.ct-confgroup__body { display: flex; flex-direction: column; }
+
+.ct-copyrow { border-top: 1px solid var(--border); }
+.ct-copyrow:first-child { border-top: 0; }
+.ct-copyrow__head { display: grid; align-items: center; gap: 16px; width: 100%; text-align: left; grid-template-columns: 84px 124px 116px minmax(0,1fr) 18px; padding: 13px 16px 13px 18px; background: transparent; border: 0; transition: background var(--dur-fast); }
+.ct-copyrow__head:hover { background: var(--bg-surface-hover); }
+.ct-copyrow.is-open .ct-copyrow__head { background: var(--bg-surface-hover); }
+.ct-copyrow__n { font-family: var(--font-display); font-weight: 700; font-size: 18px; text-transform: uppercase; letter-spacing: -0.01em; white-space: nowrap; }
+.ct-copyrow__bid { display: flex; flex-direction: column; }
+.ct-copyrow__amt { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.ct-copyrow__lbl { font-size: 8.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary); margin-top: 3px; }
+.ct-copyrow__dash { color: var(--fg-tertiary); font-size: 13px; }
+.ct-copyrow__leader { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.ct-copyrow__owner { font-size: 12px; color: var(--fg-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-copyrow__chev { font-size: 12px; color: var(--fg-secondary); justify-self: center; }
+
+/* TIMELINE */
+.ct-timeline { background: #101010; border-top: 1px solid var(--border); padding: 16px 18px 18px; }
+.ct-timeline--empty { padding: 18px; }
+.ct-timeline__none { font-size: 13px; color: var(--fg-tertiary); }
+.ct-timeline__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.ct-timeline__title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); }
+.ct-timeline__sub { font-size: 11px; color: var(--fg-tertiary); }
+.ct-timeline__list { list-style: none; margin: 0; padding: 0; }
+.ct-tl { display: flex; gap: 14px; --rowh: 42px; --dotc: 21px; }
+.ct-tl__rail { position: relative; flex: 0 0 12px; }
+.ct-tl__rail::before { content: ""; position: absolute; left: 50%; transform: translateX(-50%); top: 0; bottom: 0; width: 2px; background: #2A2A2A; }
+.ct-tl:first-child .ct-tl__rail::before { top: var(--dotc); }
+.ct-tl:last-child .ct-tl__rail::before { bottom: calc(100% - var(--dotc)); }
+.ct-tl__dot { position: absolute; left: 50%; top: var(--dotc); transform: translate(-50%, -50%); z-index: 1; width: 11px; height: 11px; border-radius: 50%; background: #1C1C1C; border: 2px solid #3A3A3A; }
+.ct-tl.is-nom .ct-tl__dot { border-color: var(--rail); }
+.ct-tl.is-last .ct-tl__dot { box-shadow: 0 0 0 4px rgba(201,162,39,0.12); }
+.ct-tl__body { flex: 1; min-width: 0; }
+.ct-tl__main { display: grid; align-items: center; column-gap: 16px; grid-template-columns: 96px 168px minmax(0,1fr) 76px; min-height: var(--rowh); }
+.ct-tl__time { display: flex; flex-direction: column; gap: 2px; }
+.ct-tl__clock { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg-primary); }
+.ct-tl__rel { font-size: 10px; color: var(--fg-tertiary); }
+.ct-tl__team { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.ct-tl__owner { font-size: 12px; color: var(--fg-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-tl__bid { display: flex; align-items: center; gap: 9px; }
+.ct-tl__amt { font-family: var(--font-display); font-weight: 700; font-size: 21px; line-height: 1; font-variant-numeric: tabular-nums; }
+.ct-tl__tag { justify-self: end; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 7px; border-radius: var(--r-1); white-space: nowrap; }
+.ct-tl-tag--nom { color: var(--fg-secondary); background: #1C1C1C; border: 1px solid var(--border); }
+.ct-tl-tag--outbid { color: var(--fg-tertiary); background: transparent; border: 1px solid var(--border); }
+.ct-tl-tag--leading { color: #5FB07E; background: rgba(45,122,78,0.14); border: 1px solid rgba(45,122,78,0.34); }
+.ct-tl-tag--won { color: #0A0A0A; background: var(--gold-gradient); box-shadow: var(--inset-metallic); }
+
+/* RESPONSIVE */
+@container ct (max-width: 920px) {
+  .ct-profile { grid-template-columns: 110px 1fr; }
+  .ct-profile__meter { grid-column: 1 / -1; }
+  .ct-profile__name { font-size: 38px; }
+}
+@container ct (max-width: 640px) {
+  .ct-root { padding: 18px 14px 64px; }
+  .ct-panel__head { flex-direction: column; align-items: stretch; gap: 14px; padding: 18px 16px 16px; }
+  .ct-panel__h2 { font-size: 26px; }
+  .ct-search { width: 100%; }
+  .ct-profile { grid-template-columns: 104px 1fr; gap: 14px; padding: 16px; align-items: start; }
+  .ct-portrait { width: 104px; }
+  .ct-profile__name { font-size: 22px; line-height: 1.02; margin: 6px 0 0; overflow-wrap: anywhere; }
+  .ct-profile__offered { display: none; }
+  .ct-profile__facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; padding-top: 10px; }
+  .ct-fact__val { font-size: 17px; margin-top: 3px; }
+  .ct-profile__meter { grid-column: 1 / -1; margin-top: 2px; }
+  .ct-summary { padding: 18px 16px 22px; }
+  .ct-confgroup__head { flex-wrap: wrap; gap: 8px 12px; padding: 11px 14px 11px 16px; }
+  .ct-confroll { width: 100%; margin-left: 0; }
+  .ct-copyrow__head { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; grid-template-columns: none; padding: 12px 14px; }
+  .ct-copyrow__n { flex: 0 0 auto; min-width: max-content; }
+  .ct-copyrow__bid { flex: 0 0 auto; order: 4; align-items: flex-end; }
+  .ct-copyrow__amt { font-size: 20px; }
+  .ct-copyrow__leader { flex: 0 0 auto; order: 3; margin-left: auto; }
+  .ct-copyrow__owner { display: none; }
+  .ct-copyrow__lbl { display: none; }
+  .ct-copyrow__chev { display: none; }
+  .ct-timeline { padding: 14px 14px 16px; }
+  .ct-tl { gap: 12px; --rowh: auto; --dotc: 19px; }
+  .ct-tl__rail { flex: 0 0 14px; }
+  .ct-tl__main { grid-template-columns: 1fr auto; grid-template-areas: "team tag" "bid time"; row-gap: 3px; column-gap: 10px; min-height: 0; }
+  .ct-tl__team { grid-area: team; align-self: end; }
+  .ct-tl__bid { grid-area: bid; align-self: start; }
+  .ct-tl__amt { font-size: 18px; }
+  .ct-tl__time { grid-area: time; align-self: start; align-items: flex-end; text-align: right; }
+  .ct-tl__tag { grid-area: tag; align-self: center; justify-self: end; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useRef, useEffect } = React;
+
+// ---- Streamlit bridge ----
+function streamlitSend(type, data) {
+  const msg = Object.assign({ isStreamlitMessage: true, type }, data || {});
+  window.parent.postMessage(msg, "*");
+}
+function setComponentValue(value) {
+  streamlitSend("streamlit:setComponentValue", { value, dataType: "json" });
+}
+function setFrameHeight() {
+  streamlitSend("streamlit:setFrameHeight", { height: document.documentElement.scrollHeight });
+}
+
+// ---- helpers ----
+const initials = (name) => {
+  if (!name) return '??';
+  const parts = String(name).replace(',', '').trim().split(/\s+/);
+  const a = parts[0]?.[0] || '';
+  const b = parts.length > 1 ? parts[parts.length - 1][0] : (parts[0]?.[1] || '');
+  return (a + b).toUpperCase();
+};
+const posTextColor = (pos) => (pos === 'LB' || pos === 'DB' || pos === 'DL' ? '#F5F5F5' : '#0A0A0A');
+const CONF_MARK_LABEL = { sec: 'SEC', b1g: 'B1G', acc: 'ACC', big12: 'B12', pac: 'PAC', aac: 'AAC' };
+const STAR_COLOR = { 5: '#C9A227', 4: '#3B82C4', 3: '#7BA4C9', 2: '#6A6A6A', 1: '#4A4A4A' };
+
+// ---- Atoms ----
+const Shot = ({ name, pos, photo, size = 38, posColors }) => (
+  <div className="ct-shot" style={{ width: size, height: size }}>
+    {photo ? <img className="ct-shot__img" src={photo} alt="" /> : null}
+    {!photo && <span className="ct-shot__initials" style={{ fontSize: Math.round(size * 0.4) }}>{initials(name)}</span>}
+    <span className="ct-shot__accent" style={{ background: (posColors && posColors[pos]) || '#5A5A5A' }} />
+  </div>
+);
+
+const PosTag = ({ pos, posColors }) => (
+  <span className="ct-pos-tag" style={{ background: (posColors && posColors[pos]) || '#5A5A5A', color: posTextColor(pos) }}>{pos}</span>
+);
+
+const Stars = ({ n, size = 16 }) => (
+  <span className="ct-stars" style={{ fontSize: size }}>
+    {[1,2,3,4,5].map((i) => (
+      <span key={i} style={{ color: i <= n ? STAR_COLOR[n] : '#262626' }}>★</span>
+    ))}
+  </span>
+);
+
+const ConfBadge = ({ id, name, accent, size = 22 }) => (
+  <span className="ct-conf">
+    <span className="ct-conf__mark" style={{ width: size, height: size, background: accent || '#5A5A5A' }}>{CONF_MARK_LABEL[id] || ''}</span>
+    <span className="ct-conf__name">{name}</span>
+  </span>
+);
+
+const TeamPill = ({ id, teams, confAccent, h = 24 }) => {
+  const t = (teams && teams[id]) || { bg: '#2A2A2A', fg: '#9A9A9A', abbr: '??', conf: '' };
+  if (t.pill) {
+    return <span className="ct-pill ct-pill--img" style={{ height: h }}><img src={t.pill} alt={t.name} /></span>;
+  }
+  const abbr = t.abbr && t.abbr.length > 4 ? t.abbr.slice(0, 4) : (t.abbr || '??');
+  return (
+    <span className="ct-pill ct-pill--fb" style={{ height: h, borderRadius: Math.round(h * 0.22) }} title={t.name}>
+      <span className="ct-pill__edge" style={{ width: Math.round(h * 0.6), background: (confAccent && confAccent[t.conf]) || '#5A5A5A' }} />
+      <span className="ct-pill__body" style={{ background: t.bg, color: t.fg, fontSize: Math.max(11, Math.round(h * 0.46)) }}>{abbr}</span>
+    </span>
+  );
+};
+
+const StatusChip = ({ status, statusMeta }) => {
+  const m = (statusMeta && statusMeta[status]) || { label: status, color: '#5A5A5A' };
+  return (
+    <span className={'ct-status ct-status--' + status}>
+      <span className="ct-status__dot" style={{ background: m.color }} />
+      <span className="ct-status__label">{m.label}</span>
+    </span>
+  );
+};
+
+const Delta = ({ value }) => {
+  if (value == null) return null;
+  const pos = value > 0;
+  return (
+    <span className={'ct-delta ' + (pos ? 'is-pos' : value < 0 ? 'is-neg' : 'is-flat')}>
+      {pos ? '+' : value < 0 ? '−' : ''}${Math.abs(Math.round(value))}
+    </span>
+  );
+};
+
+// ---- Search ----
+const SearchBar = ({ value, onPick, tracked, posColors }) => {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const wrap = useRef(null);
+
+  useEffect(() => {
+    const onDoc = (e) => { if (wrap.current && !wrap.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  const results = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const list = s ? tracked.filter((p) => p.name.toLowerCase().includes(s)) : tracked;
+    return list.slice(0, 10);
+  }, [q, tracked]);
+
+  const pick = (p) => { onPick(p.id); setQ(''); setOpen(false); };
+  const onKey = (e) => {
+    if (!open) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHi((h) => Math.min(results.length - 1, h + 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHi((h) => Math.max(0, h - 1)); }
+    else if (e.key === 'Enter' && results[hi]) { pick(results[hi]); }
+    else if (e.key === 'Escape') setOpen(false);
+  };
+
+  return (
+    <div className="ct-search" ref={wrap}>
+      <div className={'ct-search__field' + (open ? ' is-open' : '')}>
+        <span className="ct-search__ic">⌕</span>
+        <input value={q}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); setHi(0); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKey}
+          placeholder="Search a recruit to track copies…" />
+        {q && <button className="ct-search__clear" onClick={() => setQ('')}>×</button>}
+      </div>
+      {open && (
+        <div className="ct-search__menu" role="listbox">
+          {results.length ? results.map((p, i) => (
+            <button key={p.id} role="option" aria-selected={i === hi}
+              className={'ct-opt' + (i === hi ? ' is-hi' : '') + (p.id === value ? ' is-cur' : '')}
+              onMouseEnter={() => setHi(i)} onClick={() => pick(p)}>
+              <Shot name={p.name} pos={p.pos} posColors={posColors} size={34} />
+              <span className="ct-opt__id">
+                <span className="ct-opt__name">{p.name}</span>
+                <span className="ct-opt__meta">
+                  <PosTag pos={p.pos} posColors={posColors} />
+                  {p.posRank > 0 && <span className="ct-opt__rank">{p.pos}{p.posRank}</span>}
+                  {p.stars > 0 && <Stars n={p.stars} size={12} />}
+                </span>
+              </span>
+              <span className="ct-opt__roll">
+                <span className="ct-opt__roll-n"><b>{p.roll.sold}</b><span>sold</span></span>
+                <span className="ct-opt__roll-n"><b>{p.roll.live + p.roll.open}</b><span>open</span></span>
+              </span>
+            </button>
+          )) : <div className="ct-opt-empty">No recruits match “{q}”.</div>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ---- Profile ----
+const Fact = ({ label, children, hero }) => (
+  <div className="ct-fact">
+    <div className="ct-fact__label">{label}</div>
+    <div className={'ct-fact__val' + (hero ? ' is-hero' : '')}>{children}</div>
+  </div>
+);
+
+const CopiesMeter = ({ roll }) => {
+  const seg = (n) => (roll.total ? (n / roll.total) * 100 : 0);
+  return (
+    <div className="ct-meter">
+      <div className="ct-meter__head">
+        <span className="ct-meter__title">Copies Claimed</span>
+        <span className="ct-meter__count"><b>{roll.sold}</b> of {roll.total} sold · {roll.live} live · {roll.open} open</span>
+      </div>
+      <div className="ct-meter__bar">
+        <span className="ct-meter__seg is-sold" style={{ width: seg(roll.sold) + '%' }} />
+        <span className="ct-meter__seg is-live" style={{ width: seg(roll.live) + '%' }} />
+        <span className="ct-meter__seg is-open" style={{ width: seg(roll.open) + '%' }} />
+      </div>
+      <div className="ct-meter__legend">
+        <span><i className="is-sold" />Sold</span>
+        <span><i className="is-live" />In process</span>
+        <span><i className="is-open" />Available</span>
+      </div>
+    </div>
+  );
+};
+
+const PortraitSlot = ({ name, pos, photo, posColors }) => (
+  <div className="ct-portrait">
+    <div className="ct-portrait__bar" style={{ background: (posColors && posColors[pos]) || '#5A5A5A' }} />
+    {photo ? (
+      <img className="ct-portrait__img" src={photo} alt={name} />
+    ) : (
+      <div className="ct-portrait__empty">
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <circle cx="28" cy="20" r="9" /><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50" />
+        </svg>
+        <div className="ct-portrait__label">Photo</div>
+      </div>
+    )}
+    {!photo && <span className="ct-portrait__initials">{initials(name)}</span>}
+  </div>
+);
+
+const Profile = ({ pid, players, ledger, posColors }) => {
+  const p = players[pid] || { name: '—', pos: 'ATH', stars: 0, posRank: 0, score: 0 };
+  const entry = ledger[pid] || { roll: { sold: 0, live: 0, open: 0, total: 0, avg: null, high: null }, confs: [] };
+  const roll = entry.roll;
+  return (
+    <div className="ct-profile">
+      <PortraitSlot name={p.name} pos={p.pos} photo={p.headshot} posColors={posColors} />
+      <div className="ct-profile__id">
+        <div className="ct-profile__tags">
+          <PosTag pos={p.pos} posColors={posColors} />
+          {p.posRank > 0 && <span className="ct-profile__pr">{p.pos} #{p.posRank}</span>}
+          {entry.confs.length > 0 && <span className="ct-profile__offered">Offered in {entry.confs.length} conferences</span>}
+        </div>
+        <div className="ct-profile__name">{p.name}</div>
+        <div className="ct-profile__sub">
+          {p.stars > 0 && <Stars n={p.stars} size={18} />}
+        </div>
+        <div className="ct-profile__facts">
+          <Fact label="Recruit Score" hero>{(p.score || 0).toFixed(1)}</Fact>
+          <Fact label="Pos Rank">{p.posRank > 0 ? `${p.pos}${p.posRank}` : '—'}</Fact>
+          <Fact label="Avg Sold">{roll.avg != null ? '$' + roll.avg : '—'}</Fact>
+          <Fact label="High Sold">{roll.high != null ? '$' + roll.high : '—'}</Fact>
+        </div>
+      </div>
+      <div className="ct-profile__meter"><CopiesMeter roll={roll} /></div>
+    </div>
+  );
+};
+
+// ---- Timeline ----
+const labelFor = (copy, entry, isLast) => {
+  if (isLast) return copy.status === 'sold' ? 'WON' : 'LEADING';
+  return entry.nomination ? 'NOM' : 'OUTBID';
+};
+
+const BidTimeline = ({ copy, accentColor, teams, confAccent }) => {
+  if (!copy.bids.length) {
+    return (
+      <div className="ct-timeline ct-timeline--empty">
+        <span className="ct-timeline__none">Not yet nominated — no bid history. This copy is still on the board.</span>
+      </div>
+    );
+  }
+  return (
+    <div className="ct-timeline">
+      <div className="ct-timeline__head">
+        <span className="ct-timeline__title">Bid History</span>
+        <span className="ct-timeline__sub">{copy.bids.length} bids · earliest first</span>
+      </div>
+      <ol className="ct-timeline__list" style={{ '--rail': accentColor }}>
+        {copy.bids.map((b, i) => {
+          const isLast = i === copy.bids.length - 1;
+          const lbl = labelFor(copy, b, isLast);
+          const t = teams[b.team] || {};
+          return (
+            <li key={i} className={'ct-tl' + (isLast ? ' is-last' : '') + (b.nomination ? ' is-nom' : '')}>
+              <span className="ct-tl__rail">
+                <span className="ct-tl__dot" style={isLast ? { background: accentColor, borderColor: accentColor } : null} />
+              </span>
+              <div className="ct-tl__body">
+                <div className="ct-tl__main">
+                  <span className="ct-tl__time">
+                    <span className="ct-tl__clock">{b.ts || '—'}</span>
+                  </span>
+                  <span className="ct-tl__team">
+                    <TeamPill id={b.team} teams={teams} confAccent={confAccent} h={24} />
+                    <span className="ct-tl__owner">{t.name || t.owner || ''}</span>
+                  </span>
+                  <span className="ct-tl__bid">
+                    <span className="ct-tl__amt">${Math.round(b.amount)}</span>
+                    {b.delta != null && b.delta !== 0 && <Delta value={b.delta} />}
+                  </span>
+                  <span className={'ct-tl__tag ct-tl-tag--' + lbl.toLowerCase()}>{lbl}</span>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+};
+
+// ---- Copy row ----
+const CopyRow = ({ copy, accentColor, open, onToggle, teams, statusMeta, confAccent }) => (
+  <div className={'ct-copyrow' + (open ? ' is-open' : '')}>
+    <button className="ct-copyrow__head" onClick={onToggle} aria-expanded={open}>
+      <span className="ct-copyrow__n">Copy {copy.n}</span>
+      <StatusChip status={copy.status} statusMeta={statusMeta} />
+      <span className="ct-copyrow__bid">
+        {copy.maxBid != null ? <span className="ct-copyrow__amt">${Math.round(copy.maxBid)}</span> : <span className="ct-copyrow__dash">—</span>}
+        {copy.maxBid != null && <span className="ct-copyrow__lbl">{copy.status === 'sold' ? 'hammer' : 'high bid'}</span>}
+      </span>
+      <span className="ct-copyrow__leader">
+        {copy.leader ? (
+          <React.Fragment>
+            <TeamPill id={copy.leader} teams={teams} confAccent={confAccent} h={22} />
+            <span className="ct-copyrow__owner">{(teams[copy.leader] || {}).name || ''}</span>
+          </React.Fragment>
+        ) : <span className="ct-copyrow__dash">No bids yet</span>}
+      </span>
+      <span className="ct-copyrow__chev">{copy.bids.length ? (open ? '▾' : '▸') : ''}</span>
+    </button>
+    {open && <BidTimeline copy={copy} accentColor={accentColor} teams={teams} confAccent={confAccent} />}
+  </div>
+);
+
+const ConfRollChips = ({ copies }) => {
+  const c = { sold: 0, live: 0, open: 0 };
+  copies.forEach((cp) => { c[cp.status] = (c[cp.status] || 0) + 1; });
+  return (
+    <span className="ct-confroll">
+      {c.sold > 0 && <span className="ct-confroll__chip is-sold">{c.sold} sold</span>}
+      {c.live > 0 && <span className="ct-confroll__chip is-live">{c.live} live</span>}
+      {c.open > 0 && <span className="ct-confroll__chip is-open">{c.open} open</span>}
+    </span>
+  );
+};
+
+const RowsSummary = ({ confs, expanded, setExpanded, confAccent, confName, teams, statusMeta }) => (
+  <div className="ct-rows">
+    {confs.map(({ conf, copies }) => {
+      const ac = (confAccent && confAccent[conf]) || '#C9A227';
+      return (
+        <section className="ct-confgroup" key={conf} style={{ '--accent': ac }}>
+          <header className="ct-confgroup__head">
+            <span className="ct-confgroup__edge" />
+            <ConfBadge id={conf} name={(confName && confName[conf]) || conf.toUpperCase()} accent={ac} size={24} />
+            <span className="ct-confgroup__count">{copies.length} copies</span>
+            <ConfRollChips copies={copies} />
+          </header>
+          <div className="ct-confgroup__body">
+            {copies.map((cp) => (
+              <CopyRow key={cp.id} copy={cp} accentColor={ac} teams={teams} statusMeta={statusMeta} confAccent={confAccent}
+                open={expanded === cp.id} onToggle={() => setExpanded(expanded === cp.id ? null : cp.id)} />
+            ))}
+          </div>
+        </section>
+      );
+    })}
+  </div>
+);
+
+// ---- App ----
+const firstInteresting = (ledger, pid) => {
+  const entry = ledger[pid];
+  if (!entry) return null;
+  for (const c of entry.confs) for (const cp of c.copies) if (cp.status === 'live') return cp.id;
+  for (const c of entry.confs) for (const cp of c.copies) if (cp.bids.length) return cp.id;
+  for (const c of entry.confs) for (const cp of c.copies) return cp.id;
+  return null;
+};
+
+const App = ({ data }) => {
+  const TEAMS = data.TEAMS || {};
+  const PLAYERS = data.PLAYERS || {};
+  const POS_COLORS = data.POS_COLORS || {};
+  const CONF_ACCENT = data.CONF_ACCENT || {};
+  const CONF_NAME = data.CONF_NAME || {};
+  const COPY_LEDGER = data.COPY_LEDGER || {};
+  const TRACKED = data.TRACKED || [];
+  const STATUS_META = data.STATUS_META || {};
+
+  const defaultPid = TRACKED[0] ? TRACKED[0].id : null;
+  const [pid, setPid] = useState(defaultPid);
+  const [expanded, setExpanded] = useState(() => (defaultPid ? firstInteresting(COPY_LEDGER, defaultPid) : null));
+
+  useEffect(() => {
+    if (TRACKED.length && (!pid || !COPY_LEDGER[pid])) {
+      const next = TRACKED[0].id;
+      setPid(next);
+      setExpanded(firstInteresting(COPY_LEDGER, next));
+    }
+  }, [data]);
+
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) { firstRun.current = false; return; }
+    setExpanded(firstInteresting(COPY_LEDGER, pid));
+    if (pid) setComponentValue({ action: 'pick', value: pid, ts: Date.now() });
+  }, [pid]);
+
+  if (!pid || !COPY_LEDGER[pid]) {
+    return (
+      <div className="ct-frame">
+        <div className="ct-root">
+          <div className="ct-context">
+            <span>Live Auction</span><span className="ct-context__sep">/</span><span className="ct-context__here">Copy Tracker</span>
+          </div>
+          <div className="ct-panel">
+            <header className="ct-panel__head">
+              <div>
+                <h2 className="ct-panel__h2">Copy Tracker</h2>
+                <p className="ct-panel__desc">Track every copy of a recruit across all six conference rooms.</p>
+              </div>
+            </header>
+            <div style={{ padding: '32px 24px', color: '#9A9A9A', fontSize: 13, textAlign: 'center' }}>
+              No recruits to track yet — no auction transactions for this year.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const entry = COPY_LEDGER[pid];
+
+  return (
+    <div className="ct-frame">
+      <div className="ct-root">
+        <div className="ct-context">
+          <span>Live Auction</span>
+          <span className="ct-context__sep">/</span>
+          <span className="ct-context__here">Copy Tracker</span>
+        </div>
+        <div className="ct-panel">
+          <header className="ct-panel__head">
+            <div>
+              <h2 className="ct-panel__h2">Copy Tracker</h2>
+              <p className="ct-panel__desc">Track every copy of a recruit across all six conference rooms.</p>
+            </div>
+            <SearchBar value={pid} onPick={setPid} tracked={TRACKED} posColors={POS_COLORS} />
+          </header>
+          <Profile pid={pid} players={PLAYERS} ledger={COPY_LEDGER} posColors={POS_COLORS} />
+          <div className="ct-summary">
+            <div className="ct-summary__head">
+              <span className="ct-summary__title">Copies by Conference</span>
+              <span className="ct-summary__hint">Select a copy to open its bid timeline</span>
+            </div>
+            <RowsSummary confs={entry.confs} expanded={expanded} setExpanded={setExpanded}
+              confAccent={CONF_ACCENT} confName={CONF_NAME} teams={TEAMS} statusMeta={STATUS_META} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ---- Mount ----
+let _root = null;
+function mount(data) {
+  if (!_root) _root = ReactDOM.createRoot(document.getElementById('root'));
+  _root.render(<App data={data} />);
+  requestAnimationFrame(setFrameHeight);
+  setTimeout(setFrameHeight, 80);
+  setTimeout(setFrameHeight, 300);
+}
+
+window.addEventListener('message', (ev) => {
+  if (!ev.data || ev.data.type !== 'streamlit:render') return;
+  const args = ev.data.args || {};
+  mount(args.data || {});
+});
+window.addEventListener('resize', setFrameHeight);
+
+streamlitSend('streamlit:componentReady', { apiVersion: 1 });
+mount({});
+</script>
+</body>
+</html>

@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CFFB Auction Board</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-canvas: #0A0A0A;
+  --bg-surface: #141414;
+  --bg-surface-elev: #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border: #2A2A2A;
+  --border-strong: #3A3A3A;
+  --fg-primary: #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary: #5A5A5A;
+  --gold: #C9A227;
+  --gold-light: #E8C547;
+  --gold-dark: #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  --live: #2D7A4E;
+  --font-display: 'Saira Condensed', 'Oswald', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.6);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic: inset 0 1px 0 rgba(255,255,255,0.06);
+  --dur-fast: 120ms; --dur-base: 180ms;
+}
+html, body { margin: 0; padding: 0; }
+* { box-sizing: border-box; }
+body { background: var(--bg-canvas); color: var(--fg-primary); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; cursor: pointer; }
+img { display: block; }
+.dim { color: var(--fg-secondary); }
+.cffb-gold-grad-text { background: var(--gold-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+@keyframes cffb-live-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.7); opacity: 0.5; } }
+@keyframes cffb-ring-spin { to { transform: rotate(360deg); } }
+
+.frame { container-type: inline-size; container-name: app; background: var(--bg-canvas); }
+
+/* TOPBAR */
+.topbar { min-height: 64px; background: #0F0F0F; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; }
+.topbar__title { display: flex; align-items: center; gap: 14px; flex-shrink: 0; min-width: 0; }
+.topbar__h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; margin: 0; line-height: 1; letter-spacing: -0.005em; text-transform: uppercase; white-space: nowrap; }
+.topbar__spacer { margin-left: auto; }
+.topbar__pool { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.topbar__pool-label { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); white-space: nowrap; }
+.topbar__pool-val { font-family: var(--font-display); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* PAGE */
+.page { max-width: 1440px; width: 100%; margin: 0 auto; padding: 22px 24px 32px; }
+.page-head { margin-bottom: 16px; }
+.page-head__sub { font-size: 13px; color: var(--fg-secondary); }
+.page-head__sub strong { color: var(--fg-primary); font-weight: 600; }
+
+/* LIVE indicator */
+.live-ind { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.live-ind__ring { width: 20px; height: 20px; border-radius: 50%; padding: 1.5px; background: conic-gradient(from 0deg, #E8C547, #C9A227, #8B6F1F, #C9A227, #E8C547); animation: cffb-ring-spin 4s linear infinite; }
+.live-ind__ring > i { width: 100%; height: 100%; border-radius: 50%; background: #0A0A0A; display: flex; align-items: center; justify-content: center; animation: cffb-ring-spin 4s linear infinite reverse; }
+.live-ind__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); box-shadow: var(--shadow-glow-live); animation: cffb-live-pulse 1.4s ease-in-out infinite; }
+.live-ind__label { font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-primary); }
+
+/* CONF FILTER */
+.conf-filter { display: flex; gap: 6px; align-items: center; padding: 6px; margin-bottom: 26px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3); overflow-x: auto; scrollbar-width: thin; }
+.conf-tab { display: flex; align-items: center; gap: 9px; flex-shrink: 0; padding: 9px 15px; border-radius: var(--r-2); background: transparent; border: 1px solid transparent; color: var(--fg-secondary); transition: background var(--dur-fast), color var(--dur-fast); }
+.conf-tab__mark { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 10px; letter-spacing: 0.02em; color: #0A0A0A; filter: grayscale(1) opacity(0.55); transition: filter var(--dur-fast); flex-shrink: 0; }
+.conf-tab__name { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; flex: 0 0 auto; }
+.conf-tab:hover { color: var(--fg-primary); }
+.conf-tab:hover .conf-tab__mark { filter: grayscale(0.3) opacity(0.85); }
+.conf-tab.is-active { background: var(--bg-surface-elev); border-color: var(--border-strong); color: var(--fg-primary); }
+.conf-tab.is-active .conf-tab__mark { filter: none; }
+.conf-tab__count { font-family: var(--font-body); font-weight: 600; font-size: 11px; flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--fg-tertiary); background: #101010; border-radius: var(--r-pill); padding: 2px 7px; }
+.conf-tab.is-active .conf-tab__count { color: var(--gold); }
+
+/* TOP grid */
+.top { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: start; margin-bottom: 8px; }
+@container app (min-width: 1040px) {
+  .top { grid-template-columns: minmax(0,1fr) 520px; grid-template-areas: "live funds"; gap: 24px; }
+  .top__live { grid-area: live; }
+  .top__funds { grid-area: funds; }
+}
+
+/* COMPLETED panel grid */
+.cpl { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+@container app (min-width: 1040px) { .cpl { grid-template-columns: minmax(0,1fr) 520px; gap: 20px; } }
+.cpl__chart { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3); padding: 16px 18px 12px; }
+.cpl__chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.cpl__chart-title { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.02em; text-transform: uppercase; }
+.cpl__chart-sub { font-size: 11px; color: var(--fg-secondary); }
+
+/* SCATTER */
+.scat__plot { position: relative; }
+.scat__svg { display: block; width: 100%; height: auto; }
+.scat__grid { stroke: #232323; stroke-width: 1; }
+.scat__axis { stroke: #3A3A3A; stroke-width: 1; }
+.scat__tick { fill: #5A5A5A; font-size: 11px; font-family: var(--font-body); font-variant-numeric: tabular-nums; }
+.scat__axis-title { fill: var(--fg-secondary); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-body); }
+.scat__dot { cursor: pointer; }
+.scat__dot-fill { stroke-width: 1.5; fill-opacity: 0.92; transition: opacity 140ms ease, r 120ms ease; }
+.scat__svg.is-focusing .scat__dot:not(.is-hi) .scat__dot-fill { opacity: 0.12; }
+.scat__dot.is-hover .scat__dot-fill { filter: drop-shadow(0 0 7px rgba(255,255,255,0.4)); fill-opacity: 1; }
+.scat__tip { position: absolute; width: 190px; transform: translate(14px, -50%); background: var(--bg-surface-elev); border: 1px solid var(--border-strong); border-radius: var(--r-2); box-shadow: var(--shadow-md); padding: 11px 12px; pointer-events: none; z-index: 5; }
+.scat__tip-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: var(--r-2) 0 0 var(--r-2); }
+.scat__tip-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.scat__tip-name { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.05; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scat__tip-sub { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.scat__tip-rows { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; margin: 0; }
+.scat__tip-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+.scat__tip-row dt { color: var(--fg-secondary); letter-spacing: 0.04em; }
+.scat__tip-row dd { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--fg-primary); font-variant-numeric: tabular-nums; }
+.scat__tip-row dd.is-gold { color: var(--gold); }
+.scat__tip-team { display: flex; }
+
+/* SECTION */
+.section { margin-bottom: 36px; }
+.section__head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.section__title { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: 0.06em; text-transform: uppercase; }
+.section__meta { font-size: 12px; color: var(--fg-secondary); font-variant-numeric: tabular-nums; }
+.section__spacer { margin-left: auto; }
+
+/* SHOT */
+.shot { position: relative; flex-shrink: 0; overflow: hidden; border-radius: 50%;
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 8px), linear-gradient(160deg, #242D39 0%, #161A20 60%, #101216 100%);
+  display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
+.shot__initials { font-family: var(--font-display); font-weight: 700; color: rgba(184,202,222,0.92); line-height: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+.shot__accent { position: absolute; left: 12%; right: 12%; bottom: 0; height: 3px; border-radius: 2px 2px 0 0; }
+.shot__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* POS TAG / COPY BADGE */
+.pos-tag { font-family: var(--font-display); font-weight: 700; font-size: 11px; padding: 1px 5px; border-radius: var(--r-1); color: #0A0A0A; text-align: center; letter-spacing: 0.02em; line-height: 1.3; display: inline-block; flex-shrink: 0; }
+.copy-badge { font-family: var(--font-body); font-weight: 600; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); border: 1px solid rgba(201,162,39,0.35); background: rgba(201,162,39,0.08); padding: 1px 6px; border-radius: var(--r-1); white-space: nowrap; flex-shrink: 0; }
+.copy-badge__of { color: var(--fg-tertiary); }
+
+/* TEAM PILL */
+.pill { display: inline-flex; align-items: stretch; vertical-align: middle; overflow: hidden; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+.pill--img { border-radius: 4px; }
+.pill--img img { height: 100%; width: auto; display: block; }
+.pill--fb { border: 1px solid rgba(0,0,0,0.5); }
+.pill__edge { flex-shrink: 0; }
+.pill__body { display: flex; align-items: center; padding: 0 9px; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; border-left: 2px solid rgba(245,245,245,0.85); white-space: nowrap; }
+
+/* TABLE shell */
+.tbl { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3); overflow: hidden; }
+.tbl__toolbar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); background: #121212; flex-wrap: wrap; }
+.tbl__search { flex: 1 1 180px; min-width: 150px; display: flex; align-items: center; gap: 8px; background: #0D0D0D; border: 1px solid var(--border); border-radius: var(--r-2); padding: 6px 10px; }
+.tbl__search:focus-within { border-color: var(--border-strong); }
+.tbl__search-ic { color: var(--fg-tertiary); font-size: 15px; line-height: 1; }
+.tbl__search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--fg-primary); font-family: inherit; font-size: 13px; }
+.tbl__search input::placeholder { color: var(--fg-tertiary); }
+.tbl__clear { background: transparent; border: 0; color: var(--fg-secondary); font-size: 15px; line-height: 1; padding: 0 2px; }
+.tbl__clear:hover { color: var(--fg-primary); }
+.tbl__filters { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.tbl__sel { display: flex; align-items: center; gap: 6px; background: #0D0D0D; border: 1px solid var(--border); border-radius: var(--r-2); padding: 5px 9px; }
+.tbl__sel > span { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); }
+.tbl__sel select { background: transparent; border: 0; outline: none; color: var(--fg-primary); font-family: inherit; font-size: 12px; cursor: pointer; }
+.tbl__sel select option { background: #181818; color: var(--fg-primary); }
+.tbl__count { font-size: 11px; color: var(--fg-tertiary); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 2px; }
+.tbl__scroll { max-height: 432px; overflow-y: auto; overscroll-behavior: contain; }
+.tbl__scroll::-webkit-scrollbar { width: 10px; }
+.tbl__scroll::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 6px; border: 3px solid var(--bg-surface); }
+.tbl__empty { padding: 32px; text-align: center; color: var(--fg-tertiary); font-size: 13px; }
+.lhead, .dhead { position: sticky; top: 0; z-index: 3; background: #181818; border-bottom: 1px solid var(--border); display: grid; align-items: center; gap: 14px; padding: 8px 16px; }
+.lhead { grid-template-columns: 42px minmax(0,1fr) 86px 150px 64px; }
+.dhead { grid-template-columns: 40px minmax(0,1fr) 76px 142px; }
+.th { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 0; padding: 0; cursor: pointer; font-family: var(--font-body); font-weight: 600; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); }
+.th:hover { color: var(--fg-primary); }
+.th.is-active { color: var(--gold); }
+.th--r { justify-content: flex-end; }
+.th__arr { font-size: 8px; opacity: 0.85; }
+.th:not(.is-active) .th__arr { opacity: 0.3; }
+
+/* LIVE row */
+.lrow { background: var(--bg-surface); display: grid; align-items: center; gap: 14px; grid-template-columns: 42px minmax(0,1fr) 86px 150px 64px; padding: 9px 16px; transition: background var(--dur-fast); }
+.lrow:hover { background: var(--bg-surface-hover); }
+.lrow + .lrow { border-top: 1px solid var(--border); }
+.lrow__name { font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.05; text-transform: uppercase; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lrow__meta { display: flex; align-items: center; gap: 7px; margin-top: 4px; font-size: 11px; }
+.lrow__bid { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.lrow__bid-val { font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.lrow__bidder { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lrow__owner { font-size: 11px; color: var(--fg-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lrow__bids { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.lrow__bids-val { font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--gold); }
+.lrow__bids-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); }
+
+/* COMPLETED row */
+.drow { background: var(--bg-surface); display: grid; align-items: center; gap: 14px; grid-template-columns: 40px minmax(0,1fr) 76px 142px; padding: 8px 16px; transition: background var(--dur-fast); }
+.drow:hover { background: var(--bg-surface-hover); }
+.drow + .drow { border-top: 1px solid var(--border); }
+.drow__name { font-family: var(--font-display); font-weight: 700; font-size: 17px; line-height: 1.05; text-transform: uppercase; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow__meta { display: flex; align-items: center; gap: 7px; margin-top: 3px; font-size: 11px; }
+.drow__price { text-align: right; font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--gold); }
+.drow__winner { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.drow__owner { font-size: 11px; color: var(--fg-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* FUNDS */
+.funds-wrap { max-width: 720px; container-type: inline-size; container-name: funds; }
+.funds { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3); overflow: hidden; }
+.frow { display: grid; align-items: center; gap: 12px; grid-template-columns: minmax(140px,1.15fr) auto 62px auto; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+.frow:last-child { border-bottom: 0; }
+.frow--head { background: #181818; padding: 11px 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); }
+.frow--head > div:nth-child(2), .frow--head > div:nth-child(3), .frow--head > div:nth-child(4) { text-align: right; }
+.frow--body:hover { background: var(--bg-surface-hover); }
+.frow--total { background: #121212; border-top: 1px solid var(--border-strong); }
+.frow__team { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.frow__team--total { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.frow__team-id { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.frow__team-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; line-height: 1.05; text-transform: uppercase; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.frow__owner { font-size: 11px; color: var(--fg-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.frow__spent { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.frow__spent-val { font-family: var(--font-display); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.meter { width: 54px; flex: none; height: 7px; background: #101010; border-radius: var(--r-pill); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03); }
+.meter__fill { height: 100%; border-radius: var(--r-pill); background: linear-gradient(90deg, #6E6056, #C9A227); }
+.frow__remain { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.frow__remain-val { font-family: var(--font-display); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--gold); white-space: nowrap; }
+.frow__remain-lbl { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); }
+.frow__share { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.share { width: 46px; flex: none; height: 7px; background: #101010; border-radius: var(--r-pill); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03); }
+.share__fill { height: 100%; border-radius: var(--r-pill); background: linear-gradient(90deg, #2E5A46, #4A9968); }
+.frow__share-val { font-family: var(--font-display); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+
+.empty { text-align: center; color: var(--fg-tertiary); font-size: 13px; padding: 36px; border: 1px dashed var(--border); border-radius: var(--r-3); }
+
+/* MOBILE breakpoints */
+@container app (max-width: 640px) {
+  .page { padding: 18px 14px 32px; }
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar__h1 { font-size: 21px; }
+  .conf-filter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; overflow-x: visible; }
+  .conf-tab { flex-direction: column; gap: 4px; justify-content: center; padding: 8px 4px 7px; text-align: center; position: relative; }
+  .conf-tab__name { font-size: 13px; line-height: 1; }
+  .conf-tab__count { position: absolute; top: 5px; right: 5px; font-size: 9px; padding: 1px 5px; }
+  .section__title { font-size: 19px; }
+  .lhead, .dhead { display: none; }
+  .lrow { grid-template-columns: 42px minmax(0,1fr) auto; grid-template-areas: "shot id bid" "shot bidder bids"; row-gap: 7px; padding: 11px 14px; }
+  .drow { grid-template-columns: 40px minmax(0,1fr) auto; grid-template-areas: "shot id price" "shot winner price"; row-gap: 6px; padding: 10px 14px; }
+  .lrow__shot { grid-area: shot; }
+  .lrow__id { grid-area: id; min-width: 0; }
+  .lrow__bid { grid-area: bid; }
+  .lrow__bidder { grid-area: bidder; }
+  .lrow__bids { grid-area: bids; }
+  .drow__shot { grid-area: shot; }
+  .drow__id { grid-area: id; min-width: 0; }
+  .drow__price { grid-area: price; align-self: center; }
+  .drow__winner { grid-area: winner; }
+  .funds-wrap { max-width: none; }
+  .tbl__scroll { max-height: 60vh; overflow-x: hidden; }
+  .tbl__search { flex-basis: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+// ------ Streamlit bridge -------------------------------------------------
+function streamlitSend(type, data) {
+  const msg = Object.assign({ isStreamlitMessage: true, type }, data || {});
+  window.parent.postMessage(msg, "*");
+}
+function setFrameHeight() {
+  streamlitSend("streamlit:setFrameHeight", { height: document.documentElement.scrollHeight });
+}
+
+// ------ Defaults / helpers ------------------------------------------------
+const POS_FILTER = ['All', 'QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'DB', 'ATH'];
+const defDir = (key) => (['bid', 'price', 'copy', 'bids'].includes(key) ? 'desc' : 'asc');
+
+const initials = (name) => {
+  if (!name) return '??';
+  const parts = String(name).replace(',', '').trim().split(/\s+/);
+  const a = parts[0]?.[0] || '';
+  const b = parts.length > 1 ? parts[parts.length - 1][0] : (parts[0]?.[1] || '');
+  return (a + b).toUpperCase();
+};
+const posTextColor = (pos) => (pos === 'LB' || pos === 'DB' || pos === 'DL' ? '#F5F5F5' : '#0A0A0A');
+const CONF_MARK_LABEL = { sec: 'SEC', b1g: 'B1G', acc: 'ACC', big12: 'B12', pac: 'PAC', aac: 'AAC' };
+
+// ------ Reusable atoms (read shared dicts from props.data) ----------------
+const Shot = ({ name, pos, photo, size = 38, posColors }) => (
+  <div className="shot" style={{ width: size, height: size }}>
+    {photo ? <img className="shot__img" src={photo} alt="" /> : null}
+    {!photo && <span className="shot__initials" style={{ fontSize: Math.round(size * 0.4) }}>{initials(name)}</span>}
+    <span className="shot__accent" style={{ background: (posColors && posColors[pos]) || '#5A5A5A' }} />
+  </div>
+);
+
+const PosTag = ({ pos, posColors }) => (
+  <span className="pos-tag" style={{ background: (posColors && posColors[pos]) || '#5A5A5A', color: posTextColor(pos) }}>{pos}</span>
+);
+
+const CopyBadge = ({ copy }) => (
+  <span className="copy-badge">Copy {copy.n}<span className="copy-badge__of">/{copy.of}</span></span>
+);
+
+const TeamPill = ({ id, teams, confAccent, h = 26 }) => {
+  const t = (teams && teams[id]) || { bg: '#2A2A2A', fg: '#9A9A9A', abbr: '??', conf: '' };
+  if (t.pill) {
+    return <span className="pill pill--img" style={{ height: h }}><img src={t.pill} alt={t.name} /></span>;
+  }
+  const abbr = t.abbr && t.abbr.length > 4 ? t.abbr.slice(0, 4) : (t.abbr || '??');
+  return (
+    <span className="pill pill--fb" style={{ height: h, borderRadius: Math.round(h * 0.22) }} title={t.name}>
+      <span className="pill__edge" style={{ width: Math.round(h * 0.62), background: (confAccent && confAccent[t.conf]) || '#5A5A5A' }} />
+      <span className="pill__body" style={{ background: t.bg, color: t.fg, fontSize: Math.max(11, Math.round(h * 0.46)) }}>{abbr}</span>
+    </span>
+  );
+};
+
+const LiveIndicator = ({ label }) => (
+  <span className="live-ind">
+    <span className="live-ind__ring"><i><span className="live-ind__dot" /></i></span>
+    {label && <span className="live-ind__label">{label}</span>}
+  </span>
+);
+
+// ------ Conference filter -------------------------------------------------
+const ConfFilter = ({ active, counts, onChange, conferences, confAccent }) => (
+  <div className="conf-filter" role="tablist" aria-label="Conference">
+    {conferences.map((c) => (
+      <button key={c.id} role="tab" aria-selected={active === c.id}
+        className={'conf-tab' + (active === c.id ? ' is-active' : '')} onClick={() => onChange(c.id)}>
+        <span className="conf-tab__mark" style={{ background: confAccent[c.id] || '#5A5A5A' }}>{CONF_MARK_LABEL[c.id] || ''}</span>
+        <span className="conf-tab__name">{c.name}</span>
+        <span className="conf-tab__count">{counts[c.id] || 0}</span>
+      </button>
+    ))}
+  </div>
+);
+
+// ------ Sortable header + toolbar ----------------------------------------
+const SortTh = ({ col, label, sort, onSort, align }) => {
+  const active = sort.key === col;
+  return (
+    <button className={'th' + (active ? ' is-active' : '') + (align === 'right' ? ' th--r' : '')} onClick={() => onSort(col)}>
+      <span>{label}</span>
+      <span className="th__arr">{active ? (sort.dir === 'asc' ? '▲' : '▼') : '↕'}</span>
+    </button>
+  );
+};
+
+const Toolbar = ({ q, setQ, pos, setPos, sort, setSort, sortOpts, count }) => (
+  <div className="tbl__toolbar">
+    <div className="tbl__search">
+      <span className="tbl__search-ic">⌕</span>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players" />
+      {q && <button className="tbl__clear" onClick={() => setQ('')}>×</button>}
+    </div>
+    <div className="tbl__filters">
+      <label className="tbl__sel">
+        <span>Pos</span>
+        <select value={pos} onChange={(e) => setPos(e.target.value)}>
+          {POS_FILTER.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+      </label>
+      <label className="tbl__sel">
+        <span>Sort</span>
+        <select value={sort.key} onChange={(e) => setSort({ key: e.target.value, dir: defDir(e.target.value) })}>
+          {sortOpts.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
+        </select>
+      </label>
+      <span className="tbl__count">{count}</span>
+    </div>
+  </div>
+);
+
+const useTable = (defaultSort) => {
+  const [q, setQ] = useState('');
+  const [pos, setPos] = useState('All');
+  const [sort, setSort] = useState(defaultSort);
+  const onSort = (key) => setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: defDir(key) }));
+  return { q, setQ, pos, setPos, sort, setSort, onSort };
+};
+
+const applyFilter = (lots, q, pos, players) => lots.filter((l) => {
+  const p = players[l.player];
+  if (!p) return false;
+  if (pos !== 'All' && p.pos !== pos) return false;
+  if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
+  return true;
+});
+
+// ------ Live row + table --------------------------------------------------
+const LiveRow = ({ lot, players, teams, posColors, confAccent }) => {
+  const p = players[lot.player] || { name: '—', pos: 'ATH' };
+  const t = teams[lot.bidder] || { owner: '' };
+  return (
+    <div className="lrow">
+      <div className="lrow__shot"><Shot name={p.name} pos={p.pos} photo={p.headshot} posColors={posColors} size={38} /></div>
+      <div className="lrow__id">
+        <div className="lrow__name">{p.name}</div>
+        <div className="lrow__meta">
+          <PosTag pos={p.pos} posColors={posColors} />
+          <CopyBadge copy={lot.copy} />
+          {p.stars > 0 && <span className="dim">{p.stars}★</span>}
+        </div>
+      </div>
+      <div className="lrow__bid">
+        <span className="lrow__bid-val">${Math.round(lot.highBid)}</span>
+      </div>
+      <div className="lrow__bidder">
+        <TeamPill id={lot.bidder} teams={teams} confAccent={confAccent} h={24} />
+        <span className="lrow__owner">{t.name || t.owner}</span>
+      </div>
+      <div className="lrow__bids">
+        <span className="lrow__bids-val">{lot.bids || 0}</span>
+        <span className="lrow__bids-lbl">bids</span>
+      </div>
+    </div>
+  );
+};
+
+const LIVE_SORT = [
+  { k: 'bid', label: 'High bid' }, { k: 'bids', label: 'Most bids' },
+  { k: 'name', label: 'Player A–Z' }, { k: 'team', label: 'Leader' },
+];
+
+const LiveTable = ({ lots, players, teams, posColors, confAccent }) => {
+  const { q, setQ, pos, setPos, sort, setSort, onSort } = useTable({ key: 'bid', dir: 'desc' });
+  const dir = sort.dir === 'asc' ? 1 : -1;
+  const liveVal = (l, key) => {
+    const p = players[l.player] || {};
+    if (key === 'name') return (p.name || '').toLowerCase();
+    if (key === 'bid') return l.highBid;
+    if (key === 'team') return ((teams[l.bidder] && teams[l.bidder].name) || '').toLowerCase();
+    return l.bids || 0;
+  };
+  const rows = applyFilter(lots, q, pos, players).sort((a, b) => {
+    const va = liveVal(a, sort.key), vb = liveVal(b, sort.key);
+    return va < vb ? -dir : va > vb ? dir : 0;
+  });
+  return (
+    <div className="tbl">
+      <Toolbar q={q} setQ={setQ} pos={pos} setPos={setPos} sort={sort} setSort={setSort} sortOpts={LIVE_SORT} count={`${rows.length} lots`} />
+      <div className="tbl__scroll">
+        <div className="lhead">
+          <div />
+          <SortTh col="name" label="Player" sort={sort} onSort={onSort} />
+          <SortTh col="bid" label="High Bid" align="right" sort={sort} onSort={onSort} />
+          <SortTh col="team" label="Leader" sort={sort} onSort={onSort} />
+          <SortTh col="bids" label="Bids" align="right" sort={sort} onSort={onSort} />
+        </div>
+        {rows.length ? rows.map((l) => <LiveRow key={l.id} lot={l} players={players} teams={teams} posColors={posColors} confAccent={confAccent} />)
+          : <div className="tbl__empty">No lots match your filters.</div>}
+      </div>
+    </div>
+  );
+};
+
+// ------ Completed row + scatter ------------------------------------------
+const DoneRow = ({ lot, players, teams, posColors, confAccent }) => {
+  const p = players[lot.player] || { name: '—', pos: 'ATH' };
+  const t = teams[lot.winner] || {};
+  return (
+    <div className="drow">
+      <div className="drow__shot"><Shot name={p.name} pos={p.pos} photo={p.headshot} posColors={posColors} size={36} /></div>
+      <div className="drow__id">
+        <div className="drow__name">{p.name}</div>
+        <div className="drow__meta">
+          <PosTag pos={p.pos} posColors={posColors} />
+          <CopyBadge copy={lot.copy} />
+          {p.stars > 0 && <span className="dim">{p.stars}★</span>}
+        </div>
+      </div>
+      <div className="drow__price">${Math.round(lot.price)}</div>
+      <div className="drow__winner">
+        <TeamPill id={lot.winner} teams={teams} confAccent={confAccent} h={24} />
+        <span className="drow__owner">{t.name}</span>
+      </div>
+    </div>
+  );
+};
+
+const DONE_SORT = [
+  { k: 'price', label: 'Price (high→low)' }, { k: 'name', label: 'Player A–Z' }, { k: 'team', label: 'Won by' },
+];
+
+const VW = 720, VH = 384, MG = { l: 52, r: 20, t: 16, b: 46 };
+const niceTicks = (min, max, n) => {
+  const span = (max - min) || 1;
+  const step0 = span / n;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const norm = step0 / mag;
+  let step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  step *= mag;
+  const lo = Math.floor(min / step) * step;
+  const hi = Math.ceil(max / step) * step;
+  const arr = [];
+  for (let v = lo; v <= hi + step * 1e-6; v += step) arr.push(+v.toFixed(6));
+  return { lo, hi, arr };
+};
+
+const ScatterChart = ({ lots, highlight, players, teams, posColors }) => {
+  const [hover, setHover] = useState(null);
+  const focusing = highlight && highlight.size > 0;
+  if (!lots.length) return <div className="tbl__empty">No completed sales to plot.</div>;
+  const xs = lots.map((l) => l.price);
+  const ys = lots.map((l) => (players[l.player] && players[l.player].score) || 0);
+  const xT = niceTicks(Math.min(...xs), Math.max(...xs), 5);
+  const yT = niceTicks(Math.min(...ys), Math.max(...ys), 5);
+  const iw = VW - MG.l - MG.r, ih = VH - MG.t - MG.b;
+  const X = (v) => MG.l + (v - xT.lo) / (xT.hi - xT.lo || 1) * iw;
+  const Y = (v) => MG.t + (1 - (v - yT.lo) / (yT.hi - yT.lo || 1)) * ih;
+  const hv = hover ? lots.find((l) => l.id === hover) : null;
+  const hvT = hv ? (teams[hv.winner] || {}) : null;
+  const hvP = hv ? (players[hv.player] || {}) : null;
+  return (
+    <div className="scat">
+      <div className="scat__plot">
+        <svg className={'scat__svg' + (focusing || hover ? ' is-focusing' : '')} viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet">
+          {yT.arr.map((v) => (
+            <g key={'y' + v}>
+              <line className="scat__grid" x1={MG.l} y1={Y(v)} x2={VW - MG.r} y2={Y(v)} />
+              <text className="scat__tick" x={MG.l - 9} y={Y(v) + 4} textAnchor="end">{v.toFixed(0)}</text>
+            </g>
+          ))}
+          {xT.arr.map((v) => (
+            <g key={'x' + v}>
+              <line className="scat__grid" x1={X(v)} y1={MG.t} x2={X(v)} y2={VH - MG.b} />
+              <text className="scat__tick" x={X(v)} y={VH - MG.b + 19} textAnchor="middle">${v}</text>
+            </g>
+          ))}
+          <line className="scat__axis" x1={MG.l} y1={VH - MG.b} x2={VW - MG.r} y2={VH - MG.b} />
+          <line className="scat__axis" x1={MG.l} y1={MG.t} x2={MG.l} y2={VH - MG.b} />
+          <text className="scat__axis-title" x={MG.l + iw / 2} y={VH - 7} textAnchor="middle">Price Paid ($)</text>
+          <text className="scat__axis-title" textAnchor="middle" transform={`translate(14,${MG.t + ih / 2}) rotate(-90)`}>Recruit Score</text>
+          {lots.map((l) => {
+            const t = teams[l.winner] || { bg: '#9A9A9A', fg: '#F5F5F5' };
+            const p = players[l.player] || { score: 0 };
+            const hi = focusing ? highlight.has(l.id) : true;
+            const isHover = hover === l.id;
+            return (
+              <g key={l.id} className={'scat__dot' + (hi ? ' is-hi' : '') + (isHover ? ' is-hover' : '')}
+                 onMouseEnter={() => setHover(l.id)} onMouseLeave={() => setHover((h) => (h === l.id ? null : h))}>
+                <circle cx={X(l.price)} cy={Y(p.score)} r={13} fill="transparent" />
+                <circle className="scat__dot-fill" cx={X(l.price)} cy={Y(p.score)} r={isHover ? 8 : 6.5} fill={t.bg} stroke={t.fg} />
+              </g>
+            );
+          })}
+        </svg>
+        {hv && (
+          <div className="scat__tip" style={{ left: (X(hv.price) / VW * 100) + '%', top: (Y(hvP.score) / VH * 100) + '%' }}>
+            <span className="scat__tip-accent" style={{ background: hvT.bg }} />
+            <div className="scat__tip-head">
+              <Shot name={hvP.name} pos={hvP.pos} photo={hvP.headshot} posColors={posColors} size={34} />
+              <div style={{ minWidth: 0 }}>
+                <div className="scat__tip-name">{hvP.name}</div>
+                <div className="scat__tip-sub"><PosTag pos={hvP.pos} posColors={posColors} /><CopyBadge copy={hv.copy} /></div>
+              </div>
+            </div>
+            <dl className="scat__tip-rows">
+              <div className="scat__tip-row"><dt>Price Paid</dt><dd className="is-gold">${Math.round(hv.price)}</dd></div>
+              <div className="scat__tip-row"><dt>Recruit Score</dt><dd>{(hvP.score || 0).toFixed(1)}</dd></div>
+              <div className="scat__tip-row"><dt>Won By</dt><dd className="scat__tip-team"><TeamPill id={hv.winner} teams={teams} confAccent={{}} h={18} /></dd></div>
+            </dl>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CompletedPanel = ({ lots, players, teams, posColors, confAccent }) => {
+  const { q, setQ, pos, setPos, sort, setSort, onSort } = useTable({ key: 'price', dir: 'desc' });
+  const dir = sort.dir === 'asc' ? 1 : -1;
+  const filtered = applyFilter(lots, q, pos, players);
+  const doneVal = (l, key) => {
+    const p = players[l.player] || {};
+    if (key === 'name') return (p.name || '').toLowerCase();
+    if (key === 'team') return ((teams[l.winner] && teams[l.winner].name) || '').toLowerCase();
+    return l.price;
+  };
+  const rows = [...filtered].sort((a, b) => {
+    const va = doneVal(a, sort.key), vb = doneVal(b, sort.key);
+    return va < vb ? -dir : va > vb ? dir : 0;
+  });
+  const isFiltering = q.trim() !== '' || pos !== 'All';
+  const highlight = isFiltering ? new Set(filtered.map((l) => l.id)) : null;
+  return (
+    <div className="cpl">
+      <div className="cpl__chart">
+        <div className="cpl__chart-head">
+          <span className="cpl__chart-title">Spend vs. Recruit Score</span>
+          <span className="cpl__chart-sub">{lots.length} signed · color = winning team</span>
+        </div>
+        <ScatterChart lots={lots} highlight={highlight} players={players} teams={teams} posColors={posColors} />
+      </div>
+      <div className="tbl cpl__table">
+        <Toolbar q={q} setQ={setQ} pos={pos} setPos={setPos} sort={sort} setSort={setSort} sortOpts={DONE_SORT} count={`${rows.length} sold`} />
+        <div className="tbl__scroll">
+          <div className="dhead">
+            <div />
+            <SortTh col="name" label="Player" sort={sort} onSort={onSort} />
+            <SortTh col="price" label="Price" align="right" sort={sort} onSort={onSort} />
+            <SortTh col="team" label="Won By" sort={sort} onSort={onSort} />
+          </div>
+          {rows.length ? rows.map((l) => <DoneRow key={l.id} lot={l} players={players} teams={teams} posColors={posColors} confAccent={confAccent} />)
+            : <div className="tbl__empty">No sales match your filters.</div>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ------ Funds -------------------------------------------------------------
+const FundsRow = ({ t, totalRemain, maxRemain, confAccent }) => {
+  const remain = (t.budget || 0) - (t.spent || 0);
+  const share = totalRemain ? (remain / totalRemain) * 100 : 0;
+  return (
+    <div className="frow frow--body">
+      <div className="frow__team">
+        <TeamPill id={t.id} teams={{ [t.id]: t }} confAccent={confAccent} h={22} />
+        <span className="frow__team-id">
+          <span className="frow__team-name">{t.name}</span>
+          {t.owner && <span className="frow__owner">{t.owner}</span>}
+        </span>
+      </div>
+      <div className="frow__spent">
+        <div className="meter"><div className="meter__fill" style={{ width: (t.budget ? (t.spent / t.budget * 100) : 0) + '%' }} /></div>
+        <span className="frow__spent-val">${Math.round(t.spent || 0)}<span className="dim"> / {Math.round(t.budget || 0)}</span></span>
+      </div>
+      <div className="frow__remain"><span className="frow__remain-val">${Math.round(remain)}</span><span className="frow__remain-lbl">left</span></div>
+      <div className="frow__share">
+        <div className="share"><div className="share__fill" style={{ width: (maxRemain ? (remain / maxRemain * 100) : 0) + '%' }} /></div>
+        <span className="frow__share-val">{share.toFixed(1)}%</span>
+      </div>
+    </div>
+  );
+};
+
+const FundsTable = ({ teams, confAccent }) => {
+  const totalRemain = teams.reduce((s, t) => s + ((t.budget || 0) - (t.spent || 0)), 0) || 1;
+  const totalAlloc = teams.reduce((s, t) => s + (t.budget || 0), 0);
+  const totalSpent = teams.reduce((s, t) => s + (t.spent || 0), 0);
+  const rows = [...teams].sort((a, b) => ((b.budget || 0) - (b.spent || 0)) - ((a.budget || 0) - (a.spent || 0)));
+  const maxRemain = Math.max(...rows.map((t) => (t.budget || 0) - (t.spent || 0)), 1);
+  return (
+    <div className="funds">
+      <div className="frow frow--head">
+        <div>Team</div><div>Spent</div><div>Remaining</div><div>% of Pool</div>
+      </div>
+      {rows.map((t) => <FundsRow key={t.id} t={t} totalRemain={totalRemain} maxRemain={maxRemain} confAccent={confAccent} />)}
+      <div className="frow frow--total">
+        <div className="frow__team frow__team--total">Pool · {teams.length} teams</div>
+        <div className="frow__spent">
+          <div className="meter"><div className="meter__fill" style={{ width: (totalAlloc ? (totalSpent / totalAlloc * 100) : 0) + '%' }} /></div>
+          <span className="frow__spent-val">${Math.round(totalSpent).toLocaleString()}<span className="dim"> / {Math.round(totalAlloc).toLocaleString()}</span></span>
+        </div>
+        <div className="frow__remain"><span className="frow__remain-val">${Math.round(totalRemain).toLocaleString()}</span><span className="frow__remain-lbl">left</span></div>
+        <div className="frow__share"><span className="frow__share-val" style={{ marginLeft: 'auto' }}>100%</span></div>
+      </div>
+    </div>
+  );
+};
+
+// ------ App ---------------------------------------------------------------
+const App = ({ data }) => {
+  const CONFERENCES = data.CONFERENCES || [];
+  const TEAMS = data.TEAMS || {};
+  const PLAYERS = data.PLAYERS || {};
+  const POS_COLORS = data.POS_COLORS || {};
+  const CONF_ACCENT = data.CONF_ACCENT || {};
+  const LIVE_LOTS = data.LIVE_LOTS || [];
+  const COMPLETED = data.COMPLETED || [];
+  const isLive = !!data.isLive;
+
+  const initialConf = CONFERENCES[0] ? CONFERENCES[0].id : 'sec';
+  const [conf, setConf] = useState(initialConf);
+  useEffect(() => {
+    if (!CONFERENCES.find((c) => c.id === conf) && CONFERENCES[0]) {
+      setConf(CONFERENCES[0].id);
+    }
+  }, [data]);
+
+  const liveCounts = useMemo(() => {
+    const m = {};
+    LIVE_LOTS.forEach((l) => { m[l.conf] = (m[l.conf] || 0) + 1; });
+    return m;
+  }, [LIVE_LOTS]);
+
+  const confMeta = CONFERENCES.find((c) => c.id === conf) || CONFERENCES[0] || { name: '—' };
+  const teamsArr = useMemo(
+    () => Object.entries(TEAMS).filter(([, t]) => t.conf === conf).map(([id, t]) => ({ id, ...t })),
+    [conf, TEAMS]
+  );
+  const live = useMemo(() => LIVE_LOTS.filter((l) => l.conf === conf), [conf, LIVE_LOTS]);
+  const done = useMemo(() => COMPLETED.filter((c) => c.conf === conf), [conf, COMPLETED]);
+
+  const totalRemain = teamsArr.reduce((s, t) => s + ((t.budget || 0) - (t.spent || 0)), 0);
+  const totalBudget = teamsArr.reduce((s, t) => s + (t.budget || 0), 0);
+
+  return (
+    <div className="frame">
+      <div className="topbar">
+        <div className="topbar__title">
+          <h1 className="topbar__h1">Auction Board</h1>
+          {isLive && <LiveIndicator label="Live" />}
+        </div>
+        <div className="topbar__spacer" />
+        <div className="topbar__pool">
+          <span className="topbar__pool-label">{confMeta.name} Pool Left</span>
+          <span className="topbar__pool-val cffb-gold-grad-text">${Math.round(totalRemain).toLocaleString()}</span>
+        </div>
+      </div>
+
+      <div className="page">
+        <div className="page-head">
+          <div className="page-head__sub">
+            Bidding across <strong>{confMeta.name}</strong> · {live.length} lots on the block · {done.length} sold
+          </div>
+        </div>
+
+        <ConfFilter active={conf} counts={liveCounts} onChange={setConf}
+                    conferences={CONFERENCES} confAccent={CONF_ACCENT} />
+
+        <div className="top">
+          <section className="section top__live">
+            <div className="section__head">
+              <span className="section__title">On the Block</span>
+              <span className="section__meta">{confMeta.name} · {live.length} live lots</span>
+            </div>
+            {live.length ? (
+              <LiveTable lots={live} players={PLAYERS} teams={TEAMS} posColors={POS_COLORS} confAccent={CONF_ACCENT} />
+            ) : (
+              <div className="empty">No live lots in {confMeta.name} right now.</div>
+            )}
+          </section>
+
+          <section className="section top__funds">
+            <div className="section__head">
+              <span className="section__title">Team Funds</span>
+              <span className="section__meta">${Math.round(totalRemain).toLocaleString()} of ${Math.round(totalBudget).toLocaleString()} left</span>
+            </div>
+            <div className="funds-wrap">
+              {teamsArr.length
+                ? <FundsTable teams={teamsArr} confAccent={CONF_ACCENT} />
+                : <div className="empty">No teams in {confMeta.name}.</div>}
+            </div>
+          </section>
+        </div>
+
+        <section className="section">
+          <div className="section__head">
+            <span className="section__title">Completed</span>
+            <span className="section__meta">{confMeta.name} · {done.length} players sold</span>
+            <span className="section__spacer" />
+            <span className="section__meta">Search highlights the chart</span>
+          </div>
+          {done.length ? (
+            <CompletedPanel lots={done} players={PLAYERS} teams={TEAMS} posColors={POS_COLORS} confAccent={CONF_ACCENT} />
+          ) : (
+            <div className="empty">No completed auctions in {confMeta.name} yet.</div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+};
+
+// ------ Mount -------------------------------------------------------------
+let _root = null;
+let _lastData = null;
+function mount(data) {
+  _lastData = data;
+  if (!_root) _root = ReactDOM.createRoot(document.getElementById('root'));
+  _root.render(<App data={data} />);
+  requestAnimationFrame(setFrameHeight);
+  setTimeout(setFrameHeight, 80);
+  setTimeout(setFrameHeight, 300);
+}
+
+window.addEventListener('message', (ev) => {
+  if (!ev.data || ev.data.type !== 'streamlit:render') return;
+  const args = ev.data.args || {};
+  const data = args.data || {};
+  mount(data);
+});
+window.addEventListener('resize', setFrameHeight);
+
+streamlitSend('streamlit:componentReady', { apiVersion: 1 });
+// Render an empty shell immediately so the frame has a baseline height.
+mount({ CONFERENCES: [], TEAMS: {}, PLAYERS: {}, POS_COLORS: {}, CONF_ACCENT: {}, LIVE_LOTS: [], COMPLETED: [] });
+</script>
+</body>
+</html>
