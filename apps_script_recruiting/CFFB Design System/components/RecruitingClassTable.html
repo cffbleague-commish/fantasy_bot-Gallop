@@ -1,0 +1,1773 @@
+<!-- CFFB · RecruitingClassTable
+     ───────────────────────────────────────────────────────────────
+     Filterable, sortable, scrollable leaderboard for grading
+     recruiting classes — three years of data per team.
+
+     Columns:
+       # (class rank · sticky)
+       Team (logo chip · CLICK to filter to that team)
+       Year · Conf Rank
+       5★ · 4★ · 3★ · 2★ (tier-colored counts)
+       Commits · Score (gold-gradient for #1 in current year) · Grade
+
+     Filters:
+       free-text team search, year, grade, sort dropdown,
+       and a click-to-filter affordance on each team logo.
+       A dismissible "Filtering on TEAM ×" pill appears when active.
+
+     Sort: click any column header with a chevron to toggle asc/desc.
+     Scroll: table body scrolls inside a 520px-tall wrapper. Header
+       sticks; first column ("#") and team chip column also pin on
+       horizontal scroll.
+
+     Streamlit-friendly: no external JS deps, no framework. Inline
+     <script> at the bottom scopes itself to the preceding
+     [data-cffb-rct] element so multiple tables on one page coexist.
+     ─────────────────────────────────────────────────────────────── -->
+<style>
+.cffb-rct {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F5F5F5;
+  background: #141414;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Heading bar */
+.cffb-rct__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-rct__title {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  margin: 0;
+}
+.cffb-rct__eyebrow {
+  font-weight: 700; font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #C9A227;
+  margin-right: 8px;
+}
+.cffb-rct__count {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 13px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #9A9A9A;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-rct__count strong { color: #F5F5F5; font-weight: 700; }
+
+/* Filter row */
+.cffb-rct__filters {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #141414;
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-rct__search {
+  position: relative; flex: 1 1 220px; min-width: 180px;
+}
+.cffb-rct__search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  color: #F5F5F5;
+  font: 500 13px/1.2 'Inter', system-ui, sans-serif;
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+.cffb-rct__search input::placeholder { color: #5A5A5A; }
+.cffb-rct__search input:focus {
+  border-color: #C9A227;
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+.cffb-rct__search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px;
+  stroke: #5A5A5A; fill: none; stroke-width: 2;
+  pointer-events: none;
+}
+.cffb-rct__select { position: relative; display: inline-flex; align-items: center; }
+.cffb-rct__select select {
+  appearance: none; -webkit-appearance: none;
+  padding: 8px 28px 8px 12px;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  color: #F5F5F5;
+  font: 500 13px/1.2 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+  min-width: 110px;
+}
+.cffb-rct__select select:hover { background: #1F1F1F; }
+.cffb-rct__select select:focus {
+  border-color: #C9A227;
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+.cffb-rct__select::after {
+  content: ""; position: absolute; right: 10px; top: 50%;
+  width: 8px; height: 8px;
+  border-right: 1.5px solid #9A9A9A;
+  border-bottom: 1.5px solid #9A9A9A;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+.cffb-rct__reset {
+  margin-left: auto;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  color: #9A9A9A;
+  font: 600 11px/1.2 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+.cffb-rct__reset:hover { color: #F5F5F5; border-color: #3A3A3A; }
+
+/* Active-team pill (visible only when a team is picked) */
+.cffb-rct__pill-row {
+  display: none;
+  align-items: center; gap: 10px;
+  padding: 10px 20px;
+  background: rgba(201,162,39,0.06);
+  border-bottom: 1px solid #2A2A2A;
+}
+.cffb-rct.is-team-filtered .cffb-rct__pill-row { display: flex; }
+.cffb-rct__pill-label {
+  font: 700 10px/1 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #9A9A9A;
+}
+.cffb-rct__pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 6px 5px 10px;
+  background: #1C1C1C;
+  border: 1px solid rgba(201,162,39,0.40);
+  border-radius: 999px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 13px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #F5F5F5;
+}
+.cffb-rct__pill-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #2A2A2A;
+  color: #F5F5F5;
+  font: 700 11px/1 'Inter', system-ui, sans-serif;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms;
+}
+.cffb-rct__pill-x:hover { background: #B84545; }
+
+/* Scroll wrapper */
+.cffb-rct__scroll {
+  max-height: 520px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #2A2A2A #0A0A0A;
+}
+.cffb-rct__scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.cffb-rct__scroll::-webkit-scrollbar-track { background: #0A0A0A; }
+.cffb-rct__scroll::-webkit-scrollbar-thumb {
+  background: #2A2A2A; border-radius: 6px; border: 2px solid #0A0A0A;
+}
+.cffb-rct__scroll::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
+
+/* Table */
+.cffb-rct__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-rct__table th,
+.cffb-rct__table td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid #1F1F1F;
+}
+.cffb-rct__table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: #1C1C1C;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600; font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #9A9A9A;
+  border-bottom: 1px solid #2A2A2A;
+  user-select: none;
+}
+.cffb-rct__table thead th.is-sortable { cursor: pointer; }
+.cffb-rct__table thead th.is-sortable:hover { color: #F5F5F5; }
+.cffb-rct__table thead th.is-sortable::after {
+  content: " ▾"; opacity: 0; color: #C9A227; margin-left: 2px;
+  font-size: 9px;
+}
+.cffb-rct__table thead th.is-sorted-asc::after  { content: " ▴"; opacity: 1; }
+.cffb-rct__table thead th.is-sorted-desc::after { content: " ▾"; opacity: 1; }
+.cffb-rct__table thead th.is-sortable:not(.is-sorted-asc):not(.is-sorted-desc):hover::after { opacity: 0.4; }
+
+/* Sticky rank column */
+.cffb-rct__table th.cffb-rct__col-rank,
+.cffb-rct__table td.cffb-rct__col-rank {
+  position: sticky; left: 0;
+  background: #141414;
+  z-index: 1;
+  padding-left: 20px;
+  width: 56px;
+}
+.cffb-rct__table thead th.cffb-rct__col-rank {
+  background: #1C1C1C;
+  z-index: 4;
+}
+.cffb-rct__table tbody tr:hover td.cffb-rct__col-rank { background: #1F1F1F; }
+
+/* Sticky team column (right after rank) */
+.cffb-rct__table th.cffb-rct__col-team,
+.cffb-rct__table td.cffb-rct__col-team {
+  position: sticky; left: 56px;
+  background: #141414;
+  z-index: 1;
+  width: 144px;
+  padding-left: 4px; padding-right: 4px;
+}
+.cffb-rct__table thead th.cffb-rct__col-team {
+  background: #1C1C1C;
+  z-index: 4;
+}
+.cffb-rct__table tbody tr:hover td.cffb-rct__col-team { background: #1F1F1F; }
+
+/* Body rows */
+.cffb-rct__table tbody tr {
+  position: relative;
+  transition: background 120ms;
+}
+.cffb-rct__table tbody tr:hover td:not(.cffb-rct__col-rank):not(.cffb-rct__col-team) { background: #1F1F1F; }
+.cffb-rct__table tbody tr.is-top td.cffb-rct__col-rank::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+}
+.cffb-rct__table tbody tr:last-child td { border-bottom: none; }
+.cffb-rct__table tbody tr.is-hidden { display: none; }
+.cffb-rct__table tbody tr.is-team-active td { background: rgba(201,162,39,0.05); }
+.cffb-rct__table tbody tr.is-team-active td.cffb-rct__col-rank,
+.cffb-rct__table tbody tr.is-team-active td.cffb-rct__col-team { background: #1A1607; }
+
+/* Cells */
+.cffb-rct__rank {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 18px;
+  color: #9A9A9A;
+}
+.cffb-rct__rank.is-top { color: #C9A227; }
+
+/* Team logo button — click to filter.
+   The button accepts either:
+     • <img class="cffb-rct__logo"> ripped-pill PNG (250×60) at md (200×48)
+     • <span class="cffb-rct__chip"> circular abbreviation fallback */
+.cffb-rct__chip-btn {
+  background: none; border: 0; padding: 4px; margin: 0;
+  cursor: pointer; display: inline-flex; align-items: center;
+  border-radius: 8px;
+  transition: transform 120ms cubic-bezier(0.2,0.8,0.2,1),
+              background 120ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-rct__chip-btn:hover { transform: translateX(2px); background: rgba(201,162,39,0.06); }
+.cffb-rct__chip-btn:focus { outline: none; }
+.cffb-rct__chip-btn:focus-visible { box-shadow: 0 0 0 2px #0A0A0A, 0 0 0 4px #C9A227; }
+
+/* Ripped pill PNG — sm size (~125×30) */
+.cffb-rct__logo {
+  display: block;
+  height: 28px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  transition: filter 120ms;
+}
+.cffb-rct__chip-btn:hover .cffb-rct__logo {
+  filter: drop-shadow(0 0 6px rgba(201,162,39,0.45)) brightness(1.06);
+}
+
+/* Circular abbreviation fallback */
+.cffb-rct__chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  letter-spacing: 0;
+  transition: box-shadow 120ms cubic-bezier(0.2,0.8,0.2,1);
+  margin-left: 8px;
+}
+.cffb-rct__chip-btn:hover .cffb-rct__chip {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06),
+              0 0 0 2px #0A0A0A,
+              0 0 0 3px rgba(201,162,39,0.55);
+}
+
+/* Year */
+.cffb-rct__year {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 14px;
+  color: #9A9A9A;
+  letter-spacing: 0.04em;
+  width: 40px;
+}
+
+/* Conference rank */
+.cffb-rct__confrank {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 15px;
+  color: #F5F5F5;
+  text-align: center;
+  width: 60px;
+}
+.cffb-rct__confrank.is-empty { color: #5A5A5A; font-weight: 500; }
+
+/* Star count cells */
+.cffb-rct__stars { text-align: center; width: 52px; }
+.cffb-rct__star-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 4px;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 15px;
+  min-width: 32px;
+}
+.cffb-rct__star-count::before {
+  content: "★"; font-size: 11px; line-height: 1;
+}
+.cffb-rct__star-count.is-zero            { color: #3A3A3A; }
+.cffb-rct__star-count.is-zero::before    { color: #3A3A3A; }
+.cffb-rct__star-count--5                  { color: #E8C547; }
+.cffb-rct__star-count--5::before          { color: #C9A227; }
+.cffb-rct__star-count--4                  { color: #7DA8D6; }
+.cffb-rct__star-count--4::before          { color: #3B82C4; }
+.cffb-rct__star-count--3                  { color: #A8C5DC; }
+.cffb-rct__star-count--3::before          { color: #7BA4C9; }
+.cffb-rct__star-count--2                  { color: #9A9A9A; }
+.cffb-rct__star-count--2::before          { color: #6A6A6A; }
+
+/* Totals + score */
+.cffb-rct__total {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 15px;
+  color: #F5F5F5;
+  text-align: center;
+}
+.cffb-rct__score {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 17px;
+  color: #F5F5F5;
+  text-align: right;
+  letter-spacing: -0.005em;
+}
+.cffb-rct__score.is-top {
+  background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Grade pill */
+.cffb-rct__grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700; font-size: 14px;
+  letter-spacing: -0.01em;
+  border-radius: 4px;
+  padding: 3px 9px 4px;
+  min-width: 36px;
+  color: #F5F5F5;
+}
+.cffb-rct__grade--ap { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; box-shadow: 0 0 10px rgba(201,162,39,0.30); }
+.cffb-rct__grade--a  { background: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%); color: #0A0A0A; }
+.cffb-rct__grade--am { background: rgba(201,162,39,0.85); color: #0A0A0A; }
+.cffb-rct__grade--bp { background: #4A9968; }
+.cffb-rct__grade--b  { background: #2D7A4E; }
+.cffb-rct__grade--bm { background: #226A42; }
+.cffb-rct__grade--cp { background: #5A7A98; }
+.cffb-rct__grade--c  { background: #4A6680; }
+.cffb-rct__grade--cm { background: #3A5670; }
+.cffb-rct__grade--dp { background: #B84545; }
+.cffb-rct__grade--d  { background: #A03A3A; }
+.cffb-rct__grade--f  { background: #7A2A2A; }
+
+/* Empty state */
+.cffb-rct__empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #5A5A5A;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600; font-size: 16px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  display: none;
+}
+.cffb-rct.is-empty .cffb-rct__empty { display: block; }
+.cffb-rct.is-empty .cffb-rct__table tbody { display: none; }
+
+/* Footer */
+.cffb-rct__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #141414;
+  border-top: 1px solid #2A2A2A;
+  font-size: 11px; color: #5A5A5A;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 600;
+}
+.cffb-rct__foot-legend { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cffb-rct__foot-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.cffb-rct__foot-legend i {
+  font-style: normal; font-size: 11px;
+  font-family: 'Saira Condensed', system-ui, sans-serif; font-weight: 700;
+}
+.cffb-rct__hint {
+  font-style: normal;
+  letter-spacing: 0.08em;
+}
+.cffb-rct__hint strong { color: #9A9A9A; font-weight: 700; }
+
+/* ─────────────────────────────────────────────────────────────────
+   MOBILE (≤720px) — each <tr> reflows from a table row into a card.
+   Logo on the left spans two rows; rank+grade on top; year+conf# +
+   score in the middle; star counts + commits total along the bottom.
+   thead is hidden; sticky positioning is dropped. Filter bar wraps
+   naturally. All info from the desktop view is preserved.
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .cffb-rct__head { padding: 14px 16px 10px; }
+  .cffb-rct__title { font-size: 17px; }
+  .cffb-rct__filters { padding: 10px 12px; gap: 6px; }
+  .cffb-rct__select select { min-width: 0; padding: 8px 26px 8px 10px; font-size: 12px; }
+  .cffb-rct__reset { width: 100%; margin-left: 0; order: 99; }
+  .cffb-rct__search { flex-basis: 100%; }
+  .cffb-rct__pill-row { padding: 10px 14px; }
+  .cffb-rct__scroll { max-height: 70vh; padding: 10px 0 6px; }
+  .cffb-rct__foot { padding: 10px 14px; flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* Re-flow table */
+  .cffb-rct__table,
+  .cffb-rct__table tbody { display: block; }
+  .cffb-rct__table thead { display: none; }
+
+  .cffb-rct__table tr {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-areas:
+      "rank logo logo logo year year score score"
+      "cr   s5   s4   s3   s2   tot  grade grade";
+    gap: 8px 4px;
+    align-items: center;
+    padding: 12px 14px;
+    margin: 0 12px 8px;
+    background: #141414;
+    border: 1px solid #2A2A2A;
+    border-radius: 8px;
+    position: relative;
+  }
+  .cffb-rct__table tr.is-top {
+    border-color: rgba(201,162,39,0.45);
+    box-shadow: 0 0 18px rgba(201,162,39,0.14);
+  }
+  .cffb-rct__table tr.is-team-active {
+    border-color: rgba(201,162,39,0.55);
+    background: #1A1607;
+  }
+  .cffb-rct__table tr.is-top td.cffb-rct__col-rank::before { display: none; }
+
+  /* Every cell becomes a stacked label-over-value mini block.
+     The label is injected as a ::before pseudo-element set to
+     display:block so it sits above the value like a column header. */
+  .cffb-rct__table td {
+    position: static !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    white-space: nowrap;
+    text-align: left !important;
+  }
+  .cffb-rct__table tbody td::before {
+    display: block;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5A5A5A;
+    margin-bottom: 2px;
+    line-height: 1;
+  }
+
+  /* Logo — row 1, cols 3-6 (right of rank, left of year).
+     Pulled 1px left so the rank→logo gap reads as 3px while the rest
+     of the card stays on the 4px grid gap. */
+  .cffb-rct__table td.cffb-rct__col-team {
+    grid-area: logo;
+    align-self: center; justify-self: start;
+    margin-left: -1px;
+  }
+  .cffb-rct__table td.cffb-rct__col-team::before { display: none; }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__chip {
+    width: 40px; height: 40px; font-size: 12px;
+    margin-left: 0;
+  }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__logo {
+    height: 26px; max-width: 100px;
+  }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__chip-btn { padding: 2px; }
+
+  /* Rank — row 1, top-left. Sized to match the star/commit numbers
+     for visual consistency across the metric row → row pair. */
+  .cffb-rct__table td.cffb-rct__col-rank {
+    grid-area: rank;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px; line-height: 1;
+    color: #9A9A9A;
+    align-self: center;
+  }
+  .cffb-rct__table td.cffb-rct__col-rank::before { content: "Rank"; }
+  .cffb-rct__table td.cffb-rct__col-rank.is-top { color: #C9A227; }
+  .cffb-rct__table td.cffb-rct__col-rank::after { content: none; }
+
+  /* Year — row 1, immediately after the logo, left-aligned. */
+  .cffb-rct__table td.cffb-rct__year {
+    grid-area: year;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #F5F5F5;
+    letter-spacing: 0;
+    justify-self: start;
+    align-self: center;
+    text-align: left !important;
+  }
+  .cffb-rct__table td.cffb-rct__year::before { content: "Year"; text-align: left; }
+
+  /* Conf rank — row 2, col 1 (under rank) */
+  .cffb-rct__table td.cffb-rct__confrank {
+    grid-area: cr;
+    font-family: 'Saira Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    text-align: left !important;
+    align-self: start;
+  }
+  .cffb-rct__table td.cffb-rct__confrank::before { content: "Conf #"; }
+  .cffb-rct__table td.cffb-rct__confrank.is-empty::before { content: "Conf"; }
+
+  /* Score — row 1, far right (sits directly over the grade pill below).
+     Sized to match the rank/star/commit numbers for visual consistency. */
+  .cffb-rct__table tr > td:nth-child(10) {
+    grid-area: score;
+    text-align: right !important;
+    font-size: 15px;
+    line-height: 1;
+    align-self: center;
+    justify-self: end;
+  }
+  .cffb-rct__table tr > td:nth-child(10)::before {
+    content: "Score";
+    text-align: right;
+  }
+  /* Restore gold gradient for the top-class score on mobile.
+     Use longhand properties — the `background:` shorthand would reset
+     `background-clip` to border-box and break the text-clip trick. */
+  .cffb-rct__table tr > td.cffb-rct__score.is-top {
+    background-image: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%) !important;
+    background-color: transparent !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+  /* The text-clip strips ALL descendant text — including ::before — to
+     transparent. Re-paint the label normally for the top-row score. */
+  .cffb-rct__table tr > td.cffb-rct__score.is-top::before {
+    -webkit-text-fill-color: #5A5A5A;
+    background: none !important;
+  }
+
+  /* Grade — row 2, far right (sits directly below the score). */
+  .cffb-rct__table tr > td:nth-child(11) {
+    grid-area: grade;
+    text-align: right !important;
+    justify-self: end;
+    align-self: center;
+  }
+  .cffb-rct__table tr > td:nth-child(11)::before {
+    content: "Grade";
+    text-align: right;
+  }
+  .cffb-rct__table tr > td:nth-child(11) .cffb-rct__grade {
+    font-size: 14px;
+    padding: 3px 8px 4px;
+  }
+
+  /* Star tier columns (5th–8th) — each labeled with its tier */
+  .cffb-rct__table tr > td:nth-child(5) { grid-area: s5; }
+  .cffb-rct__table tr > td:nth-child(6) { grid-area: s4; }
+  .cffb-rct__table tr > td:nth-child(7) { grid-area: s3; }
+  .cffb-rct__table tr > td:nth-child(8) { grid-area: s2; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(5)::before { content: "5★"; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(6)::before { content: "4★"; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(7)::before { content: "3★"; }
+  .cffb-rct__table tr > td.cffb-rct__stars:nth-child(8)::before { content: "2★"; }
+
+  /* Commits total — row 2, col 6 */
+  .cffb-rct__table tr > td.cffb-rct__total {
+    grid-area: tot;
+    justify-self: center;
+    align-self: start;
+    text-align: center !important;
+    font-size: 15px;
+  }
+  .cffb-rct__table tr > td.cffb-rct__total::before {
+    content: "TOT";
+    text-align: center;
+  }
+
+  .cffb-rct__table tr > td.cffb-rct__stars {
+    display: block;
+    text-align: center !important;
+    justify-self: center;
+  }
+  .cffb-rct__table tr > td.cffb-rct__stars .cffb-rct__star-count {
+    font-size: 15px; gap: 3px; min-width: 0;
+    justify-content: center;
+  }
+  .cffb-rct__table tr > td.cffb-rct__stars .cffb-rct__star-count::before {
+    /* Hide the inline star glyph on mobile — the label already says "5★" etc. */
+    content: none;
+  }
+  .cffb-rct__table tr > td.cffb-rct__stars::before {
+    text-align: center;
+  }
+
+  /* Empty state stays centered */
+  .cffb-rct__empty { padding: 32px 16px; font-size: 14px; }
+}
+
+/* Narrow phones (≤380px) — tighter type, same 8-col grid. */
+@media (max-width: 380px) {
+  .cffb-rct__table tr {
+    gap: 6px 3px; padding: 10px 8px;
+  }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__chip { width: 32px; height: 32px; font-size: 9px; margin-left: 0; }
+  .cffb-rct__table td.cffb-rct__col-team .cffb-rct__logo { height: 20px; max-width: 84px; }
+  .cffb-rct__table td.cffb-rct__col-rank { font-size: 20px; }
+  .cffb-rct__table td.cffb-rct__year { font-size: 12px; }
+  .cffb-rct__table tr > td:nth-child(10) { font-size: 13px; }
+  .cffb-rct__table tbody td::before { font-size: 7px; letter-spacing: 0.06em; }
+  .cffb-rct__table tr > td.cffb-rct__stars .cffb-rct__star-count { font-size: 12px; }
+  .cffb-rct__table tr > td:nth-child(11) .cffb-rct__grade { font-size: 12px; padding: 2px 6px 3px; min-width: 0; }
+}
+</style>
+
+<div class="cffb-rct" data-cffb-rct>
+  <div class="cffb-rct__head">
+    <h3 class="cffb-rct__title">
+      <span class="cffb-rct__eyebrow">CFFB ·</span>Recruiting Class Grades
+    </h3>
+    <div class="cffb-rct__count">
+      <strong data-count-visible>60</strong> / <span data-count-total>60</span> classes
+    </div>
+  </div>
+
+  <div class="cffb-rct__filters">
+    <div class="cffb-rct__search">
+      <svg class="cffb-rct__search-icon" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="16.5" y1="16.5" x2="21" y2="21" stroke-linecap="round"></line>
+      </svg>
+      <input type="text" placeholder="Search team…" data-filter="search">
+    </div>
+
+    <div class="cffb-rct__select">
+      <select data-filter="year">
+        <option value="">All draft years</option>
+        <option value="2026">2026 Draft</option>
+        <option value="2025">2025 Draft</option>
+        <option value="2024">2024 Draft</option>
+      </select>
+    </div>
+
+    <div class="cffb-rct__select">
+      <select data-filter="conf">
+        <option value="">All conferences</option>
+        <option value="sec">SEC</option>
+        <option value="b1g">Big Ten</option>
+        <option value="acc">ACC</option>
+        <option value="big12">Big 12</option>
+        <option value="pac">Pac-12</option>
+        <option value="aac">AAC</option>
+        <option value="mw">Mtn West</option>
+        <option value="ind">Independent</option>
+      </select>
+    </div>
+
+    <button class="cffb-rct__reset" type="button" data-reset>Reset</button>
+  </div>
+
+  <div class="cffb-rct__pill-row" data-pill-row>
+    <span class="cffb-rct__pill-label">Filtering on</span>
+    <span class="cffb-rct__pill">
+      <span data-pill-team>Team</span>
+      <button class="cffb-rct__pill-x" type="button" data-team-clear aria-label="Clear team filter">✕</button>
+    </span>
+  </div>
+
+  <div class="cffb-rct__scroll">
+    <table class="cffb-rct__table">
+      <thead>
+        <tr>
+          <th class="cffb-rct__col-rank is-sortable is-sorted-asc" data-sort="rank">#</th>
+          <th class="cffb-rct__col-team">Team</th>
+          <th class="is-sortable" data-sort="year">Yr</th>
+          <th class="is-sortable" data-sort="confrank" style="text-align:center;">Conf #</th>
+          <th class="is-sortable" data-sort="s5" style="text-align:center;">5★</th>
+          <th class="is-sortable" data-sort="s4" style="text-align:center;">4★</th>
+          <th class="is-sortable" data-sort="s3" style="text-align:center;">3★</th>
+          <th class="is-sortable" data-sort="s2" style="text-align:center;">2★</th>
+          <th class="is-sortable" data-sort="total" style="text-align:center;">Commits</th>
+          <th class="is-sortable" data-sort="score" style="text-align:right;">Score</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-team="Georgia" data-team-abbr="UGA" data-conf="sec" data-grade="A" data-year="2026"
+            data-rank="1" data-confrank="1" data-s5="4" data-s4="10" data-s3="8" data-s2="1" data-total="23" data-score="987.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank is-top">01</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Georgia" title="Filter to Georgia"><img class="cffb-rct__logo" src="../assets/teams/georgia.png" alt="Georgia"></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">23</td>
+          <td class="cffb-rct__score is-top">987.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--ap">A+</span></td>
+        </tr>
+
+        <tr data-team="Ohio State" data-team-abbr="OSU" data-conf="b1g" data-grade="A" data-year="2026"
+            data-rank="2" data-confrank="1" data-s5="3" data-s4="11" data-s3="7" data-s2="0" data-total="21" data-score="962.1">
+          <td class="cffb-rct__col-rank cffb-rct__rank">02</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Ohio State" title="Filter to Ohio State"><span class="cffb-rct__chip" style="background:#BB0000;color:#fff;">OSU</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2 is-zero">0</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">962.1</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--ap">A+</span></td>
+        </tr>
+
+        <tr data-team="Alabama" data-team-abbr="BAMA" data-conf="sec" data-grade="A" data-year="2026"
+            data-rank="3" data-confrank="2" data-s5="3" data-s4="9" data-s3="9" data-s2="1" data-total="22" data-score="941.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">03</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Alabama" title="Filter to Alabama"><span class="cffb-rct__chip" style="background:#9E1B32;color:#fff;">BAMA</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">941.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--a">A</span></td>
+        </tr>
+
+        <tr data-team="Texas" data-team-abbr="TEX" data-conf="sec" data-grade="A" data-year="2026"
+            data-rank="4" data-confrank="3" data-s5="2" data-s4="10" data-s3="8" data-s2="2" data-total="22" data-score="918.3">
+          <td class="cffb-rct__col-rank cffb-rct__rank">04</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Texas" title="Filter to Texas"><span class="cffb-rct__chip" style="background:#BF5700;color:#fff;">TEX</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">918.3</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--a">A</span></td>
+        </tr>
+
+        <tr data-team="Oregon" data-team-abbr="ORE" data-conf="b1g" data-grade="A" data-year="2026"
+            data-rank="5" data-confrank="2" data-s5="2" data-s4="8" data-s3="10" data-s2="1" data-total="21" data-score="894.7">
+          <td class="cffb-rct__col-rank cffb-rct__rank">05</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Oregon" title="Filter to Oregon"><span class="cffb-rct__chip" style="background:#154733;color:#FEE123;">ORE</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">894.7</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--am">A−</span></td>
+        </tr>
+
+        <tr data-team="LSU" data-team-abbr="LSU" data-conf="sec" data-grade="A" data-year="2026"
+            data-rank="6" data-confrank="4" data-s5="1" data-s4="9" data-s3="9" data-s2="2" data-total="21" data-score="871.2">
+          <td class="cffb-rct__col-rank cffb-rct__rank">06</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="LSU" title="Filter to LSU"><span class="cffb-rct__chip" style="background:#461D7C;color:#FDD023;">LSU</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">4</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">871.2</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--am">A−</span></td>
+        </tr>
+
+        <tr data-team="Notre Dame" data-team-abbr="ND" data-conf="ind" data-grade="B" data-year="2026"
+            data-rank="7" data-confrank="99" data-s5="1" data-s4="8" data-s3="11" data-s2="1" data-total="21" data-score="855">
+          <td class="cffb-rct__col-rank cffb-rct__rank">07</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Notre Dame" title="Filter to Notre Dame"><span class="cffb-rct__chip" style="background:#0C2340;color:#C99700;">ND</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank is-empty">—</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">855.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bp">B+</span></td>
+        </tr>
+
+        <tr data-team="Penn State" data-team-abbr="PSU" data-conf="b1g" data-grade="B" data-year="2026"
+            data-rank="8" data-confrank="3" data-s5="1" data-s4="7" data-s3="11" data-s2="2" data-total="21" data-score="832.6">
+          <td class="cffb-rct__col-rank cffb-rct__rank">08</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Penn State" title="Filter to Penn State"><span class="cffb-rct__chip" style="background:#041E42;color:#fff;">PSU</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">832.6</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bp">B+</span></td>
+        </tr>
+
+        <tr data-team="Michigan" data-team-abbr="MICH" data-conf="b1g" data-grade="B" data-year="2026"
+            data-rank="9" data-confrank="4" data-s5="1" data-s4="6" data-s3="12" data-s2="2" data-total="21" data-score="814.9">
+          <td class="cffb-rct__col-rank cffb-rct__rank">09</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Michigan" title="Filter to Michigan"><span class="cffb-rct__chip" style="background:#00274C;color:#FFCB05;">MICH</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">4</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">814.9</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="North Carolina" data-team-abbr="UNC" data-conf="acc" data-grade="B" data-year="2026"
+            data-rank="10" data-confrank="1" data-s5="1" data-s4="7" data-s3="11" data-s2="2" data-total="21" data-score="806.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">10</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="North Carolina" title="Filter to North Carolina"><img class="cffb-rct__logo" src="../assets/teams/north-carolina.png" alt="North Carolina"></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">806.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Tennessee" data-team-abbr="TENN" data-conf="sec" data-grade="B" data-year="2026"
+            data-rank="11" data-confrank="5" data-s5="0" data-s4="8" data-s3="10" data-s2="3" data-total="21" data-score="798.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">11</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Tennessee" title="Filter to Tennessee"><span class="cffb-rct__chip" style="background:#FF8200;color:#fff;">TENN</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">5</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">798.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Florida" data-team-abbr="FLA" data-conf="sec" data-grade="B" data-year="2026"
+            data-rank="12" data-confrank="6" data-s5="0" data-s4="6" data-s3="12" data-s2="3" data-total="21" data-score="776.1">
+          <td class="cffb-rct__col-rank cffb-rct__rank">12</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Florida" title="Filter to Florida"><span class="cffb-rct__chip" style="background:#0021A5;color:#FA4616;">FLA</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">6</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">776.1</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="USC" data-team-abbr="USC" data-conf="b1g" data-grade="B" data-year="2026"
+            data-rank="13" data-confrank="5" data-s5="0" data-s4="5" data-s3="13" data-s2="3" data-total="21" data-score="754.8">
+          <td class="cffb-rct__col-rank cffb-rct__rank">13</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="USC" title="Filter to USC"><span class="cffb-rct__chip" style="background:#990000;color:#FFC72C;">USC</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">5</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">754.8</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bm">B−</span></td>
+        </tr>
+
+        <tr data-team="Auburn" data-team-abbr="AUB" data-conf="sec" data-grade="C" data-year="2026"
+            data-rank="14" data-confrank="7" data-s5="0" data-s4="4" data-s3="13" data-s2="4" data-total="21" data-score="712.6">
+          <td class="cffb-rct__col-rank cffb-rct__rank">14</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Auburn" title="Filter to Auburn"><span class="cffb-rct__chip" style="background:#0C2340;color:#E87722;">AUB</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">7</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">4</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">712.6</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--c">C</span></td>
+        </tr>
+
+        <tr data-team="Florida State" data-team-abbr="FSU" data-conf="acc" data-grade="C" data-year="2026"
+            data-rank="15" data-confrank="2" data-s5="0" data-s4="3" data-s3="14" data-s2="4" data-total="21" data-score="695">
+          <td class="cffb-rct__col-rank cffb-rct__rank">15</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Florida State" title="Filter to Florida State"><span class="cffb-rct__chip" style="background:#782F40;color:#CEB888;">FSU</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">14</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">4</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">695.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--c">C</span></td>
+        </tr>
+
+        <tr data-team="Clemson" data-team-abbr="CLEM" data-conf="acc" data-grade="C" data-year="2026"
+            data-rank="16" data-confrank="3" data-s5="0" data-s4="3" data-s3="13" data-s2="5" data-total="21" data-score="678.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">16</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Clemson" title="Filter to Clemson"><span class="cffb-rct__chip" style="background:#F66733;color:#522D80;">CLEM</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">5</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">678.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--cm">C−</span></td>
+        </tr>
+
+        <tr data-team="Army" data-team-abbr="ARMY" data-conf="aac" data-grade="D" data-year="2026"
+            data-rank="17" data-confrank="1" data-s5="0" data-s4="2" data-s3="12" data-s2="7" data-total="21" data-score="662.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">17</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Army" title="Filter to Army"><img class="cffb-rct__logo" src="../assets/teams/army.png" alt="Army"></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">7</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">662.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--dp">D+</span></td>
+        </tr>
+
+        <tr data-team="Texas A&M" data-team-abbr="TAMU" data-conf="sec" data-grade="D" data-year="2026"
+            data-rank="18" data-confrank="8" data-s5="0" data-s4="2" data-s3="13" data-s2="6" data-total="21" data-score="654.2">
+          <td class="cffb-rct__col-rank cffb-rct__rank">18</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Texas A&M" title="Filter to Texas A&M"><span class="cffb-rct__chip" style="background:#500000;color:#fff;">TAMU</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">8</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">6</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">654.2</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--dp">D+</span></td>
+        </tr>
+
+        <tr data-team="Kansas State" data-team-abbr="KSU" data-conf="big12" data-grade="F" data-year="2026"
+            data-rank="19" data-confrank="2" data-s5="0" data-s4="1" data-s3="12" data-s2="8" data-total="21" data-score="587.3">
+          <td class="cffb-rct__col-rank cffb-rct__rank">19</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Kansas State" title="Filter to Kansas State"><span class="cffb-rct__chip" style="background:#512888;color:#fff;">KSU</span></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">8</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">587.3</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--f">F</span></td>
+        </tr>
+
+        <tr data-team="Fresno State" data-team-abbr="FRES" data-conf="mw" data-grade="F" data-year="2026"
+            data-rank="20" data-confrank="1" data-s5="0" data-s4="1" data-s3="8" data-s2="12" data-total="21" data-score="542">
+          <td class="cffb-rct__col-rank cffb-rct__rank">20</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Fresno State" title="Filter to Fresno State"><img class="cffb-rct__logo" src="../assets/teams/fresno-state.png" alt="Fresno State"></button></td>
+          <td class="cffb-rct__year">'26</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">12</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">542.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--f">F</span></td>
+        </tr>
+
+        <tr data-team="Georgia" data-team-abbr="UGA" data-conf="sec" data-grade="A" data-year="2025"
+            data-rank="1" data-confrank="1" data-s5="5" data-s4="11" data-s3="6" data-s2="0" data-total="22" data-score="992">
+          <td class="cffb-rct__col-rank cffb-rct__rank">01</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Georgia" title="Filter to Georgia"><img class="cffb-rct__logo" src="../assets/teams/georgia.png" alt="Georgia"></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2 is-zero">0</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">992.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--ap">A+</span></td>
+        </tr>
+
+        <tr data-team="Ohio State" data-team-abbr="OSU" data-conf="b1g" data-grade="A" data-year="2025"
+            data-rank="2" data-confrank="1" data-s5="4" data-s4="9" data-s3="7" data-s2="1" data-total="21" data-score="951.3">
+          <td class="cffb-rct__col-rank cffb-rct__rank">02</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Ohio State" title="Filter to Ohio State"><span class="cffb-rct__chip" style="background:#BB0000;color:#fff;">OSU</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">951.3</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--a">A</span></td>
+        </tr>
+
+        <tr data-team="Alabama" data-team-abbr="BAMA" data-conf="sec" data-grade="A" data-year="2025"
+            data-rank="3" data-confrank="2" data-s5="2" data-s4="10" data-s3="8" data-s2="1" data-total="21" data-score="923">
+          <td class="cffb-rct__col-rank cffb-rct__rank">03</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Alabama" title="Filter to Alabama"><span class="cffb-rct__chip" style="background:#9E1B32;color:#fff;">BAMA</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">923.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--a">A</span></td>
+        </tr>
+
+        <tr data-team="Texas" data-team-abbr="TEX" data-conf="sec" data-grade="A" data-year="2025"
+            data-rank="4" data-confrank="4" data-s5="1" data-s4="9" data-s3="10" data-s2="2" data-total="22" data-score="876.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">04</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Texas" title="Filter to Texas"><span class="cffb-rct__chip" style="background:#BF5700;color:#fff;">TEX</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">4</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">876.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--am">A−</span></td>
+        </tr>
+
+        <tr data-team="Oregon" data-team-abbr="ORE" data-conf="b1g" data-grade="B" data-year="2025"
+            data-rank="5" data-confrank="3" data-s5="2" data-s4="7" data-s3="11" data-s2="2" data-total="22" data-score="862.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">05</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Oregon" title="Filter to Oregon"><span class="cffb-rct__chip" style="background:#154733;color:#FEE123;">ORE</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">862.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bp">B+</span></td>
+        </tr>
+
+        <tr data-team="LSU" data-team-abbr="LSU" data-conf="sec" data-grade="B" data-year="2025"
+            data-rank="6" data-confrank="5" data-s5="1" data-s4="8" data-s3="10" data-s2="2" data-total="21" data-score="851.6">
+          <td class="cffb-rct__col-rank cffb-rct__rank">06</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="LSU" title="Filter to LSU"><span class="cffb-rct__chip" style="background:#461D7C;color:#FDD023;">LSU</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">5</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">851.6</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bp">B+</span></td>
+        </tr>
+
+        <tr data-team="Penn State" data-team-abbr="PSU" data-conf="b1g" data-grade="B" data-year="2025"
+            data-rank="7" data-confrank="4" data-s5="1" data-s4="6" data-s3="12" data-s2="2" data-total="21" data-score="812">
+          <td class="cffb-rct__col-rank cffb-rct__rank">07</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Penn State" title="Filter to Penn State"><span class="cffb-rct__chip" style="background:#041E42;color:#fff;">PSU</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">4</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">812.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Notre Dame" data-team-abbr="ND" data-conf="ind" data-grade="B" data-year="2025"
+            data-rank="8" data-confrank="99" data-s5="0" data-s4="7" data-s3="12" data-s2="2" data-total="21" data-score="798.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">08</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Notre Dame" title="Filter to Notre Dame"><span class="cffb-rct__chip" style="background:#0C2340;color:#C99700;">ND</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank is-empty">—</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">798.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Texas A&M" data-team-abbr="TAMU" data-conf="sec" data-grade="B" data-year="2025"
+            data-rank="9" data-confrank="6" data-s5="1" data-s4="6" data-s3="10" data-s2="3" data-total="20" data-score="792.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">09</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Texas A&M" title="Filter to Texas A&M"><span class="cffb-rct__chip" style="background:#500000;color:#fff;">TAMU</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">6</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">20</td>
+          <td class="cffb-rct__score">792.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Michigan" data-team-abbr="MICH" data-conf="b1g" data-grade="B" data-year="2025"
+            data-rank="10" data-confrank="6" data-s5="0" data-s4="6" data-s3="11" data-s2="3" data-total="20" data-score="768.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">10</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Michigan" title="Filter to Michigan"><span class="cffb-rct__chip" style="background:#00274C;color:#FFCB05;">MICH</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">6</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">20</td>
+          <td class="cffb-rct__score">768.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bm">B−</span></td>
+        </tr>
+
+        <tr data-team="Tennessee" data-team-abbr="TENN" data-conf="sec" data-grade="B" data-year="2025"
+            data-rank="11" data-confrank="7" data-s5="0" data-s4="7" data-s3="11" data-s2="3" data-total="21" data-score="761.1">
+          <td class="cffb-rct__col-rank cffb-rct__rank">11</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Tennessee" title="Filter to Tennessee"><span class="cffb-rct__chip" style="background:#FF8200;color:#fff;">TENN</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">7</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">761.1</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bm">B−</span></td>
+        </tr>
+
+        <tr data-team="Clemson" data-team-abbr="CLEM" data-conf="acc" data-grade="B" data-year="2025"
+            data-rank="12" data-confrank="2" data-s5="1" data-s4="5" data-s3="12" data-s2="3" data-total="21" data-score="751.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">12</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Clemson" title="Filter to Clemson"><span class="cffb-rct__chip" style="background:#F66733;color:#522D80;">CLEM</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">751.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bm">B−</span></td>
+        </tr>
+
+        <tr data-team="USC" data-team-abbr="USC" data-conf="b1g" data-grade="C" data-year="2025"
+            data-rank="13" data-confrank="8" data-s5="1" data-s4="4" data-s3="13" data-s2="3" data-total="21" data-score="742">
+          <td class="cffb-rct__col-rank cffb-rct__rank">13</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="USC" title="Filter to USC"><span class="cffb-rct__chip" style="background:#990000;color:#FFC72C;">USC</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">8</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">742.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--cp">C+</span></td>
+        </tr>
+
+        <tr data-team="Florida" data-team-abbr="FLA" data-conf="sec" data-grade="C" data-year="2025"
+            data-rank="14" data-confrank="9" data-s5="0" data-s4="5" data-s3="12" data-s2="4" data-total="21" data-score="728.2">
+          <td class="cffb-rct__col-rank cffb-rct__rank">14</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Florida" title="Filter to Florida"><span class="cffb-rct__chip" style="background:#0021A5;color:#FA4616;">FLA</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">9</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">4</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">728.2</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--cp">C+</span></td>
+        </tr>
+
+        <tr data-team="North Carolina" data-team-abbr="UNC" data-conf="acc" data-grade="C" data-year="2025"
+            data-rank="15" data-confrank="1" data-s5="0" data-s4="5" data-s3="12" data-s2="4" data-total="21" data-score="712.3">
+          <td class="cffb-rct__col-rank cffb-rct__rank">15</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="North Carolina" title="Filter to North Carolina"><img class="cffb-rct__logo" src="../assets/teams/north-carolina.png" alt="North Carolina"></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">4</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">712.3</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--c">C</span></td>
+        </tr>
+
+        <tr data-team="Auburn" data-team-abbr="AUB" data-conf="sec" data-grade="C" data-year="2025"
+            data-rank="16" data-confrank="10" data-s5="0" data-s4="3" data-s3="14" data-s2="4" data-total="21" data-score="683.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">16</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Auburn" title="Filter to Auburn"><span class="cffb-rct__chip" style="background:#0C2340;color:#E87722;">AUB</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">10</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">14</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">4</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">683.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--c">C</span></td>
+        </tr>
+
+        <tr data-team="Florida State" data-team-abbr="FSU" data-conf="acc" data-grade="D" data-year="2025"
+            data-rank="17" data-confrank="3" data-s5="0" data-s4="2" data-s3="13" data-s2="5" data-total="20" data-score="658.7">
+          <td class="cffb-rct__col-rank cffb-rct__rank">17</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Florida State" title="Filter to Florida State"><span class="cffb-rct__chip" style="background:#782F40;color:#CEB888;">FSU</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">5</span></td>
+          <td class="cffb-rct__total">20</td>
+          <td class="cffb-rct__score">658.7</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--cm">C−</span></td>
+        </tr>
+
+        <tr data-team="Army" data-team-abbr="ARMY" data-conf="aac" data-grade="D" data-year="2025"
+            data-rank="18" data-confrank="1" data-s5="0" data-s4="1" data-s3="13" data-s2="7" data-total="21" data-score="638">
+          <td class="cffb-rct__col-rank cffb-rct__rank">18</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Army" title="Filter to Army"><img class="cffb-rct__logo" src="../assets/teams/army.png" alt="Army"></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">7</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">638.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--d">D</span></td>
+        </tr>
+
+        <tr data-team="Kansas State" data-team-abbr="KSU" data-conf="big12" data-grade="D" data-year="2025"
+            data-rank="19" data-confrank="2" data-s5="0" data-s4="2" data-s3="11" data-s2="8" data-total="21" data-score="608.9">
+          <td class="cffb-rct__col-rank cffb-rct__rank">19</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Kansas State" title="Filter to Kansas State"><span class="cffb-rct__chip" style="background:#512888;color:#fff;">KSU</span></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">8</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">608.9</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--d">D</span></td>
+        </tr>
+
+        <tr data-team="Fresno State" data-team-abbr="FRES" data-conf="mw" data-grade="F" data-year="2025"
+            data-rank="20" data-confrank="1" data-s5="0" data-s4="1" data-s3="9" data-s2="11" data-total="21" data-score="556.3">
+          <td class="cffb-rct__col-rank cffb-rct__rank">20</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Fresno State" title="Filter to Fresno State"><img class="cffb-rct__logo" src="../assets/teams/fresno-state.png" alt="Fresno State"></button></td>
+          <td class="cffb-rct__year">'25</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">11</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">556.3</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--f">F</span></td>
+        </tr>
+
+        <tr data-team="Ohio State" data-team-abbr="OSU" data-conf="b1g" data-grade="A" data-year="2024"
+            data-rank="1" data-confrank="1" data-s5="5" data-s4="10" data-s3="6" data-s2="0" data-total="21" data-score="978.2">
+          <td class="cffb-rct__col-rank cffb-rct__rank">01</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Ohio State" title="Filter to Ohio State"><span class="cffb-rct__chip" style="background:#BB0000;color:#fff;">OSU</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2 is-zero">0</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">978.2</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--ap">A+</span></td>
+        </tr>
+
+        <tr data-team="Michigan" data-team-abbr="MICH" data-conf="b1g" data-grade="A" data-year="2024"
+            data-rank="2" data-confrank="1" data-s5="4" data-s4="9" data-s3="7" data-s2="1" data-total="21" data-score="951.7">
+          <td class="cffb-rct__col-rank cffb-rct__rank">02</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Michigan" title="Filter to Michigan"><span class="cffb-rct__chip" style="background:#00274C;color:#FFCB05;">MICH</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">951.7</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--ap">A+</span></td>
+        </tr>
+
+        <tr data-team="Georgia" data-team-abbr="UGA" data-conf="sec" data-grade="A" data-year="2024"
+            data-rank="3" data-confrank="2" data-s5="3" data-s4="9" data-s3="9" data-s2="1" data-total="22" data-score="944.7">
+          <td class="cffb-rct__col-rank cffb-rct__rank">03</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Georgia" title="Filter to Georgia"><img class="cffb-rct__logo" src="../assets/teams/georgia.png" alt="Georgia"></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">944.7</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--a">A</span></td>
+        </tr>
+
+        <tr data-team="Alabama" data-team-abbr="BAMA" data-conf="sec" data-grade="A" data-year="2024"
+            data-rank="4" data-confrank="3" data-s5="4" data-s4="8" data-s3="8" data-s2="2" data-total="22" data-score="935.1">
+          <td class="cffb-rct__col-rank cffb-rct__rank">04</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Alabama" title="Filter to Alabama"><span class="cffb-rct__chip" style="background:#9E1B32;color:#fff;">BAMA</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">22</td>
+          <td class="cffb-rct__score">935.1</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--a">A</span></td>
+        </tr>
+
+        <tr data-team="LSU" data-team-abbr="LSU" data-conf="sec" data-grade="A" data-year="2024"
+            data-rank="5" data-confrank="4" data-s5="2" data-s4="9" data-s3="8" data-s2="2" data-total="21" data-score="889.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">05</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="LSU" title="Filter to LSU"><span class="cffb-rct__chip" style="background:#461D7C;color:#FDD023;">LSU</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">4</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">9</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">889.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--am">A−</span></td>
+        </tr>
+
+        <tr data-team="Penn State" data-team-abbr="PSU" data-conf="b1g" data-grade="B" data-year="2024"
+            data-rank="6" data-confrank="2" data-s5="2" data-s4="8" data-s3="10" data-s2="1" data-total="21" data-score="872.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">06</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Penn State" title="Filter to Penn State"><span class="cffb-rct__chip" style="background:#041E42;color:#fff;">PSU</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">872.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bp">B+</span></td>
+        </tr>
+
+        <tr data-team="Texas" data-team-abbr="TEX" data-conf="sec" data-grade="B" data-year="2024"
+            data-rank="7" data-confrank="5" data-s5="1" data-s4="8" data-s3="11" data-s2="1" data-total="21" data-score="843.8">
+          <td class="cffb-rct__col-rank cffb-rct__rank">07</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Texas" title="Filter to Texas"><span class="cffb-rct__chip" style="background:#BF5700;color:#fff;">TEX</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">5</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">843.8</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bp">B+</span></td>
+        </tr>
+
+        <tr data-team="Oregon" data-team-abbr="ORE" data-conf="b1g" data-grade="B" data-year="2024"
+            data-rank="8" data-confrank="4" data-s5="1" data-s4="8" data-s3="10" data-s2="2" data-total="21" data-score="825">
+          <td class="cffb-rct__col-rank cffb-rct__rank">08</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Oregon" title="Filter to Oregon"><span class="cffb-rct__chip" style="background:#154733;color:#FEE123;">ORE</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">4</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">10</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">825.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Notre Dame" data-team-abbr="ND" data-conf="ind" data-grade="B" data-year="2024"
+            data-rank="9" data-confrank="99" data-s5="1" data-s4="6" data-s3="13" data-s2="1" data-total="21" data-score="809.2">
+          <td class="cffb-rct__col-rank cffb-rct__rank">09</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Notre Dame" title="Filter to Notre Dame"><span class="cffb-rct__chip" style="background:#0C2340;color:#C99700;">ND</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank is-empty">—</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">1</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">809.2</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="USC" data-team-abbr="USC" data-conf="b1g" data-grade="B" data-year="2024"
+            data-rank="10" data-confrank="6" data-s5="2" data-s4="5" data-s3="12" data-s2="2" data-total="21" data-score="803.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">10</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="USC" title="Filter to USC"><span class="cffb-rct__chip" style="background:#990000;color:#FFC72C;">USC</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">6</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">803.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="North Carolina" data-team-abbr="UNC" data-conf="acc" data-grade="B" data-year="2024"
+            data-rank="11" data-confrank="2" data-s5="1" data-s4="6" data-s3="12" data-s2="2" data-total="21" data-score="794">
+          <td class="cffb-rct__col-rank cffb-rct__rank">11</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="North Carolina" title="Filter to North Carolina"><img class="cffb-rct__logo" src="../assets/teams/north-carolina.png" alt="North Carolina"></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">2</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">794.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bm">B−</span></td>
+        </tr>
+
+        <tr data-team="Florida State" data-team-abbr="FSU" data-conf="acc" data-grade="B" data-year="2024"
+            data-rank="12" data-confrank="1" data-s5="1" data-s4="6" data-s3="11" data-s2="3" data-total="21" data-score="781.3">
+          <td class="cffb-rct__col-rank cffb-rct__rank">12</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Florida State" title="Filter to Florida State"><span class="cffb-rct__chip" style="background:#782F40;color:#CEB888;">FSU</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">6</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">781.3</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--b">B</span></td>
+        </tr>
+
+        <tr data-team="Florida" data-team-abbr="FLA" data-conf="sec" data-grade="B" data-year="2024"
+            data-rank="13" data-confrank="7" data-s5="0" data-s4="7" data-s3="11" data-s2="3" data-total="21" data-score="751">
+          <td class="cffb-rct__col-rank cffb-rct__rank">13</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Florida" title="Filter to Florida"><span class="cffb-rct__chip" style="background:#0021A5;color:#FA4616;">FLA</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">7</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">7</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">751.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--bm">B−</span></td>
+        </tr>
+
+        <tr data-team="Tennessee" data-team-abbr="TENN" data-conf="sec" data-grade="C" data-year="2024"
+            data-rank="14" data-confrank="8" data-s5="1" data-s4="5" data-s3="12" data-s2="3" data-total="21" data-score="734.6">
+          <td class="cffb-rct__col-rank cffb-rct__rank">14</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Tennessee" title="Filter to Tennessee"><span class="cffb-rct__chip" style="background:#FF8200;color:#fff;">TENN</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">8</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5">1</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">3</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">734.6</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--cp">C+</span></td>
+        </tr>
+
+        <tr data-team="Auburn" data-team-abbr="AUB" data-conf="sec" data-grade="C" data-year="2024"
+            data-rank="15" data-confrank="9" data-s5="0" data-s4="5" data-s3="11" data-s2="5" data-total="21" data-score="704.2">
+          <td class="cffb-rct__col-rank cffb-rct__rank">15</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Auburn" title="Filter to Auburn"><span class="cffb-rct__chip" style="background:#0C2340;color:#E87722;">AUB</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">9</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">5</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">5</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">704.2</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--c">C</span></td>
+        </tr>
+
+        <tr data-team="Clemson" data-team-abbr="CLEM" data-conf="acc" data-grade="C" data-year="2024"
+            data-rank="16" data-confrank="3" data-s5="0" data-s4="4" data-s3="13" data-s2="4" data-total="21" data-score="702.6">
+          <td class="cffb-rct__col-rank cffb-rct__rank">16</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Clemson" title="Filter to Clemson"><span class="cffb-rct__chip" style="background:#F66733;color:#522D80;">CLEM</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">3</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">4</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">4</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">702.6</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--c">C</span></td>
+        </tr>
+
+        <tr data-team="Texas A&M" data-team-abbr="TAMU" data-conf="sec" data-grade="C" data-year="2024"
+            data-rank="17" data-confrank="10" data-s5="0" data-s4="3" data-s3="13" data-s2="5" data-total="21" data-score="671.4">
+          <td class="cffb-rct__col-rank cffb-rct__rank">17</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Texas A&M" title="Filter to Texas A&M"><span class="cffb-rct__chip" style="background:#500000;color:#fff;">TAMU</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">10</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">13</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">5</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">671.4</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--cm">C−</span></td>
+        </tr>
+
+        <tr data-team="Kansas State" data-team-abbr="KSU" data-conf="big12" data-grade="D" data-year="2024"
+            data-rank="18" data-confrank="1" data-s5="0" data-s4="3" data-s3="12" data-s2="6" data-total="21" data-score="642">
+          <td class="cffb-rct__col-rank cffb-rct__rank">18</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Kansas State" title="Filter to Kansas State"><span class="cffb-rct__chip" style="background:#512888;color:#fff;">KSU</span></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">3</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">12</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">6</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">642.0</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--dp">D+</span></td>
+        </tr>
+
+        <tr data-team="Army" data-team-abbr="ARMY" data-conf="aac" data-grade="D" data-year="2024"
+            data-rank="19" data-confrank="2" data-s5="0" data-s4="2" data-s3="11" data-s2="8" data-total="21" data-score="619.5">
+          <td class="cffb-rct__col-rank cffb-rct__rank">19</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Army" title="Filter to Army"><img class="cffb-rct__logo" src="../assets/teams/army.png" alt="Army"></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">2</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">11</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">8</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">619.5</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--d">D</span></td>
+        </tr>
+
+        <tr data-team="Fresno State" data-team-abbr="FRES" data-conf="mw" data-grade="F" data-year="2024"
+            data-rank="20" data-confrank="1" data-s5="0" data-s4="2" data-s3="8" data-s2="11" data-total="21" data-score="574.6">
+          <td class="cffb-rct__col-rank cffb-rct__rank">20</td>
+          <td class="cffb-rct__col-team"><button type="button" class="cffb-rct__chip-btn" data-team-pick="Fresno State" title="Filter to Fresno State"><img class="cffb-rct__logo" src="../assets/teams/fresno-state.png" alt="Fresno State"></button></td>
+          <td class="cffb-rct__year">'24</td>
+          <td class="cffb-rct__confrank">1</td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--5 is-zero">0</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--4">2</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--3">8</span></td>
+          <td class="cffb-rct__stars"><span class="cffb-rct__star-count cffb-rct__star-count--2">11</span></td>
+          <td class="cffb-rct__total">21</td>
+          <td class="cffb-rct__score">574.6</td>
+          <td><span class="cffb-rct__grade cffb-rct__grade--f">F</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="cffb-rct__empty">No classes match those filters.</div>
+  </div>
+
+  <div class="cffb-rct__foot">
+    <div class="cffb-rct__foot-legend">
+      <span><i style="color:#C9A227;">★</i> 5-STAR</span>
+      <span><i style="color:#3B82C4;">★</i> 4-STAR</span>
+      <span><i style="color:#7BA4C9;">★</i> 3-STAR</span>
+      <span><i style="color:#6A6A6A;">★</i> 2-STAR</span>
+    </div>
+    <div class="cffb-rct__hint"><strong>Click a logo</strong> to filter on that team</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var s = document.currentScript;
+  var root = s && s.previousElementSibling;
+  while (root && !(root.matches && root.matches('[data-cffb-rct]'))) root = root.previousElementSibling;
+  if (!root) return;
+
+  var tbody    = root.querySelector('tbody');
+  var rows     = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+  var search   = root.querySelector('[data-filter="search"]');
+  var fYear    = root.querySelector('[data-filter="year"]');
+  var fConf    = root.querySelector('[data-filter="conf"]');
+  var reset    = root.querySelector('[data-reset]');
+  var visTxt   = root.querySelector('[data-count-visible]');
+  var totalTxt = root.querySelector('[data-count-total]');
+  var heads    = root.querySelectorAll('thead th.is-sortable');
+  var pillRow  = root.querySelector('[data-pill-row]');
+  var pillTeam = root.querySelector('[data-pill-team]');
+  var pillX    = root.querySelector('[data-team-clear]');
+
+  var teamFilter = '';
+  totalTxt.textContent = rows.length;
+
+  function applyFilters() {
+    var q = (search.value || '').trim().toLowerCase();
+    var yr = fYear.value, cf = fConf.value;
+    var visible = 0;
+    rows.forEach(function (tr) {
+      var teamMatch  = !q || tr.dataset.team.toLowerCase().indexOf(q) !== -1;
+      var yearMatch  = !yr || tr.dataset.year === yr;
+      var confMatch  = !cf || tr.dataset.conf === cf;
+      var pickMatch  = !teamFilter || tr.dataset.team === teamFilter;
+      var ok = teamMatch && yearMatch && confMatch && pickMatch;
+      tr.classList.toggle('is-hidden', !ok);
+      tr.classList.toggle('is-team-active', !!(teamFilter && tr.dataset.team === teamFilter));
+      if (ok) visible++;
+    });
+    visTxt.textContent = visible;
+    root.classList.toggle('is-empty', visible === 0);
+    root.classList.toggle('is-team-filtered', !!teamFilter);
+    if (teamFilter) pillTeam.textContent = teamFilter;
+  }
+
+  function pickTeam(name) {
+    teamFilter = (teamFilter === name) ? '' : name;
+    applyFilters();
+  }
+  function clearTeam() {
+    teamFilter = '';
+    applyFilters();
+  }
+
+  // Click any team chip
+  tbody.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-team-pick]');
+    if (!btn) return;
+    pickTeam(btn.getAttribute('data-team-pick'));
+  });
+  pillX.addEventListener('click', clearTeam);
+
+  // Sort
+  var sortKey = 'rank', sortDir = 'asc';
+  function applySort() {
+    var numeric = sortKey !== 'team' && sortKey !== 'year';
+    var sorted = rows.slice().sort(function (a, b) {
+      var av = a.dataset[sortKey], bv = b.dataset[sortKey];
+      if (numeric) { av = parseFloat(av); bv = parseFloat(bv); }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ?  1 : -1;
+      return 0;
+    });
+    sorted.forEach(function (tr) { tbody.appendChild(tr); });
+    heads.forEach(function (th) {
+      th.classList.remove('is-sorted-asc', 'is-sorted-desc');
+      if (th.dataset.sort === sortKey) th.classList.add('is-sorted-' + sortDir);
+    });
+  }
+  heads.forEach(function (th) {
+    th.addEventListener('click', function () {
+      var key = th.dataset.sort;
+      if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortKey = key; sortDir = (key === 'team' || key === 'rank' || key === 'confrank') ? 'asc' : 'desc'; }
+      applySort();
+    });
+  });
+
+  [search, fYear, fConf].forEach(function (el) {
+    el.addEventListener('input',  applyFilters);
+    el.addEventListener('change', applyFilters);
+  });
+  reset.addEventListener('click', function () {
+    search.value = ''; fYear.value = ''; fConf.value = '';
+    teamFilter = '';
+    sortKey = 'rank'; sortDir = 'asc';
+    applyFilters(); applySort();
+  });
+
+  applyFilters();
+})();
+</script>
