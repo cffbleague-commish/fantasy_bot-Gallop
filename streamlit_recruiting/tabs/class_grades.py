@@ -139,7 +139,7 @@ def _leaderboard_and_detail(grades_df: pd.DataFrame):
     (Board / Pricing / Live Auction) and the surrounding Class Grades sections
     don't re-execute their data loads.
     """
-    col_left, col_right = responsive_columns([45, 55], gap="medium")
+    col_left, col_right = responsive_columns([50, 50], gap="medium")
 
     with col_left:
         component_rows = _build_component_rows(grades_df)
