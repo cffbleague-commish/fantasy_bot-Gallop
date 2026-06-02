@@ -6,7 +6,6 @@ opens the right-column deep dive built from the TeamClassDetail component.
 
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
 from data.sheets import (
     load_recruiting_grades,
@@ -17,7 +16,6 @@ from data.sheets import (
 )
 from grading import compute_class_grades
 from components import (
-    plotly_layout_defaults,
     _html,
     ICON_CALCULATOR,
     ICON_HELP,
@@ -58,46 +56,12 @@ def render():
 
     # --- Two-column layout: leaderboard + team deep dive ---
     # The whole row lives inside a fragment so team-logo clicks only re-execute
-    # this section — not the other three tabs, not the conference chart below.
+    # this section — not the other three tabs, not the methodology disclosure below.
     _leaderboard_and_detail(grades_df)
 
     # --- Methodology disclosure (under the section it explains) ---
     st.markdown("")
     _html(_render_methodology_disclosure())
-
-    # --- Conference Comparison Chart ---
-    if len(grades_df) > 5:
-        st.markdown("---")
-        st.markdown("#### Conference Comparison")
-
-        if "DraftYear" in grades_df.columns and grades_df["DraftYear"].nunique() > 1:
-            conf_avg = grades_df.groupby(["Conference", "DraftYear"])["ClassScore"].mean().reset_index()
-            conf_avg.columns = ["Conference", "Year", "Avg Score"]
-            conf_avg["Year"] = conf_avg["Year"].astype(str)
-            conf_avg = conf_avg.sort_values("Avg Score", ascending=False)
-
-            fig = px.bar(
-                conf_avg,
-                x="Conference",
-                y="Avg Score",
-                color="Year",
-                barmode="group",
-            )
-        else:
-            conf_avg = grades_df.groupby("Conference")["ClassScore"].mean().reset_index()
-            conf_avg.columns = ["Conference", "Avg Score"]
-            conf_avg = conf_avg.sort_values("Avg Score", ascending=False)
-
-            fig = px.bar(
-                conf_avg,
-                x="Conference",
-                y="Avg Score",
-                color_discrete_sequence=["#C9A227"],
-            )
-        layout = plotly_layout_defaults()
-        layout.update(height=350)
-        fig.update_layout(**layout)
-        st.plotly_chart(fig, use_container_width=True)
 
 
 def _build_component_rows(grades_df: pd.DataFrame) -> list[dict]:
