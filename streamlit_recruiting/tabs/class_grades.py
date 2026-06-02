@@ -90,13 +90,13 @@ def render():
             selected_team=st.session_state.get("grades_selected_team"),
             key="grades_class_table",
         )
-        # Sync selection into session state and rerun so the right column updates.
+        # Sync selection into session state. No explicit st.rerun(): the
+        # component value change already triggered THIS rerun, and `col_right`
+        # below runs in the same script execution so it picks up the new team.
         if selected != st.session_state.get("grades_selected_team"):
             st.session_state["grades_selected_team"] = selected
-            # Reset the detail year when team changes — we pick the team's most
-            # recent year on the next render.
+            # Reset the detail year so the team's most recent year is selected.
             st.session_state.pop("grades_detail_year", None)
-            st.rerun()
 
     with col_right:
         team_name = st.session_state.get("grades_selected_team")
@@ -221,8 +221,14 @@ def _render_league_overview(grades_df: pd.DataFrame):
 # Team detail (right column)
 # ---------------------------------------------------------------------------
 
+@st.fragment
 def _render_team_detail(team_name: str, grades_df: pd.DataFrame):
-    """Render the right-column class detail via the CFFB TeamClassDetail component."""
+    """Render the right-column class detail via the CFFB TeamClassDetail component.
+
+    `@st.fragment` scopes reruns triggered from inside this function (year-tab
+    clicks, back chevron) to just this panel — the leaderboard, KPI row, and
+    conference chart don't re-execute on year switches.
+    """
     team_rows = grades_df[grades_df["Franchise"] == team_name]
     if team_rows.empty:
         st.caption(f"No grade data found for {team_name}.")
@@ -379,25 +385,11 @@ def _build_team_detail_payload(
     pos_counts = {"QB": 0, "RB": 0, "WR": 0, "TE": 0}
 
     if not player_grades.empty:
-        # Position avg bid (league-wide for this year, all teams).
-        pos_avg_bid: dict[str, float] = {}
-        if "BidAmount" in player_grades.columns and "Position" in player_grades.columns:
-            grp = player_grades.dropna(subset=["BidAmount"]).groupby("Position")["BidAmount"].mean()
-            pos_avg_bid = {str(k).upper(): float(v) for k, v in grp.items()}
-
-        # Join headshots + college from the recruiting board (name normalization
-        # bridges MFL "Last, First" → ESPN "First Last").
-        board_df = load_recruiting_board(None)
-        headshot_map: dict[str, str] = {}
-        college_map: dict[str, str] = {}
-        if not board_df.empty:
-            brd = board_df.copy()
-            brd["_key"] = brd["Player"].apply(normalize_name)
-            brd = brd[brd["_key"] != ""].drop_duplicates(subset="_key", keep="last")
-            if "HeadshotURL" in brd.columns:
-                headshot_map = dict(zip(brd["_key"], brd["HeadshotURL"]))
-            if "College" in brd.columns:
-                college_map = dict(zip(brd["_key"], brd["College"]))
+        # Position-avg-bid (league-wide for this year) and the board headshot/
+        # college join are both pulled from cached helpers so repeated detail
+        # renders don't re-do the groupby + map construction.
+        pos_avg_bid = _position_avg_bid_map(year)
+        headshot_map, college_map = _board_join_maps()
 
         team_players = player_grades[player_grades["Franchise"] == team_name].copy()
         if not team_players.empty:
@@ -504,3 +496,32 @@ def _safe_num(v):
     if pd.isna(f):
         return None
     return f
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _position_avg_bid_map(year: int) -> dict[str, float]:
+    """Per-position league-wide average BidAmount for a given draft year."""
+    pg = load_player_grades(year)
+    if pg.empty or "BidAmount" not in pg.columns or "Position" not in pg.columns:
+        return {}
+    grp = pg.dropna(subset=["BidAmount"]).groupby("Position")["BidAmount"].mean()
+    return {str(k).upper(): float(v) for k, v in grp.items()}
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _board_join_maps() -> tuple[dict[str, str], dict[str, str]]:
+    """Return (headshot_map, college_map) keyed by normalize_name(Player).
+
+    Bridges MFL "Last, First" → ESPN "First Last" so PlayerGrades rows can
+    pick up board-side enrichment (headshot, college) without re-doing the
+    groupby on every detail render.
+    """
+    brd = load_recruiting_board(None)
+    if brd.empty:
+        return {}, {}
+    brd = brd.copy()
+    brd["_key"] = brd["Player"].apply(normalize_name)
+    brd = brd[brd["_key"] != ""].drop_duplicates(subset="_key", keep="last")
+    hs = dict(zip(brd["_key"], brd["HeadshotURL"])) if "HeadshotURL" in brd.columns else {}
+    co = dict(zip(brd["_key"], brd["College"])) if "College" in brd.columns else {}
+    return hs, co
