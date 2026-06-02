@@ -27,8 +27,11 @@ from components import render_kpi_row, plotly_layout_defaults, college_logo_url,
 from descriptions import DESCRIPTIONS
 from utils.viewport import responsive_columns
 
-# Import copy session assignment from live auction tab
-from tabs.live_auction import _assign_copy_sessions, _resolve_winning_prices
+# Copy-session lifecycle moved to data/auction_payload.py
+from data.auction_payload import (
+    assign_copy_sessions as _assign_copy_sessions,
+    resolve_winning_prices as _resolve_winning_prices,
+)
 
 
 def render():
