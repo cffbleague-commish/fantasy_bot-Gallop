@@ -81,29 +81,10 @@ def render():
     st.markdown("---")
 
     # --- Two-column layout: leaderboard + team deep dive ---
-    col_left, col_right = responsive_columns([45, 55], gap="medium")
-
-    with col_left:
-        component_rows = _build_component_rows(grades_df)
-        selected = render_recruiting_class_table(
-            component_rows,
-            selected_team=st.session_state.get("grades_selected_team"),
-            key="grades_class_table",
-        )
-        # Sync selection into session state. No explicit st.rerun(): the
-        # component value change already triggered THIS rerun, and `col_right`
-        # below runs in the same script execution so it picks up the new team.
-        if selected != st.session_state.get("grades_selected_team"):
-            st.session_state["grades_selected_team"] = selected
-            # Reset the detail year so the team's most recent year is selected.
-            st.session_state.pop("grades_detail_year", None)
-
-    with col_right:
-        team_name = st.session_state.get("grades_selected_team")
-        if team_name:
-            _render_team_detail(team_name, grades_df)
-        else:
-            st.caption("Click a team logo in the leaderboard to view their recruiting detail.")
+    # The whole row lives inside a fragment so team-logo clicks only re-execute
+    # this section — not the other three tabs, not the KPI row above, not the
+    # conference chart below.
+    _leaderboard_and_detail(grades_df)
 
     # --- Conference Comparison Chart ---
     if len(grades_df) > 5:
@@ -215,6 +196,65 @@ def _render_league_overview(grades_df: pd.DataFrame):
             f'</span>'
         )
     _html(f'<div style="display:flex;flex-wrap:wrap;gap:6px 0;">{badges_html}</div>')
+
+
+# ---------------------------------------------------------------------------
+# Leaderboard + detail row (outer fragment)
+# ---------------------------------------------------------------------------
+
+_EMPTY_DETAIL_PAYLOAD = {
+    "team": None,
+    "logo": "",
+    "year": None,
+    "availableYears": [],
+    "grade": "",
+    "rank": 0,
+    "tiles": [],
+    "totalCommits": 0,
+    "stars": [],
+    "positions": [],
+    "recruits": [],
+    "emptyMessage": "Click a team logo in the leaderboard to view their recruiting class detail.",
+}
+
+
+@st.fragment
+def _leaderboard_and_detail(grades_df: pd.DataFrame):
+    """Outer fragment around the two-column leaderboard + detail row.
+
+    A team-logo click inside the leaderboard triggers a partial rerun scoped to
+    this fragment instead of the whole script, so the other three tabs
+    (Board / Pricing / Live Auction) and the surrounding Class Grades sections
+    don't re-execute their data loads.
+    """
+    col_left, col_right = responsive_columns([45, 55], gap="medium")
+
+    with col_left:
+        component_rows = _build_component_rows(grades_df)
+        selected = render_recruiting_class_table(
+            component_rows,
+            selected_team=st.session_state.get("grades_selected_team"),
+            key="grades_class_table",
+        )
+        # Click handler lives in col_left but the visible change is in col_right.
+        # Setting state and asking the fragment to rerun re-executes both columns
+        # cheaply — the cost stays inside this fragment.
+        if selected != st.session_state.get("grades_selected_team"):
+            st.session_state["grades_selected_team"] = selected
+            st.session_state.pop("grades_detail_year", None)
+            st.rerun(scope="fragment")
+
+    with col_right:
+        team_name = st.session_state.get("grades_selected_team")
+        if team_name:
+            _render_team_detail(team_name, grades_df)
+        else:
+            # Pre-mount the iframe with an empty payload so the FIRST team click
+            # of the session doesn't pay a cold iframe-load cost.
+            render_team_class_detail(
+                _EMPTY_DETAIL_PAYLOAD,
+                key="team_detail_panel",
+            )
 
 
 # ---------------------------------------------------------------------------

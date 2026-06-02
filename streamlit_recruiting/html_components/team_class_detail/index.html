@@ -495,6 +495,28 @@ html, body {
   letter-spacing: 0.08em; text-transform: uppercase;
 }
 
+/* Pre-mount empty state — shown while no team is selected. Sized small so the
+   iframe reserves modest vertical space; the panel resizes once a team
+   payload arrives. */
+.cffb-tcd__empty-card {
+  display: none;
+  align-items: center; justify-content: center;
+  min-height: 120px;
+  padding: 28px 24px;
+  text-align: center;
+  color: #9A9A9A;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500; font-size: 13px;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+.cffb-tcd.is-empty .cffb-tcd__empty-card { display: flex; }
+.cffb-tcd.is-empty > :not(.cffb-tcd__empty-card) { display: none; }
+.cffb-tcd.is-empty {
+  /* No gold top-stripe in empty state; the stripe lives on the header band. */
+  border-color: #2A2A2A;
+}
+
 /* ============ Responsive (media queries — iframe viewport) ============ */
 @media (max-width: 1180px) {
   .cffb-tcd__recruit {
@@ -641,6 +663,7 @@ html, body {
 <body>
 
 <div class="cffb-tcd" data-cffb-tcd>
+  <div class="cffb-tcd__empty-card" data-tcd-empty>Click a team logo in the leaderboard to view their recruiting class detail.</div>
   <header class="cffb-tcd__header">
     <button type="button" class="cffb-tcd__back" data-tcd-back>
       <span class="cffb-tcd__back-chevron"></span>All Classes
@@ -722,6 +745,7 @@ html, body {
   var posLegEl    = root.querySelector('[data-tcd-pos-legend]');
   var gridEl      = root.querySelector('[data-tcd-grid]');
   var backBtn     = root.querySelector('[data-tcd-back]');
+  var emptyEl     = root.querySelector('[data-tcd-empty]');
 
   // ---------- Helpers ----------
   var GRADE_CLASS = {
@@ -952,6 +976,19 @@ html, body {
   function render(args) {
     // Wrapper passes the payload as the `data` kwarg; everything ships inside it.
     var data = (args && args.data) || args || {};
+
+    // Empty-state branch — driven by the absence of a team name. CSS hides the
+    // structured sections and shows the placeholder card without us touching
+    // any of the data-tcd-* hooks, so the next populated render is cheap.
+    if (!data.team) {
+      root.classList.add('is-empty');
+      if (emptyEl && data.emptyMessage) emptyEl.textContent = data.emptyMessage;
+      requestAnimationFrame(setFrameHeight);
+      setTimeout(setFrameHeight, 50);
+      return;
+    }
+    root.classList.remove('is-empty');
+
     nameEl.textContent = data.team || '—';
     renderLogo(data.logo || '', data.team || '');
     renderYears(data.availableYears || [], data.year);

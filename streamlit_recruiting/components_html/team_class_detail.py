@@ -26,7 +26,7 @@ _component_func = components.declare_component(
 
 def render_team_class_detail(
     data: Mapping[str, Any],
-    height: int = 1200,
+    height: int = 600,
     key: str = "cffb_team_class_detail",
 ) -> Optional[dict]:
     """Render the team class detail and return the last action.

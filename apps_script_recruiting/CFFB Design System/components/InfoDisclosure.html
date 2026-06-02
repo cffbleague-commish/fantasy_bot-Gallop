@@ -1,0 +1,398 @@
+<!-- CFFB · InfoDisclosure
+     A collapsible information / instruction card. Click the header
+     (e.g. "How is this graded?") and the card expands to reveal a
+     methodology write-up, a weighted-factor breakdown, or numbered
+     steps. Built for the "show your work" moments — grading,
+     scoring, auction rules — without cluttering the page by default.
+
+     PURE CSS — no JavaScript. A visually-hidden checkbox drives the
+     open/closed state via the grid-template-rows 0fr→1fr trick, so
+     the panel animates smoothly BOTH directions and survives
+     Streamlit's st.markdown injection (which strips <script>).
+
+     EACH instance needs a UNIQUE id on the <input> + matching
+     `for=` on the <label>. To open one by default, add `checked`
+     to its input.
+
+     Anatomy
+       .cffb-disc                      wrapper (the card)
+         input.cffb-disc__toggle       hidden state-holder (unique id)
+         label.cffb-disc__summary      clickable header (for=id)
+           .cffb-disc__icon            gold stroke-icon chip
+           .cffb-disc__heading         eyebrow + question
+           svg.cffb-disc__chev         chevron, rotates 180° when open
+         .cffb-disc__panel             animated height wrapper
+           .cffb-disc__body            revealed content
+
+     Variants
+       .cffb-disc--featured            gold left-accent + gold icon chip
+                                       (use for the primary methodology block)
+
+     Content helpers (drop inside __body)
+       .cffb-disc__factors / __factor  weighted-factor rows w/ mini bars
+       .cffb-disc__steps               numbered instruction list
+       .cffb-disc__note                small gold-flagged footnote -->
+<style>
+.cffb-disc {
+  background: #141414;
+  border: 1px solid #2A2A2A;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #F5F5F5;
+  position: relative;
+  transition: border-color 180ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-disc:hover { border-color: #3A3A3A; }
+
+/* Hidden state-holder — kept focusable for keyboard users. */
+.cffb-disc__toggle {
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Header (clickable) -------------------------------------- */
+.cffb-disc__summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background 120ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-disc__summary:hover { background: #1C1C1C; }
+.cffb-disc__toggle:focus-visible ~ .cffb-disc__summary {
+  outline: 2px solid #C9A227;
+  outline-offset: -2px;
+}
+
+.cffb-disc__icon {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: #1C1C1C;
+  border: 1px solid #2A2A2A;
+  color: #9A9A9A;
+  transition: color 120ms, border-color 120ms;
+}
+.cffb-disc__icon svg { width: 17px; height: 17px; display: block; }
+.cffb-disc__summary:hover .cffb-disc__icon { color: #C9A227; border-color: #3A3A3A; }
+
+.cffb-disc__heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cffb-disc__eyebrow {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5A5A5A;
+  line-height: 1;
+}
+.cffb-disc__title {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.005em;
+  color: #F5F5F5;
+  line-height: 1.1;
+}
+
+/* Chevron — stroke icon, rotates on open. */
+.cffb-disc__chev {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+  color: #5A5A5A;
+  transition: transform 240ms cubic-bezier(0.2,0.8,0.2,1), color 120ms;
+}
+.cffb-disc__summary:hover .cffb-disc__chev { color: #9A9A9A; }
+.cffb-disc__toggle:checked ~ .cffb-disc__summary .cffb-disc__chev {
+  transform: rotate(180deg);
+  color: #C9A227;
+}
+
+/* ---- Animated panel (0fr → 1fr) ------------------------------ */
+.cffb-disc__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms cubic-bezier(0.2,0.8,0.2,1);
+}
+.cffb-disc__toggle:checked ~ .cffb-disc__panel {
+  grid-template-rows: 1fr;
+}
+.cffb-disc__body {
+  overflow: hidden;
+  min-height: 0;
+}
+/* Inner padding lives on a child so the collapse animates cleanly. */
+.cffb-disc__inner {
+  padding: 2px 18px 18px 64px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #9A9A9A;
+}
+.cffb-disc__inner p { margin: 0 0 10px; }
+.cffb-disc__inner p:last-child { margin-bottom: 0; }
+.cffb-disc__inner strong { color: #F5F5F5; font-weight: 600; }
+.cffb-disc__divider { height: 1px; background: #2A2A2A; margin: 14px 0; }
+
+/* ---- Featured (primary methodology) -------------------------- */
+.cffb-disc--featured { box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+.cffb-disc--featured::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #E8C547 0%, #C9A227 55%, #8B6F1F 100%);
+  z-index: 1;
+}
+.cffb-disc--featured .cffb-disc__icon {
+  background: rgba(201,162,39,0.12);
+  border-color: rgba(201,162,39,0.4);
+  color: #C9A227;
+}
+.cffb-disc--featured .cffb-disc__eyebrow { color: #C9A227; }
+
+/* ---- Content helper: weighted-factor breakdown --------------- */
+.cffb-disc__factors {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: 4px;
+}
+.cffb-disc__factor {
+  display: grid;
+  grid-template-columns: 1fr 120px 42px;
+  align-items: center;
+  gap: 14px;
+}
+.cffb-disc__factor-label {
+  font-size: 13px;
+  color: #F5F5F5;
+  font-weight: 500;
+}
+.cffb-disc__factor-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #2A2A2A;
+  overflow: hidden;
+}
+.cffb-disc__factor-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #C9A227;
+}
+.cffb-disc__factor-pct {
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: #C9A227;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Content helper: numbered steps -------------------------- */
+.cffb-disc__steps {
+  counter-reset: step;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cffb-disc__steps li {
+  position: relative;
+  padding-left: 36px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #9A9A9A;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+.cffb-disc__steps li strong { color: #F5F5F5; }
+.cffb-disc__steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1px solid #3A3A3A;
+  background: #1C1C1C;
+  color: #C9A227;
+  font-family: 'Saira Condensed', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Content helper: formula line ---------------------------- */
+.cffb-disc__formula {
+  font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+  font-size: 12.5px;
+  color: #F5F5F5;
+  background: #0A0A0A;
+  border: 1px solid #2A2A2A;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.cffb-disc__formula em { color: #C9A227; font-style: normal; }
+
+/* ---- Content helper: footnote -------------------------------- */
+.cffb-disc__note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #2A2A2A;
+  font-size: 12px;
+  color: #5A5A5A;
+}
+.cffb-disc__note::before {
+  content: "★";
+  color: #C9A227;
+  font-size: 11px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+/* ---- Group spacing (stack of disclosures) -------------------- */
+.cffb-disc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 560px;
+}
+</style>
+
+<div class="cffb-disc-group">
+
+  <!-- ===== FEATURED · open by default ===== -->
+  <div class="cffb-disc cffb-disc--featured">
+    <input type="checkbox" class="cffb-disc__toggle" id="cffb-disc-grade" checked>
+    <label class="cffb-disc__summary" for="cffb-disc-grade">
+      <span class="cffb-disc__icon" aria-hidden="true">
+        <!-- calculator -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="8" y1="6" x2="16" y2="6"/>
+          <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
+          <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/>
+          <line x1="16" y1="14" x2="16" y2="18"/><line x1="8" y1="18" x2="12" y2="18"/>
+        </svg>
+      </span>
+      <span class="cffb-disc__heading">
+        <span class="cffb-disc__eyebrow">Methodology</span>
+        <span class="cffb-disc__title">How is the Class Grade calculated?</span>
+      </span>
+      <svg class="cffb-disc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </label>
+    <div class="cffb-disc__panel">
+      <div class="cffb-disc__body">
+        <div class="cffb-disc__inner">
+          <p>The letter grade blends four weighted inputs into a single 0–100 score, then maps to the A–F scale. Talent carries the most weight, but a class that overpays for its haul gets dinged on value.</p>
+          <div class="cffb-disc__factors">
+            <div class="cffb-disc__factor">
+              <span class="cffb-disc__factor-label">Talent composite (star tiers)</span>
+              <span class="cffb-disc__factor-bar"><span class="cffb-disc__factor-fill" style="width:100%"></span></span>
+              <span class="cffb-disc__factor-pct">40%</span>
+            </div>
+            <div class="cffb-disc__factor">
+              <span class="cffb-disc__factor-label">National class rank</span>
+              <span class="cffb-disc__factor-bar"><span class="cffb-disc__factor-fill" style="width:62.5%"></span></span>
+              <span class="cffb-disc__factor-pct">25%</span>
+            </div>
+            <div class="cffb-disc__factor">
+              <span class="cffb-disc__factor-label">Value vs. market spend</span>
+              <span class="cffb-disc__factor-bar"><span class="cffb-disc__factor-fill" style="width:50%"></span></span>
+              <span class="cffb-disc__factor-pct">20%</span>
+            </div>
+            <div class="cffb-disc__factor">
+              <span class="cffb-disc__factor-label">Position-need fit</span>
+              <span class="cffb-disc__factor-bar"><span class="cffb-disc__factor-fill" style="width:37.5%"></span></span>
+              <span class="cffb-disc__factor-pct">15%</span>
+            </div>
+          </div>
+          <div class="cffb-disc__note">Grades recalculate live as commits land and auction prices settle.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Recruit Score — closed ===== -->
+  <div class="cffb-disc">
+    <input type="checkbox" class="cffb-disc__toggle" id="cffb-disc-score">
+    <label class="cffb-disc__summary" for="cffb-disc-score">
+      <span class="cffb-disc__icon" aria-hidden="true">
+        <!-- help-circle -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12" y2="17"/>
+        </svg>
+      </span>
+      <span class="cffb-disc__heading">
+        <span class="cffb-disc__title">How is Recruit Score determined?</span>
+      </span>
+      <svg class="cffb-disc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </label>
+    <div class="cffb-disc__panel">
+      <div class="cffb-disc__body">
+        <div class="cffb-disc__inner">
+          <p>A normalized 0–100 rating for a single commit, built from the national ranking, a position-scarcity multiplier, and how the player's auction price compares to projected market value.</p>
+          <div class="cffb-disc__formula">Score = <em>Rank Index</em> × <em>Position Weight</em> × <em>(Market ÷ Paid)</em></div>
+          <div class="cffb-disc__note">A five-star landed below market reads higher than one bought at a premium.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Auction rules — closed ===== -->
+  <div class="cffb-disc">
+    <input type="checkbox" class="cffb-disc__toggle" id="cffb-disc-auction">
+    <label class="cffb-disc__summary" for="cffb-disc-auction">
+      <span class="cffb-disc__icon" aria-hidden="true">
+        <!-- list / instructions -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/>
+          <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span class="cffb-disc__heading">
+        <span class="cffb-disc__eyebrow">Instructions</span>
+        <span class="cffb-disc__title">How does the live auction work?</span>
+      </span>
+      <svg class="cffb-disc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </label>
+    <div class="cffb-disc__panel">
+      <div class="cffb-disc__body">
+        <div class="cffb-disc__inner">
+          <ol class="cffb-disc__steps">
+            <li>Each manager opens with a <strong>$200 recruiting budget</strong> for the cycle.</li>
+            <li>Players nominate a recruit; the clock resets to <strong>10 seconds</strong> on every new high bid.</li>
+            <li>Highest bid when the clock hits zero <strong>signs the recruit</strong> to that class.</li>
+            <li>Class Grade and Recruit Score update the instant a commit lands.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
