@@ -195,6 +195,15 @@ function getConfig() {
       minCopyPairsForEmpirical: 8
     },
 
+    // Class Score Aggregation
+    // Top `fullCreditCount` players (ranked by recruitScore × starMultiplier)
+    // contribute their full weighted score. Each additional player decays
+    // at `decayRate` per rank beyond the cutoff. Same player counted at most once.
+    classScoreConfig: {
+      fullCreditCount: 8,
+      decayRate: 0.5
+    },
+
     // League structure
     numberOfConferences: 6,
     copiesPerPlayer: 12

@@ -439,19 +439,49 @@ function formatDollarSavings(val) {
 
 /**
  * Calculate recruiting class score for a team's auction haul.
- * Star-weighted sum of recruit scores.
+ * Star-weighted sum of recruit scores with diminishing returns past
+ * `fullCreditCount` and per-player deduplication.
+ *
+ * Dedup: a team may drop & re-acquire the same player during the live
+ * auction (LiveAuction.gs allows 3rd+ ordinals). The highest-bid record
+ * is kept for the class score so the player only contributes once.
  *
  * @param {Array} players - Matched auction records for one franchise
  * @returns {Object} - { classScore, starBreakdown: { 5: n, 4: n, ... } }
  */
 function calcClassScore(players) {
-  var classScore = 0;
-  var starBreakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  var config = getConfig();
+  var classCfg = config.classScoreConfig || {};
+  var fullCreditCount = classCfg.fullCreditCount || 8;
+  var decayRate = classCfg.decayRate || 0.5;
 
+  // Dedupe by normalized player name; keep highest-bid record.
+  var byName = {};
   players.forEach(function(p) {
-    var mult = STAR_MULTIPLIERS[p.stars] || 0.3;
-    classScore += p.recruitScore * mult;
+    var key = normalizeNameForMatch(p.playerName);
+    if (!byName[key] || p.bidAmount > byName[key].bidAmount) {
+      byName[key] = p;
+    }
+  });
+  var unique = Object.keys(byName).map(function(k) { return byName[k]; });
+
+  // Rank by weighted contribution (recruitScore × starMultiplier) desc
+  unique.forEach(function(p) {
+    p._mult = STAR_MULTIPLIERS[p.stars] || 0.3;
+    p._weighted = p.recruitScore * p._mult;
+  });
+  unique.sort(function(a, b) { return b._weighted - a._weighted; });
+
+  var starBreakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  unique.forEach(function(p) {
     starBreakdown[p.stars] = (starBreakdown[p.stars] || 0) + 1;
+  });
+
+  // Top fullCreditCount get full credit; subsequent players decay
+  var classScore = 0;
+  unique.forEach(function(p, i) {
+    var rankDecay = i < fullCreditCount ? 1 : Math.pow(decayRate, i - fullCreditCount + 1);
+    classScore += p._weighted * rankDecay;
   });
 
   return { classScore: classScore, starBreakdown: starBreakdown };
