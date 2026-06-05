@@ -525,7 +525,6 @@ const BidTimeline = ({ copy, accentColor, teams, confAccent }) => {
                   </span>
                   <span className="ct-tl__team">
                     <TeamPill id={b.team} teams={teams} confAccent={confAccent} h={24} />
-                    <span className="ct-tl__owner">{t.name || t.owner || ''}</span>
                   </span>
                   <span className="ct-tl__bid">
                     <span className="ct-tl__amt">${Math.round(b.amount)}</span>
@@ -554,10 +553,7 @@ const CopyRow = ({ copy, accentColor, open, onToggle, teams, statusMeta, confAcc
       </span>
       <span className="ct-copyrow__leader">
         {copy.leader ? (
-          <React.Fragment>
-            <TeamPill id={copy.leader} teams={teams} confAccent={confAccent} h={22} />
-            <span className="ct-copyrow__owner">{(teams[copy.leader] || {}).name || ''}</span>
-          </React.Fragment>
+          <TeamPill id={copy.leader} teams={teams} confAccent={confAccent} h={22} />
         ) : <span className="ct-copyrow__dash">No bids yet</span>}
       </span>
       <span className="ct-copyrow__chev">{copy.bids.length ? (open ? '▾' : '▸') : ''}</span>

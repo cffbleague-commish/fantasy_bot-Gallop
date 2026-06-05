@@ -412,7 +412,6 @@ const LiveRow = ({ lot, players, teams, posColors, confAccent }) => {
       </div>
       <div className="lrow__bidder">
         <TeamPill id={lot.bidder} teams={teams} confAccent={confAccent} h={24} />
-        <span className="lrow__owner">{t.name || t.owner}</span>
       </div>
       <div className="lrow__bids">
         <span className="lrow__bids-val">{lot.bids || 0}</span>
@@ -477,7 +476,6 @@ const DoneRow = ({ lot, players, teams, posColors, confAccent }) => {
       <div className="drow__price">${Math.round(lot.price)}</div>
       <div className="drow__winner">
         <TeamPill id={lot.winner} teams={teams} confAccent={confAccent} h={24} />
-        <span className="drow__owner">{t.name}</span>
       </div>
     </div>
   );
@@ -621,11 +619,7 @@ const FundsRow = ({ t, totalRemain, maxRemain, confAccent }) => {
   return (
     <div className="frow frow--body">
       <div className="frow__team">
-        <TeamPill id={t.id} teams={{ [t.id]: t }} confAccent={confAccent} h={22} />
-        <span className="frow__team-id">
-          <span className="frow__team-name">{t.name}</span>
-          {t.owner && <span className="frow__owner">{t.owner}</span>}
-        </span>
+        <TeamPill id={t.id} teams={{ [t.id]: t }} confAccent={confAccent} h={26} />
       </div>
       <div className="frow__spent">
         <div className="meter"><div className="meter__fill" style={{ width: (t.budget ? (t.spent / t.budget * 100) : 0) + '%' }} /></div>
