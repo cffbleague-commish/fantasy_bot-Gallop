@@ -213,6 +213,17 @@ def _safe_float(value, default: float = 0.0) -> float:
         return default
 
 
+def _normalize_fid(value) -> str:
+    """Match the FranchiseLookup normalization: "0001" / "1.0" / 1 → "1"."""
+    if value is None:
+        return ""
+    try:
+        return str(int(float(value)))
+    except (TypeError, ValueError):
+        s = str(value).strip().lstrip("0")
+        return s or "0"
+
+
 def _board_lookup(year: Optional[int]) -> dict:
     """Map PlayerName → recruit metadata (score, stars, posRank, headshot)."""
     board = load_recruiting_board(year)
@@ -365,7 +376,7 @@ def _build_lots(df: pd.DataFrame) -> tuple[list, list]:
                 "player": _safe_str(pid),
                 "copy": {"n": copy_n, "of": copies_of},
                 "price": float(win.get("BidAmount", 0) or 0),
-                "winner": _safe_str(win.get("FranchiseID")),
+                "winner": _normalize_fid(win.get("FranchiseID")),
             })
         else:
             high_row = None
@@ -384,7 +395,7 @@ def _build_lots(df: pd.DataFrame) -> tuple[list, list]:
                 "player": _safe_str(pid),
                 "copy": {"n": copy_n, "of": copies_of},
                 "highBid": high_bid,
-                "bidder": _safe_str(high_row.get("FranchiseID")),
+                "bidder": _normalize_fid(high_row.get("FranchiseID")),
                 "bids": int(len(bid_rows)),
             })
 
@@ -406,7 +417,8 @@ def build_auction_board_payload(year: Optional[int]) -> dict:
     won_df = df[df["TransactionType"] == "AUCTION_WON"] if not df.empty else df
     spent_by_fid = {}
     if not won_df.empty:
-        agg = won_df.groupby("FranchiseID")["BidAmount"].sum()
+        normalized = won_df["FranchiseID"].apply(_normalize_fid)
+        agg = won_df.assign(_nfid=normalized).groupby("_nfid")["BidAmount"].sum()
         spent_by_fid = {str(k): float(v) for k, v in agg.items()}
 
     budgets = fetch_auction_budgets(year) if year else {}
@@ -549,7 +561,7 @@ def _build_copy_record(conf_id: str, session: int, group: pd.DataFrame) -> dict:
         amount = float(row.get("BidAmount", 0) or 0)
         ts_raw = _safe_str(row.get("Timestamp"))
         bids.append({
-            "team": _safe_str(row.get("FranchiseID")),
+            "team": _normalize_fid(row.get("FranchiseID")),
             "owner": "",
             "amount": amount,
             "ts": ts_raw,
@@ -566,7 +578,7 @@ def _build_copy_record(conf_id: str, session: int, group: pd.DataFrame) -> dict:
         max_bid = bids[-1]["amount"]
     if status == "sold" and not won_rows.empty:
         win = won_rows.iloc[-1]
-        leader = _safe_str(win.get("FranchiseID"))
+        leader = _normalize_fid(win.get("FranchiseID"))
         max_bid = float(win.get("BidAmount", 0) or 0)
 
     return {
@@ -615,7 +627,8 @@ def build_copy_tracker_payload(year: Optional[int]) -> dict:
     won_df = df[df["TransactionType"] == "AUCTION_WON"] if not df.empty else df
     spent_by_fid = {}
     if not won_df.empty:
-        agg = won_df.groupby("FranchiseID")["BidAmount"].sum()
+        normalized = won_df["FranchiseID"].apply(_normalize_fid)
+        agg = won_df.assign(_nfid=normalized).groupby("_nfid")["BidAmount"].sum()
         spent_by_fid = {str(k): float(v) for k, v in agg.items()}
     budgets = fetch_auction_budgets(year) if year else {}
 
