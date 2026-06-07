@@ -334,6 +334,28 @@ section.main > div.block-container,
 .pp-dpanel__band b { color: var(--gold); font-weight: 700; }
 .pp-dpanel__live-note { font-size: 11px; color: var(--fg-tertiary); }
 
+/* probability curve (inline SVG inside the pred zone) */
+.pp-pcurve__svg { display: block; width: 100%; height: auto; margin-top: 2px; }
+.pp-pcurve__axis { stroke: #2A2A2A; stroke-width: 1; }
+.pp-pcurve__proj { stroke-width: 1.5; }
+.pp-pcurve__tick {
+  fill: var(--fg-tertiary); font-family: var(--font-body);
+  font-size: 10px; font-variant-numeric: tabular-nums;
+}
+.pp-pcurve__tick.is-proj { fill: var(--gold-light); font-weight: 700; }
+.pp-pcurve__legend {
+  display: flex; flex-wrap: wrap; gap: 6px 12px;
+  padding: 4px 2px 0; margin-top: 2px;
+}
+.pp-pleg { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; }
+.pp-pleg__dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.pp-pleg__lbl { color: var(--fg-secondary); }
+.pp-pleg.is-primary .pp-pleg__lbl { color: var(--fg-primary); font-weight: 600; }
+.pp-pleg__val {
+  font-family: var(--font-display); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .pp-ldelta {
   white-space: nowrap; flex-shrink: 0;
   font-family: var(--font-display); font-weight: 700; font-size: 15px;

@@ -548,6 +548,152 @@ def _density(x, proj, sig_lo, sig_hi):
     return math.exp(-0.5 * ((x - proj) / s) ** 2)
 
 
+def _prob_curve_svg(scenarios: list[dict], W: int = 460, H: int = 130) -> str:
+    """Render the prediction probability curve as inline SVG.
+
+    Ported from pp-charts.jsx so the curve can live inside the detail-panel
+    HTML (matching the design) instead of being a separate Streamlit block.
+    Drops the interactive hover crosshair — pure SVG inside st.markdown can't
+    run JS — but keeps the three-scenario overlay + 80% band + tick labels +
+    legend.
+    """
+    if not scenarios:
+        return ""
+
+    primary = next((s for s in scenarios if s.get("primary")), scenarios[-1])
+
+    MG = {"l": 14, "r": 14, "t": 10, "b": 28}
+    iw = W - MG["l"] - MG["r"]
+    ih = H - MG["t"] - MG["b"]
+
+    floors = [s["proj"] - ZRANGE * s["sigLo"] for s in scenarios]
+    ceils = [s["proj"] + ZRANGE * s["sigHi"] for s in scenarios]
+    raw_min = max(0, min(floors))
+    raw_max = max(ceils)
+    pad = max(2, (raw_max - raw_min) * 0.06)
+    x_min = max(0, raw_min - pad)
+    x_max = raw_max + pad
+    if x_max <= x_min:
+        x_max = x_min + 1
+
+    def X(v):
+        return MG["l"] + ((v - x_min) / (x_max - x_min)) * iw
+
+    base_y = MG["t"] + ih
+
+    def Y(d):
+        return MG["t"] + (1 - d) * ih
+
+    p80_lo = max(1, round(primary["proj"] - Z80 * primary["sigLo"]))
+    p80_hi = round(primary["proj"] + Z80 * primary["sigHi"])
+
+    N = 110
+
+    def sample(sc):
+        pts = []
+        for i in range(N + 1):
+            x = x_min + (i / N) * (x_max - x_min)
+            pts.append((x, _density(x, sc["proj"], sc["sigLo"], sc["sigHi"])))
+        return pts
+
+    def line_of(pts):
+        return " ".join(
+            f"{'M' if i == 0 else 'L'}{X(q[0]):.1f} {Y(q[1]):.1f}"
+            for i, q in enumerate(pts)
+        )
+
+    prim_pts = sample(primary)
+    prim_line = line_of(prim_pts)
+    prim_area = f"{prim_line} L{X(x_max):.1f} {base_y} L{X(x_min):.1f} {base_y} Z"
+
+    band_pts = [q for q in prim_pts if p80_lo <= q[0] <= p80_hi]
+    band_path = ""
+    if band_pts:
+        inner = [
+            (p80_lo, _density(p80_lo, primary["proj"], primary["sigLo"], primary["sigHi"])),
+            *band_pts,
+            (p80_hi, _density(p80_hi, primary["proj"], primary["sigLo"], primary["sigHi"])),
+        ]
+        band_path = (
+            " ".join(
+                f"{'M' if i == 0 else 'L'}{X(q[0]):.1f} {Y(q[1]):.1f}"
+                for i, q in enumerate(inner)
+            )
+            + f" L{X(p80_hi):.1f} {base_y} L{X(p80_lo):.1f} {base_y} Z"
+        )
+
+    # Non-primary scenarios drawn as lines (with dash for "current")
+    other_lines = ""
+    for s in scenarios:
+        if s.get("primary"):
+            continue
+        line = line_of(sample(s))
+        dash = ' stroke-dasharray="5 4"' if s["kind"] == "current" else ""
+        other_lines += (
+            f'<path d="{line}" fill="none" stroke="{s["color"]}" '
+            f'stroke-width="1.6" stroke-opacity="0.85"{dash}/>'
+        )
+
+    # Tick labels at p80 bounds + projection point
+    ticks = sorted(set([
+        round(x_min + pad),
+        p80_lo,
+        round(primary["proj"]),
+        p80_hi,
+        round(x_max - pad),
+    ]))
+    tick_svg = "".join(
+        f'<text class="pp-pcurve__tick{" is-proj" if abs(v - primary["proj"]) < 0.5 else ""}" '
+        f'x="{X(v):.1f}" y="{base_y + 18}" text-anchor="middle">${v}</text>'
+        for v in ticks
+    )
+
+    proj_x = X(primary["proj"])
+    primary_color = primary["color"]
+    band_path_el = (
+        f'<path d="{band_path}" fill="url(#pp-pc-band)"/>' if band_path else ""
+    )
+
+    svg = (
+        f'<svg class="pp-pcurve__svg" viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid meet">'
+        f'<defs>'
+        f'<linearGradient id="pp-pc-area" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0%" stop-color="#5B9D6B" stop-opacity="0.16"/>'
+        f'<stop offset="100%" stop-color="#5B9D6B" stop-opacity="0"/>'
+        f'</linearGradient>'
+        f'<linearGradient id="pp-pc-band" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0%" stop-color="#6FB47F" stop-opacity="0.40"/>'
+        f'<stop offset="100%" stop-color="#5B9D6B" stop-opacity="0.05"/>'
+        f'</linearGradient>'
+        f'</defs>'
+        f'<line class="pp-pcurve__axis" x1="{MG["l"]}" y1="{base_y}" '
+        f'x2="{W - MG["r"]}" y2="{base_y}"/>'
+        f'<path d="{prim_area}" fill="url(#pp-pc-area)"/>'
+        f'{band_path_el}'
+        f'{other_lines}'
+        f'<path d="{prim_line}" fill="none" stroke="{primary_color}" stroke-width="2.4"/>'
+        f'<line class="pp-pcurve__proj" x1="{proj_x:.1f}" y1="{Y(1) - 4}" '
+        f'x2="{proj_x:.1f}" y2="{base_y}" style="stroke:{primary_color};"/>'
+        f'{tick_svg}'
+        f'</svg>'
+    )
+
+    # Legend below the SVG
+    legend_items = ""
+    for s in scenarios:
+        is_prim = s.get("primary")
+        legend_items += (
+            f'<span class="pp-pleg{" is-primary" if is_prim else ""}">'
+            f'<span class="pp-pleg__dot" style="background:{s["color"]};"></span>'
+            f'<span class="pp-pleg__lbl">{_esc(s["label"])}</span>'
+            f'<span class="pp-pleg__val" style="color:{s["color"]};">{_fmt_money(s["proj"])}</span>'
+            f'</span>'
+        )
+    legend = f'<div class="pp-pcurve__legend">{legend_items}</div>'
+
+    return svg + legend
+
+
 def _prob_curve_figure(scenarios: list[dict]):
     if not scenarios:
         return None
@@ -846,6 +992,8 @@ def _detail_panel_html(prospect: dict | None) -> str:
 
     note = _esc(p.get("live_note") or "—")
 
+    curve_svg = _prob_curve_svg(p["scenarios"])
+
     return f"""
     <div class="pp-dpanel-wrap">
       <div class="pp-dpanel">
@@ -908,6 +1056,7 @@ def _detail_panel_html(prospect: dict | None) -> str:
             {band_html}
           </div>
           <span class="pp-dpanel__live-note">{note}</span>
+          {curve_svg}
         </div>
       </div>
     </div>
@@ -1257,14 +1406,8 @@ def render() -> None:
         active_pid = selected["id"]
         st.session_state.pp_active_pid = active_pid
 
-    # --- Detail panel ---
+    # --- Detail panel (includes the probability curve as inline SVG) ---
     _html(_detail_panel_html(selected))
-
-    # --- Probability curve (Plotly, rendered inside the detail-panel column) ---
-    if selected:
-        fig = _prob_curve_figure(selected["scenarios"])
-        if fig is not None:
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     # --- Big Board ---
     year_label = "All Classes" if show_all_years else str(active_year_raw)
