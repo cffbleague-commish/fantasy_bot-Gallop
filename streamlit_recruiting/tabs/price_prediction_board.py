@@ -93,7 +93,12 @@ DEFAULT_SIG = {
 # ---------------------------------------------------------------------------
 
 def _html(html: str) -> None:
-    st.markdown(html, unsafe_allow_html=True)
+    # Strip per-line leading whitespace + blank lines. Streamlit pipes
+    # unsafe_allow_html through a markdown parser; any line indented 4+
+    # spaces becomes a code block, and blank lines inject <p> wrappers
+    # that break grid/flex layouts.
+    flat = "".join(line.lstrip() for line in html.splitlines() if line.strip())
+    st.markdown(flat, unsafe_allow_html=True)
 
 
 def _esc(s) -> str:
