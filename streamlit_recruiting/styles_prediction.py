@@ -38,6 +38,20 @@ section.main > div.block-container,
 .pp-frame { width: 100%; }
 .pp-frame * { box-sizing: border-box; }
 
+/* Kill Streamlit's default anchor styling on links we render. */
+.pp-infobtn, .pp-infobtn:hover, .pp-infobtn:visited,
+.pp-yearseg__btn, .pp-yearseg__btn:hover, .pp-yearseg__btn:visited,
+.pp-brow, .pp-brow:hover, .pp-brow:visited {
+  text-decoration: none !important;
+}
+/* Force the anchor's own color (children inherit by default — unless overridden
+   by a more specific class or inline style, both of which we want to preserve). */
+.pp-yearseg__btn { color: var(--fg-secondary) !important; }
+.pp-yearseg__btn.is-on { color: #0A0A0A !important; }
+.pp-brow { color: var(--fg-primary) !important; }
+.pp-brow__name { color: var(--fg-primary) !important; }
+.pp-brow__score { color: var(--fg-primary) !important; }
+
 /* ============================================================ TOP BAR */
 .pp-topbar {
   min-height: var(--topbar-h);
