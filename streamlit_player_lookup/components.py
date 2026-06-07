@@ -871,3 +871,407 @@ def render_award_badge(award_type: str, year: int | None = None) -> str:
         f'background:{bg};color:{fg};border:1px solid {border};'
         f'margin:2px 4px 2px 0;">{_esc(display_name)}{_esc(yr)}</span>'
     )
+
+
+# ---------------------------------------------------------------------------
+# Player Ledger renderers (pl-*)
+# Mirrors apps_script_recruiting/CFFB Design System/Player Ledger/ledger.css
+# ---------------------------------------------------------------------------
+
+
+_PL_STATUS_META = {
+    "rostered":    {"label": "Rostered"},
+    "redshirting": {"label": "Redshirting"},
+    "graduated":   {"label": "Graduated"},
+    "declared":    {"label": "Declared"},
+    "fa":          {"label": "Free Agent"},
+}
+
+
+def render_breadcrumb(crumbs: list[str], here: str) -> str:
+    """Render the "League / Player Ledger" breadcrumb."""
+    parts = []
+    for i, crumb in enumerate(crumbs):
+        if i > 0:
+            parts.append('<span class="pl-context__sep">/</span>')
+        parts.append(f'<span class="pl-context__crumb">{_esc(crumb)}</span>')
+    if crumbs:
+        parts.append('<span class="pl-context__sep">/</span>')
+    parts.append(f'<span class="pl-context__here">{_esc(here)}</span>')
+    return f'<div class="pl-context">{"".join(parts)}</div>'
+
+
+def render_panel_header(title: str, desc: str = "") -> str:
+    """Render the gold-gradient panel header with title and optional description."""
+    desc_html = f'<p class="pl-panel__desc">{_esc(desc)}</p>' if desc else ""
+    return (
+        f'<div class="pl-panel__head">'
+        f'  <div class="pl-panel__title">'
+        f'    <h1 class="pl-panel__h1">{_esc(title)}</h1>'
+        f'    {desc_html}'
+        f'  </div>'
+        f'</div>'
+    )
+
+
+def render_portrait(initials: str, position: str, size: str = "lg") -> str:
+    """Render the player portrait with position-colored top bar and initials."""
+    color = _POS_COLORS.get((position or "").upper(), "#5A5A5A")
+    cls = f"pl-portrait pl-portrait--{size}"
+    sil_svg = (
+        '<svg class="pl-portrait__sil" viewBox="0 0 24 24" fill="currentColor">'
+        '<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.31 0-8 1.66-8 5v3h16v-3'
+        'c0-3.34-4.69-5-8-5z"/></svg>'
+    )
+    return (
+        f'<div class="{cls}">'
+        f'  <span class="pl-portrait__bar" style="background:{color};"></span>'
+        f'  {sil_svg}'
+        f'  <span class="pl-portrait__initials">{_esc(initials)}</span>'
+        f'</div>'
+    )
+
+
+def render_stat_tile(label: str, value: str, hero: bool = False) -> str:
+    """Render a single stat tile for the hero rail."""
+    val_cls = "pl-stat__val is-hero" if hero else "pl-stat__val"
+    return (
+        f'<div class="pl-stat">'
+        f'  <span class="pl-stat__label">{_esc(label)}</span>'
+        f'  <span class="{val_cls}">{_esc(value)}</span>'
+        f'</div>'
+    )
+
+
+def render_hero_profile(
+    name: str,
+    position: str,
+    college: str = "",
+    meta: str = "",
+    composite: str = "",
+    stats: list[dict] | None = None,
+    accent_color: str = "#C9A227",
+    initials: str = "",
+) -> str:
+    """Render the full hero profile block.
+
+    Args:
+        name: Player name (uppercase, large display).
+        position: Position code (QB/RB/WR/TE) — drives portrait bar color + chip.
+        college: Optional college / school text under the name row.
+        meta: Optional meta line (NFL team, draft class, etc.).
+        composite: Optional composite/rating text shown next to stars.
+        stats: List of {label, value, hero (optional)} dicts (4 tiles ideal).
+        accent_color: Hex color used for the hero radial gradient (--accent).
+        initials: Pre-computed initials for the portrait.
+    """
+    if not initials:
+        parts = [p for p in str(name).split() if p]
+        initials = "".join(p[0] for p in parts[:2]).upper()
+
+    portrait = render_portrait(initials, position, size="lg")
+    pos_chip = (
+        f'<span class="pl-poschip">{_esc(position)}</span>' if position else ""
+    )
+    college_html = (
+        f'<span class="pl-hero__college">{_esc(college)}</span>' if college else ""
+    )
+    composite_html = (
+        f'<span class="pl-hero__composite">{_esc(composite)}</span>' if composite else ""
+    )
+    meta_html = (
+        f'<div class="pl-hero__meta">{_esc(meta)}</div>' if meta else ""
+    )
+
+    stats_html = ""
+    if stats:
+        tiles = "".join(
+            render_stat_tile(s["label"], s["value"], hero=s.get("hero", False))
+            for s in stats
+        )
+        stats_html = (
+            f'<div class="pl-hero__rail">'
+            f'  <div class="pl-hero__stats">{tiles}</div>'
+            f'</div>'
+        )
+
+    return (
+        f'<div class="pl-hero" style="--accent:{accent_color};">'
+        f'  {portrait}'
+        f'  <div class="pl-hero__id">'
+        f'    <div class="pl-hero__tags">{pos_chip}{college_html}</div>'
+        f'    <div class="pl-hero__namerow">'
+        f'      <h2 class="pl-hero__name">{_esc(name)}</h2>'
+        f'    </div>'
+        f'    <div class="pl-hero__stars">{composite_html}</div>'
+        f'    {meta_html}'
+        f'  </div>'
+        f'  {stats_html}'
+        f'</div>'
+    )
+
+
+def render_copies_meter(counts: dict, total: int | None = None) -> str:
+    """Render the segmented copies meter.
+
+    Args:
+        counts: dict with keys rostered / redshirting / graduated / declared / fa.
+        total: Optional total for the count label. Defaults to sum(counts).
+    """
+    order = ["rostered", "redshirting", "graduated", "declared", "fa"]
+    counts = {k: int(counts.get(k, 0)) for k in order}
+    total_n = total if total is not None else sum(counts.values())
+
+    segments = "".join(
+        f'<span class="pl-meter__seg is-{k}" style="flex:{counts[k]};"></span>'
+        for k in order if counts[k] > 0
+    )
+    legend = "".join(
+        f'<span><i class="is-{k}"></i>{_esc(_PL_STATUS_META[k]["label"])} {counts[k]}</span>'
+        for k in order
+    )
+
+    return (
+        f'<div class="pl-meter">'
+        f'  <div class="pl-meter__head">'
+        f'    <span class="pl-meter__title">Copies</span>'
+        f'    <span class="pl-meter__count"><b>{counts["rostered"] + counts["redshirting"]}</b> active of <b>{total_n}</b> total</span>'
+        f'  </div>'
+        f'  <div class="pl-meter__bar">{segments}</div>'
+        f'  <div class="pl-meter__legend">{legend}</div>'
+        f'</div>'
+    )
+
+
+def render_eligibility_strip(years: list[dict]) -> str:
+    """Render the horizontal eligibility year strip.
+
+    Args:
+        years: list of {season, label, state, sub (optional)} dicts.
+               state in {"used","rs","rs-med","current","pre"}.
+    """
+    if not years:
+        return ""
+    cells = []
+    for y in years:
+        state = y.get("state", "pre")
+        is_current = state == "current"
+        cell_cls = "pl-eligyr"
+        if is_current:
+            cell_cls += " pl-eligyr--current"
+        season = str(y.get("season", ""))
+        label = str(y.get("label", ""))
+        sub = str(y.get("sub", ""))
+        sub_html = f'<div class="pl-eligyr__sub">{_esc(sub)}</div>' if sub else ""
+        cells.append(
+            f'<div class="{cell_cls}">'
+            f'  <div class="pl-eligyr__season">{_esc(season)}</div>'
+            f'  <div class="pl-eligyr__rail"><span class="pl-eligyr__dot is-{state}"></span></div>'
+            f'  <div class="pl-eligyr__lbl">{_esc(label)}</div>'
+            f'  {sub_html}'
+            f'</div>'
+        )
+
+    return (
+        f'<div class="pl-elig">'
+        f'  <div class="pl-elig__head">'
+        f'    <span class="pl-elig__title">Eligibility</span>'
+        f'  </div>'
+        f'  <div class="pl-eligstrip">{"".join(cells)}</div>'
+        f'</div>'
+    )
+
+
+def render_conference_group_header(
+    conf: str,
+    total: int,
+    active: int,
+    retired: int,
+    fa: int,
+    accent_color: str = "#C9A227",
+) -> str:
+    """Render the conference group header with accent edge and roll chips."""
+    roll = []
+    if active:
+        roll.append(f'<span class="pl-confroll__chip is-active">{active} Active</span>')
+    if retired:
+        roll.append(f'<span class="pl-confroll__chip is-retired">{retired} Retired</span>')
+    if fa:
+        roll.append(f'<span class="pl-confroll__chip is-fa">{fa} FA</span>')
+    return (
+        f'<div class="pl-confgroup__head">'
+        f'  <span class="pl-confgroup__edge"></span>'
+        f'  <span class="pl-confgroup__name">{_esc(conf)}</span>'
+        f'  <span class="pl-confgroup__count">{total} Copies</span>'
+        f'  <span class="pl-confroll">{"".join(roll)}</span>'
+        f'</div>'
+    )
+
+
+def render_status_chip(status: str, size: str = "md") -> str:
+    """Render a status chip (rostered / redshirting / graduated / declared / fa)."""
+    s = status.lower()
+    meta = _PL_STATUS_META.get(s, {"label": status})
+    size_cls = " pl-status--sm" if size == "sm" else ""
+    return (
+        f'<span class="pl-status pl-status--{s}{size_cls}">'
+        f'  <span class="pl-status__dot"></span>'
+        f'  <span class="pl-status__label">{_esc(meta["label"])}</span>'
+        f'</span>'
+    )
+
+
+def render_money(amount: float | int | None, hero: bool = False) -> str:
+    """Render a price ("$42") or "on the wire" placeholder when amount is None/0."""
+    if amount is None or (isinstance(amount, (int, float)) and amount <= 0):
+        return '<span class="pl-money pl-money--wire">on the wire</span>'
+    cls = "pl-money pl-money--hero" if hero else "pl-money"
+    return f'<span class="{cls}">${int(amount)}</span>'
+
+
+def render_pl_owner(
+    team_name: str,
+    owner_handle: str = "",
+    logo_url: str = "",
+    stacked: bool = False,
+    size: str = "md",
+) -> str:
+    """Render the owner block with team mark + name + monospace handle.
+
+    Pass team_name=None / empty to render the "Free agent" dashed pill.
+    """
+    if not team_name or str(team_name).lower() in ("free agent", "fa"):
+        return (
+            f'<span class="pl-owner pl-owner--fa">'
+            f'  <span class="pl-owner__fa">Free agent</span>'
+            f'</span>'
+        )
+    logo_cls = "pl-owner__logo" + (" pl-owner__logo--lg" if size == "lg" else "")
+    logo_html = (
+        f'<img class="{logo_cls}" src="{_esc(logo_url)}" alt="" />'
+        if logo_url else ""
+    )
+    handle_html = (
+        f'<span class="pl-owner__handle">{_esc(owner_handle)}</span>'
+        if owner_handle else ""
+    )
+    stacked_cls = " pl-owner--stacked" if stacked else ""
+    return (
+        f'<span class="pl-owner{stacked_cls}">'
+        f'  {logo_html}'
+        f'  <span class="pl-owner__id">'
+        f'    <span class="pl-owner__team">{_esc(team_name)}</span>'
+        f'    {handle_html}'
+        f'  </span>'
+        f'</span>'
+    )
+
+
+def render_honors_star(count: int) -> str:
+    """Render the gold honors star with award count."""
+    if not count or count <= 0:
+        return ""
+    return f'<span class="pl-honors">★ {int(count)}</span>'
+
+
+def render_pl_tag(text: str, variant: str) -> str:
+    """Render a small tag (won / rs / rs-med / award / graduate / drop / declared)."""
+    return f'<span class="pl-tag pl-tag--{variant}">{_esc(text)}</span>'
+
+
+def render_transaction_timeline(events: list[dict]) -> str:
+    """Render the vertical transaction timeline.
+
+    Args:
+        events: list of dicts with keys:
+            season (str/int), variant (won/rs/rs-med/award/drop/graduate/fa),
+            owner_html (pre-rendered owner block), detail_html (price/tag),
+            note (optional plain text).
+    """
+    if not events:
+        return (
+            '<div class="pl-tl"><div class="pl-tl__sub">'
+            'No transactions recorded.</div></div>'
+        )
+    items = []
+    last = len(events) - 1
+    for i, e in enumerate(events):
+        variant = e.get("variant", "won")
+        season = str(e.get("season", ""))
+        owner_html = e.get("owner_html", "")
+        detail_html = e.get("detail_html", "")
+        note = e.get("note", "")
+        note_html = (
+            f'<div class="pl-tlitem__note">{_esc(note)}</div>' if note else ""
+        )
+        is_last_cls = " is-last" if i == last else ""
+        items.append(
+            f'<li class="pl-tlitem{is_last_cls}">'
+            f'  <div class="pl-tlitem__rail">'
+            f'    <span class="pl-tlitem__dot is-{variant}"></span>'
+            f'  </div>'
+            f'  <div class="pl-tlitem__body">'
+            f'    <div class="pl-tlitem__main">'
+            f'      <span class="pl-tlitem__season">{_esc(season)}</span>'
+            f'      <span class="pl-tlitem__owner">{owner_html}</span>'
+            f'      <span class="pl-tlitem__detail">{detail_html}</span>'
+            f'    </div>'
+            f'    {note_html}'
+            f'  </div>'
+            f'</li>'
+        )
+
+    return (
+        f'<div class="pl-tl">'
+        f'  <div class="pl-tl__head">'
+        f'    <span class="pl-tl__title">Transaction Ledger</span>'
+        f'    <span class="pl-tl__sub">{len(events)} events</span>'
+        f'  </div>'
+        f'  <ol class="pl-tl__list">{"".join(items)}</ol>'
+        f'</div>'
+    )
+
+
+# Emoji status dots — used inside st.expander labels, which only accept text
+# (no SVG/HTML). Approximates the colored status dot from the visual design.
+_PL_STATUS_EMOJI = {
+    "rostered":    "\U0001F7E2",  # green circle
+    "redshirting": "\U0001F7E1",  # yellow circle
+    "graduated":   "\U0001F7E4",  # brown circle
+    "declared":    "\U0001F7E0",  # orange circle
+    "fa":          "\U000026AB",  # black circle
+}
+
+
+def render_copy_row_label_md(
+    copy_n: int,
+    status: str,
+    owner: str,
+    elig_short: str = "",
+    price: float | int | None = None,
+    since_year: int | None = None,
+    honors: int = 0,
+) -> str:
+    """Build a markdown string for use as st.expander label.
+
+    Streamlit expander labels accept markdown text but not HTML, so emoji dots
+    and bold/italic are the only formatting available.
+    """
+    dot = _PL_STATUS_EMOJI.get(status.lower(), "⚫")
+    label = _PL_STATUS_META.get(status.lower(), {}).get("label", status).upper()
+    parts = [f"**Copy {copy_n}**", f"{dot} {label}", owner or "Free agent"]
+    if elig_short:
+        parts.append(elig_short)
+    if price and price > 0:
+        since = f" since {int(since_year)}" if since_year else ""
+        parts.append(f"${int(price)}{since}")
+    elif since_year:
+        parts.append(f"FA since {int(since_year)}")
+    if honors and honors > 0:
+        parts.append(f"★ {int(honors)}")
+    return "  ·  ".join(parts)
+
+
+def render_section_label(text: str) -> str:
+    """Render a section label with gold accent bar."""
+    return f'<div class="pl-section-label">{_esc(text)}</div>'

@@ -32,8 +32,7 @@ with st.sidebar:
     st.caption(f"League Year: {league_year}")
     st.caption("Data refreshes every 5 minutes.")
 
-# --- App title ---
-st.markdown("# CFFB Player Lookup")
+# --- App caption (panel header lives inside the view) ---
 st.caption("Player information is manually updated at select times of the year. Direct any questions to the commissioner.")
 
 # --- Main view ---

@@ -123,6 +123,17 @@ AWARD_DISPLAY_NAMES = {
     "National_WR/TE": "Fred Biletnikoff Award",
 }
 
+# Conference accent colors — drive `--accent` CSS variable on hero gradients,
+# conference group headers, and copy row accent bars.
+CONFERENCE_ACCENT_COLORS = {
+    "ACC": "#013CA6",
+    "B10": "#0088CE",
+    "B12": "#E81E2C",
+    "P12": "#003F87",
+    "SEC": "#1A3668",
+    "AAC": "#002855",
+}
+
 
 def get_league_year() -> int:
     """Get the current league year from Streamlit secrets, falling back to calendar year."""

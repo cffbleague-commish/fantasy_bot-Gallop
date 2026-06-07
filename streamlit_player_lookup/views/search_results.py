@@ -9,6 +9,7 @@ import streamlit as st
 import pandas as pd
 
 from config import POSITIONS, CONFERENCES
+from components import _html, render_breadcrumb, render_panel_header
 from data.sheets import (
     load_player_copies_enriched,
     load_franchise_lookup,
@@ -19,6 +20,17 @@ from data.sheets import (
 
 def render():
     """Render the search bar, filters, results table, and detail view."""
+
+    # --- Breadcrumb + panel chrome ---
+    _html(render_breadcrumb(["League"], "Player Ledger"))
+    _html(
+        '<div class="pl-panel">'
+        + render_panel_header(
+            "Player Ledger",
+            "Search and inspect every player copy across all six conferences.",
+        )
+        + '<div style="padding:18px 24px 4px;">'
+    )
 
     # --- Search bar ---
     search = st.text_input(
@@ -67,6 +79,7 @@ def render():
 
     if unique_players.empty:
         st.info("No player data available. Check your Google Sheet connection.")
+        _html("</div></div>")
         return
 
     # --- Apply filters ---
@@ -97,6 +110,7 @@ def render():
     # --- Results table ---
     if filtered.empty:
         st.info("No players match your search / filters.")
+        _html("</div></div>")
         return
 
     st.caption(f"{len(filtered)} player{'s' if len(filtered) != 1 else ''} found")
@@ -145,3 +159,6 @@ def render():
                         conference_filter if conference_filter != "All" else None
                     ),
                 )
+
+    # --- Close panel chrome ---
+    _html("</div></div>")
