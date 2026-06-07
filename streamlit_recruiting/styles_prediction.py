@@ -523,6 +523,61 @@ section.main > div.block-container,
   padding: 36px; text-align: center; color: var(--fg-tertiary); font-size: 13px;
 }
 
+/* ============================================================ ROW CLICK OVERLAY
+   Each board row is a st.container(key="pp_row_<id>") holding the row HTML +
+   an invisible st.button. The button overlays the row and captures clicks
+   via Streamlit's widget protocol — no browser navigation, instant rerun. */
+[class*="st-key-pp_board_wrap"] {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+  margin: 0 18px;
+}
+/* Kill Streamlit's default vertical gap between row containers. */
+[class*="st-key-pp_board_wrap"] [data-testid="stVerticalBlock"] {
+  gap: 0 !important;
+}
+[class*="st-key-pp_row_"] {
+  position: relative;
+}
+/* The button container fills the row and sits above it. */
+[class*="st-key-pp_row_"] [data-testid="stElementContainer"]:has(button) {
+  position: absolute !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 5;
+}
+[class*="st-key-pp_row_"] [data-testid="stButton"] {
+  width: 100%;
+  height: 100%;
+}
+[class*="st-key-pp_row_"] [data-testid="stButton"] > button {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  opacity: 0;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+[class*="st-key-pp_row_"] [data-testid="stButton"] > button:focus,
+[class*="st-key-pp_row_"] [data-testid="stButton"] > button:focus-visible {
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+/* Container hover surfaces the row hover state (gold left bar + bg shift). */
+[class*="st-key-pp_row_"]:hover .pp-brow {
+  background: var(--bg-surface-hover);
+}
+[class*="st-key-pp_row_"]:hover .pp-brow::before {
+  transform: scaleY(1);
+}
+
 /* ============================================================ RESPONSIVE */
 @media (max-width: 1080px) {
   .pp-dpanel {

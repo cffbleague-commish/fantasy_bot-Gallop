@@ -914,66 +914,58 @@ def _detail_panel_html(prospect: dict | None) -> str:
     """
 
 
-def _big_board_html(
-    rows: list[dict],
-    active_pid: str,
-    params: dict,
-    show_year: bool,
-    year_label: str,
-) -> str:
-    """Render the Big Board table as HTML anchor rows."""
-    if not rows:
-        body = '<div class="pp-tbl__empty">No prospects match your filters.</div>'
-    else:
-        items = []
-        for i, p in enumerate(rows, start=1):
-            year_chip = (
-                f'<span class="pp-brow__year">’{str(p["year"])[-2:]}</span>'
-                if show_year and p.get("year") else ""
-            )
-            active = " is-active" if p["id"] == active_pid else ""
-            items.append(f"""
-              <a class="pp-brow{active}" href="{_row_link(p["id"], params)}" target="_self">
-                <span class="pp-brow__rank">{i}</span>
-                <span class="pp-brow__shot">{_shot_html(p, 42)}</span>
-                <span class="pp-brow__id">
-                  <span class="pp-brow__name">{_esc(p["name"])}</span>
-                  <span class="pp-brow__meta">
-                    {_pos_tag_html(p.get("position", ""))}
-                    <span class="pp-brow__posrank">{_esc(p.get("position", ""))}{p.get("pos_rank") or ""}</span>
-                    {year_chip}
-                    {_college_logo_html(p.get("college", ""), 18)}
-                    <span class="pp-brow__school">{_esc(p.get("college", ""))}</span>
-                  </span>
-                </span>
-                <span class="pp-brow__stars">{_stars_html(p["stars"], 13)}</span>
-                <span class="pp-brow__score">{p["score"]:.1f}</span>
-                <span class="pp-brow__proj">
-                  <span class="pp-brow__proj-val">{_fmt_money(p["proj"])}</span>
-                  <span class="pp-brow__proj-range">{_fmt_money(p["floor"])}–{_fmt_money(p["ceil"])}</span>
-                </span>
-              </a>
-            """)
-        body = "".join(items)
-
+def _board_chrome_html(year_label: str, row_count: int) -> str:
+    """Render the board page header + column header (no rows)."""
     return f"""
     <div class="pp-page">
       <div class="pp-board-head">
         <span class="pp-board-head__title">{_esc(year_label)} Big Board</span>
-        <span class="pp-board-head__meta">{len(rows)} prospects · ranked by composite · projections per copy</span>
+        <span class="pp-board-head__meta">{row_count} prospects · ranked by composite · projections per copy</span>
         <span class="pp-board-head__hint">Tap a prospect to load the prediction above</span>
       </div>
-      <div class="pp-tbl">
-        <div class="pp-bhead">
-          <span>#</span>
-          <span></span>
-          <span>Prospect</span>
-          <span>Stars</span>
-          <span class="t-r">Comp</span>
-          <span class="t-r">Projected</span>
-        </div>
-        <div class="pp-board__rows">{body}</div>
+      <div class="pp-bhead">
+        <span>#</span>
+        <span></span>
+        <span>Prospect</span>
+        <span>Stars</span>
+        <span class="t-r">Comp</span>
+        <span class="t-r">Projected</span>
       </div>
+    </div>
+    """
+
+
+def _row_html(p: dict, rank: int, show_year: bool, active: bool) -> str:
+    """Render one Big Board row as a non-clickable div.
+
+    Click handling is supplied by an overlaid st.button — see render() for
+    the container/button pairing.
+    """
+    year_chip = (
+        f'<span class="pp-brow__year">’{str(p["year"])[-2:]}</span>'
+        if show_year and p.get("year") else ""
+    )
+    active_cls = " is-active" if active else ""
+    return f"""
+    <div class="pp-brow{active_cls}">
+      <span class="pp-brow__rank">{rank}</span>
+      <span class="pp-brow__shot">{_shot_html(p, 42)}</span>
+      <span class="pp-brow__id">
+        <span class="pp-brow__name">{_esc(p["name"])}</span>
+        <span class="pp-brow__meta">
+          {_pos_tag_html(p.get("position", ""))}
+          <span class="pp-brow__posrank">{_esc(p.get("position", ""))}{p.get("pos_rank") or ""}</span>
+          {year_chip}
+          {_college_logo_html(p.get("college", ""), 18)}
+          <span class="pp-brow__school">{_esc(p.get("college", ""))}</span>
+        </span>
+      </span>
+      <span class="pp-brow__stars">{_stars_html(p["stars"], 13)}</span>
+      <span class="pp-brow__score">{p["score"]:.1f}</span>
+      <span class="pp-brow__proj">
+        <span class="pp-brow__proj-val">{_fmt_money(p["proj"])}</span>
+        <span class="pp-brow__proj-range">{_fmt_money(p["floor"])}–{_fmt_money(p["ceil"])}</span>
+      </span>
     </div>
     """
 
@@ -1252,12 +1244,18 @@ def render() -> None:
         prospects.sort(key=lambda p: p["name"].lower())
     # else: "Big board rank" — already sorted
 
-    # Active selection
-    active_pid = qp.get("pp_pid", "")
+    # Active selection: session_state is the source of truth so clicks are
+    # instant (no browser navigation). Deep-link compatibility: if a URL
+    # arrives with ?pp_pid=, seed session_state from it on first run.
+    if "pp_active_pid" not in st.session_state:
+        st.session_state.pp_active_pid = qp.get("pp_pid", "")
+
+    active_pid = st.session_state.pp_active_pid
     selected = next((p for p in prospects if p["id"] == active_pid), None)
     if selected is None and prospects:
         selected = prospects[0]
         active_pid = selected["id"]
+        st.session_state.pp_active_pid = active_pid
 
     # --- Detail panel ---
     _html(_detail_panel_html(selected))
@@ -1269,20 +1267,22 @@ def render() -> None:
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     # --- Big Board ---
-    if show_all_years:
-        year_label = "All Classes"
-    else:
-        year_label = str(active_year_raw)
-    # Persist current selections in row hrefs
-    row_params = {k: v for k, v in qp.items() if k != "pp_pid"}
-    if show_all_years:
-        row_params["pp_year"] = "all"
-    else:
-        row_params["pp_year"] = str(active_year_raw)
-    _html(_big_board_html(
-        rows=prospects,
-        active_pid=active_pid,
-        params=row_params,
-        show_year=show_all_years,
-        year_label=year_label,
-    ))
+    year_label = "All Classes" if show_all_years else str(active_year_raw)
+
+    _html(_board_chrome_html(year_label, len(prospects)))
+
+    if not prospects:
+        _html('<div class="pp-tbl__empty">No prospects match your filters.</div>')
+        return
+
+    # Each row is a Streamlit container whose ".st-key-pp_row_<id>" class
+    # we target in CSS to overlay an invisible button. The button captures
+    # clicks via Streamlit's widget protocol (instant rerun, no page reload).
+    with st.container(key="pp_board_wrap"):
+        for i, p in enumerate(prospects, start=1):
+            is_active = p["id"] == active_pid
+            with st.container(key=f"pp_row_{p['id']}"):
+                _html(_row_html(p, i, show_all_years, is_active))
+                if st.button(" ", key=f"pp_btn_{p['id']}", use_container_width=True):
+                    st.session_state.pp_active_pid = p["id"]
+                    st.rerun()
