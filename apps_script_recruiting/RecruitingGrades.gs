@@ -3,7 +3,7 @@
  * Evaluates team performance in rookie auctions with three metrics:
  *   1. Individual Player Auction Grade — letter grade per player (bid vs predicted/league avg)
  *   2. Recruiting Class Score — numeric per team (star-weighted recruit scores)
- *   3. Overall Auction Grade — letter grade per team (talent + efficiency blend)
+ *   3. Overall Auction Grade — letter grade per team (year-relative z-score on classScore)
  *
  * Reads from AuctionData (actual bids) and RecruitingBoard (predictions/ratings).
  */
@@ -135,10 +135,8 @@ function generateRecruitingGradesForYear(year) {
     return f;
   });
 
-  // --- 5. Compute overall grades (z-score vs historical class scores) ---
-  var historicalScores = loadHistoricalClassScores(yearStr, config);
-  Logger.log("  Historical benchmark classes loaded: " + historicalScores.length);
-  calcOverallGrades(franchises, historicalScores);
+  // --- 5. Compute overall grades (year-relative z-score on classScore) ---
+  calcOverallGrades(franchises);
 
   // Log summary
   franchises.sort(function(a, b) { return b.classScore - a.classScore; });
@@ -279,32 +277,6 @@ function loadFranchiseLookup(config) {
   });
 
   return lookup;
-}
-
-/**
- * Load historical class scores from the RecruitingGrades sheet for z-score benchmarking.
- * Excludes the year currently being graded (it will be replaced).
- *
- * @param {String} currentYearStr - Year being graded (excluded from results)
- * @param {Object} config - From getConfig()
- * @returns {Array<Number>} - Class scores from prior years
- */
-function loadHistoricalClassScores(currentYearStr, config) {
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName(config.sheets.recruitingGrades);
-  if (!sheet) return [];
-
-  var data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return [];
-
-  var scores = [];
-  data.slice(1).forEach(function(row) {
-    if (String(row[0]) === currentYearStr) return;
-    var classScore = Number(row[3]) || 0;
-    if (classScore > 0) scores.push(classScore);
-  });
-
-  return scores;
 }
 
 /**
@@ -494,13 +466,13 @@ function calcClassScore(players) {
 /**
  * Calculate overall auction grades for all franchises.
  * Class rank and conf rank are year-relative.
- * Overall grade uses z-score against historical class scores for bell-curve distribution.
+ * Overall grade uses a year-relative z-score on classScore so the letter
+ * reflects performance vs peers that year, not vs historical class strength.
  * Talent/efficiency percentiles are kept for analyst write-up grades.
  *
  * @param {Array} franchises - Array of franchise objects with classScore and avgSavings
- * @param {Array<Number>} historicalScores - Class scores from prior years
  */
-function calcOverallGrades(franchises, historicalScores) {
+function calcOverallGrades(franchises) {
   if (franchises.length === 0) return;
 
   var n = franchises.length;
@@ -547,15 +519,16 @@ function calcOverallGrades(franchises, historicalScores) {
     }
   });
 
-  // --- Overall grade: z-score against historical class scores ---
+  // --- Overall grade: year-relative z-score ---
+  // Grade reflects how each team performed vs its peers THIS year, not vs
+  // historical class strength. Raw classScore stays absolute for cross-year
+  // comparison.
   var currentScores = franchises.map(function(f) { return f.classScore; });
-  var allScores = historicalScores.concat(currentScores);
-
-  var mean = allScores.reduce(function(s, v) { return s + v; }, 0) / allScores.length;
-  var variance = allScores.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0) / allScores.length;
+  var mean = currentScores.reduce(function(s, v) { return s + v; }, 0) / currentScores.length;
+  var variance = currentScores.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0) / currentScores.length;
   var sd = Math.sqrt(variance);
 
-  Logger.log("  Historical + current pool: " + allScores.length + " classes, mean=" +
+  Logger.log("  Year pool: " + currentScores.length + " classes, mean=" +
     mean.toFixed(1) + ", sd=" + sd.toFixed(1));
 
   franchises.forEach(function(f) {
