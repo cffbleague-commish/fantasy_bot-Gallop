@@ -559,7 +559,8 @@ def _build_copy_record(conf_id: str, session: int, group: pd.DataFrame) -> dict:
     timeline = pd.concat([init_rows, bid_rows]).sort_values("Timestamp")
     for i, (_, row) in enumerate(timeline.iterrows()):
         amount = float(row.get("BidAmount", 0) or 0)
-        ts_raw = _safe_str(row.get("Timestamp"))
+        ts_val = row.get("Timestamp")
+        ts_raw = ts_val.strftime("%Y-%m-%d %H:%M:%S") if pd.notna(ts_val) else ""
         bids.append({
             "team": _normalize_fid(row.get("FranchiseID")),
             "owner": "",

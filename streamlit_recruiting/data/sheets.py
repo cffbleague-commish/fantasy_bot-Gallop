@@ -376,7 +376,11 @@ def load_live_auction() -> pd.DataFrame:
     df["IsRookie"] = df.iloc[:, c["IsRookie"]].astype(str).str.upper() == "TRUE"
     df["TransactionType"] = df.iloc[:, c["TransactionType"]].astype(str) if c["TransactionType"] < len(df.columns) else "AUCTION_WON"
     df["Note"] = df.iloc[:, c["Note"]].astype(str).replace("", pd.NA) if c["Note"] < len(df.columns) else ""
-    df["Timestamp"] = df.iloc[:, c["Timestamp"]].astype(str)
+    # Google Sheets reformats the Apps Script-written "yyyy-MM-dd HH:mm:ss" into the
+    # spreadsheet's locale display (often 12-hour "M/d/yyyy h:mm:ss AM/PM"), which
+    # breaks lexicographic sort. Parse to real datetimes so every downstream
+    # sort_values("Timestamp") is chronological.
+    df["Timestamp"] = pd.to_datetime(df.iloc[:, c["Timestamp"]], errors="coerce")
 
     # Read precomputed PlayerCopyID (from Apps Script assignRookieCopyIds) if present.
     # Derives CopySession integer from the ordinal suffix (e.g. "PC-17502-AAC-1" → 1).
