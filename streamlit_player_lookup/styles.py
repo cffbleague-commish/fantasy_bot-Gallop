@@ -231,12 +231,13 @@ GLOBAL_CSS = """
 [data-testid="stDataFrame"]:hover [data-testid="stDataFrameResizeHandle"] {
   opacity: 0.5;
 }
-/* Column config: image columns — larger, centered headshots */
+/* Column config: image columns — natural-aspect pill (logos, not headshots) */
 [data-testid="stDataFrame"] img {
-  border-radius: 50% !important;
-  width: 40px !important;
-  height: 40px !important;
-  object-fit: cover !important;
+  border-radius: 4px !important;
+  height: 28px !important;
+  width: auto !important;
+  max-width: 80px !important;
+  object-fit: contain !important;
 }
 /* Toolbar (search, download) */
 [data-testid="stElementToolbar"] {
@@ -1329,11 +1330,13 @@ GLOBAL_CSS = """
 .pl-owner { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
 .pl-owner--stacked { flex-direction: column; align-items: flex-start; gap: 7px; }
 .pl-owner__logo {
-  width: 32px; height: 32px; border-radius: 50%;
+  height: 26px; width: auto; max-width: 96px;
+  border-radius: 4px;
   background: var(--bg-surface-elev); border: 1px solid var(--border);
-  object-fit: cover; flex-shrink: 0;
+  object-fit: contain; padding: 2px 4px;
+  flex-shrink: 0;
 }
-.pl-owner__logo--lg { width: 48px; height: 48px; }
+.pl-owner__logo--lg { height: 38px; max-width: 132px; }
 .pl-owner__id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .pl-owner__team {
   font: 600 13px/1.1 var(--font-body); color: var(--fg-primary); white-space: nowrap;

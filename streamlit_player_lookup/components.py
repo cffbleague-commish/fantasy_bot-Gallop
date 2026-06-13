@@ -469,10 +469,11 @@ def render_team_logo(
     """
     if logo_url and str(logo_url).startswith("http"):
         img_height = "30px" if size == "sm" else "48px" if size == "md" else "60px"
+        max_w = int(img_height.rstrip("px")) * 3
         return (
             f'<img src="{logo_url}" alt="{_esc(abbreviation)}" '
-            f'style="height:{img_height};'
-            f'border-radius:50%;object-fit:cover;" '
+            f'style="height:{img_height};border-radius:4px;'
+            f'max-width:{max_w}px;object-fit:contain;" '
             f'onerror="this.style.display=\'none\'">'
         )
 
