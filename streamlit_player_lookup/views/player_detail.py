@@ -1,12 +1,9 @@
 """
 Player Detail View — renders the full detail panel for a selected player.
 
-Visual language mirrors the Player Ledger design system:
-- Hero profile (portrait + name + stats rail)
-- Copies meter (segmented status bar)
-- Conference-grouped expandable copy rows
-- Vertical transaction timeline inside each copy
-- Awards section with section labels
+Visual language mirrors the Player Ledger design system, rendered as
+pure HTML (no st.expander / no st.dataframe) so it matches the auction
+tool's CFFB style rather than Streamlit defaults.
 """
 
 import streamlit as st
@@ -24,7 +21,8 @@ from components import (
     render_honors_star,
     render_pl_tag,
     render_transaction_timeline,
-    render_copy_row_label_md,
+    render_pl_row,
+    render_awards_table,
     render_section_label,
 )
 from config import (
@@ -57,7 +55,6 @@ def render_player_detail(
 
     fran_name_map: dict[str, str] = {}
     fran_logo_map: dict[str, str] = {}
-    fran_conf_map: dict[str, str] = {}
     if not franchise_df.empty:
         fran_name_map = dict(zip(franchise_df["FranchiseID"], franchise_df["TeamName"]))
         fran_logo_map = {
@@ -65,7 +62,13 @@ def render_player_detail(
             for _, row in franchise_df.iterrows()
             if row.get("Logo") and str(row["Logo"]).startswith("http")
         }
-        fran_conf_map = dict(zip(franchise_df["FranchiseID"], franchise_df["Conference"]))
+
+    # Pre-load transaction log ONCE, then filter per-copy at render time.
+    txn_df = load_transaction_log()
+    player_txns = (
+        txn_df[txn_df["PlayerID"] == mfl_player_id].copy()
+        if not txn_df.empty else pd.DataFrame()
+    )
 
     # --- Hero profile ---
     _render_player_hero(player_copies, fran_name_map)
@@ -99,17 +102,15 @@ def render_player_detail(
         '</div>'
     )
 
-    # --- Conference-grouped copies ---
-    _render_conference_groups(display_copies, fran_name_map, fran_logo_map)
-
-    st.markdown("---")
+    # --- Conference-grouped copies (pure HTML, no Streamlit chrome) ---
+    _render_conference_groups(display_copies, player_txns, fran_name_map, fran_logo_map)
 
     # --- Awards section ---
     _render_awards_section(mfl_player_id, fran_logo_map)
 
 
 # ---------------------------------------------------------------------------
-# Status classification (drives the copies meter + status chips)
+# Status classification
 # ---------------------------------------------------------------------------
 
 
@@ -122,7 +123,6 @@ def _classify_copy_status(copy: pd.Series, fran_name_map: dict) -> str:
     if not has_owner:
         return "fa"
 
-    # Graduated: inactive + eligibility exhausted (or explicit retention decision)
     elig_used = copy.get("EligibilityYearsUsed")
     retention = str(copy.get("RetentionDecision", "")).strip().lower()
     if not active and (
@@ -131,13 +131,9 @@ def _classify_copy_status(copy: pd.Series, fran_name_map: dict) -> str:
     ):
         return "graduated"
 
-    # Declared early
     if copy.get("DeclaredEarly"):
         return "declared"
 
-    # Currently redshirting — use most recent RS year matching the current
-    # league year as a heuristic. If RS years aren't trackable, treat any
-    # RS-used + active copy as rostered (RS will surface in the timeline).
     trad_yr = copy.get("TraditionalRedshirtYear")
     med_yr = copy.get("MedicalRedshirtYear")
     try:
@@ -177,7 +173,6 @@ def _render_player_hero(player_copies: pd.DataFrame, fran_name_map: dict):
         meta_parts.append(f"Draft Class {created_str}")
     meta = " · ".join(meta_parts)
 
-    # Build stats for the rail — same data as the original KPI row.
     total = len(player_copies)
     active = int(player_copies["Active"].sum())
     rostered = sum(
@@ -196,8 +191,6 @@ def _render_player_hero(player_copies: pd.DataFrame, fran_name_map: dict):
         {"label": "Honors", "value": str(total_awards)},
     ]
 
-    # Pick the dominant conference's accent color as the hero accent, if any
-    # one conference holds rostered copies. Otherwise fall back to gold.
     rostered_by_conf = (
         player_copies[player_copies["Active"]]
         .groupby("Conference")
@@ -236,17 +229,17 @@ def _render_copies_meter(player_copies: pd.DataFrame, fran_name_map: dict):
 
 
 # ---------------------------------------------------------------------------
-# Conference-grouped copies
+# Conference-grouped copies (pure HTML)
 # ---------------------------------------------------------------------------
 
 
 def _render_conference_groups(
     display_copies: pd.DataFrame,
+    player_txns: pd.DataFrame,
     fran_name_map: dict,
     fran_logo_map: dict,
 ):
-    """Render each conference as its own group with expandable copy rows."""
-    # Sort conferences in the canonical order, then anything else alphabetically.
+    """Emit each conference's group + copy rows as a single HTML block."""
     present_confs = list(display_copies["Conference"].unique())
     ordered = [c for c in CONFERENCES if c in present_confs]
     ordered += sorted(c for c in present_confs if c not in ordered)
@@ -257,7 +250,6 @@ def _render_conference_groups(
             continue
         conf_copies = conf_copies.sort_values("PlayerCopyID").reset_index(drop=True)
 
-        # Roll-up counts for this conference's header chips
         total = len(conf_copies)
         active = 0
         retired = 0
@@ -272,26 +264,37 @@ def _render_conference_groups(
                 fa += 1
 
         accent_color = CONFERENCE_ACCENT_COLORS.get(conf, "#C9A227")
-
-        # Open the conference group wrapper (sets --accent on descendants).
-        _html(
-            f'<div class="pl-confgroup" style="--accent:{accent_color};">'
-            f'{render_conference_group_header(conf, total, active, retired, fa, accent_color)}'
-            f'<div class="pl-confgroup__body">'
+        header_html = render_conference_group_header(
+            conf, total, active, retired, fa, accent_color
         )
 
+        rows_html_parts = []
         for _, c in conf_copies.iterrows():
-            _render_copy_expander(c, fran_name_map, fran_logo_map)
+            rows_html_parts.append(
+                _build_copy_row_html(c, player_txns, fran_name_map, fran_logo_map)
+            )
+        rows_html = "".join(rows_html_parts)
 
-        _html("</div></div>")
+        _html(
+            f'<div class="pl-confgroup" style="--accent:{accent_color};">'
+            f'{header_html}'
+            f'<div class="pl-confgroup__body">{rows_html}</div>'
+            f'</div>'
+        )
 
 
-def _render_copy_expander(
+# ---------------------------------------------------------------------------
+# Per-copy row + body builders (return HTML strings)
+# ---------------------------------------------------------------------------
+
+
+def _build_copy_row_html(
     copy: pd.Series,
+    player_txns: pd.DataFrame,
     fran_name_map: dict,
     fran_logo_map: dict,
-):
-    """Render one copy as a Streamlit expander row with timeline inside."""
+) -> str:
+    """Build a single pl-row HTML block for one copy (summary + collapsed body)."""
     status = _classify_copy_status(copy, fran_name_map)
     fid = str(copy.get("CurrentFranchiseID", ""))
     owner_name = (
@@ -299,41 +302,57 @@ def _render_copy_expander(
         if fid and fid not in ("", "0", "nan")
         else ""
     )
+    owner_logo = fran_logo_map.get(fid, "") if fid and fid not in ("", "0", "nan") else ""
+    owner_html = render_pl_owner(owner_name, "", owner_logo, stacked=False, size="md")
 
-    # Eligibility short form e.g. "FR 1/4"
     elig_used = copy.get("EligibilityYearsUsed")
-    elig_short = ""
-    if pd.notna(elig_used):
-        elig_short = f"{int(elig_used)}/4 yrs"
+    elig_short = f"{int(elig_used)}/4 yrs" if pd.notna(elig_used) else ""
 
-    # Honors (national + all-conference) for this specific copy.
+    # Money in the summary: most recent AUCTION_WON BidAmount for this copy.
+    copy_id = str(copy.get("PlayerCopyID", ""))
+    money_html = _latest_auction_money_html(player_txns, copy_id)
+
     nat = int(copy.get("NationalAwards") or 0)
     conf_aw = int(copy.get("AllConferenceAwards") or 0)
     honors = nat + conf_aw
 
-    # Parse copy index out of the PlayerCopyID for the label
-    copy_id = str(copy.get("PlayerCopyID", ""))
-    copy_n = _extract_copy_number(copy_id)
-
-    label = render_copy_row_label_md(
-        copy_n=copy_n,
-        status=status,
-        owner=owner_name or "Free agent",
-        elig_short=elig_short,
-        price=None,  # Acquired price needs transaction lookup; omit from label
-        since_year=None,
-        honors=honors,
+    body_html = _build_copy_body_html(
+        copy, status, player_txns, fran_name_map, fran_logo_map
     )
 
-    with st.expander(label, expanded=False):
-        _render_copy_detail_inner(copy, status, fran_name_map, fran_logo_map)
+    return render_pl_row(
+        card_id=copy_id or f"copy-{_extract_copy_number(copy_id)}",
+        copy_n=_extract_copy_number(copy_id),
+        status=status,
+        owner_html=owner_html,
+        elig_short=elig_short,
+        money_html=money_html,
+        honors=honors,
+        body_html=body_html,
+    )
+
+
+def _latest_auction_money_html(player_txns: pd.DataFrame, copy_id: str) -> str:
+    """Return the most recent auction bid amount as a money pill, or ''."""
+    if player_txns.empty:
+        return ""
+    rows = player_txns[
+        (player_txns["CopyAssigned"] == copy_id)
+        & (player_txns["Type"] == "AUCTION_WON")
+    ]
+    if rows.empty:
+        return ""
+    rows = rows.copy()
+    rows["_sort_ts"] = pd.to_datetime(rows["Timestamp"], errors="coerce")
+    rows = rows.sort_values("_sort_ts", ascending=False)
+    bid = rows.iloc[0].get("BidAmount")
+    if pd.isna(bid) or float(bid) <= 0:
+        return ""
+    return render_money(float(bid))
 
 
 def _extract_copy_number(copy_id: str) -> int:
-    """Extract a small integer copy number from the PlayerCopyID for display.
-
-    PlayerCopyIDs vary in format; we try to find the last numeric segment.
-    """
+    """Extract a small integer copy number from the PlayerCopyID for display."""
     if not copy_id:
         return 0
     digits = []
@@ -350,18 +369,14 @@ def _extract_copy_number(copy_id: str) -> int:
         return 0
 
 
-# ---------------------------------------------------------------------------
-# Copy detail (inside each expander)
-# ---------------------------------------------------------------------------
-
-
-def _render_copy_detail_inner(
+def _build_copy_body_html(
     copy: pd.Series,
     status: str,
+    player_txns: pd.DataFrame,
     fran_name_map: dict,
     fran_logo_map: dict,
-):
-    """Render the copy detail block + vertical transaction timeline."""
+) -> str:
+    """Build the inner panel HTML (facts grid + transaction timeline)."""
     fid = str(copy.get("CurrentFranchiseID", ""))
     owner_name = (
         fran_name_map.get(fid, "")
@@ -371,16 +386,12 @@ def _render_copy_detail_inner(
     owner_logo = fran_logo_map.get(fid, "") if fid and fid not in ("", "0", "nan") else ""
     copy_n = _extract_copy_number(str(copy.get("PlayerCopyID", "")))
 
-    # --- Header row: copy #, status, owner ---
     status_chip = render_status_chip(status)
-    owner_html = render_pl_owner(owner_name, "", owner_logo, stacked=False, size="md")
+    owner_block = render_pl_owner(owner_name, "", owner_logo, stacked=False, size="md")
 
-    # --- Facts grid ---
-    facts = []
-
+    # Facts
     elig_used = copy.get("EligibilityYearsUsed")
     elig_val = f"{int(elig_used)}/4 yrs" if pd.notna(elig_used) else "—"
-    facts.append({"label": "Eligibility", "value": elig_val})
 
     trad_yr = copy.get("TraditionalRedshirtYear")
     med_yr = copy.get("MedicalRedshirtYear")
@@ -391,12 +402,11 @@ def _render_copy_detail_inner(
     if copy.get("MedicalRedshirtUsed"):
         yr = f" {int(med_yr)}" if pd.notna(med_yr) else ""
         rs_tags.append(render_pl_tag(f"MED RS{yr}", "rs-med"))
-    rs_val_html = " ".join(rs_tags) if rs_tags else '<span style="color:var(--fg-tertiary);">None</span>'
-
     if copy.get("DeclaredEarly"):
         dec_year = copy.get("DeclarationYear")
         dec_str = f" {int(dec_year)}" if pd.notna(dec_year) else ""
-        rs_val_html += " " + render_pl_tag(f"DECLARED{dec_str}", "declared")
+        rs_tags.append(render_pl_tag(f"DECLARED{dec_str}", "declared"))
+    rs_val_html = " ".join(rs_tags) if rs_tags else '<span style="color:var(--fg-tertiary);">None</span>'
 
     retention = str(copy.get("RetentionDecision", "")).strip()
     if retention and retention.lower() != "nan":
@@ -418,49 +428,47 @@ def _render_copy_detail_inner(
         f"{honors_total} ({nat} national, {conf_aw} all-conf)" if honors_total else "—"
     )
 
-    facts.extend(
-        [
-            {"label": "Redshirt", "value_html": rs_val_html},
-            {"label": "Retention", "value": ret_val},
-            {"label": "Path", "value": ret_path_val},
-            {"label": "Count", "value": ret_count_val},
-            {"label": "Honors", "value": honors_val},
-        ]
-    )
-
+    facts = [
+        {"label": "Eligibility", "value_html": _esc(elig_val)},
+        {"label": "Status Tags", "value_html": rs_val_html},
+        {"label": "Retention", "value_html": _esc(ret_val)},
+        {"label": "Path", "value_html": _esc(ret_path_val)},
+        {"label": "Decision Count", "value_html": _esc(ret_count_val)},
+        {"label": "Honors", "value_html": _esc(honors_val)},
+    ]
     facts_html = "".join(
         (
             f'<div class="pl-fact">'
             f'  <span class="pl-fact__label">{_esc(f["label"])}</span>'
-            f'  <span class="pl-fact__val">{f.get("value_html") or _esc(f.get("value", "—"))}</span>'
+            f'  <span class="pl-fact__val">{f["value_html"]}</span>'
             f'</div>'
         )
         for f in facts
     )
 
-    _html(
-        f'<div class="pl-copy-detail">'
-        f'  <div class="pl-copy-detail__head">'
-        f'    <span class="pl-copy-detail__copy">Copy {copy_n}</span>'
-        f'    {status_chip}'
-        f'    <span class="pl-copy-detail__owner">{owner_html}</span>'
-        f'    {render_honors_star(honors_total)}'
-        f'  </div>'
-        f'  <div class="pl-copy-detail__facts">{facts_html}</div>'
-        f'</div>'
-    )
-
-    # --- Vertical transaction timeline ---
-    _render_copy_timeline(
-        mfl_player_id=str(copy.get("MFL_Player_ID", "")),
+    timeline_html = _build_timeline_html(
         copy_id=str(copy.get("PlayerCopyID", "")),
+        player_txns=player_txns,
         fran_name_map=fran_name_map,
         fran_logo_map=fran_logo_map,
     )
 
+    return (
+        f'<div class="pl-copy-detail">'
+        f'  <div class="pl-copy-detail__head">'
+        f'    <span class="pl-copy-detail__copy">Copy {copy_n}</span>'
+        f'    {status_chip}'
+        f'    <span class="pl-copy-detail__owner">{owner_block}</span>'
+        f'    {render_honors_star(honors_total)}'
+        f'  </div>'
+        f'  <div class="pl-copy-detail__facts">{facts_html}</div>'
+        f'  {timeline_html}'
+        f'</div>'
+    )
+
 
 # ---------------------------------------------------------------------------
-# Transaction timeline (vertical) for a copy
+# Transaction timeline builder (returns HTML)
 # ---------------------------------------------------------------------------
 
 
@@ -472,27 +480,20 @@ _TXN_VARIANT_MAP = {
 }
 
 
-def _render_copy_timeline(
-    mfl_player_id: str,
+def _build_timeline_html(
     copy_id: str,
+    player_txns: pd.DataFrame,
     fran_name_map: dict,
     fran_logo_map: dict,
-):
-    """Pull TransactionLog rows for this copy and render the vertical timeline."""
-    txn_df = load_transaction_log()
-    if txn_df.empty:
-        _html(render_transaction_timeline([]))
-        return
+) -> str:
+    """Filter the pre-loaded transaction log for one copy and return timeline HTML."""
+    if player_txns.empty:
+        return render_transaction_timeline([])
 
-    copy_txns = txn_df[
-        (txn_df["PlayerID"] == mfl_player_id)
-        & (txn_df["CopyAssigned"] == copy_id)
-    ].copy()
+    copy_txns = player_txns[player_txns["CopyAssigned"] == copy_id].copy()
     if copy_txns.empty:
-        _html(render_transaction_timeline([]))
-        return
+        return render_transaction_timeline([])
 
-    # Sort chronological (oldest → newest) for top-to-bottom timeline
     copy_txns["_sort_ts"] = pd.to_datetime(copy_txns["Timestamp"], errors="coerce")
     copy_txns = copy_txns.sort_values("_sort_ts", ascending=True).drop(columns=["_sort_ts"])
 
@@ -501,7 +502,6 @@ def _render_copy_timeline(
         txn_type = str(t.get("Type", "") or "")
         variant = _TXN_VARIANT_MAP.get(txn_type, "won")
 
-        # Year — fall back to first 4 chars of timestamp if Year col is blank.
         season = t.get("Year")
         if pd.notna(season):
             season_str = str(int(season))
@@ -518,7 +518,6 @@ def _render_copy_timeline(
         flogo = fran_logo_map.get(fid, "") if fid not in ("", "0", "nan") else ""
         owner_html = render_pl_owner(fname, "", flogo, stacked=False, size="md")
 
-        # Detail: money tag + transaction-type tag.
         bid = t.get("BidAmount")
         bid_html = ""
         if pd.notna(bid) and float(bid) > 0:
@@ -527,20 +526,14 @@ def _render_copy_timeline(
         type_label = TRANSACTION_TYPE_LABELS.get(txn_type, txn_type or "Event")
         tag_variant = {
             "AUCTION_WON": "won",
-            "FREE_AGENT": "rs",  # subdued
+            "FREE_AGENT": "rs",
             "IR": "drop",
             "TAXI": "rs",
-        }.get(txn_type, "won")
-        # Use plain label color, not "won" gold bg, for non-auction events:
-        if txn_type != "AUCTION_WON":
-            tag_variant = "rs" if txn_type == "TAXI" else (
-                "drop" if txn_type == "IR" else "graduate"
-            )
+        }.get(txn_type, "graduate")
         tag_html = render_pl_tag(type_label, tag_variant)
 
         detail_html = f"{bid_html} {tag_html}".strip()
         action = str(t.get("Action", "") or "")
-        # Only show 'action' as note if it adds real info beyond the type label
         note = action if action and action.lower() not in ("", "nan", type_label.lower()) else ""
 
         events.append(
@@ -553,16 +546,16 @@ def _render_copy_timeline(
             }
         )
 
-    _html(render_transaction_timeline(events))
+    return render_transaction_timeline(events)
 
 
 # ---------------------------------------------------------------------------
-# Awards section
+# Awards section (pure HTML, no st.dataframe)
 # ---------------------------------------------------------------------------
 
 
 def _render_awards_section(mfl_player_id: str, fran_logo_map: dict):
-    """Render awards across all copies for this player."""
+    """Render awards across all copies for this player as HTML tables."""
     awards_df = load_awards()
     if awards_df.empty:
         return
@@ -572,12 +565,6 @@ def _render_awards_section(mfl_player_id: str, fran_logo_map: dict):
         return
 
     _html(render_section_label("Awards"))
-
-    award_col_config = {
-        "Team": st.column_config.ImageColumn("Team", width="small"),
-        "Score": st.column_config.NumberColumn("Score", format="%.2f"),
-        "Points": st.column_config.NumberColumn("Points", format="%.2f"),
-    }
 
     national = player_awards[
         ~player_awards["AwardType"].str.startswith("AllConf_", na=False)
@@ -590,52 +577,66 @@ def _render_awards_section(mfl_player_id: str, fran_logo_map: dict):
 
     if not national.empty:
         _html(render_section_label("National Awards"))
-        nat_display = national[
-            ["Year", "AwardType", "Conference", "AwardScore", "StarterPoints"]
-        ].copy()
-        nat_display["AwardType"] = nat_display["AwardType"].map(
-            AWARD_DISPLAY_NAMES
-        ).fillna(nat_display["AwardType"])
-        if "FranchiseID" in national.columns:
-            nat_display["Team"] = national["FranchiseID"].map(fran_logo_map).fillna("")
-        nat_display.rename(
-            columns={
-                "AwardType": "Award",
-                "AwardScore": "Score",
-                "StarterPoints": "Points",
-                "Conference": "Conf",
-            },
-            inplace=True,
-        )
-        st.dataframe(
-            nat_display,
-            column_config=award_col_config,
-            hide_index=True,
-            use_container_width=True,
+        rows = []
+        for _, a in national.sort_values("Year", ascending=False).iterrows():
+            award_name = AWARD_DISPLAY_NAMES.get(a["AwardType"], a["AwardType"])
+            fid = str(a.get("FranchiseID", ""))
+            logo = fran_logo_map.get(fid, "")
+            rows.append(
+                {
+                    "Year": int(a["Year"]) if pd.notna(a["Year"]) else "",
+                    "Award": award_name,
+                    "Conf": a.get("Conference", ""),
+                    "Team": logo,
+                    "Score": f"{a['AwardScore']:.2f}" if pd.notna(a.get("AwardScore")) else "",
+                    "Points": f"{a['StarterPoints']:.2f}" if pd.notna(a.get("StarterPoints")) else "",
+                }
+            )
+        _html(
+            render_awards_table(
+                rows,
+                [
+                    {"key": "Year", "label": "Year", "type": "year"},
+                    {"key": "Award", "label": "Award", "type": "text"},
+                    {"key": "Conf", "label": "Conf", "type": "text"},
+                    {"key": "Team", "label": "Team", "type": "logo"},
+                    {"key": "Score", "label": "Score", "type": "num"},
+                    {"key": "Points", "label": "Points", "type": "num"},
+                ],
+            )
         )
 
     if not all_conf.empty:
         _html(render_section_label("All-Conference Awards"))
-        ac_display = all_conf[
-            ["Year", "AwardType", "Conference", "Rank", "AwardScore", "StarterPoints"]
-        ].copy()
-        ac_display["AwardType"] = ac_display["AwardType"].apply(_format_allconf_award)
-        if "FranchiseID" in all_conf.columns:
-            ac_display["Team"] = all_conf["FranchiseID"].map(fran_logo_map).fillna("")
-        ac_display.rename(
-            columns={
-                "AwardType": "Award",
-                "AwardScore": "Score",
-                "StarterPoints": "Points",
-                "Conference": "Conf",
-            },
-            inplace=True,
-        )
-        st.dataframe(
-            ac_display,
-            column_config=award_col_config,
-            hide_index=True,
-            use_container_width=True,
+        rows = []
+        for _, a in all_conf.sort_values(["Year", "Rank"], ascending=[False, True]).iterrows():
+            award_name = _format_allconf_award(a["AwardType"])
+            fid = str(a.get("FranchiseID", ""))
+            logo = fran_logo_map.get(fid, "")
+            rows.append(
+                {
+                    "Year": int(a["Year"]) if pd.notna(a["Year"]) else "",
+                    "Award": award_name,
+                    "Conf": a.get("Conference", ""),
+                    "Rank": str(int(a["Rank"])) if pd.notna(a.get("Rank")) else "",
+                    "Team": logo,
+                    "Score": f"{a['AwardScore']:.2f}" if pd.notna(a.get("AwardScore")) else "",
+                    "Points": f"{a['StarterPoints']:.2f}" if pd.notna(a.get("StarterPoints")) else "",
+                }
+            )
+        _html(
+            render_awards_table(
+                rows,
+                [
+                    {"key": "Year", "label": "Year", "type": "year"},
+                    {"key": "Award", "label": "Award", "type": "text"},
+                    {"key": "Conf", "label": "Conf", "type": "text"},
+                    {"key": "Rank", "label": "Rank", "type": "num"},
+                    {"key": "Team", "label": "Team", "type": "logo"},
+                    {"key": "Score", "label": "Score", "type": "num"},
+                    {"key": "Points", "label": "Points", "type": "num"},
+                ],
+            )
         )
 
 

@@ -1276,3 +1276,92 @@ def render_copy_row_label_md(
 def render_section_label(text: str) -> str:
     """Render a section label with gold accent bar."""
     return f'<div class="pl-section-label">{_esc(text)}</div>'
+
+
+_PL_CHEV_SVG = (
+    '<svg class="pl-row__chev" viewBox="0 0 20 20" fill="none" '
+    'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    '<path d="M5 7.5l5 5 5-5" stroke="currentColor" stroke-width="2" '
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>'
+)
+
+
+def render_pl_row(
+    *,
+    card_id: str,
+    copy_n: int,
+    status: str,
+    owner_html: str,
+    elig_short: str,
+    money_html: str,
+    honors: int,
+    body_html: str,
+    open_by_default: bool = False,
+) -> str:
+    """Render one copy as a pure-CSS disclosure row (no Streamlit chrome).
+
+    Mirrors the auction tool's .cffb-disc pattern: a hidden checkbox toggles
+    a label's siblings, animating grid-template-rows for smooth open/close.
+    No reruns, no Streamlit expander border. All 12 copies for a player can
+    be emitted in a single st.markdown call.
+    """
+    checked = " checked" if open_by_default else ""
+    status_chip = render_status_chip(status, size="sm")
+    honors_html = render_honors_star(honors) if honors and honors > 0 else ""
+    cid = _esc(card_id)
+    return (
+        f'<div class="pl-row">'
+        f'<input type="checkbox" class="pl-row__toggle" id="pl-row-{cid}"{checked}>'
+        f'<label class="pl-row__summary" for="pl-row-{cid}">'
+        f'  <span class="pl-row__n">Copy {int(copy_n)}{honors_html}</span>'
+        f'  <span class="pl-row__status">{status_chip}</span>'
+        f'  <span class="pl-row__owner">{owner_html}</span>'
+        f'  <span class="pl-row__elig">{_esc(elig_short)}</span>'
+        f'  <span class="pl-row__money">{money_html}</span>'
+        f'  {_PL_CHEV_SVG}'
+        f'</label>'
+        f'<div class="pl-row__panel">'
+        f'  <div class="pl-row__body">{body_html}</div>'
+        f'</div>'
+        f'</div>'
+    )
+
+
+def render_awards_table(rows: list[dict], columns: list[dict]) -> str:
+    """Render an HTML awards table (replaces st.dataframe).
+
+    Args:
+        rows: list of dicts, one per award row. Keys match column `key` values.
+        columns: list of {key, label, type} dicts where type in
+                 {"text","year","num","logo"}.
+    """
+    head = "".join(f'<th>{_esc(c["label"])}</th>' for c in columns)
+    body_rows = []
+    for r in rows:
+        cells = []
+        for c in columns:
+            ctype = c.get("type", "text")
+            val = r.get(c["key"], "")
+            if ctype == "logo":
+                if val:
+                    cells.append(
+                        f'<td class="is-logo"><img src="{_esc(val)}" alt="" '
+                        f'onerror="this.style.display=\'none\'"/></td>'
+                    )
+                else:
+                    cells.append('<td class="is-logo"></td>')
+            elif ctype == "year":
+                cells.append(f'<td class="is-year">{_esc(val)}</td>')
+            elif ctype == "num":
+                cells.append(f'<td class="is-num">{_esc(val)}</td>')
+            elif ctype == "html":
+                cells.append(f'<td>{val}</td>')
+            else:
+                cells.append(f'<td>{_esc(val)}</td>')
+        body_rows.append(f'<tr>{"".join(cells)}</tr>')
+    return (
+        f'<table class="pl-awtable">'
+        f'<thead><tr>{head}</tr></thead>'
+        f'<tbody>{"".join(body_rows)}</tbody>'
+        f'</table>'
+    )

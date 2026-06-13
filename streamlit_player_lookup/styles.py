@@ -1253,31 +1253,115 @@ GLOBAL_CSS = """
 .pl-confroll__chip.is-fa      { color: var(--fg-tertiary); }
 .pl-confgroup__body { display: flex; flex-direction: column; gap: 8px; }
 
-/* ---------- Streamlit expander → pl-row look ------------- */
-.pl-confgroup__body [data-testid="stExpander"] {
-  border: 1px solid var(--border) !important;
-  border-radius: 8px !important;
-  background: var(--bg-surface) !important;
+/* ---------- pl-row disclosure (pure-CSS collapsible) ------ */
+/* Mirrors the auction tool's .cffb-disc pattern: hidden checkbox + label
+   click handler, smooth grid-template-rows open/close animation, no
+   Streamlit expander chrome. */
+.pl-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
-  transition: border-color var(--dur-fast), background var(--dur-fast);
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
-.pl-confgroup__body [data-testid="stExpander"]::before {
+.pl-row:hover { border-color: var(--border-strong); }
+.pl-row::before {
   content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
   background: var(--accent); transform: scaleY(0); transform-origin: center;
-  transition: transform var(--dur-fast); z-index: 1;
+  transition: transform var(--dur-fast) var(--ease-out); z-index: 1;
 }
-.pl-confgroup__body [data-testid="stExpander"]:hover::before { transform: scaleY(1); }
-.pl-confgroup__body [data-testid="stExpander"]:has(details[open])::before { transform: scaleY(1); }
-.pl-confgroup__body [data-testid="stExpander"] summary {
-  background: transparent;
-  padding: 14px 16px;
+.pl-row:hover::before { transform: scaleY(1); }
+
+.pl-row__toggle {
+  position: absolute; width: 1px; height: 1px;
+  opacity: 0; pointer-events: none;
+}
+.pl-row__toggle:checked ~ .pl-row__summary { background: var(--bg-surface-hover); }
+.pl-row__toggle:checked ~ .pl-row__summary .pl-row__chev { transform: rotate(180deg); color: var(--gold); }
+.pl-row__toggle:checked ~ .pl-row__panel { grid-template-rows: 1fr; }
+.pl-row:has(.pl-row__toggle:checked)::before { transform: scaleY(1); }
+.pl-row:has(.pl-row__toggle:checked) { border-color: var(--accent); }
+
+.pl-row__summary {
+  display: grid;
+  grid-template-columns: 64px auto minmax(0,1fr) auto auto 18px;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.pl-row__summary:hover { background: var(--bg-surface-hover); }
+.pl-row__n {
+  font: 700 13px/1 var(--font-display); text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--fg-primary); white-space: nowrap;
+}
+.pl-row__status { justify-self: start; }
+.pl-row__owner { min-width: 0; }
+.pl-row__elig { font: 600 11px/1 var(--font-body); color: var(--fg-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pl-row__money { white-space: nowrap; }
+.pl-row__chev {
+  width: 14px; height: 14px; color: var(--fg-tertiary);
+  transition: transform var(--dur-base) var(--ease-out), color var(--dur-fast);
+  display: flex; align-items: center; justify-content: center;
+}
+.pl-row__summary:hover .pl-row__chev { color: var(--fg-secondary); }
+
+.pl-row__panel {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-slow) var(--ease-out);
+}
+.pl-row__body { overflow: hidden; min-height: 0; }
+
+/* ---------- HTML awards table ----------------------------- */
+.pl-awtable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
   font-family: var(--font-body);
+  margin-bottom: 16px;
 }
-.pl-confgroup__body [data-testid="stExpander"] summary:hover { background: var(--bg-surface-hover); }
-.pl-confgroup__body [data-testid="stExpander"] summary svg { color: var(--gold-light); }
-.pl-confgroup__body [data-testid="stExpander"] details[open] {
-  border-top: 1px solid var(--border);
+.pl-awtable thead th {
+  text-align: left;
+  font: 600 10px/1 var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  padding: 11px 14px;
+  white-space: nowrap;
+}
+.pl-awtable tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.pl-awtable tbody tr:last-child td { border-bottom: 0; }
+.pl-awtable tbody tr:hover td { background: var(--bg-surface-hover); }
+.pl-awtable td.is-year {
+  font: 700 13px/1 var(--font-display); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums; width: 56px;
+}
+.pl-awtable td.is-num {
+  font-variant-numeric: tabular-nums; text-align: right; color: var(--fg-secondary);
+  width: 70px;
+}
+.pl-awtable td.is-logo { width: 64px; }
+.pl-awtable td.is-logo img {
+  height: 24px; width: auto; max-width: 60px;
+  border-radius: 4px; object-fit: contain;
+  background: var(--bg-surface-elev); border: 1px solid var(--border);
+  padding: 2px 4px;
 }
 
 /* ---------- Status chip ----------------------------------- */

@@ -25,6 +25,7 @@
   window.__CFFB_ENHANCER_LOADED = true;
 
   var LOG_PREFIX = "[CFFB]";
+  console.log(LOG_PREFIX, "Enhancer loaded, readyState:", document.readyState);
 
   // ==================================================================
   //  UNICODE CHARACTERS (safe in any source encoding)
@@ -823,6 +824,7 @@
 
   function enhanceFreeAgentPage(commish) {
     var tables = document.querySelectorAll("table.report");
+    console.log(LOG_PREFIX, "enhanceFreeAgentPage — tables found:", tables.length);
     for (var t = 0; t < tables.length; t++) {
       var table     = tables[t];
       var headerRow = table.querySelector("tr");
@@ -837,8 +839,10 @@
         if (hText.indexOf("Copy 2") !== -1) c2Idx = h;
       }
       if (c1Idx === -1 && c2Idx === -1) continue;
+      console.log(LOG_PREFIX, "enhanceFreeAgentPage — Copy columns at:", c1Idx, c2Idx);
 
       var rows = table.querySelectorAll("tr.oddtablerow, tr.eventablerow");
+      console.log(LOG_PREFIX, "enhanceFreeAgentPage — data rows:", rows.length);
       for (var i = 0; i < rows.length; i++) {
         var row   = rows[i];
         var cells = row.querySelectorAll("td");
@@ -889,19 +893,50 @@
   // ==================================================================
 
   function enhanceOrphanCells() {
+    var commish = isCommissioner();
+
+    // Pass 1: class-based sweep (contractstatus / contractinfo cells)
     var cells = document.querySelectorAll(
       "td.contractstatus:not([data-cffb-enhanced]), td.contractinfo:not([data-cffb-enhanced])"
     );
-    if (!cells.length) return;
-
-    var commish = isCommissioner();
-
     for (var i = 0; i < cells.length; i++) {
       var td = cells[i];
       var row = td.closest("tr");
       var playerLink = row ? row.querySelector("a[class*='position_']") : null;
       var position = extractPosition(playerLink);
       enhanceCellSimple(td, position, commish);
+    }
+
+    // Pass 2: header-indexed sweep (tables with "Copy 1"/"Copy 2" columns)
+    // Catches free agent listing and any other page with plain <td> copy cells
+    var tables = document.querySelectorAll("table.report");
+    for (var t = 0; t < tables.length; t++) {
+      var table = tables[t];
+      var headerRow = table.querySelector("tr");
+      if (!headerRow) continue;
+
+      var headers = headerRow.querySelectorAll("th");
+      var c1Idx = -1, c2Idx = -1;
+      for (var h = 0; h < headers.length; h++) {
+        var hText = headers[h].textContent || "";
+        if (hText.indexOf("Copy 1") !== -1) c1Idx = h;
+        if (hText.indexOf("Copy 2") !== -1) c2Idx = h;
+      }
+      if (c1Idx === -1 && c2Idx === -1) continue;
+
+      var rows = table.querySelectorAll("tr.oddtablerow, tr.eventablerow");
+      for (var r = 0; r < rows.length; r++) {
+        var rowCells = rows[r].querySelectorAll("td");
+        var pLink = rows[r].querySelector("td.player a[class*='position_']");
+        var pos = extractPosition(pLink);
+
+        if (c1Idx >= 0 && c1Idx < rowCells.length && !rowCells[c1Idx].getAttribute("data-cffb-enhanced")) {
+          enhanceCellSimple(rowCells[c1Idx], pos, commish);
+        }
+        if (c2Idx >= 0 && c2Idx < rowCells.length && !rowCells[c2Idx].getAttribute("data-cffb-enhanced")) {
+          enhanceCellSimple(rowCells[c2Idx], pos, commish);
+        }
+      }
     }
   }
 
@@ -1165,6 +1200,7 @@
   function runEnhancer() {
     try {
       var pageType = getPageType();
+      console.log(LOG_PREFIX, "runEnhancer — pageType:", pageType, "| URL:", window.location.search);
 
       if (pageType) {
         var commish = isCommissioner();
