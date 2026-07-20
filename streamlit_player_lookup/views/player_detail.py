@@ -115,7 +115,26 @@ def render_player_detail(
 
 
 def _classify_copy_status(copy: pd.Series, fran_name_map: dict) -> str:
-    """Bucket a copy into rostered / redshirting / graduated / declared / fa."""
+    """Bucket a copy into rostered / redshirting / graduated / declared / fa.
+
+    Graduation and early declaration are checked FIRST, before ownership, so
+    that terminal states (player can never be acquired again) override the
+    "no current owner → free agent" inference. A graduated copy typically has
+    no `CurrentFranchiseID`, but should not be displayed as available FA.
+    """
+    elig_used = copy.get("EligibilityYearsUsed")
+    retention = str(copy.get("RetentionDecision", "")).strip().lower()
+
+    # Terminal — used up eligibility (4+ years) or explicit graduation decision.
+    if (pd.notna(elig_used) and int(elig_used) >= 4) or retention in (
+        "graduate", "graduated"
+    ):
+        return "graduated"
+
+    # Terminal — declared for the NFL draft early, exited the college pool.
+    if copy.get("DeclaredEarly"):
+        return "declared"
+
     fid = str(copy.get("CurrentFranchiseID", ""))
     has_owner = fid and fid not in ("", "0", "nan") and fid in fran_name_map
     active = bool(copy.get("Active"))
@@ -123,17 +142,7 @@ def _classify_copy_status(copy: pd.Series, fran_name_map: dict) -> str:
     if not has_owner:
         return "fa"
 
-    elig_used = copy.get("EligibilityYearsUsed")
-    retention = str(copy.get("RetentionDecision", "")).strip().lower()
-    if not active and (
-        (pd.notna(elig_used) and int(elig_used) >= 4)
-        or retention in ("graduate", "graduated")
-    ):
-        return "graduated"
-
-    if copy.get("DeclaredEarly"):
-        return "declared"
-
+    # Currently redshirting — RS year matches league year.
     trad_yr = copy.get("TraditionalRedshirtYear")
     med_yr = copy.get("MedicalRedshirtYear")
     try:

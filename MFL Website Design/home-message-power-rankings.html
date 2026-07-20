@@ -1,0 +1,975 @@
+<style>
+/* CFFB · Power Rankings — layout styles
+   Broadcast power-rankings board. Design tokens inlined below. */
+
+:root {
+  --bg-canvas: #0B0B0C;
+  --bg-surface: #141416;
+  --bg-surface-elev: #1B1B1E;
+  --bg-surface-hover: #212127;
+  --fg-primary: #E8E7E4;
+  --fg-secondary: #9A9A96;
+  --fg-tertiary: #6A6A66;
+  --border: #262629;
+  --border-strong: #34343A;
+  --gold: #C9A227;
+  --gold-light: #E8C547;
+  --gold-gradient: linear-gradient(90deg,#8A6E28,#C9A227,#E8C547);
+  --inset-metallic: inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4);
+  --delta-pos: #4EAE7A;
+  --delta-neg: #C9524A;
+  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --r-1: 4px;
+  --r-2: 8px;
+  --r-3: 14px;
+  --r-pill: 999px;
+  --shadow-md: 0 6px 24px rgba(0,0,0,0.5);
+  --dur-fast: 120ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* { box-sizing: border-box; }
+
+button { font-family: inherit; cursor: pointer; }
+img { display: block; }
+.dim { color: var(--fg-secondary); }
+.num { font-variant-numeric: tabular-nums; }
+
+.stage { width: 100%; }
+.frame { container-type: inline-size; container-name: app; background: var(--bg-canvas); }
+.stage--desktop .frame { width: 100%; min-height: 100vh; }
+.stage--mobile {
+  display: flex; justify-content: center;
+  padding: 28px 16px 96px; background: #050505; min-height: 100vh;
+}
+.stage--mobile .frame {
+  width: 402px; height: 844px; flex-shrink: 0;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  border-radius: 20px; border: 1px solid var(--border);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+.stage--mobile .frame::-webkit-scrollbar { width: 0; }
+
+/* floating Desktop / Mobile toggle */
+.viewtoggle {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 60;
+  display: inline-flex; gap: 4px; padding: 5px;
+  background: rgba(18,18,18,0.92); border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill); box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.viewtoggle__btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--fg-secondary);
+  font-family: var(--font-body); font-weight: 600; font-size: 12px; letter-spacing: 0.04em;
+}
+.viewtoggle__btn.is-on { background: var(--bg-surface-elev); color: var(--fg-primary); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.viewtoggle__ic { width: 16px; height: 16px; }
+
+/* ============================================================ TOP BAR */
+.topbar {
+  min-height: 64px;
+  background: #0F0F0F;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 24px;
+  position: sticky; top: 0; z-index: 20;
+}
+.topbar__brand {
+  font-family: var(--font-display); font-weight: 700; font-size: 22px;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.topbar__mark {
+  width: 30px; height: 30px; border-radius: 6px;
+  background: var(--gold-gradient); color: #0A0A0A;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; box-shadow: var(--inset-metallic);
+}
+.topbar__divider { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
+.topbar__h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 24px; margin: 0;
+  line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
+}
+.topbar__spacer { margin-left: auto; }
+.topbar__week {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0;
+}
+.topbar__week-lbl { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); white-space: nowrap; }
+.topbar__week-val { font-family: var(--font-display); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ============================================================ PAGE */
+.page { max-width: 1280px; width: 100%; margin: 0 auto; padding: 22px 24px 64px; }
+
+.page-head { margin-bottom: 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.page-head__sub { font-size: 13px; color: var(--fg-secondary); }
+.page-head__sub strong { color: var(--fg-primary); font-weight: 600; }
+
+/* ============================================================ CONF FILTER */
+.conf-filter {
+  display: flex; gap: 6px; align-items: center;
+  padding: 6px; margin-bottom: 22px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3);
+  overflow-x: auto; scrollbar-width: thin;
+}
+.conf-tab {
+  display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+  padding: 9px 15px; border-radius: var(--r-2);
+  background: transparent; border: 1px solid transparent;
+  color: var(--fg-secondary); transition: background var(--dur-fast), color var(--dur-fast);
+}
+.conf-tab__logo { width: 22px; height: 22px; object-fit: contain; filter: grayscale(1) opacity(0.55); transition: filter var(--dur-fast); flex-shrink: 0; }
+.conf-tab__all {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  background: #1C1C1C; color: var(--fg-secondary); box-shadow: inset 0 0 0 1px var(--border);
+}
+.conf-tab__name { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; }
+.conf-tab:hover { color: var(--fg-primary); }
+.conf-tab:hover .conf-tab__logo { filter: grayscale(0.3) opacity(0.85); }
+.conf-tab.is-active { background: var(--bg-surface-elev); border-color: var(--border-strong); color: var(--fg-primary); }
+.conf-tab.is-active .conf-tab__logo { filter: none; }
+.conf-tab.is-active .conf-tab__all { background: var(--gold-gradient); color: #0A0A0A; box-shadow: var(--inset-metallic); }
+.conf-tab__count {
+  font-family: var(--font-body); font-weight: 600; font-size: 11px;
+  font-variant-numeric: tabular-nums; color: var(--fg-tertiary);
+  background: #101010; border-radius: var(--r-pill); padding: 2px 7px;
+}
+.conf-tab.is-active .conf-tab__count { color: var(--gold); }
+
+/* ============================================================ LAYOUT GRID */
+.layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+.section { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3); overflow: hidden; }
+.section__head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+.section__title { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: 0.01em; text-transform: uppercase; }
+.section__meta { font-size: 12px; color: var(--fg-secondary); }
+.section__spacer { margin-left: auto; }
+
+/* ============================================================ RANKING TABLE */
+.rtbl { width: 100%; }
+.rhead, .rrow {
+  display: grid;
+  grid-template-columns: 54px 88px 1fr 78px 70px 74px 72px 84px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+.rhead {
+  height: 38px; border-bottom: 1px solid var(--border);
+  background: #101010; position: sticky; top: 0; z-index: 2;
+}
+.rhead > span {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+.rhead .r-r, .rhead .r-num { text-align: right; }
+.rscroll { max-height: 1480px; overflow-y: auto; scrollbar-width: thin; }
+
+.rrow {
+  height: 58px; border-bottom: 1px solid var(--border);
+  position: relative; background: transparent;
+  transition: background var(--dur-fast);
+  width: 100%; text-align: left; border-left: none; border-right: none; border-top: none;
+  color: inherit; cursor: pointer;
+}
+.rrow::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--gold); transform: scaleY(0); transform-origin: center;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.rrow:hover { background: var(--bg-surface-hover); }
+.rrow:hover::before { transform: scaleY(1); }
+.rrow:last-child { border-bottom: none; }
+.rrow.is-sel { background: #181818; }
+.rrow.is-sel::before { transform: scaleY(1); }
+
+/* rank cell */
+.r-rank { display: flex; align-items: center; gap: 7px; }
+.r-rank__n {
+  font-family: var(--font-display); font-weight: 700; font-size: 22px;
+  font-variant-numeric: tabular-nums; line-height: 1; min-width: 26px;
+  color: var(--fg-secondary);
+}
+.r-rank__n.tout { color: var(--fg-secondary); }
+.r-rank__n.t25  { color: #7BA4C9; }
+.r-rank__n.t10  { color: #3B82C4; }
+.r-rank__n.t5   { color: var(--gold); }
+.r-rank__n.t1   { color: var(--gold-light); text-shadow: 0 0 14px rgba(201,162,39,0.5); }
+.r-move { display: inline-flex; align-items: center; gap: 1px; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.r-move--up { color: var(--delta-pos); }
+.r-move--down { color: var(--delta-neg); }
+.r-move--flat { color: var(--fg-tertiary); }
+
+/* team cell */
+.r-team { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.r-team__id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.r-team__name { font-weight: 600; font-size: 15px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-team__sub { font-size: 11px; color: var(--fg-secondary); display: flex; align-items: center; gap: 5px; }
+.r-team__conf { font-weight: 600; letter-spacing: 0.04em; }
+
+/* record + numeric cells */
+.r-rec { font-family: var(--font-display); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.r-rec__sub { font-size: 10px; color: var(--fg-tertiary); font-family: var(--font-body); font-weight: 600; letter-spacing: 0.06em; }
+.r-num { text-align: right; font-family: var(--font-display); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.r-num--dim { color: var(--fg-secondary); }
+
+/* CFFB Score cell with mini bar */
+.r-score { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.r-score__val { font-family: var(--font-display); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1; }
+.rrow.is-top1 .r-score__val { color: var(--gold-light); }
+.r-score__bar { width: 56px; height: 4px; background: #101010; border-radius: var(--r-pill); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04); }
+.r-score__fill { height: 100%; border-radius: var(--r-pill); }
+
+/* ============================================================ TEAM PILL */
+.pill {
+  display: inline-flex; align-items: stretch; vertical-align: middle;
+  overflow: hidden; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+.pill--img { border-radius: 4px; }
+.pill--img img { height: 100%; width: auto; display: block; }
+.pill--fb { border: 1px solid rgba(0,0,0,0.5); }
+.pill__edge { flex-shrink: 0; }
+.pill__body {
+  display: flex; align-items: center; padding: 0 9px;
+  font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em;
+}
+
+/* ============================================================ DETAIL PANEL */
+.detail { position: sticky; top: 88px; }
+.detail__hero { padding: 18px; border-bottom: 1px solid var(--border); }
+.detail__top { display: flex; align-items: center; gap: 12px; }
+.detail__id { flex: 1 1 auto; min-width: 0; }
+.detail__name { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; text-transform: uppercase; letter-spacing: 0.005em; }
+.detail__owner { font-size: 12px; color: var(--fg-secondary); margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+.detail__figs { display: flex; align-items: flex-start; gap: 22px; flex-shrink: 0; }
+.detail__fig { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+.detail__fig-row { display: flex; align-items: center; gap: 6px; }
+.detail__fig-lbl { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); }
+.detail__fig-val { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 0.9; font-variant-numeric: tabular-nums; }
+
+/* stat chips */
+.detail__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+.stat { background: var(--bg-surface); padding: 12px 14px; }
+.stat__lbl { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); margin-bottom: 4px; }
+.stat__val { font-family: var(--font-display); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1; }
+.stat__val small { font-size: 12px; color: var(--fg-tertiary); font-family: var(--font-body); font-weight: 600; }
+.stat__val.is-pos { color: var(--delta-pos); }
+.stat__val.is-neg { color: var(--delta-neg); }
+
+/* schedule list */
+.sched { padding: 6px 0 4px; }
+.sched__head { display: flex; align-items: center; padding: 10px 16px 8px; }
+.sched__title { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-secondary); }
+.sched__list { max-height: 326px; overflow-y: auto; scrollbar-width: thin; }
+.srow { display: grid; grid-template-columns: 40px 26px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid var(--border); }
+.srow--up { opacity: 0.62; }
+.srow__wk { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-tertiary); }
+.srow__res {
+  width: 22px; height: 22px; border-radius: var(--r-1);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+}
+.srow__res--w { background: rgba(45,122,78,0.16); color: var(--delta-pos); box-shadow: inset 0 0 0 1px rgba(45,122,78,0.4); }
+.srow__res--l { background: rgba(184,69,69,0.14); color: var(--delta-neg); box-shadow: inset 0 0 0 1px rgba(184,69,69,0.36); }
+.srow__res--bye, .srow__res--up { background: #161616; color: var(--fg-tertiary); box-shadow: inset 0 0 0 1px var(--border); font-size: 10px; }
+.srow__opp { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.srow__opp-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srow__opp-pre { font-size: 11px; color: var(--fg-tertiary); }
+.srow__score { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.srow__score-val { font-family: var(--font-display); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.srow__score-ap { font-size: 10px; color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+.srow__bye { font-size: 12px; color: var(--fg-tertiary); }
+
+/* ============================================================ CHARTS ROW */
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.chart-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-3); padding: 16px 18px 14px; }
+.chart-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.chart-card__eyebrow { font-weight: 700; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.chart-card__title { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.005em; text-transform: uppercase; line-height: 1; }
+.chart-card__sub { font-size: 12px; color: var(--fg-secondary); margin-top: 5px; }
+
+/* segmented toggle (mirrors MetricScatter) */
+.modes { display: inline-flex; background: #0A0A0A; border: 1px solid var(--border); border-radius: 6px; padding: 3px; flex-shrink: 0; }
+.modes__btn {
+  appearance: none; border: 0; cursor: pointer; background: transparent;
+  font-family: var(--font-body); font-weight: 600; font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-secondary);
+  padding: 7px 13px; border-radius: 4px; transition: color var(--dur-fast), background var(--dur-fast);
+}
+.modes__btn:hover { color: var(--fg-primary); }
+.modes__btn.is-active { background: var(--gold-gradient); color: #0A0A0A; }
+
+/* chart svg shared */
+.chart-svg { display: block; width: 100%; height: auto; }
+.c-grid { stroke: #232323; stroke-width: 1; }
+.c-axis { stroke: #3A3A3A; stroke-width: 1; }
+.c-tick { fill: #5A5A5A; font-size: 11px; font-family: var(--font-body); font-variant-numeric: tabular-nums; }
+.c-axis-title { fill: #9A9A9A; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--font-body); }
+.c-ref { stroke: #C9A227; stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.55; }
+.c-ref-lbl { fill: #C9A227; font-size: 10px; font-weight: 600; font-family: var(--font-body); opacity: 0.85; }
+
+/* scatter */
+.scat-wrap { position: relative; }
+.scat-dot { cursor: pointer; }
+.scat-dot-fill { stroke-width: 1.5; transition: opacity 140ms var(--ease-out); }
+.chart-svg.is-focusing .scat-dot:not(.is-hi) .scat-dot-fill { opacity: 0.14; }
+.scat-dot.is-hi .scat-dot-fill { filter: drop-shadow(0 0 6px rgba(255,255,255,0.25)); }
+.scat-dot.is-sel .scat-dot-fill { stroke: #E8C547; stroke-width: 2.5; }
+.scat-tip {
+  position: absolute; top: 0; left: 0; width: 184px;
+  background: #1C1C1C; border: 1px solid var(--border-strong); border-radius: 8px;
+  box-shadow: var(--shadow-md); padding: 11px 12px; pointer-events: none;
+  opacity: 0; transform: translateY(4px); transition: opacity 120ms, transform 120ms; z-index: 5;
+}
+.scat-tip.is-on { opacity: 1; transform: none; }
+.scat-tip__head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.scat-tip__name { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1; text-transform: uppercase; }
+.scat-tip__rows { display: flex; flex-direction: column; gap: 5px; border-top: 1px solid var(--border); padding-top: 8px; }
+.scat-tip__row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 11px; }
+.scat-tip__row dt { color: var(--fg-secondary); margin: 0; }
+.scat-tip__row dd { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--fg-primary); font-variant-numeric: tabular-nums; }
+.scat-tip__row dd.is-gold { color: var(--gold-light); }
+
+/* bars (weekly chart) */
+.c-bar { transition: opacity 140ms; }
+.c-bar-lbl { fill: #9A9A9A; font-size: 10px; font-family: var(--font-body); font-variant-numeric: tabular-nums; text-anchor: middle; }
+.c-wk-lbl { fill: #5A5A5A; font-size: 10px; font-family: var(--font-body); text-anchor: middle; }
+.c-opp { stroke-width: 2; }
+.chart-foot { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--border); font-size: 11px; color: var(--fg-tertiary); flex-wrap: wrap; }
+.chart-foot__key { display: inline-flex; align-items: center; gap: 6px; }
+.chart-foot__sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.chart-foot__sw--line { width: 14px; height: 0; border-top: 2px dashed #C9A227; border-radius: 0; }
+
+/* ============================================================ RESPONSIVE (container-query driven so the mobile frame collapses too) */
+@container app (max-width: 1080px) {
+  .layout { grid-template-columns: 1fr; }
+  .detail { position: static; }
+  .charts { grid-template-columns: 1fr; }
+  .rscroll { max-height: 1100px; }
+}
+@container app (max-width: 760px) {
+  .page { padding: 16px 14px 56px; }
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar__h1 { font-size: 19px; }
+  .topbar__brand span:last-child { display: none; }
+  .topbar__week-val { font-size: 15px; }
+  /* conference bar fills the frame width — 4-col grid, no horizontal scroll */
+  .conf-filter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; overflow-x: visible; }
+  .conf-tab { position: relative; flex-direction: column; gap: 4px; justify-content: center; padding: 9px 4px 7px; text-align: center; }
+  .conf-tab__logo, .conf-tab__all { width: 23px; height: 23px; }
+  .conf-tab__name { font-size: 12px; line-height: 1; }
+  .conf-tab__count { position: absolute; top: 4px; right: 4px; font-size: 9px; padding: 1px 5px; }
+  /* condensed ladder: rank · team · overall record · CFFB */
+  .rhead, .rrow { grid-template-columns: 64px 64px 1fr 54px 62px; gap: 12px; padding: 0 14px; }
+  .r-c-conf, .r-c-ap, .r-c-oppap { display: none; }
+  .r-rec__sub { display: none; }
+  .rscroll { max-height: 560px; }
+  .rrow { height: 54px; }
+  .r-rank { gap: 8px; }
+  .r-rank__n { font-size: 19px; min-width: 18px; }
+  .r-team__name { font-size: 14px; }
+  .detail__fig-val { font-size: 34px; }
+  .chart-card__title { font-size: 19px; }
+}
+
+
+.cffb-boot { padding: 40px; text-align: center; color: var(--fg-secondary); font-family: var(--font-body); }
+.cffb-boot--err { color: var(--delta-neg); }
+
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<div id="cffb-pr-root"></div>
+<script type="text/babel" data-presets="react">
+/* ---- data-live.jsx ---- */
+// CFFB · Power Rankings — LIVE data loader
+// Replaces the demo's PRNG-generated data.jsx at build time.
+// Fetches JSON from the Apps Script Web App and populates the same
+// `window.*` globals that components.jsx / charts.jsx / app.jsx consume.
+
+// The build script substitutes the real /exec URL for <<SET_PR_WEBAPP_URL_ENV_VAR>>.
+const CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+
+// Conference accent colors — displayed as the strip on the team pill and
+// tab tint. Keyed by the lowercase conf id emitted by the web app.
+const CONF_ACCENT_MAP = {
+  sec: '#C9A227',
+  b1g: '#4A6FA5', bten: '#4A6FA5', bigten: '#4A6FA5',
+  acc: '#8B4A5C',
+  big12: '#B84545', b12: '#B84545',
+  aac: '#6B5C8B',
+  pac: '#5C7A6A', pac12: '#5C7A6A', p12: '#5C7A6A'
+};
+
+async function loadPowerRankings() {
+  const res = await fetch(CFFB_WEBAPP_URL, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching rankings');
+  const d = await res.json();
+  if (d.error) throw new Error(d.error);
+
+  // Bare-bones globals from payload
+  window.WEEKS_PLAYED = d.weeksPlayed;
+  window.WEEKS_TOTAL  = d.weeksTotal;
+  window.CONFERENCES  = d.conferences;
+  window.CONF_NAME    = Object.fromEntries(
+    d.conferences.filter((c) => c.id !== 'all').map((c) => [c.id, c.name])
+  );
+  window.CONF_ACCENT  = CONF_ACCENT_MAP;
+
+  // Derive a broadcast-friendly CFFB Score (60–98 band) from raw rankingScore,
+  // so the score-bar visual matches the demo's scale. Rank ordering is
+  // preserved from the sheet — this only affects the displayed score number.
+  const scores = d.teams.map((t) => t.rankingScore).filter((v) => v != null);
+  const minS = scores.length ? Math.min.apply(null, scores) : 0;
+  const maxS = scores.length ? Math.max.apply(null, scores) : 1;
+  const spread = (maxS - minS) || 1;
+
+  const enriched = d.teams.map((t) => {
+    const raw = t.rankingScore == null ? minS : t.rankingScore;
+    const cffb = Math.round((60 + ((raw - minS) / spread) * 38) * 10) / 10;
+    const prev = t.prevRank == null ? t.rank : t.prevRank;
+    return Object.assign({}, t, {
+      cffb: cffb,
+      move: prev - t.rank
+    });
+  });
+
+  window.TEAMS      = Object.fromEntries(enriched.map((t) => [t.id, t]));
+  window.IDS        = enriched.map((t) => t.id);
+  window.STANDINGS  = enriched.slice().sort((a, b) => a.rank - b.rank);
+  window.CONF_COUNTS = enriched.reduce(
+    (m, t) => (m[t.conf] = (m[t.conf] || 0) + 1, m),
+    { all: enriched.length }
+  );
+
+  const played = enriched.filter((t) => t.ppg > 0);
+  window.LEAGUE_PPG = played.length
+    ? Math.round((played.reduce((s, t) => s + t.ppg, 0) / played.length) * 10) / 10
+    : 0;
+
+  // These globals are declared for symmetry with the demo; charts.jsx and
+  // components.jsx don't read them, so an empty stub is fine.
+  window.LEAGUE_WEEK_AVG = [];
+  window.WEEK_PTS = Object.fromEntries(
+    enriched.map((t) => [t.id, t.games.map((g) => g.bye ? null : g.my)])
+  );
+
+  window.CFFB_UPDATED_AT = d.updatedAt;
+  window.CFFB_SEASON     = d.season;
+}
+
+window.__loadPowerRankings = loadPowerRankings;
+
+
+/* ---- components.jsx ---- */
+// CFFB · Power Rankings — components (pill, conf filter, ranking table, detail)
+
+const { useState } = React;
+
+// ---- Team logo pill --------------------------------------------------------
+const TeamPill = ({ id, h = 26 }) => {
+  const t = TEAMS[id] || { bg: '#2A2A2A', fg: '#9A9A9A', abbr: '??', conf: 'sec' };
+  if (t.pill) {
+    return <span className="pill pill--img" style={{ height: h }}><img src={t.pill} alt={t.name} /></span>;
+  }
+  const abbr = t.abbr.length > 4 ? t.abbr.slice(0, 4) : t.abbr;
+  return (
+    <span className="pill pill--fb" style={{ height: h, borderRadius: Math.round(h * 0.22) }} title={t.name}>
+      <span className="pill__edge" style={{ width: Math.round(h * 0.6), background: CONF_ACCENT[t.conf] || '#5A5A5A' }} />
+      <span className="pill__body" style={{ background: t.bg, color: t.fg, fontSize: Math.max(11, Math.round(h * 0.46)) }}>{abbr}</span>
+    </span>
+  );
+};
+
+// ---- Rank movement indicator ----------------------------------------------
+const Move = ({ move }) => {
+  if (move > 0) return <span className="r-move r-move--up">▲{move}</span>;
+  if (move < 0) return <span className="r-move r-move--down">▼{-move}</span>;
+  return <span className="r-move r-move--flat">—</span>;
+};
+
+// ---- Conference filter -----------------------------------------------------
+const ConfFilter = ({ active, onChange }) => (
+  <div className="conf-filter" role="tablist" aria-label="Conference">
+    {CONFERENCES.map((c) => (
+      <button key={c.id} role="tab" aria-selected={active === c.id}
+        className={'conf-tab' + (active === c.id ? ' is-active' : '')} onClick={() => onChange(c.id)}>
+        {c.logo
+          ? <img className="conf-tab__logo" src={c.logo} alt={c.name} />
+          : <span className="conf-tab__all">★</span>}
+        <span className="conf-tab__name">{c.name}</span>
+        <span className="conf-tab__count">{CONF_COUNTS[c.id] || 0}</span>
+      </button>
+    ))}
+  </div>
+);
+
+// ---- CFFB score → fill color (gold for elite, fading down) ------------------
+const scoreColor = (cffb) => {
+  if (cffb >= 90) return 'var(--gold-gradient)';
+  if (cffb >= 80) return 'linear-gradient(90deg,#6E6056,#C9A227)';
+  if (cffb >= 70) return 'linear-gradient(90deg,#3A3A3A,#7A6A44)';
+  return 'linear-gradient(90deg,#2A2A2A,#4A4A4A)';
+};
+
+// ---- Rank prestige tier (color ramp) --------------------------------------
+const rankTier = (n) => (n === 1 ? 't1' : n <= 5 ? 't5' : n <= 10 ? 't10' : n <= 25 ? 't25' : 'tout');
+const tierColor = (n) => (n === 1 ? '#E8C547' : n <= 5 ? '#C9A227' : n <= 10 ? '#3B82C4' : n <= 25 ? '#7BA4C9' : '#9A9A9A');
+
+// ---- Ranking row + table ---------------------------------------------------
+const RankRow = ({ r, selected, onSelect }) => (
+  <button
+    className={'rrow' + (selected ? ' is-sel' : '') + (r.rank === 1 ? ' is-top1' : '')}
+    onClick={() => onSelect(r.id)}
+  >
+    <div className="r-rank">
+      <span className={'r-rank__n ' + rankTier(r.rank)}>{r.rank}</span>
+      <Move move={r.move} />
+    </div>
+    <div className="r-team">
+      <TeamPill id={r.id} h={30} />
+    </div>
+    <div className="r-c-spacer"></div>
+    <div className="r-cell r-c-overall">
+      <div className="r-rec">{r.W}–{r.L}</div>
+      <div className="r-rec__sub">OVERALL</div>
+    </div>
+    <div className="r-cell r-c-conf">
+      <div className="r-rec">{r.cW}–{r.cL}</div>
+      <div className="r-rec__sub">CONF</div>
+    </div>
+    <div className="r-num r-c-ap">{r.allPlayPct.toFixed(1)}%</div>
+    <div className="r-num r-num--dim r-c-oppap">{r.oppAllPlayPct.toFixed(1)}%</div>
+    <div className="r-score">
+      <span className="r-score__val">{r.cffb.toFixed(1)}</span>
+      <span className="r-score__bar"><span className="r-score__fill" style={{ width: ((r.cffb - 55) / 45 * 100) + '%', background: scoreColor(r.cffb) }} /></span>
+    </div>
+  </button>
+);
+
+const RankingTable = ({ rows, selected, onSelect, confName }) => (
+  <section className="section">
+    <div className="section__head">
+      <span className="section__title">The Ladder</span>
+      <span className="section__meta">{rows.length} teams · {confName} · sorted by CFFB Score</span>
+      <span className="section__spacer" />
+      <span className="section__meta">Scroll for all {rows.length}</span>
+    </div>
+    <div className="rtbl">
+      <div className="rhead">
+        <span>Rank</span>
+        <span>Team</span>
+        <span className="r-c-spacer"></span>
+        <span className="r-c-overall">Overall</span>
+        <span className="r-c-conf">Conf</span>
+        <span className="r-r r-c-ap">All-Play</span>
+        <span className="r-r r-c-oppap">Opp AP</span>
+        <span className="r-r">CFFB</span>
+      </div>
+      <div className="rscroll">
+        {rows.map((r) => (
+          <RankRow key={r.id} r={r} selected={selected === r.id} onSelect={onSelect} />
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+// ---- Detail panel ----------------------------------------------------------
+const SchedRow = ({ g, teamConf }) => {
+  if (g.bye) {
+    return (
+      <div className="srow">
+        <span className="srow__wk">Wk {g.week}</span>
+        <span className="srow__res srow__res--bye">—</span>
+        <span className="srow__bye">Bye week</span>
+        <span />
+      </div>
+    );
+  }
+  if (g.upcoming) {
+    return (
+      <div className="srow srow--up">
+        <span className="srow__wk">Wk {g.week}</span>
+        <span className="srow__res srow__res--up">vs</span>
+        <span className="srow__opp">
+          {g.opp ? <TeamPill id={g.opp} h={20} /> : null}
+          <span className="srow__opp-name">{g.opp ? TEAMS[g.opp].name : 'Bye'}</span>
+        </span>
+        <span className="srow__score"><span className="srow__opp-pre">upcoming</span></span>
+      </div>
+    );
+  }
+  return (
+    <div className="srow">
+      <span className="srow__wk">Wk {g.week}</span>
+      <span className={'srow__res srow__res--' + (g.win ? 'w' : 'l')}>{g.win ? 'W' : 'L'}</span>
+      <span className="srow__opp">
+        <TeamPill id={g.opp} h={20} />
+        <span className="srow__opp-name">{TEAMS[g.opp].name}</span>
+      </span>
+      <span className="srow__score">
+        <span className="srow__score-val">{g.my.toFixed(1)} – {g.ov.toFixed(1)}</span>
+        <span className="srow__score-ap">{g.ap.toFixed(0)}% AP · opp {g.oppAp.toFixed(0)}%</span>
+      </span>
+    </div>
+  );
+};
+
+const StreakVal = ({ streak }) => {
+  const cls = streak[0] === 'W' ? ' is-pos' : streak[0] === 'L' ? ' is-neg' : '';
+  return <div className={'stat__val' + cls}>{streak}</div>;
+};
+
+const DetailPanel = ({ r }) => {
+  const rows = [...r.games, ...r.upcoming.map((u) => ({ ...u, upcoming: true }))];
+  return (
+    <section className="section detail">
+      <div className="detail__hero">
+        <div className="detail__top">
+          <TeamPill id={r.id} h={40} />
+          <div className="detail__id">
+            <div className="detail__name">{r.name}</div>
+            <div className="detail__owner">
+              <span className="r-team__conf">{CONF_NAME[r.conf]}</span>
+              <span>·</span><span>{r.owner}</span>
+            </div>
+          </div>
+          <div className="detail__figs">
+            <div className="detail__fig">
+              <div className="detail__fig-lbl">Rank</div>
+              <div className="detail__fig-row">
+                <div className="detail__fig-val" style={{ color: tierColor(r.rank) }}>{r.rank}</div>
+                <Move move={r.move} />
+              </div>
+            </div>
+            <div className="detail__fig">
+              <div className="detail__fig-lbl">CFFB</div>
+              <div className="detail__fig-val" style={{ color: 'var(--gold-light)' }}>{r.cffb.toFixed(1)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="detail__stats">
+        <div className="stat"><div className="stat__lbl">Overall</div><div className="stat__val">{r.W}–{r.L}</div></div>
+        <div className="stat"><div className="stat__lbl">Conference</div><div className="stat__val">{r.cW}–{r.cL}</div></div>
+        <div className="stat"><div className="stat__lbl">Streak</div><StreakVal streak={r.streak} /></div>
+        <div className="stat"><div className="stat__lbl">All-Play %</div><div className="stat__val">{r.allPlayPct.toFixed(1)}<small>%</small></div></div>
+        <div className="stat"><div className="stat__lbl">Opp All-Play</div><div className="stat__val">{r.oppAllPlayPct.toFixed(1)}<small>%</small></div></div>
+        <div className="stat"><div className="stat__lbl">Pts / Game</div><div className="stat__val">{r.ppg.toFixed(1)}</div></div>
+      </div>
+
+      <div className="sched">
+        <div className="sched__head">
+          <span className="sched__title">Schedule · Results</span>
+          <span className="section__spacer" />
+          <span className="section__meta">Through Wk {WEEKS_PLAYED}</span>
+        </div>
+        <div className="sched__list">
+          {rows.map((g, i) => <SchedRow key={i} g={g} teamConf={r.conf} />)}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+Object.assign(window, { TeamPill, Move, ConfFilter, RankingTable, DetailPanel });
+
+
+/* ---- charts.jsx ---- */
+// CFFB · Power Rankings — charts (league scatter + weekly performance)
+
+const { useState: useStateC } = React;
+
+// nice tick helper
+const niceTicks = (min, max, n) => {
+  const span = (max - min) || 1;
+  const step0 = span / n;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const norm = step0 / mag;
+  let step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  step *= mag;
+  const lo = Math.floor(min / step) * step;
+  const hi = Math.ceil(max / step) * step;
+  const arr = [];
+  for (let v = lo; v <= hi + step * 1e-6; v += step) arr.push(+v.toFixed(6));
+  return { lo, hi, arr };
+};
+
+// ===========================================================================
+// SCATTER — Points / Game (X) × All-Play % (Y). Each dot is a team.
+// Selected team is ringed; hovering highlights one and dims the rest.
+// ===========================================================================
+const SVW = 560, SVH = 372, SM = { l: 52, r: 18, t: 18, b: 50 };
+
+const LeagueScatter = ({ rows, selected, onSelect }) => {
+  const [hover, setHover] = useStateC(null);
+  const xs = rows.map((r) => r.ppg);
+  const ys = rows.map((r) => r.allPlayPct);
+  const xT = niceTicks(Math.min(...xs) - 2, Math.max(...xs) + 2, 5);
+  const yT = niceTicks(Math.max(0, Math.min(...ys) - 5), Math.min(100, Math.max(...ys) + 5), 5);
+  const iw = SVW - SM.l - SM.r, ih = SVH - SM.t - SM.b;
+  const X = (v) => SM.l + (v - xT.lo) / (xT.hi - xT.lo) * iw;
+  const Y = (v) => SM.t + (1 - (v - yT.lo) / (yT.hi - yT.lo)) * ih;
+
+  const focusing = hover != null;
+  const hv = hover ? rows.find((r) => r.id === hover) : null;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-card__head">
+        <div>
+          <div className="chart-card__eyebrow">League Compare</div>
+          <div className="chart-card__title">Scoring × All-Play</div>
+          <div className="chart-card__sub">Each dot a team · X = pts/game · Y = all-play % · color = team</div>
+        </div>
+      </div>
+      <div className="scat-wrap">
+        <svg className={'chart-svg' + (focusing ? ' is-focusing' : '')} viewBox={`0 0 ${SVW} ${SVH}`} preserveAspectRatio="xMidYMid meet">
+          {yT.arr.map((v) => (
+            <g key={'y' + v}>
+              <line className="c-grid" x1={SM.l} y1={Y(v)} x2={SVW - SM.r} y2={Y(v)} />
+              <text className="c-tick" x={SM.l - 9} y={Y(v) + 4} textAnchor="end">{v.toFixed(0)}%</text>
+            </g>
+          ))}
+          {xT.arr.map((v) => (
+            <g key={'x' + v}>
+              <line className="c-grid" x1={X(v)} y1={SM.t} x2={X(v)} y2={SVH - SM.b} />
+              <text className="c-tick" x={X(v)} y={SVH - SM.b + 19} textAnchor="middle">{v.toFixed(0)}</text>
+            </g>
+          ))}
+          {/* league avg reference (vertical) */}
+          <line className="c-ref" x1={X(LEAGUE_PPG)} y1={SM.t} x2={X(LEAGUE_PPG)} y2={SVH - SM.b} />
+          <text className="c-ref-lbl" x={X(LEAGUE_PPG) + 5} y={SM.t + 12}>LG AVG {LEAGUE_PPG}</text>
+          <line className="c-axis" x1={SM.l} y1={SVH - SM.b} x2={SVW - SM.r} y2={SVH - SM.b} />
+          <line className="c-axis" x1={SM.l} y1={SM.t} x2={SM.l} y2={SVH - SM.b} />
+          <text className="c-axis-title" x={SM.l + iw / 2} y={SVH - 6} textAnchor="middle">Points / Game</text>
+          <text className="c-axis-title" textAnchor="middle" transform={`translate(13,${SM.t + ih / 2}) rotate(-90)`}>All-Play %</text>
+          {rows.map((r) => {
+            const isSel = r.id === selected;
+            const isHi = !focusing || hover === r.id;
+            return (
+              <g key={r.id} className={'scat-dot' + (isHi ? ' is-hi' : '') + (isSel ? ' is-sel' : '')}
+                 onMouseEnter={() => setHover(r.id)} onMouseLeave={() => setHover((h) => (h === r.id ? null : h))}
+                 onClick={() => onSelect(r.id)} style={{ cursor: 'pointer' }}>
+                <circle cx={X(r.ppg)} cy={Y(r.allPlayPct)} r={13} fill="transparent" />
+                <circle className="scat-dot-fill" cx={X(r.ppg)} cy={Y(r.allPlayPct)} r={isSel ? 8 : 6.5}
+                        fill={r.bg} stroke={isSel ? '#E8C547' : r.fg} />
+              </g>
+            );
+          })}
+        </svg>
+        {hv && (
+          <div className="scat-tip is-on" style={{ left: (X(hv.ppg) / SVW * 100) + '%', top: (Y(hv.allPlayPct) / SVH * 100) + '%', transform: 'translate(14px,-50%)' }}>
+            <div className="scat-tip__head">
+              <TeamPill id={hv.id} h={24} />
+              <span className="scat-tip__name">{hv.name}</span>
+            </div>
+            <dl className="scat-tip__rows">
+              <div className="scat-tip__row"><dt>Rank</dt><dd>#{hv.rank}</dd></div>
+              <div className="scat-tip__row"><dt>Pts / Game</dt><dd>{hv.ppg.toFixed(1)}</dd></div>
+              <div className="scat-tip__row"><dt>All-Play %</dt><dd>{hv.allPlayPct.toFixed(1)}%</dd></div>
+              <div className="scat-tip__row"><dt>Opp All-Play</dt><dd>{hv.oppAllPlayPct.toFixed(1)}%</dd></div>
+              <div className="scat-tip__row"><dt>CFFB Score</dt><dd className="is-gold">{hv.cffb.toFixed(1)}</dd></div>
+            </dl>
+          </div>
+        )}
+      </div>
+      <div className="chart-foot">
+        <span className="chart-foot__key"><span className="chart-foot__sw" style={{ background: 'var(--gold)', borderRadius: 999 }} /> Selected team ringed gold</span>
+        <span className="chart-foot__key"><span className="chart-foot__sw chart-foot__sw--line" /> League scoring average</span>
+      </div>
+    </div>
+  );
+};
+
+// ===========================================================================
+// WEEKLY — selected team's week-by-week Points or All-Play %.
+// Points mode: team bars + opponent marker + league-avg line + W/L color.
+// All-Play mode: weekly all-play % bars + 50% reference line.
+// ===========================================================================
+const WVW = 560, WVH = 372, WM = { l: 44, r: 18, t: 18, b: 42 };
+
+const WeeklyChart = ({ r }) => {
+  const [mode, setMode] = useStateC('points'); // 'points' | 'allplay'
+  const played = r.games.filter((g) => !g.bye);
+  const n = played.length;
+  const iw = WVW - WM.l - WM.r, ih = WVH - WM.t - WM.b;
+  const slot = iw / n;
+  const bw = Math.min(30, slot * 0.56);
+
+  let yT, valOf, fmt, refY, refLbl, oppOf;
+  if (mode === 'points') {
+    const allV = played.flatMap((g) => [g.my, g.ov]);
+    yT = niceTicks(Math.max(0, Math.min(...allV) - 8), Math.max(...allV) + 8, 5);
+    valOf = (g) => g.my; oppOf = (g) => g.ov;
+    fmt = (v) => v.toFixed(0); refY = LEAGUE_PPG; refLbl = 'LG AVG ' + LEAGUE_PPG;
+  } else {
+    yT = niceTicks(0, 100, 5);
+    valOf = (g) => g.ap; oppOf = (g) => g.oppAp;
+    fmt = (v) => v.toFixed(0) + '%'; refY = 50; refLbl = '50% — even';
+  }
+  const Y = (v) => WM.t + (1 - (v - yT.lo) / (yT.hi - yT.lo)) * ih;
+  const cx = (i) => WM.l + slot * i + slot / 2;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-card__head">
+        <div>
+          <div className="chart-card__eyebrow">Week by Week</div>
+          <div className="chart-card__title">{r.name}</div>
+          <div className="chart-card__sub">{mode === 'points' ? 'Points scored each week vs opponent' : 'All-play win % each week (vs the field)'}</div>
+        </div>
+        <div className="modes" role="tablist">
+          <button className={'modes__btn' + (mode === 'points' ? ' is-active' : '')} onClick={() => setMode('points')}>Points</button>
+          <button className={'modes__btn' + (mode === 'allplay' ? ' is-active' : '')} onClick={() => setMode('allplay')}>All-Play %</button>
+        </div>
+      </div>
+      <svg className="chart-svg" viewBox={`0 0 ${WVW} ${WVH}`} preserveAspectRatio="xMidYMid meet">
+        {yT.arr.map((v) => (
+          <g key={'y' + v}>
+            <line className="c-grid" x1={WM.l} y1={Y(v)} x2={WVW - WM.r} y2={Y(v)} />
+            <text className="c-tick" x={WM.l - 8} y={Y(v) + 4} textAnchor="end">{fmt(v)}</text>
+          </g>
+        ))}
+        <line className="c-ref" x1={WM.l} y1={Y(refY)} x2={WVW - WM.r} y2={Y(refY)} />
+        <text className="c-ref-lbl" x={WVW - WM.r} y={Y(refY) - 5} textAnchor="end">{refLbl}</text>
+        <line className="c-axis" x1={WM.l} y1={WVH - WM.b} x2={WVW - WM.r} y2={WVH - WM.b} />
+        {played.map((g, i) => {
+          const v = valOf(g);
+          const x = cx(i), y0 = WVH - WM.b, y1 = Y(v);
+          const win = mode === 'points' ? g.win : v >= 50;
+          const fill = win ? r.bg : '#2A2A2A';
+          const stroke = win ? r.fg : '#4A4A4A';
+          return (
+            <g key={i}>
+              <rect className="c-bar" x={x - bw / 2} y={y1} width={bw} height={Math.max(0, y0 - y1)} rx="2"
+                    fill={fill} stroke={stroke} strokeWidth="1" />
+              {oppOf && (
+                <line className="c-opp" x1={x - bw / 2 - 2} x2={x + bw / 2 + 2} y1={Y(oppOf(g))} y2={Y(oppOf(g))} stroke="#9A9A9A" />
+              )}
+              <text className="c-bar-lbl" x={x} y={y1 - 6}>{fmt(v)}</text>
+              <text className="c-wk-lbl" x={x} y={WVH - WM.b + 16}>{g.week}</text>
+            </g>
+          );
+        })}
+        <text className="c-axis-title" x={WM.l + iw / 2} y={WVH - 4} textAnchor="middle">Week</text>
+      </svg>
+      <div className="chart-foot">
+        <span className="chart-foot__key"><span className="chart-foot__sw" style={{ background: r.bg, boxShadow: 'inset 0 0 0 1px ' + r.fg }} /> {mode === 'points' ? 'Win' : 'Above 50%'}</span>
+        <span className="chart-foot__key"><span className="chart-foot__sw" style={{ background: '#2A2A2A' }} /> {mode === 'points' ? 'Loss' : 'Below 50%'}</span>
+        {oppOf && <span className="chart-foot__key"><span className="chart-foot__sw" style={{ background: '#9A9A9A', height: 2 }} /> Opponent {mode === 'points' ? 'score' : 'all-play'}</span>}
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { LeagueScatter, WeeklyChart });
+
+
+/* ---- app.jsx ---- */
+// CFFB · Power Rankings — app composition
+
+const { useState: useStateA, useMemo } = React;
+
+const App = () => {
+  const [conf, setConf] = useStateA('all');
+  const [selected, setSelected] = useStateA(STANDINGS[0].id);
+  const [view, setView] = useStateA('desktop'); // 'desktop' | 'mobile'
+
+  const confName = (CONFERENCES.find((c) => c.id === conf) || {}).name;
+
+  // Filtered + re-ranked within the active conference view.
+  const rows = useMemo(() => {
+    const base = conf === 'all' ? STANDINGS : STANDINGS.filter((r) => r.conf === conf);
+    return base; // already sorted by CFFB Score; rank shown is league rank
+  }, [conf]);
+
+  // Keep a valid selection inside the current filter.
+  const selRow = rows.find((r) => r.id === selected) || rows[0];
+  const selId = selRow ? selRow.id : null;
+
+  const onConf = (c) => {
+    setConf(c);
+    const base = c === 'all' ? STANDINGS : STANDINGS.filter((r) => r.conf === c);
+    if (!base.some((r) => r.id === selected)) setSelected(base[0].id);
+  };
+
+  return (
+    <React.Fragment>
+    <div className={'stage stage--' + view}>
+    <div className="frame">
+      {/* ---- Top bar ---- */}
+      <div className="topbar">
+        <h1 className="topbar__h1">Power Rankings</h1>
+        <span className="topbar__spacer" />
+        <div className="topbar__week">
+          <span className="topbar__week-lbl">2026 Season</span>
+          <span className="topbar__week-val">Through Week {WEEKS_PLAYED}</span>
+        </div>
+      </div>
+
+      <div className="page">
+        <div className="page-head">
+          <span className="page-head__sub">
+            {conf === 'all'
+              ? <React.Fragment>All <strong>100</strong> managers, ranked by <strong>CFFB Score</strong> — all-play %, head-to-head record and scoring, weighted. Top 25 shown first; scroll the ladder for the full field.</React.Fragment>
+              : <React.Fragment>Showing <strong>{confName}</strong> — {rows.length} teams, league rank preserved. Click any team for its weekly results.</React.Fragment>}
+          </span>
+        </div>
+
+        <ConfFilter active={conf} onChange={onConf} />
+
+        <div className="layout">
+          <RankingTable rows={rows} selected={selId} onSelect={setSelected} confName={confName} />
+          {selRow && <DetailPanel r={selRow} />}
+        </div>
+
+        <div className="charts">
+          <LeagueScatter rows={rows} selected={selId} onSelect={setSelected} />
+          {selRow && <WeeklyChart r={selRow} />}
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div className="viewtoggle" role="group" aria-label="Preview size">
+      <button className={'viewtoggle__btn' + (view === 'desktop' ? ' is-on' : '')} onClick={() => setView('desktop')}>
+        <svg className="viewtoggle__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>
+        Desktop
+      </button>
+      <button className={'viewtoggle__btn' + (view === 'mobile' ? ' is-on' : '')} onClick={() => setView('mobile')}>
+        <svg className="viewtoggle__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+        Mobile
+      </button>
+    </div>
+    </React.Fragment>
+  );
+};
+
+
+const CFFBBoot = () => {
+  const [ready, setReady] = React.useState(false);
+  const [err, setErr]     = React.useState(null);
+  React.useEffect(() => {
+    window.__loadPowerRankings()
+      .then(() => setReady(true))
+      .catch((e) => setErr(e && e.message ? e.message : String(e)));
+  }, []);
+  if (err)   return <div className="cffb-boot cffb-boot--err">Couldn't load rankings: {err}</div>;
+  if (!ready) return <div className="cffb-boot">Loading rankings…</div>;
+  return <App />;
+};
+ReactDOM.createRoot(document.getElementById('cffb-pr-root')).render(<CFFBBoot />);
+
+
+</script>
