@@ -105,8 +105,9 @@ function buildPowerRankingsPayload(overrideYear) {
       }
     });
 
-    const W  = numOrZero(r.regularSeasonWins);
-    const L  = numOrZero(r.regularSeasonLosses);
+    // Overall record includes postseason play (Conference record does not).
+    const W  = numOrZero(r.regularSeasonWins)   + numOrZero(r.postseasonWins);
+    const L  = numOrZero(r.regularSeasonLosses) + numOrZero(r.postseasonLosses);
     const cW = numOrZero(r.conferenceWins);
     const cL = numOrZero(r.conferenceLosses);
     const gamesPlayed = games.filter(function (g) { return !g.bye; }).length;

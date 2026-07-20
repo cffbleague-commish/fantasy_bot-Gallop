@@ -32,20 +32,13 @@ async function loadPowerRankings() {
   );
   window.CONF_ACCENT  = CONF_ACCENT_MAP;
 
-  // Derive a broadcast-friendly CFFB Score (60–98 band) from raw rankingScore,
-  // so the score-bar visual matches the demo's scale. Rank ordering is
-  // preserved from the sheet — this only affects the displayed score number.
-  const scores = d.teams.map((t) => t.rankingScore).filter((v) => v != null);
-  const minS = scores.length ? Math.min.apply(null, scores) : 0;
-  const maxS = scores.length ? Math.max.apply(null, scores) : 1;
-  const spread = (maxS - minS) || 1;
-
+  // CFFB Score is the raw RankingScore from the PowerRankings sheet
+  // (formula: ((RS_Wins + 1) × (AllPlayPct + OppAllPlayPct)) + PostseasonWins).
+  // Rank ordering also comes straight from the sheet's Rank column.
   const enriched = d.teams.map((t) => {
-    const raw = t.rankingScore == null ? minS : t.rankingScore;
-    const cffb = Math.round((60 + ((raw - minS) / spread) * 38) * 10) / 10;
     const prev = t.prevRank == null ? t.rank : t.prevRank;
     return Object.assign({}, t, {
-      cffb: cffb,
+      cffb: t.rankingScore == null ? 0 : t.rankingScore,
       move: prev - t.rank
     });
   });

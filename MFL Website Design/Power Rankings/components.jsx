@@ -40,14 +40,6 @@ const ConfFilter = ({ active, onChange }) => (
   </div>
 );
 
-// ---- CFFB score → fill color (gold for elite, fading down) ------------------
-const scoreColor = (cffb) => {
-  if (cffb >= 90) return 'var(--gold-gradient)';
-  if (cffb >= 80) return 'linear-gradient(90deg,#6E6056,#C9A227)';
-  if (cffb >= 70) return 'linear-gradient(90deg,#3A3A3A,#7A6A44)';
-  return 'linear-gradient(90deg,#2A2A2A,#4A4A4A)';
-};
-
 // ---- Rank prestige tier (color ramp) --------------------------------------
 const rankTier = (n) => (n === 1 ? 't1' : n <= 5 ? 't5' : n <= 10 ? 't10' : n <= 25 ? 't25' : 'tout');
 const tierColor = (n) => (n === 1 ? '#E8C547' : n <= 5 ? '#C9A227' : n <= 10 ? '#3B82C4' : n <= 25 ? '#7BA4C9' : '#9A9A9A');
@@ -78,7 +70,6 @@ const RankRow = ({ r, selected, onSelect }) => (
     <div className="r-num r-num--dim r-c-oppap">{r.oppAllPlayPct.toFixed(1)}%</div>
     <div className="r-score">
       <span className="r-score__val">{r.cffb.toFixed(1)}</span>
-      <span className="r-score__bar"><span className="r-score__fill" style={{ width: ((r.cffb - 55) / 45 * 100) + '%', background: scoreColor(r.cffb) }} /></span>
     </div>
   </button>
 );
@@ -167,7 +158,6 @@ const DetailPanel = ({ r }) => {
         <div className="detail__top">
           <TeamPill id={r.id} h={40} />
           <div className="detail__id">
-            <div className="detail__name">{r.name}</div>
             <div className="detail__owner">
               <span className="r-team__conf">{CONF_NAME[r.conf]}</span>
               <span>·</span><span>{r.owner}</span>
