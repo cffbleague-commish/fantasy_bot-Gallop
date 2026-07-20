@@ -24,10 +24,11 @@ const OUT_PATH  = path.join(DIR, 'home-message-power-rankings.html');
 // data-live.jsx replaces data.jsx (demo PRNG data) at build time.
 const JSX_FILES = ['data-live.jsx', 'components.jsx', 'charts.jsx', 'app.jsx'];
 
-// Fallback web-app URL if the env var isn't set. Leave the placeholder in
-// place so a forgotten env var produces an obviously-broken build rather
-// than silently shipping a stale URL.
-const WEBAPP_URL = process.env.PR_WEBAPP_URL || '<<SET_PR_WEBAPP_URL_ENV_VAR>>';
+// Live Apps Script Web App /exec URL for this project. Overridable via the
+// PR_WEBAPP_URL env var if you ever need to point a build at a different
+// deployment (e.g. a staging one).
+const WEBAPP_URL = process.env.PR_WEBAPP_URL
+  || 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
 
 // ---------------------------------------------------------------------------
 // Read sources

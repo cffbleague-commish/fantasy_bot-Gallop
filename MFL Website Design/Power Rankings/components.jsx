@@ -124,25 +124,27 @@ const SchedRow = ({ g, teamConf }) => {
     );
   }
   if (g.upcoming) {
+    const opp = g.opp && TEAMS[g.opp];
     return (
       <div className="srow srow--up">
         <span className="srow__wk">Wk {g.week}</span>
         <span className="srow__res srow__res--up">vs</span>
         <span className="srow__opp">
-          {g.opp ? <TeamPill id={g.opp} h={20} /> : null}
-          <span className="srow__opp-name">{g.opp ? TEAMS[g.opp].name : 'Bye'}</span>
+          {opp ? <TeamPill id={g.opp} h={20} /> : null}
+          <span className="srow__opp-name">{opp ? opp.name : 'Bye'}</span>
         </span>
         <span className="srow__score"><span className="srow__opp-pre">upcoming</span></span>
       </div>
     );
   }
+  const opp = TEAMS[g.opp];
   return (
     <div className="srow">
       <span className="srow__wk">Wk {g.week}</span>
       <span className={'srow__res srow__res--' + (g.win ? 'w' : 'l')}>{g.win ? 'W' : 'L'}</span>
       <span className="srow__opp">
-        <TeamPill id={g.opp} h={20} />
-        <span className="srow__opp-name">{TEAMS[g.opp].name}</span>
+        {opp ? <TeamPill id={g.opp} h={20} /> : null}
+        <span className="srow__opp-name">{opp ? opp.name : 'Unknown'}</span>
       </span>
       <span className="srow__score">
         <span className="srow__score-val">{g.my.toFixed(1)} – {g.ov.toFixed(1)}</span>

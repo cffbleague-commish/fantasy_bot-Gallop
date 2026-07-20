@@ -70,6 +70,8 @@ function buildPowerRankingsPayload(overrideYear) {
   const latestWeek = detectLatestPlayedWeek(rankingsByFranchise, scheduleByFranchise);
   const weeksTotal = 14; // regular season + playoffs display window
 
+  let unknownOppCount = 0;
+
   // Assemble team payload
   const teams = Object.keys(franchises).map(function (fid) {
     const meta = franchises[fid];
@@ -79,13 +81,18 @@ function buildPowerRankingsPayload(overrideYear) {
     const games = [];
     const upcoming = [];
     rows.forEach(function (row) {
+      const oppId = normalizeId(row.opponentId);
+      const oppKnown = oppId && franchises[oppId];
       if (row.week <= latestWeek) {
-        if (row.gameResult === "BYE") {
+        // Treat "BYE" or missing/unknown opponent as a bye. Rendering an
+        // "opp" that isn't in FranchiseLookup would crash SchedRow.
+        if (row.gameResult === "BYE" || !oppKnown) {
+          if (!oppKnown && row.gameResult !== "BYE") unknownOppCount++;
           games.push({ week: row.week, bye: true });
         } else {
           games.push({
             week: row.week,
-            opp: normalizeId(row.opponentId),
+            opp: oppId,
             my: round1(row.teamScore),
             ov: round1(row.opponentScore),
             win: row.gameResult === "W",
@@ -94,7 +101,7 @@ function buildPowerRankingsPayload(overrideYear) {
           });
         }
       } else {
-        upcoming.push({ week: row.week, opp: normalizeId(row.opponentId) || null });
+        upcoming.push({ week: row.week, opp: oppKnown ? oppId : null });
       }
     });
 
@@ -155,13 +162,18 @@ function buildPowerRankingsPayload(overrideYear) {
     })
   );
 
+  if (unknownOppCount > 0) {
+    Logger.log("PowerRankingsWebApp: " + unknownOppCount + " schedule rows had opponent IDs missing from FranchiseLookup (rendered as byes).");
+  }
+
   return {
     updatedAt: new Date().toISOString(),
     season: year,
     weeksPlayed: latestWeek,
     weeksTotal: weeksTotal,
     conferences: conferences,
-    teams: teams
+    teams: teams,
+    unknownOppCount: unknownOppCount
   };
 }
 
@@ -345,7 +357,10 @@ function normalizePct(v) {
 
 function normalizeId(v) {
   if (v == null || v === "") return "";
-  return String(Number(v) || v).padStart(4, "0").slice(-4);
+  // Match Utilities.gs::normalizeFranchiseId (3-digit padding). A width
+  // mismatch would silently break the join between FranchiseLookup,
+  // PowerRankings, and ScheduleResults.
+  return String(Number(v) || v).padStart(3, "0").slice(-3);
 }
 
 function normalizeConfId(s) {
