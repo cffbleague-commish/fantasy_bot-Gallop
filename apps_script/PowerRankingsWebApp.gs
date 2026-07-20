@@ -205,7 +205,7 @@ function readFranchiseLookup() {
       owner: cellStr(row, idx, ["Owner", "Manager", "OwnerHandle"]),
       bg:    cellStr(row, idx, ["Primary Color", "PrimaryColor", "BG"]),
       fg:    cellStr(row, idx, ["Secondary Color", "SecondaryColor", "FG"]),
-      logo:  cellStr(row, idx, ["Logo", "LogoURL", "Logo URL"])
+      logo:  cellStr(row, idx, ["Franchise Logo", "Logo", "LogoURL", "Logo URL"])
     };
   });
   return map;
