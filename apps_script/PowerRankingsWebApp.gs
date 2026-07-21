@@ -51,6 +51,25 @@ function clearPowerRankingsCache() {
 const PR_CACHE_KEY = "power_rankings_payload_v1";
 const PR_CACHE_TTL_SECONDS = 600; // 10 minutes
 
+// Conference logo URLs (Imgur i. host — direct image, not gallery page).
+// Keyed by the id normalizeConfId() produces from the sheet's Conference
+// column. Alternate spellings for the same conference are all included so
+// whatever the sheet uses matches.
+const CONFERENCE_LOGOS = {
+  sec:   "https://i.imgur.com/xHc56XP.png",
+  acc:   "https://i.imgur.com/mbCFRof.png",
+  aac:   "https://i.imgur.com/Ct4aTaU.png",
+  b10:   "https://i.imgur.com/c6aoyYl.png",
+  b1g:   "https://i.imgur.com/c6aoyYl.png",
+  bten:  "https://i.imgur.com/c6aoyYl.png",
+  bigten:"https://i.imgur.com/c6aoyYl.png",
+  b12:   "https://i.imgur.com/fWrSLJu.png",
+  big12: "https://i.imgur.com/fWrSLJu.png",
+  p12:   "https://i.imgur.com/1E0TJhR.png",
+  pac:   "https://i.imgur.com/1E0TJhR.png",
+  pac12: "https://i.imgur.com/1E0TJhR.png"
+};
+
 // ============================================================================
 // PAYLOAD BUILDER
 // ============================================================================
@@ -159,7 +178,7 @@ function buildPowerRankingsPayload(overrideYear) {
   teams.forEach(function (t) { if (t.conf) confSet[t.conf] = true; });
   const conferences = [{ id: "all", name: "All", logo: null }].concat(
     Object.keys(confSet).sort().map(function (id) {
-      return { id: id, name: confPrettyName(id), logo: null };
+      return { id: id, name: confPrettyName(id), logo: CONFERENCE_LOGOS[id] || null };
     })
   );
 
