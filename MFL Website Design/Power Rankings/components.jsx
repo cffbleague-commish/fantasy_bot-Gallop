@@ -66,10 +66,10 @@ const RankRow = ({ r, selected, onSelect }) => (
       <div className="r-rec">{r.cW}–{r.cL}</div>
       <div className="r-rec__sub">CONF</div>
     </div>
-    <div className="r-num r-c-ap">{r.allPlayPct.toFixed(1)}%</div>
-    <div className="r-num r-num--dim r-c-oppap">{r.oppAllPlayPct.toFixed(1)}%</div>
+    <div className="r-num r-c-ap">{r.allPlayPct.toFixed(2)}%</div>
+    <div className="r-num r-num--dim r-c-oppap">{r.oppAllPlayPct.toFixed(2)}%</div>
     <div className="r-score">
-      <span className="r-score__val">{r.cffb.toFixed(1)}</span>
+      <span className="r-score__val">{r.cffb.toFixed(3)}</span>
     </div>
   </button>
 );
@@ -121,8 +121,7 @@ const SchedRow = ({ g, teamConf }) => {
         <span className="srow__wk">Wk {g.week}</span>
         <span className="srow__res srow__res--up">vs</span>
         <span className="srow__opp">
-          {opp ? <TeamPill id={g.opp} h={20} /> : null}
-          <span className="srow__opp-name">{opp ? opp.name : 'Bye'}</span>
+          {opp ? <TeamPill id={g.opp} h={20} /> : <span className="srow__bye">Bye</span>}
         </span>
         <span className="srow__score"><span className="srow__opp-pre">upcoming</span></span>
       </div>
@@ -134,12 +133,11 @@ const SchedRow = ({ g, teamConf }) => {
       <span className="srow__wk">Wk {g.week}</span>
       <span className={'srow__res srow__res--' + (g.win ? 'w' : 'l')}>{g.win ? 'W' : 'L'}</span>
       <span className="srow__opp">
-        {opp ? <TeamPill id={g.opp} h={20} /> : null}
-        <span className="srow__opp-name">{opp ? opp.name : 'Unknown'}</span>
+        {opp ? <TeamPill id={g.opp} h={20} /> : <span className="srow__bye">Unknown</span>}
       </span>
       <span className="srow__score">
-        <span className="srow__score-val">{g.my.toFixed(1)} – {g.ov.toFixed(1)}</span>
-        <span className="srow__score-ap">{g.ap.toFixed(0)}% AP · opp {g.oppAp.toFixed(0)}%</span>
+        <span className="srow__score-val">{g.my.toFixed(2)} – {g.ov.toFixed(2)}</span>
+        <span className="srow__score-ap">{g.ap.toFixed(2)}% AP · opp {g.oppAp.toFixed(2)}%</span>
       </span>
     </div>
   );
@@ -173,7 +171,7 @@ const DetailPanel = ({ r }) => {
             </div>
             <div className="detail__fig">
               <div className="detail__fig-lbl">CFFB</div>
-              <div className="detail__fig-val" style={{ color: 'var(--gold-light)' }}>{r.cffb.toFixed(1)}</div>
+              <div className="detail__fig-val" style={{ color: 'var(--gold-light)' }}>{r.cffb.toFixed(3)}</div>
             </div>
           </div>
         </div>
@@ -183,9 +181,9 @@ const DetailPanel = ({ r }) => {
         <div className="stat"><div className="stat__lbl">Overall</div><div className="stat__val">{r.W}–{r.L}</div></div>
         <div className="stat"><div className="stat__lbl">Conference</div><div className="stat__val">{r.cW}–{r.cL}</div></div>
         <div className="stat"><div className="stat__lbl">Streak</div><StreakVal streak={r.streak} /></div>
-        <div className="stat"><div className="stat__lbl">All-Play %</div><div className="stat__val">{r.allPlayPct.toFixed(1)}<small>%</small></div></div>
-        <div className="stat"><div className="stat__lbl">Opp All-Play</div><div className="stat__val">{r.oppAllPlayPct.toFixed(1)}<small>%</small></div></div>
-        <div className="stat"><div className="stat__lbl">Pts / Game</div><div className="stat__val">{r.ppg.toFixed(1)}</div></div>
+        <div className="stat"><div className="stat__lbl">All-Play %</div><div className="stat__val">{r.allPlayPct.toFixed(2)}<small>%</small></div></div>
+        <div className="stat"><div className="stat__lbl">Opp All-Play</div><div className="stat__val">{r.oppAllPlayPct.toFixed(2)}<small>%</small></div></div>
+        <div className="stat"><div className="stat__lbl">Pts / Game</div><div className="stat__val">{r.ppg.toFixed(2)}</div></div>
       </div>
 
       <div className="sched">

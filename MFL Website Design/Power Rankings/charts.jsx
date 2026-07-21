@@ -84,14 +84,13 @@ const LeagueScatter = ({ rows, selected, onSelect }) => {
           <div className="scat-tip is-on" style={{ left: (X(hv.ppg) / SVW * 100) + '%', top: (Y(hv.allPlayPct) / SVH * 100) + '%', transform: 'translate(14px,-50%)' }}>
             <div className="scat-tip__head">
               <TeamPill id={hv.id} h={24} />
-              <span className="scat-tip__name">{hv.name}</span>
             </div>
             <dl className="scat-tip__rows">
               <div className="scat-tip__row"><dt>Rank</dt><dd>#{hv.rank}</dd></div>
-              <div className="scat-tip__row"><dt>Pts / Game</dt><dd>{hv.ppg.toFixed(1)}</dd></div>
-              <div className="scat-tip__row"><dt>All-Play %</dt><dd>{hv.allPlayPct.toFixed(1)}%</dd></div>
-              <div className="scat-tip__row"><dt>Opp All-Play</dt><dd>{hv.oppAllPlayPct.toFixed(1)}%</dd></div>
-              <div className="scat-tip__row"><dt>CFFB Score</dt><dd className="is-gold">{hv.cffb.toFixed(1)}</dd></div>
+              <div className="scat-tip__row"><dt>Pts / Game</dt><dd>{hv.ppg.toFixed(2)}</dd></div>
+              <div className="scat-tip__row"><dt>All-Play %</dt><dd>{hv.allPlayPct.toFixed(2)}%</dd></div>
+              <div className="scat-tip__row"><dt>Opp All-Play</dt><dd>{hv.oppAllPlayPct.toFixed(2)}%</dd></div>
+              <div className="scat-tip__row"><dt>CFFB Score</dt><dd className="is-gold">{hv.cffb.toFixed(3)}</dd></div>
             </dl>
           </div>
         )}
