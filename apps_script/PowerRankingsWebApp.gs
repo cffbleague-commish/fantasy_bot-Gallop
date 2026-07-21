@@ -293,24 +293,29 @@ function readLatestPowerRankings(year) {
 }
 
 /**
- * Read PowerRankings for every played week of the year and return per-
- * franchise rank arrays sorted ascending by week. Backs the RankTrail chart.
+ * Read week-by-week rank history from ScheduleResults for every franchise.
+ *
+ * We use ScheduleResults (not PowerRankings) because Rankings.gs::writeRankingsToSheet
+ * intentionally clears PowerRankings on each run — it only ever holds the latest
+ * week. ScheduleResults, in contrast, keeps a row per franchise per week with a
+ * `SeasonRank` column populated as of that week.
  */
 function readPowerRankingsHistory(year) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName("PowerRankings");
+  const sheet = SpreadsheetApp.getActive().getSheetByName("ScheduleResults");
   if (!sheet) return {};
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return {};
   const headers = data[0].map(String);
   const idx = headerIndexMap(headers);
+  if (idx["SeasonRank"] == null) return {}; // sheet doesn't expose per-week rank
 
   const byFid = {};
   data.slice(1).forEach(function (row) {
     if (Number(row[idx["Year"]]) !== year) return;
     const fid = normalizeId(row[idx["FranchiseID"]]);
     const week = Number(row[idx["Week"]]);
-    const rank = Number(row[idx["Rank"]]);
-    if (!fid || !week || isNaN(rank)) return;
+    const rank = Number(row[idx["SeasonRank"]]);
+    if (!fid || !week || isNaN(rank) || rank <= 0) return;
     if (!byFid[fid]) byFid[fid] = [];
     byFid[fid].push({ week: week, rank: rank });
   });
