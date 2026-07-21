@@ -157,8 +157,7 @@ const DetailPanel = ({ r }) => {
           <TeamPill id={r.id} h={40} />
           <div className="detail__id">
             <div className="detail__owner">
-              <span className="r-team__conf">{CONF_NAME[r.conf]}</span>
-              <span>·</span><span>{r.owner}</span>
+              <span>{r.owner}</span>
             </div>
           </div>
           <div className="detail__figs">
@@ -171,7 +170,7 @@ const DetailPanel = ({ r }) => {
             </div>
             <div className="detail__fig">
               <div className="detail__fig-lbl">CFFB</div>
-              <div className="detail__fig-val" style={{ color: 'var(--gold-light)' }}>{r.cffb.toFixed(3)}</div>
+              <div className="detail__fig-val" style={{ color: 'var(--gold-light)', fontSize: '26px' }}>{r.cffb.toFixed(3)}</div>
             </div>
           </div>
         </div>
