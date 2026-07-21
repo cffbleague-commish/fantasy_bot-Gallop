@@ -84,6 +84,7 @@ function buildPowerRankingsPayload(overrideYear) {
 
   const franchises = readFranchiseLookup();          // id -> { name, conf, abbr, owner, bg, fg, logo }
   const rankingsByFranchise = readLatestPowerRankings(year); // id -> ranking row (latest week)
+  const historyByFranchise  = readPowerRankingsHistory(year); // id -> { rankHist, moves }
   const scheduleByFranchise = readScheduleResultsForYear(year); // id -> [{ week, ... }]
 
   const latestWeek = detectLatestPlayedWeek(rankingsByFranchise, scheduleByFranchise);
@@ -116,11 +117,18 @@ function buildPowerRankingsPayload(overrideYear) {
             ov: round1(row.opponentScore),
             win: row.gameResult === "W",
             ap: allPlayPercent(row.weeklyAllPlayWins, row.weeklyAllPlayLosses, row.weeklyAllPlayTies),
-            oppAp: allPlayPercent(row.weeklyOppAllPlayWins, row.weeklyOppAllPlayLosses, row.weeklyOppAllPlayTies)
+            oppAp: allPlayPercent(row.weeklyOppAllPlayWins, row.weeklyOppAllPlayLosses, row.weeklyOppAllPlayTies),
+            rivalry: row.isRivalry,
+            gameday: row.isGameday
           });
         }
       } else {
-        upcoming.push({ week: row.week, opp: oppKnown ? oppId : null });
+        upcoming.push({
+          week: row.week,
+          opp: oppKnown ? oppId : null,
+          rivalry: row.isRivalry,
+          gameday: row.isGameday
+        });
       }
     });
 
@@ -158,7 +166,13 @@ function buildPowerRankingsPayload(overrideYear) {
 
       streak: computeStreak(games),
       games: games,
-      upcoming: upcoming
+      upcoming: upcoming,
+
+      // Weekly rank timeline for the RankTrail chart. rankHist[i] is the
+      // team's league rank AFTER week (i+1). moves[i] is the delta vs the
+      // prior week (positive = climbed, negative = dropped).
+      rankHist: (historyByFranchise[fid] && historyByFranchise[fid].rankHist) || [],
+      moves:    (historyByFranchise[fid] && historyByFranchise[fid].moves)    || []
     };
   });
 
@@ -278,6 +292,42 @@ function readLatestPowerRankings(year) {
   return out;
 }
 
+/**
+ * Read PowerRankings for every played week of the year and return per-
+ * franchise rank arrays sorted ascending by week. Backs the RankTrail chart.
+ */
+function readPowerRankingsHistory(year) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName("PowerRankings");
+  if (!sheet) return {};
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return {};
+  const headers = data[0].map(String);
+  const idx = headerIndexMap(headers);
+
+  const byFid = {};
+  data.slice(1).forEach(function (row) {
+    if (Number(row[idx["Year"]]) !== year) return;
+    const fid = normalizeId(row[idx["FranchiseID"]]);
+    const week = Number(row[idx["Week"]]);
+    const rank = Number(row[idx["Rank"]]);
+    if (!fid || !week || isNaN(rank)) return;
+    if (!byFid[fid]) byFid[fid] = [];
+    byFid[fid].push({ week: week, rank: rank });
+  });
+
+  const out = {};
+  Object.keys(byFid).forEach(function (fid) {
+    const rows = byFid[fid].slice().sort(function (a, b) { return a.week - b.week; });
+    const rankHist = rows.map(function (r) { return r.rank; });
+    const moves = rankHist.map(function (rk, i) {
+      if (i === 0) return 0;
+      return rankHist[i - 1] - rk; // + = climbed, - = dropped
+    });
+    out[fid] = { rankHist: rankHist, moves: moves };
+  });
+  return out;
+}
+
 function readScheduleResultsForYear(year) {
   const sheet = SpreadsheetApp.getActive().getSheetByName("ScheduleResults");
   if (!sheet) return {};
@@ -304,7 +354,9 @@ function readScheduleResultsForYear(year) {
       weeklyAllPlayTies:   Number(row[idx["WeeklyAllPlayTies"]] || 0),
       weeklyOppAllPlayWins:   Number(row[idx["WeeklyOppAllPlayWins"]] || 0),
       weeklyOppAllPlayLosses: Number(row[idx["WeeklyOppAllPlayLosses"]] || 0),
-      weeklyOppAllPlayTies:   Number(row[idx["WeeklyOppAllPlayTies"]] || 0)
+      weeklyOppAllPlayTies:   Number(row[idx["WeeklyOppAllPlayTies"]] || 0),
+      isRivalry: asBool(idx["IsRivalryGame"] != null ? row[idx["IsRivalryGame"]] : false),
+      isGameday: asBool(idx["IsGameOfTheWeek"] != null ? row[idx["IsGameOfTheWeek"]] : false)
     });
   });
   return out;
@@ -415,6 +467,12 @@ function cellStr(row, idx, candidates) {
 function numOrZero(v) { const n = Number(v); return isNaN(n) ? 0 : n; }
 function numOrNull(v) { if (v === "" || v == null) return null; const n = Number(v); return isNaN(n) ? null : n; }
 function round1(n) { return Math.round(Number(n || 0) * 10) / 10; }
+function asBool(v) {
+  if (v === true) return true;
+  if (v === false || v == null || v === "") return false;
+  const s = String(v).trim().toUpperCase();
+  return s === "TRUE" || s === "YES" || s === "1";
+}
 
 function jsonResponse(body) {
   return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);

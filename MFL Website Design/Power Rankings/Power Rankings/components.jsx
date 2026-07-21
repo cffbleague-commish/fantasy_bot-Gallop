@@ -40,6 +40,14 @@ const ConfFilter = ({ active, onChange }) => (
   </div>
 );
 
+// ---- CFFB score → fill color (gold for elite, fading down) ------------------
+const scoreColor = (cffb) => {
+  if (cffb >= 90) return 'var(--gold-gradient)';
+  if (cffb >= 80) return 'linear-gradient(90deg,#6E6056,#C9A227)';
+  if (cffb >= 70) return 'linear-gradient(90deg,#3A3A3A,#7A6A44)';
+  return 'linear-gradient(90deg,#2A2A2A,#4A4A4A)';
+};
+
 // ---- Rank prestige tier (color ramp) --------------------------------------
 const rankTier = (n) => (n === 1 ? 't1' : n <= 5 ? 't5' : n <= 10 ? 't10' : n <= 25 ? 't25' : 'tout');
 const tierColor = (n) => (n === 1 ? '#E8C547' : n <= 5 ? '#C9A227' : n <= 10 ? '#3B82C4' : n <= 25 ? '#7BA4C9' : '#9A9A9A');
@@ -66,10 +74,11 @@ const RankRow = ({ r, selected, onSelect }) => (
       <div className="r-rec">{r.cW}–{r.cL}</div>
       <div className="r-rec__sub">CONF</div>
     </div>
-    <div className="r-num r-c-ap">{r.allPlayPct.toFixed(2)}%</div>
-    <div className="r-num r-num--dim r-c-oppap">{r.oppAllPlayPct.toFixed(2)}%</div>
+    <div className="r-num r-c-ap">{r.allPlayPct.toFixed(1)}%</div>
+    <div className="r-num r-num--dim r-c-oppap">{r.oppAllPlayPct.toFixed(1)}%</div>
     <div className="r-score">
-      <span className="r-score__val">{r.cffb.toFixed(3)}</span>
+      <span className="r-score__val">{r.cffb.toFixed(1)}</span>
+      <span className="r-score__bar"><span className="r-score__fill" style={{ width: ((r.cffb - 55) / 45 * 100) + '%', background: scoreColor(r.cffb) }} /></span>
     </div>
   </button>
 );
@@ -102,7 +111,8 @@ const RankingTable = ({ rows, selected, onSelect, confName }) => (
   </section>
 );
 
-// ---- Rivalry badge (crossed swords + gold "RIVALRY" flag) ------------------
+// ---- Detail panel ----------------------------------------------------------
+// Rivalry mark — crossed swords. A game vs a team's designated rival.
 const RivalryIcon = ({ size = 15 }) => (
   <svg className="rivalry-icon" width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -114,15 +124,6 @@ const RivalryTag = () => (
   <span className="rivalry-tag" title="Rivalry game"><RivalryIcon size={13} />Rivalry</span>
 );
 
-// ---- College Gameday badge -------------------------------------------------
-const GAMEDAY_LOGO = 'https://i.imgur.com/9Kvqh5Y.png';
-const GamedayBadge = () => (
-  <span className="gameday-badge" title="College Gameday matchup">
-    <img src={GAMEDAY_LOGO} alt="College Gameday" />
-  </span>
-);
-
-// ---- Detail panel ----------------------------------------------------------
 const SchedRow = ({ g, teamConf }) => {
   if (g.bye) {
     return (
@@ -135,33 +136,31 @@ const SchedRow = ({ g, teamConf }) => {
     );
   }
   if (g.upcoming) {
-    const opp = g.opp && TEAMS[g.opp];
     return (
       <div className="srow srow--up">
         <span className="srow__wk">Wk {g.week}</span>
         <span className="srow__res srow__res--up">vs</span>
         <span className="srow__opp">
-          {opp ? <TeamPill id={g.opp} h={20} /> : <span className="srow__bye">Bye</span>}
+          {g.opp ? <TeamPill id={g.opp} h={20} /> : null}
+          <span className="srow__opp-name">{g.opp ? TEAMS[g.opp].name : 'Bye'}</span>
           {g.rivalry ? <RivalryTag /> : null}
-          {g.gameday ? <GamedayBadge /> : null}
         </span>
         <span className="srow__score"><span className="srow__opp-pre">upcoming</span></span>
       </div>
     );
   }
-  const opp = TEAMS[g.opp];
   return (
     <div className="srow">
       <span className="srow__wk">Wk {g.week}</span>
       <span className={'srow__res srow__res--' + (g.win ? 'w' : 'l')}>{g.win ? 'W' : 'L'}</span>
       <span className="srow__opp">
-        {opp ? <TeamPill id={g.opp} h={20} /> : <span className="srow__bye">Unknown</span>}
+        <TeamPill id={g.opp} h={20} />
+        <span className="srow__opp-name">{TEAMS[g.opp].name}</span>
         {g.rivalry ? <RivalryTag /> : null}
-        {g.gameday ? <GamedayBadge /> : null}
       </span>
       <span className="srow__score">
-        <span className="srow__score-val">{g.my.toFixed(2)} – {g.ov.toFixed(2)}</span>
-        <span className="srow__score-ap">{g.ap.toFixed(2)}% AP · opp {g.oppAp.toFixed(2)}%</span>
+        <span className="srow__score-val">{g.my.toFixed(1)} – {g.ov.toFixed(1)}</span>
+        <span className="srow__score-ap">{g.ap.toFixed(0)}% AP · opp {g.oppAp.toFixed(0)}%</span>
       </span>
     </div>
   );
@@ -180,8 +179,10 @@ const DetailPanel = ({ r }) => {
         <div className="detail__top">
           <TeamPill id={r.id} h={40} />
           <div className="detail__id">
+            <div className="detail__name">{r.name}</div>
             <div className="detail__owner">
-              <span>{r.owner}</span>
+              <span className="r-team__conf">{CONF_NAME[r.conf]}</span>
+              <span>·</span><span>{r.owner}</span>
             </div>
           </div>
           <div className="detail__figs">
@@ -194,7 +195,7 @@ const DetailPanel = ({ r }) => {
             </div>
             <div className="detail__fig">
               <div className="detail__fig-lbl">CFFB</div>
-              <div className="detail__fig-val" style={{ color: 'var(--gold-light)', fontSize: '26px' }}>{r.cffb.toFixed(3)}</div>
+              <div className="detail__fig-val" style={{ color: 'var(--gold-light)' }}>{r.cffb.toFixed(1)}</div>
             </div>
           </div>
         </div>
@@ -204,9 +205,9 @@ const DetailPanel = ({ r }) => {
         <div className="stat"><div className="stat__lbl">Overall</div><div className="stat__val">{r.W}–{r.L}</div></div>
         <div className="stat"><div className="stat__lbl">Conference</div><div className="stat__val">{r.cW}–{r.cL}</div></div>
         <div className="stat"><div className="stat__lbl">Streak</div><StreakVal streak={r.streak} /></div>
-        <div className="stat"><div className="stat__lbl">All-Play %</div><div className="stat__val">{r.allPlayPct.toFixed(2)}<small>%</small></div></div>
-        <div className="stat"><div className="stat__lbl">Opp All-Play</div><div className="stat__val">{r.oppAllPlayPct.toFixed(2)}<small>%</small></div></div>
-        <div className="stat"><div className="stat__lbl">Pts / Game</div><div className="stat__val">{r.ppg.toFixed(2)}</div></div>
+        <div className="stat"><div className="stat__lbl">All-Play %</div><div className="stat__val">{r.allPlayPct.toFixed(1)}<small>%</small></div></div>
+        <div className="stat"><div className="stat__lbl">Opp All-Play</div><div className="stat__val">{r.oppAllPlayPct.toFixed(1)}<small>%</small></div></div>
+        <div className="stat"><div className="stat__lbl">Pts / Game</div><div className="stat__val">{r.ppg.toFixed(1)}</div></div>
       </div>
 
       <div className="sched">

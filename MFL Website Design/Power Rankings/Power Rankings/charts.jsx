@@ -84,13 +84,14 @@ const LeagueScatter = ({ rows, selected, onSelect }) => {
           <div className="scat-tip is-on" style={{ left: (X(hv.ppg) / SVW * 100) + '%', top: (Y(hv.allPlayPct) / SVH * 100) + '%', transform: 'translate(14px,-50%)' }}>
             <div className="scat-tip__head">
               <TeamPill id={hv.id} h={24} />
+              <span className="scat-tip__name">{hv.name}</span>
             </div>
             <dl className="scat-tip__rows">
               <div className="scat-tip__row"><dt>Rank</dt><dd>#{hv.rank}</dd></div>
-              <div className="scat-tip__row"><dt>Pts / Game</dt><dd>{hv.ppg.toFixed(2)}</dd></div>
-              <div className="scat-tip__row"><dt>All-Play %</dt><dd>{hv.allPlayPct.toFixed(2)}%</dd></div>
-              <div className="scat-tip__row"><dt>Opp All-Play</dt><dd>{hv.oppAllPlayPct.toFixed(2)}%</dd></div>
-              <div className="scat-tip__row"><dt>CFFB Score</dt><dd className="is-gold">{hv.cffb.toFixed(3)}</dd></div>
+              <div className="scat-tip__row"><dt>Pts / Game</dt><dd>{hv.ppg.toFixed(1)}</dd></div>
+              <div className="scat-tip__row"><dt>All-Play %</dt><dd>{hv.allPlayPct.toFixed(1)}%</dd></div>
+              <div className="scat-tip__row"><dt>Opp All-Play</dt><dd>{hv.oppAllPlayPct.toFixed(1)}%</dd></div>
+              <div className="scat-tip__row"><dt>CFFB Score</dt><dd className="is-gold">{hv.cffb.toFixed(1)}</dd></div>
             </dl>
           </div>
         )}
@@ -187,8 +188,8 @@ const WeeklyChart = ({ r }) => {
 // ===========================================================================
 // RANK TRAIL — the selected team's discrete week-by-week ladder movement.
 //   'trail' : bump line of league rank over the season (rank 1 = top).
-//   'shift' : diverging step-area of net spots CLIMBED (up/green) or DROPPED
-//             (down/red) since the Week 1 baseline.
+//   'move'  : diverging columns — spots CLIMBED (up/green) or DROPPED
+//             (down/red) each week vs the prior week.
 // ===========================================================================
 const RTVW = 1120, RTVH = 288, RTM = { l: 48, r: 22, t: 24, b: 40 };
 const _lum = (hex) => { const c = hex.replace('#', ''); const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
@@ -198,36 +199,26 @@ const RankTrail = ({ r }) => {
   const hist = r.rankHist || [];
   const moves = r.moves || [];
   const n = hist.length;
-  if (n === 0) {
-    return (
-      <div className="chart-card chart-card--wide">
-        <div className="chart-card__head">
-          <div>
-            <div className="chart-card__eyebrow">Ladder Movement</div>
-            <div className="chart-card__title">Rank Trail — {r.name}</div>
-            <div className="chart-card__sub">No weekly rank history yet.</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
   const iw = RTVW - RTM.l - RTM.r, ih = RTVH - RTM.t - RTM.b;
   const slot = iw / n;
   const cx = (i) => RTM.l + slot * i + slot / 2;
   const lineCol = _lum(r.bg) < 0.3 ? r.fg : r.bg;
 
-  const best = Math.min.apply(null, hist);
-  const worst = Math.max.apply(null, hist);
+  const best = Math.min(...hist), worst = Math.max(...hist);
   const start = hist[0];
+  // cumulative shift vs the season-opening rank (+ = net spots climbed since Wk 1)
   const cum = hist.map((rk) => start - rk);
   const net = cum[n - 1];
 
+  // --- trail geometry (fixed full 1–100 ladder range · rank 1 at the top) ---
   const lo = 1, hi = 100;
   const Yr = (rank) => RTM.t + (rank - lo) / (hi - lo) * ih;
   const rTicks = [1, 20, 40, 60, 80, 100];
+  // step-before path: hold rank until the week mark, then jump — reads as discrete weeks
   let trailD = `M ${cx(0)} ${Yr(hist[0])}`;
   for (let i = 1; i < n; i++) trailD += ` L ${cx(i)} ${Yr(hist[i - 1])} L ${cx(i)} ${Yr(hist[i])}`;
 
+  // --- cumulative-shift geometry (stepped area around the season-start baseline) ---
   const cMax = Math.max(1, ...cum.map((v) => Math.abs(v)));
   const zeroY = RTM.t + ih / 2;
   const half = ih / 2 - 10;
@@ -236,6 +227,7 @@ const RankTrail = ({ r }) => {
   const cTicks = [];
   for (let v = -cMax; v <= cMax; v += cStep) cTicks.push(v);
   if (cTicks.indexOf(0) < 0) cTicks.push(0);
+  // stepped line + closed area down to the zero baseline
   let cumLineD = `M ${cx(0)} ${Yc(cum[0])}`;
   for (let i = 1; i < n; i++) cumLineD += ` L ${cx(i)} ${Yc(cum[i - 1])} L ${cx(i)} ${Yc(cum[i])}`;
   const cumAreaD = `M ${cx(0)} ${zeroY} L ${cx(0)} ${Yc(cum[0])}` +
@@ -300,7 +292,7 @@ const RankTrail = ({ r }) => {
             <path className="rt-cum-area" d={cumAreaD} fill={lineCol} />
             <path className="rt-line" d={cumLineD} stroke={lineCol} />
             {cum.map((v, i) => {
-              const x = cx(i);
+              const x = cx(i), up = v >= 0;
               return (
                 <g key={i}>
                   <circle className="rt-dot" cx={x} cy={Yc(v)} r={i === n - 1 ? 6.5 : 4.5} fill={r.bg} stroke={r.fg} />

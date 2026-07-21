@@ -347,6 +347,45 @@ img { display: block; }
 .chart-foot__sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
 .chart-foot__sw--line { width: 14px; height: 0; border-top: 2px dashed #C9A227; border-radius: 0; }
 
+/* rank trail (ladder movement chart) */
+.chart-card--wide { margin-top: 16px; }
+.rt-head-right { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
+.rt-summary { display: flex; gap: 18px; }
+.rt-sum { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.rt-sum__lbl { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); }
+.rt-sum__val { font-family: var(--font-display); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1; }
+.rt-sum__val.is-pos { color: var(--delta-pos); }
+.rt-sum__val.is-neg { color: var(--delta-neg); }
+.rt-sum__val.is-flat { color: var(--fg-tertiary); }
+.rt-line { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.rt-cum-area { opacity: 0.14; }
+.rt-dot { stroke-width: 2; }
+.rt-rank-lbl { fill: #7A7A7A; font-size: 10px; font-weight: 600; font-family: var(--font-body); font-variant-numeric: tabular-nums; }
+.rt-mv { font-size: 11px; font-weight: 700; font-family: var(--font-body); font-variant-numeric: tabular-nums; }
+.rt-mv.is-pos { fill: var(--delta-pos); }
+.rt-mv.is-neg { fill: var(--delta-neg); }
+.rt-mv.is-flat { fill: var(--fg-tertiary); letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; }
+.chart-foot__mv { font-size: 12px; font-weight: 700; line-height: 1; }
+.chart-foot__mv.is-pos { color: var(--delta-pos); }
+.chart-foot__mv.is-neg { color: var(--delta-neg); }
+
+/* rivalry badge (crossed swords + gold flag tag) */
+.rivalry-tag {
+  display: inline-flex; align-items: center; gap: 4px; flex: none;
+  padding: 2px 10px 2px 9px;
+  font-family: var(--font-body); font-weight: 800; font-size: 9px;
+  letter-spacing: 0.11em; text-transform: uppercase;
+  color: #0A0A0A;
+  background: linear-gradient(150deg, #F5DC84, #D4AE32 52%, #9C7C22);
+  clip-path: polygon(7px 0, 100% 0, 100% 100%, 7px 100%, 0 50%);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.45);
+}
+.rivalry-tag .rivalry-icon { display: block; color: #0A0A0A; }
+
+/* college gameday badge */
+.gameday-badge { display: inline-flex; align-items: center; height: 18px; flex: none; }
+.gameday-badge img { height: 18px; width: auto; display: block; border-radius: 3px; }
+
 /* ============================================================ RESPONSIVE (container-query driven so the mobile frame collapses too) */
 @container app (max-width: 1080px) {
   .layout { grid-template-columns: 1fr; }
@@ -377,6 +416,9 @@ img { display: block; }
   .r-team__name { font-size: 14px; }
   .detail__fig-val { font-size: 34px; }
   .chart-card__title { font-size: 19px; }
+  .rt-head-right { flex-direction: column; align-items: flex-start; gap: 10px; width: 100%; }
+  .rt-summary { gap: 20px; }
+  .rt-sum { align-items: flex-start; }
 }
 
 
@@ -567,6 +609,26 @@ const RankingTable = ({ rows, selected, onSelect, confName }) => (
   </section>
 );
 
+// ---- Rivalry badge (crossed swords + gold "RIVALRY" flag) ------------------
+const RivalryIcon = ({ size = 15 }) => (
+  <svg className="rivalry-icon" width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3.5 3.5 L20 20" /><path d="M17 20.5 L20.5 17" /><path d="M19 22 L22 19" />
+    <path d="M20.5 3.5 L4 20" /><path d="M3.5 17 L7 20.5" /><path d="M2 19 L5 22" />
+  </svg>
+);
+const RivalryTag = () => (
+  <span className="rivalry-tag" title="Rivalry game"><RivalryIcon size={13} />Rivalry</span>
+);
+
+// ---- College Gameday badge -------------------------------------------------
+const GAMEDAY_LOGO = 'https://i.imgur.com/9Kvqh5Y.png';
+const GamedayBadge = () => (
+  <span className="gameday-badge" title="College Gameday matchup">
+    <img src={GAMEDAY_LOGO} alt="College Gameday" />
+  </span>
+);
+
 // ---- Detail panel ----------------------------------------------------------
 const SchedRow = ({ g, teamConf }) => {
   if (g.bye) {
@@ -587,6 +649,8 @@ const SchedRow = ({ g, teamConf }) => {
         <span className="srow__res srow__res--up">vs</span>
         <span className="srow__opp">
           {opp ? <TeamPill id={g.opp} h={20} /> : <span className="srow__bye">Bye</span>}
+          {g.rivalry ? <RivalryTag /> : null}
+          {g.gameday ? <GamedayBadge /> : null}
         </span>
         <span className="srow__score"><span className="srow__opp-pre">upcoming</span></span>
       </div>
@@ -599,6 +663,8 @@ const SchedRow = ({ g, teamConf }) => {
       <span className={'srow__res srow__res--' + (g.win ? 'w' : 'l')}>{g.win ? 'W' : 'L'}</span>
       <span className="srow__opp">
         {opp ? <TeamPill id={g.opp} h={20} /> : <span className="srow__bye">Unknown</span>}
+        {g.rivalry ? <RivalryTag /> : null}
+        {g.gameday ? <GamedayBadge /> : null}
       </span>
       <span className="srow__score">
         <span className="srow__score-val">{g.my.toFixed(2)} – {g.ov.toFixed(2)}</span>
@@ -854,7 +920,156 @@ const WeeklyChart = ({ r }) => {
   );
 };
 
-Object.assign(window, { LeagueScatter, WeeklyChart });
+// ===========================================================================
+// RANK TRAIL — the selected team's discrete week-by-week ladder movement.
+//   'trail' : bump line of league rank over the season (rank 1 = top).
+//   'shift' : diverging step-area of net spots CLIMBED (up/green) or DROPPED
+//             (down/red) since the Week 1 baseline.
+// ===========================================================================
+const RTVW = 1120, RTVH = 288, RTM = { l: 48, r: 22, t: 24, b: 40 };
+const _lum = (hex) => { const c = hex.replace('#', ''); const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+
+const RankTrail = ({ r }) => {
+  const [mode, setMode] = useStateC('trail'); // 'trail' | 'shift'
+  const hist = r.rankHist || [];
+  const moves = r.moves || [];
+  const n = hist.length;
+  if (n === 0) {
+    return (
+      <div className="chart-card chart-card--wide">
+        <div className="chart-card__head">
+          <div>
+            <div className="chart-card__eyebrow">Ladder Movement</div>
+            <div className="chart-card__title">Rank Trail — {r.name}</div>
+            <div className="chart-card__sub">No weekly rank history yet.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  const iw = RTVW - RTM.l - RTM.r, ih = RTVH - RTM.t - RTM.b;
+  const slot = iw / n;
+  const cx = (i) => RTM.l + slot * i + slot / 2;
+  const lineCol = _lum(r.bg) < 0.3 ? r.fg : r.bg;
+
+  const best = Math.min.apply(null, hist);
+  const worst = Math.max.apply(null, hist);
+  const start = hist[0];
+  const cum = hist.map((rk) => start - rk);
+  const net = cum[n - 1];
+
+  const lo = 1, hi = 100;
+  const Yr = (rank) => RTM.t + (rank - lo) / (hi - lo) * ih;
+  const rTicks = [1, 20, 40, 60, 80, 100];
+  let trailD = `M ${cx(0)} ${Yr(hist[0])}`;
+  for (let i = 1; i < n; i++) trailD += ` L ${cx(i)} ${Yr(hist[i - 1])} L ${cx(i)} ${Yr(hist[i])}`;
+
+  const cMax = Math.max(1, ...cum.map((v) => Math.abs(v)));
+  const zeroY = RTM.t + ih / 2;
+  const half = ih / 2 - 10;
+  const Yc = (v) => zeroY - (v / cMax) * half;
+  const cStep = Math.max(1, Math.ceil(cMax / 2));
+  const cTicks = [];
+  for (let v = -cMax; v <= cMax; v += cStep) cTicks.push(v);
+  if (cTicks.indexOf(0) < 0) cTicks.push(0);
+  let cumLineD = `M ${cx(0)} ${Yc(cum[0])}`;
+  for (let i = 1; i < n; i++) cumLineD += ` L ${cx(i)} ${Yc(cum[i - 1])} L ${cx(i)} ${Yc(cum[i])}`;
+  const cumAreaD = `M ${cx(0)} ${zeroY} L ${cx(0)} ${Yc(cum[0])}` +
+    cum.slice(1).map((v, k) => ` L ${cx(k + 1)} ${Yc(cum[k])} L ${cx(k + 1)} ${Yc(v)}`).join('') +
+    ` L ${cx(n - 1)} ${zeroY} Z`;
+
+  return (
+    <div className="chart-card chart-card--wide">
+      <div className="chart-card__head">
+        <div>
+          <div className="chart-card__eyebrow">Ladder Movement</div>
+          <div className="chart-card__title">Rank Trail — {r.name}</div>
+          <div className="chart-card__sub">{mode === 'trail' ? 'League rank after each week · rank 1 at the top' : 'Cumulative spots climbed or dropped since the Week 1 ranking'}</div>
+        </div>
+        <div className="rt-head-right">
+          <div className="rt-summary">
+            <span className="rt-sum"><span className="rt-sum__lbl">Best</span><span className="rt-sum__val">#{best}</span></span>
+            <span className="rt-sum"><span className="rt-sum__lbl">Worst</span><span className="rt-sum__val">#{worst}</span></span>
+            <span className="rt-sum"><span className="rt-sum__lbl">Season Shift</span><span className={'rt-sum__val ' + (net > 0 ? 'is-pos' : net < 0 ? 'is-neg' : 'is-flat')}>{net > 0 ? '▲' + net : net < 0 ? '▼' + (-net) : '—'}</span></span>
+          </div>
+          <div className="modes" role="tablist">
+            <button className={'modes__btn' + (mode === 'trail' ? ' is-active' : '')} onClick={() => setMode('trail')}>Trail</button>
+            <button className={'modes__btn' + (mode === 'shift' ? ' is-active' : '')} onClick={() => setMode('shift')}>Cumulative Shift</button>
+          </div>
+        </div>
+      </div>
+
+      <svg className="chart-svg" viewBox={`0 0 ${RTVW} ${RTVH}`} preserveAspectRatio="xMidYMid meet">
+        {mode === 'trail' ? (
+          <React.Fragment>
+            {rTicks.map((v) => (
+              <g key={'r' + v}>
+                <line className="c-grid" x1={RTM.l} y1={Yr(v)} x2={RTVW - RTM.r} y2={Yr(v)} />
+                <text className="c-tick" x={RTM.l - 9} y={Yr(v) + 4} textAnchor="end">#{v}</text>
+              </g>
+            ))}
+            <path className="rt-line" d={trailD} stroke={lineCol} />
+            {hist.map((rk, i) => {
+              const mv = moves[i];
+              return (
+                <g key={i}>
+                  {i > 0 && mv !== 0 && (
+                    <text className={'rt-mv ' + (mv > 0 ? 'is-pos' : 'is-neg')} x={cx(i)} y={Yr(rk) - 14} textAnchor="middle">{mv > 0 ? '▲' + mv : '▼' + (-mv)}</text>
+                  )}
+                  <circle className="rt-dot" cx={cx(i)} cy={Yr(rk)} r={i === n - 1 ? 6.5 : 5} fill={r.bg} stroke={r.fg} />
+                  <text className="rt-rank-lbl" x={cx(i)} y={Yr(rk) + (rk <= (lo + hi) / 2 ? 20 : -12)} textAnchor="middle">#{rk}</text>
+                  <text className="c-wk-lbl" x={cx(i)} y={RTVH - RTM.b + 18}>{i + 1}</text>
+                </g>
+              );
+            })}
+            <text className="c-axis-title" x={RTM.l + iw / 2} y={RTVH - 4} textAnchor="middle">Week</text>
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            {cTicks.map((v) => (
+              <g key={'c' + v}>
+                <line className={v === 0 ? 'c-axis' : 'c-grid'} x1={RTM.l} y1={Yc(v)} x2={RTVW - RTM.r} y2={Yc(v)} />
+                <text className="c-tick" x={RTM.l - 9} y={Yc(v) + 4} textAnchor="end">{v > 0 ? '+' + v : v}</text>
+              </g>
+            ))}
+            <text className="c-ref-lbl" x={RTVW - RTM.r} y={Yc(0) - 6} textAnchor="end">WK 1 BASELINE</text>
+            <path className="rt-cum-area" d={cumAreaD} fill={lineCol} />
+            <path className="rt-line" d={cumLineD} stroke={lineCol} />
+            {cum.map((v, i) => {
+              const x = cx(i);
+              return (
+                <g key={i}>
+                  <circle className="rt-dot" cx={x} cy={Yc(v)} r={i === n - 1 ? 6.5 : 4.5} fill={r.bg} stroke={r.fg} />
+                  <text className={'rt-mv ' + (v > 0 ? 'is-pos' : v < 0 ? 'is-neg' : 'is-flat')} x={x} y={Yc(v) + (v < 0 ? 22 : -13)} textAnchor="middle">{v > 0 ? '+' + v : v === 0 ? '±0' : v}</text>
+                  <text className="c-wk-lbl" x={x} y={RTVH - RTM.b + 18}>{i + 1}</text>
+                </g>
+              );
+            })}
+            <text className="c-axis-title" x={RTM.l + iw / 2} y={RTVH - 4} textAnchor="middle">Week</text>
+          </React.Fragment>
+        )}
+      </svg>
+
+      <div className="chart-foot">
+        {mode === 'trail' ? (
+          <React.Fragment>
+            <span className="chart-foot__key"><span className="chart-foot__sw" style={{ background: lineCol, borderRadius: 999 }} /> {r.name} rank</span>
+            <span className="chart-foot__key"><span className="chart-foot__mv is-pos">▲</span> Climbed vs prior week</span>
+            <span className="chart-foot__key"><span className="chart-foot__mv is-neg">▼</span> Dropped vs prior week</span>
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <span className="chart-foot__key"><span className="chart-foot__sw" style={{ background: lineCol, borderRadius: 999 }} /> Cumulative shift vs Wk 1</span>
+            <span className="chart-foot__key"><span className="chart-foot__mv is-pos">＋</span> Above baseline = net climb</span>
+            <span className="chart-foot__key"><span className="chart-foot__mv is-neg">－</span> Below baseline = net drop</span>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { LeagueScatter, WeeklyChart, RankTrail });
 
 
 /* ---- app.jsx ---- */
@@ -915,6 +1130,8 @@ const App = () => {
           <LeagueScatter rows={rows} selected={selId} onSelect={setSelected} />
           {selRow && <WeeklyChart r={selRow} />}
         </div>
+
+        {selRow && <RankTrail r={selRow} />}
       </div>
     </div>
   );
