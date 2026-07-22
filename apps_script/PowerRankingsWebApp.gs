@@ -116,6 +116,9 @@ function buildPowerRankingsPayload(overrideYear) {
             my: round1(row.teamScore),
             ov: round1(row.opponentScore),
             win: row.gameResult === "W",
+            result: row.gameResult,   // "W" | "L" | "T"
+            oppRank: row.opponentRank,
+            conf: row.isConference,
             ap: allPlayPercent(row.weeklyAllPlayWins, row.weeklyAllPlayLosses, row.weeklyAllPlayTies),
             oppAp: allPlayPercent(row.weeklyOppAllPlayWins, row.weeklyOppAllPlayLosses, row.weeklyOppAllPlayTies),
             rivalry: row.isRivalry,
@@ -126,6 +129,7 @@ function buildPowerRankingsPayload(overrideYear) {
         upcoming.push({
           week: row.week,
           opp: oppKnown ? oppId : null,
+          conf: row.isConference,
           rivalry: row.isRivalry,
           gameday: row.isGameday
         });
@@ -354,6 +358,8 @@ function readScheduleResultsForYear(year) {
       opponentId: row[idx["OpponentID"]],
       opponentScore: Number(row[idx["OpponentScore"]] || 0),
       gameResult: row[idx["GameResult"]],
+      opponentRank: Number(row[idx["OpponentRank"]] || 0),
+      isConference: asBool(idx["IsConferenceGame"] != null ? row[idx["IsConferenceGame"]] : false),
       weeklyAllPlayWins:   Number(row[idx["WeeklyAllPlayWins"]] || 0),
       weeklyAllPlayLosses: Number(row[idx["WeeklyAllPlayLosses"]] || 0),
       weeklyAllPlayTies:   Number(row[idx["WeeklyAllPlayTies"]] || 0),

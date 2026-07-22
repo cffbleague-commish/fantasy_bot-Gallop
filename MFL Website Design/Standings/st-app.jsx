@@ -30,20 +30,24 @@ function tiebreakNote(t) {
   return base + ' ' + how;
 }
 
-// Team mark: ripped-pill PNG art when it exists, else deterministic circular chip.
-const PILL_ART = [['georgia', 'georgia'], ['north carolina', 'north-carolina'], ['army', 'army'], ['fresno state', 'fresno-state']];
-const pillFor = (name) => { const n = name.toLowerCase(); const hit = PILL_ART.find(([k]) => n.includes(k)); return hit ? '../assets/teams/' + hit[1] + '.png' : null; };
+// Team mark: franchise logo (FranchiseLookup URL from the payload) when present,
+// else a deterministic circular chip in the team's own colors (falling back to a
+// hashed hue when no colors are supplied — e.g. the standalone sample data).
 const PILL_SIZE = { sm: 'cffb-team--sm', md: 'cffb-team--sm', lg: 'cffb-team--md' };
 
-function TeamChip({ name, size }) {
-  const [pill, setPill] = React.useState(pillFor(name));
-  if (pill) return <img className={'cffb-team ' + (PILL_SIZE[size] || 'cffb-team--sm')} src={pill} alt={name} onError={() => setPill(null)} />;
-  const hues = ['#7BAFD4','#990000','#BF5700','#154733','#00274C','#461D7C','#782F40','#F47321','#0051BA','#CC0000','#002E5D','#841617','#BB0000','#013CA6','#C8102E'];
-  let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  const bg = hues[h % hues.length];
+function TeamChip({ name, size, pill, bg, fg }) {
+  const [src, setSrc] = React.useState(pill || null);
+  React.useEffect(() => { setSrc(pill || null); }, [pill]);
+  if (src) return <img className={'cffb-team ' + (PILL_SIZE[size] || 'cffb-team--sm')} src={src} alt={name} onError={() => setSrc(null)} />;
+  let background = bg;
+  if (!background) {
+    const hues = ['#7BAFD4','#990000','#BF5700','#154733','#00274C','#461D7C','#782F40','#F47321','#0051BA','#CC0000','#002E5D','#841617','#BB0000','#013CA6','#C8102E'];
+    let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    background = hues[h % hues.length];
+  }
   const abbr = name.replace(/[^A-Za-z ]/g, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const cls = 'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : '');
-  return <span className={cls} style={{ background: bg, color: '#fff' }}>{abbr}</span>;
+  return <span className={cls} style={{ background, color: fg || '#fff' }}>{abbr}</span>;
 }
 
 function RankCell({ rank }) {
@@ -76,7 +80,7 @@ function TeamModal({ team, onClose }) {
           : ''}</td>
         <td>
           <div className="st-sched__opp">
-            <TeamChip name={g.oppName} size="sm" />
+            <TeamChip name={g.oppName} size="sm" pill={g.oppPill} bg={g.oppBg} fg={g.oppFg} />
             <span className="st-sched__oppname">{g.oppName}</span>
             {g.isRivalry && (
               <span className="cffb-rivalry cffb-rivalry--solo" title="Rivalry game">
@@ -105,7 +109,7 @@ function TeamModal({ team, onClose }) {
       <div className="st-modal__panel" ref={ref}>
         <button className="st-modal__x" onClick={onClose} aria-label="Close">×</button>
         <div className="st-modal__head">
-          <TeamChip name={team.name} size="lg" />
+          <TeamChip name={team.name} size="lg" pill={team.pill} bg={team.bg} fg={team.fg} />
           <div className="st-modal__id">
             <div className="st-modal__conf">
               <span className="cffb-label">Nat #{team.natRank} · Conf #{team.confRank}</span>
@@ -196,7 +200,7 @@ function StandingsTable({ rows, view, onPick }) {
                 <td><RankCell rank={t.natRank} /></td>
                 <td>
                   <div className="st-team">
-                    <TeamChip name={t.name} size="md" />
+                    <TeamChip name={t.name} size="md" pill={t.pill} bg={t.bg} fg={t.fg} />
                     <span className="st-team__name">{t.name}</span>
                   </div>
                 </td>
@@ -238,7 +242,7 @@ function MobileList({ rows, onPick }) {
               {t.confRank}
               {t.confRank <= 2 && <span className="st-ccg">CCG</span>}
             </div>
-            <TeamChip name={t.name} size="md" />
+            <TeamChip name={t.name} size="md" pill={t.pill} bg={t.bg} fg={t.fg} />
             <div className="st-mcard__main">
               <div className="st-mcard__top">
                 <span className="st-mcard__name">{t.name}</span>
@@ -303,7 +307,7 @@ function App() {
         {model.conferences.map((c) => (
           <button key={c} role="tab" aria-selected={view === c}
             className={'st-conftab' + (view === c ? ' is-active' : '')} onClick={() => setView(c)}>
-            <img className="st-conftab__logo" src={confLogo(c)} alt=""
+            <img className="st-conftab__logo" src={(model.confLogos && model.confLogos[c]) || confLogo(c)} alt=""
               onError={(e) => { e.target.style.display = 'none'; }} />
             <span className="st-conftab__name">{c}</span>
             <span className="st-conftab__count cffb-num">{counts[c] || 0}</span>

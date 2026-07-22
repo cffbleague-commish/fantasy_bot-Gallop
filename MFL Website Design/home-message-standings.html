@@ -1,0 +1,1743 @@
+<style>
+/* ============================================================
+   CFFB.css — College Fantasy Football League stylesheet
+   Drop-in stylesheet for MyFantasyLeague custom CSS.
+
+   Built on: CFFB Design System (dark mode, championship gold)
+   Inspiration: ESPN GameDay, CFP broadcast graphics, 247sports.
+
+   Sections
+   --------
+   01  Foundations  — tokens, fonts, reset
+   02  Typography   — display + body helpers
+   03  Page chrome  — top bar, sidebar, page shell, ticker
+   04  Surfaces     — cards, KPI tiles, panels
+   05  Tables       — MFL legacy tables + custom data tables
+   06  Buttons + forms
+   07  Player atoms — name plate, position chip, team chip
+   08  NEW · Redshirt chips (traditional + medical bandage)
+   09  NEW · Eligibility dots (class + years used)
+   10  NEW · Award badges (Heisman, Davey O'Brien, Doak Walker,
+            Biletnikoff, Conference All-American)
+   11  Misc · stars, conference badges, grade pills, value delta
+   12  Utilities
+   ============================================================ */
+
+
+/* ============================================================
+   01 · FOUNDATIONS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Star tiers */
+  --star-5: #C9A227;
+  --star-4: #3B82C4;
+  --star-3: #7BA4C9;
+  --star-2: #6A6A6A;
+  --star-1: #4A4A4A;
+
+  /* Grades */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: #C9A227;
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* Deltas */
+  --delta-pos:  #2D7A4E;
+  --delta-neg:  #B84545;
+  --delta-flat: #5A5A5A;
+
+  /* Live */
+  --live: #2D7A4E;
+
+  /* Conferences */
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
+  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
+
+  /* Eligibility / Redshirt */
+  --rs-trad:    #C9A227;   /* gold shield */
+  --rs-medical: #D17575;   /* dusty red bandage */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Type scale */
+  --ds-hero: 64px; --ds-1: 48px; --ds-2: 32px; --ds-3: 24px; --ds-4: 18px;
+  --tx-lg: 16px; --tx-md: 14px; --tx-sm: 13px; --tx-xs: 12px; --tx-2xs: 11px;
+
+  /* Weights */
+  --w-400: 400; --w-500: 500; --w-600: 600; --w-700: 700;
+
+  /* Spacing — 8px base */
+  --s-half: 4px;
+  --s-1:  8px; --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 40px; --s-6: 48px; --s-7: 64px; --s-8: 80px;
+
+  /* Radii */
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+
+  /* Layout */
+  --container-max: 1280px;
+  --topbar-h: 64px;
+  --ticker-h: 44px;
+}
+
+/* Reset (light, MFL-friendly) */
+*, *::before, *::after { box-sizing: border-box; }
+
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num *, td.cffb-num, th.cffb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+
+/* ============================================================
+   02 · TYPOGRAPHY
+   ============================================================ */
+
+.cffb-display-hero,
+.cffb-display-1,
+.cffb-display-2,
+.cffb-display-3,
+.cffb-display-4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cffb-display-hero { font-weight: 700; font-size: var(--ds-hero); line-height: 1; }
+.cffb-display-1    { font-weight: 700; font-size: var(--ds-1); line-height: 1.05; }
+.cffb-display-2    { font-weight: 700; font-size: var(--ds-2); line-height: 1.1; }
+.cffb-display-3    { font-weight: 600; font-size: var(--ds-3); line-height: 1.15; }
+.cffb-display-4    { font-weight: 600; font-size: var(--ds-4); line-height: 1.2; }
+
+.cffb-h1 { font: 700 28px/1.2 var(--font-body); letter-spacing: -0.01em; margin: 0; }
+.cffb-h2 { font: 600 20px/1.25 var(--font-body); margin: 0; }
+.cffb-h3 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+.cffb-body    { font-size: var(--tx-md); color: var(--fg-primary); }
+.cffb-body-sm { font-size: var(--tx-sm); color: var(--fg-secondary); }
+
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Gold-gradient text — RESERVE for the page's hero value only. */
+.cffb-gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+
+/* ============================================================
+   03 · PAGE CHROME
+   ============================================================ */
+
+.cffb-shell {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar — sticky, 64px, holds wordmark + nav + manager chip */
+.cffb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 var(--s-3);
+  gap: var(--s-3);
+}
+.cffb-topbar__brand {
+  display: flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; font-size: var(--ds-4);
+  letter-spacing: 0.02em;
+  color: var(--fg-primary);
+  border-right: 1px solid var(--border);
+  padding-right: var(--s-3);
+  height: 100%;
+}
+.cffb-topbar__brand-mark {
+  width: 28px; height: 28px;
+  background: var(--gold-gradient);
+  -webkit-mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+          mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+}
+.cffb-topbar__nav {
+  display: flex; align-items: center; gap: var(--s-half);
+  height: 100%;
+}
+.cffb-topbar__nav a {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-sm); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 0 var(--s-2); height: 100%;
+  display: inline-flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cffb-topbar__nav a:hover { color: var(--fg-primary); text-decoration: none; }
+.cffb-topbar__nav a.is-active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--gold);
+}
+.cffb-topbar__spacer { flex: 1; }
+.cffb-topbar__manager {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--tx-sm); font-weight: 600;
+}
+.cffb-topbar__manager-cap {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* Ticker — sticky under topbar, 44px, scrolls left */
+.cffb-ticker {
+  position: sticky; top: var(--topbar-h); z-index: 49;
+  height: var(--ticker-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cffb-ticker__label {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 0 var(--s-2);
+  background: var(--bg-surface-elev);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--tx-sm); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  z-index: 2;
+}
+.cffb-ticker__track {
+  display: inline-flex; align-items: center; gap: var(--s-4);
+  white-space: nowrap;
+  padding-left: 140px;
+  animation: cffb-ticker-scroll 60s linear infinite;
+}
+.cffb-ticker__item {
+  display: inline-flex; align-items: baseline; gap: var(--s-1);
+  font-size: var(--tx-sm); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-ticker__item strong {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-primary); font-size: var(--tx-md);
+  text-transform: uppercase;
+}
+.cffb-ticker__item em { font-style: normal; color: var(--gold); font-weight: 600; }
+.cffb-ticker__sep { color: var(--border-strong); }
+@keyframes cffb-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Page shell */
+.cffb-page {
+  flex: 1;
+  max-width: var(--container-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-7);
+}
+.cffb-page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.cffb-page__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 40px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.005em;
+}
+
+/* Footer */
+.cffb-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-3);
+  font-size: var(--tx-xs);
+  color: var(--fg-tertiary);
+  text-align: center;
+}
+
+
+/* ============================================================
+   04 · SURFACES — cards, KPI tiles, panels
+   ============================================================ */
+
+.cffb-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3);
+}
+.cffb-card--featured { box-shadow: var(--inset-metallic); }
+.cffb-card--featured::before {
+  content: ""; display: block; height: 3px;
+  background: var(--gold-gradient);
+  margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) var(--s-2);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+.cffb-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.cffb-card__title {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.cffb-card__action {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* KPI tile */
+.cffb-kpi {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3) 18px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-kpi__label { /* alias for .cffb-label */
+  font-family: var(--font-body);
+  font-weight: 600; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-kpi__value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--ds-1); line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cffb-kpi__sub {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: var(--delta-pos); }
+.cffb-kpi__sub--neg { color: var(--delta-neg); }
+.cffb-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+/* Live indicator */
+.cffb-live {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--tx-2xs); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--live);
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: var(--shadow-glow-live);
+  animation: cffb-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+
+/* ============================================================
+   05 · TABLES (MFL legacy + custom)
+   ============================================================ */
+
+.cffb-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.cffb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tx-sm);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 12px var(--s-2);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cffb-table tbody td {
+  padding: 12px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.cffb-table tbody tr:last-child td { border-bottom: none; }
+.cffb-table tbody tr {
+  position: relative;
+  transition: background var(--dur-fast);
+}
+.cffb-table tbody tr:hover { background: var(--bg-surface-hover); }
+.cffb-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table tbody tr.is-active td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table__num { text-align: right; }
+.cffb-table__rank {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-secondary);
+  width: 40px; text-align: center;
+}
+
+
+/* ============================================================
+   06 · BUTTONS + FORMS
+   ============================================================ */
+
+.cffb-btn {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-xs); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+.cffb-btn:hover { filter: brightness(1.08); }
+.cffb-btn:active { filter: brightness(0.9); }
+.cffb-btn--primary {
+  background: var(--gold-gradient);
+  color: #0A0A0A;
+  border-color: transparent;
+}
+.cffb-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cffb-btn--sm { padding: 6px 10px; font-size: 10px; }
+
+.cffb-input {
+  font-family: var(--font-body); font-size: var(--tx-md);
+  padding: 10px 12px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  width: 100%;
+}
+.cffb-input::placeholder { color: var(--fg-tertiary); }
+.cffb-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+
+/* ============================================================
+   07 · PLAYER ATOMS — name plate, position chip, team chip
+   ============================================================ */
+
+.cffb-player {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-player__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 18px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.cffb-player__meta {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cffb-pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  min-width: 28px; padding: 3px 6px;
+  border-radius: var(--r-1);
+  color: #0A0A0A;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cffb-pos--qb { background: #C9A227; }
+.cffb-pos--rb { background: #3B82C4; color: #F5F5F5; }
+.cffb-pos--wr { background: #7BA4C9; }
+.cffb-pos--te { background: #8B6F1F; color: #F5F5F5; }
+.cffb-pos--ol { background: #6A6A6A; color: #F5F5F5; }
+.cffb-pos--def, .cffb-pos--lb, .cffb-pos--db { background: #B84545; color: #F5F5F5; }
+.cffb-pos--k  { background: #5C7A6A; color: #F5F5F5; }
+
+/* Team logo — canonical "ripped pill" PNGs in assets/teams/<slug>.png.
+   Conference badge on left, torn-paper edge, team art on right (250×60).
+   Sizes match the design system: sm 30px, md 48px, lg 60px tall. */
+.cffb-team {
+  display: inline-block;
+  height: 48px; width: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+
+/* Team chip — circular fallback for teams without ripped art yet */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cffb-team-chip--sm { width: 24px; height: 24px; font-size: 9px; }
+.cffb-team-chip--lg { width: 48px; height: 48px; font-size: 14px; }
+
+
+/* ============================================================
+   08 · REDSHIRT CHIPS — Traditional + Medical (NEW)
+   ------------------------------------------------------------
+   Sits inline next to a player's name. Shield silhouette,
+   gold for traditional, dusty-red bandage for medical.
+
+   Markup:
+     <span class="cffb-rs cffb-rs--trad" title="Traditional Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield…</svg>
+       <span class="cffb-rs__txt">RS</span>
+     </span>
+     <span class="cffb-rs cffb-rs--med" title="Medical Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield+bandage…</svg>
+       <span class="cffb-rs__txt">MRS</span>
+     </span>
+
+   Sizes: --xs (12px), --sm (14px default), --md (18px)
+   ------------------------------------------------------------ */
+
+.cffb-rs {
+  display: inline-flex; align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.cffb-rs__icon {
+  display: block;
+  width: 14px; height: auto;
+  flex-shrink: 0;
+}
+.cffb-rs__txt {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Sizes */
+.cffb-rs--xs .cffb-rs__icon { width: 10px; }
+.cffb-rs--xs .cffb-rs__txt  { font-size: 8.5px; }
+.cffb-rs--sm .cffb-rs__icon { width: 14px; }
+.cffb-rs--sm .cffb-rs__txt  { font-size: 10px; }
+.cffb-rs--md .cffb-rs__icon { width: 18px; }
+.cffb-rs--md .cffb-rs__txt  { font-size: 12px; }
+
+/* Traditional */
+.cffb-rs--trad           { color: var(--rs-trad); }
+.cffb-rs--trad .cffb-rs__icon { stroke: var(--rs-trad); fill: rgba(201,162,39,0.08); }
+
+/* Medical */
+.cffb-rs--med            { color: var(--rs-medical); }
+.cffb-rs--med .cffb-rs__icon { stroke: var(--rs-medical); fill: rgba(209,117,117,0.08); }
+
+/* Icon-only variant (no text), used in tight rows/tables */
+.cffb-rs--solo .cffb-rs__txt { display: none; }
+.cffb-rs--solo { gap: 0; }
+
+
+/* ============================================================
+   09 · ELIGIBILITY DOTS — class + years used (NEW)
+   ------------------------------------------------------------
+   Class label (FR / SO / JR / SR / GR) + 5 dots showing years
+   used / remaining. Redshirt years marked with a ring (◎) instead
+   of a fill — communicates "burned a year but no eligibility used".
+
+   Markup:
+     <span class="cffb-elig">
+       <span class="cffb-elig__class">JR</span>
+       <span class="cffb-elig__dots" aria-label="2 of 5 eligibility used">
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot is-rs"></span>   ← redshirt
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot"></span>
+         <span class="cffb-elig__dot"></span>
+       </span>
+       <span class="cffb-elig__remain">2 left</span>
+     </span>
+   ------------------------------------------------------------ */
+
+.cffb-elig {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cffb-elig__class {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 26px; padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  color: var(--fg-primary);
+  text-align: center;
+  background: var(--bg-surface-elev);
+}
+.cffb-elig__class--fr { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--so { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--jr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--sr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--gr { border-color: var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+
+.cffb-elig__dots {
+  display: inline-flex; gap: 3px; align-items: center;
+}
+.cffb-elig__dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.cffb-elig__dot.is-used {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.cffb-elig__dot.is-rs {
+  /* Redshirt: filled ring with hollow center — "year burned, no game time" */
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-trad) 2.5px 100%);
+  border-color: var(--rs-trad);
+}
+.cffb-elig__dot.is-rs-med {
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-medical) 2.5px 100%);
+  border-color: var(--rs-medical);
+}
+.cffb-elig__remain {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Compact variant — no remaining label, no class chip */
+.cffb-elig--compact { gap: var(--s-half); }
+.cffb-elig--compact .cffb-elig__class { display: none; }
+.cffb-elig--compact .cffb-elig__remain { display: none; }
+
+
+/* ============================================================
+   10 · AWARD BADGES — Heisman, Davey O'Brien, Doak Walker,
+        Biletnikoff, Conference All-American (NEW)
+   ------------------------------------------------------------
+   Stacked horizontal badges with a stroke-icon glyph, award
+   name, and year. The Heisman is the hero — metallic gold
+   gradient fill; the four position awards share a uniform
+   gold-outline treatment. Conference All-American picks up the
+   player's conference accent color.
+
+   Markup:
+     <div class="cffb-awards">
+       <span class="cffb-award cffb-award--heisman">
+         <svg class="cffb-award__glyph" viewBox="0 0 24 24">…</svg>
+         <span class="cffb-award__name">Heisman</span>
+         <span class="cffb-award__year">2024</span>
+       </span>
+       <span class="cffb-award cffb-award--obrien">…</span>
+       …
+     </div>
+   ------------------------------------------------------------ */
+
+.cffb-awards {
+  display: flex; flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.cffb-award {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-elev);
+  font-family: var(--font-body);
+  font-size: var(--tx-xs); font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  transition: filter var(--dur-fast);
+  cursor: default;
+}
+.cffb-award:hover { filter: brightness(1.08); }
+
+.cffb-award__glyph {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75;
+  color: var(--gold);
+}
+.cffb-award__name {
+  letter-spacing: 0.04em;
+}
+.cffb-award__year {
+  color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* Heisman — hero treatment, metallic gold fill */
+.cffb-award--heisman {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+  font-weight: 700;
+}
+.cffb-award--heisman .cffb-award__glyph { color: #0A0A0A; stroke-width: 2; }
+.cffb-award--heisman .cffb-award__year  { color: rgba(10,10,10,0.65); }
+
+/* Position awards — gold outline */
+.cffb-award--obrien,
+.cffb-award--walker,
+.cffb-award--biletnikoff {
+  border-color: rgba(201,162,39,0.45);
+  background: rgba(201,162,39,0.06);
+}
+
+/* Conference All-American — picks up conference color */
+.cffb-award--allamerican {
+  border-color: rgba(154,154,154,0.35);
+}
+.cffb-award--allamerican.is-sec   { border-color: rgba(201,162,39,0.45); color: var(--fg-primary); }
+.cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
+.cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
+.cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
+.cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+
+/* Size variants */
+.cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
+.cffb-awards--sm .cffb-award__glyph { width: 13px; height: 13px; }
+.cffb-awards--sm .cffb-award__year { font-size: 10px; }
+
+
+/* ============================================================
+   11 · MISC — stars, conference badges, grade pills, value delta
+   ============================================================ */
+
+/* Stars */
+.cffb-stars { display: inline-flex; align-items: center; gap: 2px; }
+.cffb-star { font-size: 14px; line-height: 1; color: var(--star-5); }
+.cffb-star--off { color: var(--border); }
+.cffb-stars--t5 .cffb-star { color: var(--star-5); }
+.cffb-stars--t4 .cffb-star { color: var(--star-4); }
+.cffb-stars--t3 .cffb-star { color: var(--star-3); }
+.cffb-stars--t2 .cffb-star { color: var(--star-2); }
+
+/* Conference badges */
+.cffb-conf {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: var(--r-1);
+  border: 1px solid transparent; color: var(--fg-primary);
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
+
+/* Grade pill */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: var(--r-2);
+  padding: 4px 10px 5px; color: var(--fg-primary);
+  font-size: 20px;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: var(--gold-gradient); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
+.cffb-grade--bp { background: var(--grade-b); color: var(--fg-primary); }
+.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
+.cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
+
+/* Value delta */
+.cffb-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-body); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tx-sm);
+}
+.cffb-delta--pos  { color: var(--delta-pos); }
+.cffb-delta--neg  { color: var(--delta-neg); }
+.cffb-delta--flat { color: var(--delta-flat); }
+.cffb-delta__arrow { font-size: 0.85em; line-height: 1; }
+
+
+/* ============================================================
+   12 · UTILITIES
+   ============================================================ */
+
+.cffb-row     { display: flex; gap: var(--s-2); align-items: center; }
+.cffb-row--sb { justify-content: space-between; }
+.cffb-row--end{ justify-content: flex-end; }
+.cffb-stack   { display: flex; flex-direction: column; gap: var(--s-1); }
+.cffb-stack--2 { gap: var(--s-2); }
+.cffb-stack--3 { gap: var(--s-3); }
+
+.cffb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+.cffb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.cffb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.cffb-divider { height: 1px; background: var(--border); margin: var(--s-2) 0; }
+.cffb-spacer  { flex: 1; }
+
+.cffb-muted     { color: var(--fg-secondary); }
+.cffb-tertiary  { color: var(--fg-tertiary); }
+.cffb-gold      { color: var(--gold); }
+.cffb-mono      { font-family: var(--font-mono); }
+
+.cffb-mt-1 { margin-top: var(--s-1); }
+.cffb-mt-2 { margin-top: var(--s-2); }
+.cffb-mt-3 { margin-top: var(--s-3); }
+.cffb-mb-2 { margin-bottom: var(--s-2); }
+
+/* CFFB · Standings — page styles (consumes ../cffb.css tokens) */
+
+.st-page {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-6);
+}
+
+/* ── Header ── */
+.st-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3); flex-wrap: wrap;
+  padding-bottom: var(--s-2);
+  margin-bottom: var(--s-3);
+  border-bottom: 1px solid var(--border);
+}
+.st-head__title { display: flex; flex-direction: column; gap: 6px; }
+.st-head__h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 44px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.01em; margin: 0;
+}
+.st-head__meta { white-space: nowrap; }
+
+.st-loading {
+  display: flex; align-items: center; gap: var(--s-1);
+  color: var(--fg-secondary); padding: var(--s-6) 0;
+  font-size: var(--tx-sm);
+}
+
+/* ── Conference filter (Power-Rankings style tab bar) ── */
+.st-conffilter {
+  display: flex; gap: 6px; align-items: center;
+  padding: 6px; margin-bottom: var(--s-3);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow-x: auto; scrollbar-width: thin;
+}
+.st-conftab {
+  display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+  padding: 9px 15px; border-radius: var(--r-2);
+  background: transparent; border: 1px solid transparent; cursor: pointer;
+  color: var(--fg-secondary);
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+.st-conftab__logo { width: 22px; height: 22px; object-fit: contain; filter: grayscale(1) opacity(0.55); transition: filter var(--dur-fast); flex-shrink: 0; }
+.st-conftab__name { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; }
+.st-conftab:hover { color: var(--fg-primary); }
+.st-conftab:hover .st-conftab__logo { filter: grayscale(0.3) opacity(0.85); }
+.st-conftab.is-active { background: var(--bg-surface-elev); border-color: var(--border-strong); color: var(--fg-primary); }
+.st-conftab.is-active .st-conftab__logo { filter: none; }
+.st-conftab__count {
+  font-family: var(--font-body); font-weight: 600; font-size: 11px;
+  color: var(--fg-tertiary);
+  background: #101010; border-radius: var(--r-pill); padding: 2px 7px;
+}
+.st-conftab.is-active .st-conftab__count { color: var(--gold); }
+
+/* ── Standings table ── */
+.st-table tbody tr { cursor: pointer; }
+.st-table tbody tr:focus-visible { outline: none; background: var(--bg-surface-hover); }
+.st-table tbody tr:focus-visible td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+
+.st-confrank {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 20px; color: var(--fg-primary); text-align: center;
+  width: 58px; position: relative;
+}
+.st-confrank__tb { position: absolute; left: 8px; top: 50%; transform: translateY(-9px); color: var(--gold); font-size: 0.6em; font-weight: 700; }
+
+/* Projected conference-championship seeds (top 2) */
+.st-confrank--ccg { color: var(--gold); }
+.st-ccg {
+  display: block; margin-top: 3px;
+  font-family: var(--font-body); font-weight: 700; font-size: 8px;
+  letter-spacing: 0.14em; color: var(--gold);
+}
+.st-row--ccg td { background: rgba(201,162,39,0.045); }
+.st-row--ccg:hover td { background: rgba(201,162,39,0.09); }
+.st-row--ccg td:first-child { box-shadow: inset 3px 0 0 var(--gold-dark); }
+.st-row--hero.st-row--ccg td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+.st-row--ccgline td { border-bottom: 2px solid rgba(201,162,39,0.55); }
+.st-ccg--inline { display: inline; margin: 0; padding: 1px 5px; border: 1px solid rgba(201,162,39,0.5); border-radius: var(--r-1); }
+
+/* Tiebreaker note in modal */
+.st-tie {
+  display: flex; align-items: center; gap: var(--s-2);
+  background: rgba(201,162,39,0.07);
+  border: 1px solid rgba(201,162,39,0.3);
+  border-radius: var(--r-3);
+  padding: var(--s-1) var(--s-2);
+  margin-bottom: var(--s-3);
+}
+.st-tie__badge {
+  flex: none;
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+  letter-spacing: 0.06em; color: #0A0A0A;
+  background: var(--gold-gradient); box-shadow: var(--inset-metallic);
+  border-radius: var(--r-2); padding: 5px 9px 6px;
+}
+.st-tie__txt { display: flex; flex-direction: column; gap: 2px; font-size: var(--tx-sm); color: var(--fg-primary); line-height: 1.4; }
+.st-tie__lead {
+  font-family: var(--font-body); font-weight: 700; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold);
+}
+.st-natrank {
+  font-family: var(--font-display); font-weight: 700; font-size: 20px;
+  font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.01em;
+  color: var(--fg-secondary);
+}
+.st-natrank.tout { color: var(--fg-secondary); }
+.st-natrank.t25  { color: #7BA4C9; }
+.st-natrank.t10  { color: #3B82C4; }
+.st-natrank.t5   { color: var(--gold); }
+.st-natrank.t1   { color: var(--gold-light); text-shadow: 0 0 14px rgba(201,162,39,0.5); }
+.st-table .cffb-conf { white-space: nowrap; }
+
+.st-team { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.st-team__name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 17px; text-transform: uppercase; letter-spacing: -0.005em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.st-rec { font-weight: 600; font-size: var(--tx-md); }
+
+/* Hero row — #1 nationally */
+.st-row--hero td { background: rgba(201,162,39,0.06); }
+.st-row--hero:hover td { background: rgba(201,162,39,0.10); }
+.st-row--hero td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+.st-row--hero .st-team__name {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Leader flags */
+.st-leader { display: inline-flex; align-items: center; gap: 5px; color: var(--fg-primary); font-weight: 600; }
+.st-leader__star { color: var(--gold); font-size: 11px; line-height: 1; }
+
+/* Legend */
+.st-legend { margin-top: var(--s-2); color: var(--fg-tertiary); }
+.st-legend .st-leader__star { margin-right: 3px; }
+.st-legend__src { color: var(--fg-tertiary); }
+.st-legend code { font-family: var(--font-mono); color: var(--fg-secondary); font-size: 12px; }
+
+/* ── Team modal ── */
+.st-modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(10,10,10,0.86);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: var(--s-5) var(--s-3);
+  overflow-y: auto;
+  animation: st-fade var(--dur-base) var(--ease-out);
+}
+@keyframes st-fade { from { opacity: 0; } to { opacity: 1; } }
+.st-modal__panel {
+  position: relative;
+  width: 100%; max-width: 720px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-lg);
+  padding: var(--s-3);
+  animation: st-rise var(--dur-slow) var(--ease-out);
+}
+@keyframes st-rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+.st-modal__x {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border-radius: var(--r-2);
+  background: transparent; border: 1px solid var(--border);
+  color: var(--fg-secondary); font-size: 20px; line-height: 1;
+  cursor: pointer; transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.st-modal__x:hover { color: var(--fg-primary); border-color: var(--border-strong); }
+
+.st-modal__head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-3); padding-right: 40px; }
+.st-modal__conf { display: flex; align-items: center; gap: var(--s-1); margin-bottom: 6px; }
+.st-modal__name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: -0.01em; margin: 0;
+}
+
+.st-modal__kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-1); margin-bottom: var(--s-3); }
+.st-mk {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--r-3); padding: var(--s-1) var(--s-2) 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.st-mk__v {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 26px; line-height: 1; letter-spacing: -0.01em;
+}
+.st-modal__section { margin-bottom: var(--s-1); }
+
+/* Schedule table */
+.st-sched-wrap { max-height: none; }
+.st-sched thead th { position: sticky; top: 0; }
+.st-sched__wk { font-family: var(--font-display); font-weight: 700; color: var(--fg-secondary); text-align: center; }
+.st-sched__rk { font-family: var(--font-display); font-weight: 700; font-size: 15px; text-align: center; }
+.st-sched__rk .st-natrank { font-size: 15px; }
+.st-sched__opp { display: flex; align-items: center; gap: var(--s-1); }
+.st-sched__oppname {
+  font-family: var(--font-body); font-weight: 600; font-size: var(--tx-sm);
+  color: var(--fg-primary); white-space: nowrap;
+}
+.st-sched__opprank { font-size: var(--tx-xs); color: var(--fg-secondary); }
+.st-sched__tag {
+  font-family: var(--font-body); font-weight: 700; font-size: 9px; letter-spacing: 0.1em;
+  color: var(--fg-tertiary); border: 1px solid var(--border); border-radius: var(--r-1);
+  padding: 1px 5px;
+}
+.st-sched__future td { opacity: 0.72; }
+.st-sched__score b { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.st-sched__score { white-space: nowrap; }
+.st-sc--win { color: var(--fg-primary); }
+.st-sc--sep { color: var(--border-strong); }
+
+.st-wl {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; padding: 2px 6px 3px; border-radius: var(--r-1);
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+}
+.st-wl--w { background: rgba(45,122,78,0.18); color: #4A9968; border: 1px solid rgba(45,122,78,0.4); }
+.st-wl--l { background: rgba(184,69,69,0.15); color: #D88787; border: 1px solid rgba(184,69,69,0.4); }
+.st-wl--t { background: var(--bg-surface); color: var(--fg-secondary); border: 1px solid var(--border); }
+.st-wl--upc { background: transparent; color: var(--fg-tertiary); border: 1px solid var(--border); font-size: 10px; letter-spacing: 0.08em; }
+
+/* ── Mobile card list (≤560px) ── */
+.st-mlist { display: flex; flex-direction: column; gap: var(--s-1); }
+.st-mcard {
+  display: grid; grid-template-columns: 34px auto 1fr; align-items: center;
+  gap: var(--s-2); width: 100%; text-align: left;
+  padding: var(--s-2); cursor: pointer;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--r-3); color: var(--fg-primary);
+}
+.st-mcard:active { background: var(--bg-surface-hover); }
+.st-mcard--hero { background: rgba(201,162,39,0.07); border-color: rgba(201,162,39,0.32); }
+.st-mcard--ccg { border-color: rgba(201,162,39,0.4); box-shadow: inset 3px 0 0 var(--gold-dark); }
+.st-mcard__confrank .st-ccg { position: static; display: block; margin-top: 2px; text-align: center; }
+.st-mcard__confrank {
+  position: relative; text-align: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1;
+  color: var(--fg-primary);
+}
+.st-mcard__confrank .st-confrank__tb { position: absolute; left: -3px; top: -2px; color: var(--gold); font-size: 0.5em; }
+.st-mcard__main { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.st-mcard__top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-1); }
+.st-mcard__name {
+  font-family: var(--font-display); font-weight: 700; font-size: 17px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.st-mcard--hero .st-mcard__name {
+  background: var(--gold-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.st-mcard__top .st-natrank { font-size: 16px; flex: none; }
+.st-mcard__stats {
+  display: flex; flex-wrap: wrap; gap: 4px 12px;
+  font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+.st-mcard__stats span { display: inline-flex; align-items: baseline; gap: 4px; }
+.st-mcard__stats b { font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--fg-primary); letter-spacing: 0; }
+.st-mcard__stats .st-leader b { color: var(--gold); }
+.st-mcard__stats .st-leader__star { font-size: 10px; }
+
+@media (max-width: 560px) {
+  .st-page { padding: var(--s-2) var(--s-2) var(--s-5); }
+  .st-head { flex-direction: column; align-items: flex-start; gap: var(--s-1); }
+  .st-head__h1 { font-size: 32px; }
+  .st-head__meta { display: none; }
+  .st-conffilter { border-radius: var(--r-2); }
+  .st-conftab { padding: 8px 12px; gap: 7px; }
+  .st-conftab__name { font-size: 14px; }
+  .st-modal { padding: var(--s-2); }
+  .st-modal__panel { padding: var(--s-2); border-radius: var(--r-3); }
+  .st-modal__name { font-size: 26px; }
+  .st-modal__kpis { grid-template-columns: repeat(2, 1fr); }
+  .st-sched thead th, .st-sched tbody td { padding: 10px 8px; }
+  .st-sched__oppname { font-size: var(--tx-xs); white-space: normal; }
+}
+@media (max-width: 720px) and (min-width: 561px) {
+  .st-head__h1 { font-size: 34px; }
+  .st-modal__kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+</style>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <symbol id="cffb-icon-rivalry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4 L15 15" />
+        <path d="M2.5 5.5 L5.5 2.5" />
+        <path d="M13.5 17.5 L17.5 13.5 L20 16 L16 20 Z" />
+        <path d="M20 4 L9 15" />
+        <path d="M21.5 5.5 L18.5 2.5" />
+        <path d="M10.5 17.5 L6.5 13.5 L4 16 L8 20 Z" />
+      </symbol>
+    </defs>
+  </svg>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<div id="cffb-st-root"></div>
+<script type="text/babel" data-presets="react">
+/* ---- st-data-live.jsx ---- */
+// CFFB · Standings — LIVE data loader
+// Replaces the demo's st-data.jsx (sample CSV + PRNG) at build time.
+// Fetches JSON from the same Apps Script Web App that powers Power Rankings,
+// reshapes teams[] into the model st-app.jsx consumes, and derives the
+// conference ranks / tiebreakers / league-leader flags client-side (the same
+// logic st-data.jsx's buildModel uses).
+//
+// The build script substitutes the real /exec URL for https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec.
+const CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+
+// ── helpers (ported from st-data.jsx) ────────────────────────────────────────
+const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; };
+
+// Conference slug for cffb-conf-- classes. Falls back to a hashed neutral.
+const CONF_SLUGS = { sec: 'sec', bigten: 'b1g', b1g: 'b1g', 'big ten': 'b1g', acc: 'acc', big12: 'big12', 'big 12': 'big12', pac: 'pac', 'pac-12': 'pac', 'pac12': 'pac', aac: 'aac', mw: 'mw', 'mtn west': 'mw', 'mountain west': 'mw', ind: 'ind', independent: 'ind' };
+function confSlug(name) {
+  const k = String(name || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  return CONF_SLUGS[k] || CONF_SLUGS[k.replace(/\s/g, '')] || 'ind';
+}
+
+// ── Derivation: conference ranks + tiebreakers + leaders ─────────────────────
+// Operates on an already-constructed teams array (each team carries the season
+// fields + a games[] list). Mirrors st-data.jsx buildModel lines 127-192.
+function deriveRanks(teams) {
+  // National rank: prefer the sheet's rank; if absent/zero, derive from rankScore.
+  const haveNat = teams.some((t) => t.natRankRaw > 0);
+  if (haveNat) {
+    teams.forEach((t) => { t.natRank = t.natRankRaw; });
+  } else {
+    [...teams].sort((a, b) => b.rankScore - a.rankScore).forEach((t, i) => { t.natRank = i + 1; });
+  }
+
+  // Conference rank: conf record → HEAD-TO-HEAD (among tied teams) → all-play% → points → national rank.
+  const confPct = (t) => { const g = t.confWins + t.confLosses; return g ? t.confWins / g : 0; };
+  const byConf = new Map();
+  teams.forEach((t) => { if (!byConf.has(t.conf)) byConf.set(t.conf, []); byConf.get(t.conf).push(t); });
+  const distinct = (vals) => new Set(vals.map((v) => Number(v).toFixed(4))).size > 1;
+  byConf.forEach((list) => {
+    const groups = {};
+    list.forEach((t) => { const k = confPct(t).toFixed(6); (groups[k] = groups[k] || []).push(t); });
+    const keys = Object.keys(groups).sort((a, b) => parseFloat(b) - parseFloat(a));
+    let rank = 1;
+    keys.forEach((k) => {
+      const grp = groups[k];
+      if (grp.length > 1) {
+        const ids = new Set(grp.map((t) => t.id));
+        grp.forEach((t) => {
+          let w = 0, l = 0;
+          t.games.forEach((g) => { if (g.result && ids.has(g.oppId)) { if (g.result === 'W') w++; else if (g.result === 'L') l++; } });
+          t._h2hW = w; t._h2hL = l; t._h2hPct = (w + l) ? w / (w + l) : 0;
+        });
+        grp.sort((a, b) =>
+          b._h2hPct - a._h2hPct ||
+          b.allPlayPct - a.allPlayPct ||
+          b.pointsFor - a.pointsFor ||
+          a.natRank - b.natRank
+        );
+        let decidedBy = 'National ranking';
+        if (distinct(grp.map((t) => t._h2hPct))) decidedBy = 'Head-to-head';
+        else if (distinct(grp.map((t) => t.allPlayPct))) decidedBy = 'All-play %';
+        else if (distinct(grp.map((t) => t.pointsFor))) decidedBy = 'Total points';
+        grp.forEach((t) => {
+          t.tiebreak = {
+            confRec: t.confWins + '–' + t.confLosses,
+            tiedWith: grp.filter((o) => o.id !== t.id).map((o) => o.name),
+            h2hW: t._h2hW, h2hL: t._h2hL,
+            h2hPlayed: (t._h2hW + t._h2hL) > 0,
+            decidedBy,
+          };
+        });
+      }
+      grp.forEach((t) => { t.confRank = rank++; delete t._h2hPct; });
+    });
+  });
+
+  // League leaders (flags)
+  const ptsLeader = teams.reduce((m, t) => (t.pointsFor > (m ? m.pointsFor : -1) ? t : m), null);
+  const apLeader = teams.reduce((m, t) => (t.allPlayPct > (m ? m.allPlayPct : -1) ? t : m), null);
+  teams.forEach((t) => {
+    t.isPtsLeader = ptsLeader && t.id === ptsLeader.id;
+    t.isApLeader = apLeader && t.id === apLeader.id;
+  });
+
+  teams.sort((a, b) => a.natRank - b.natRank);
+}
+
+// ── Loader: fetch the web app JSON and build the standings model ─────────────
+async function loadStandings() {
+  const res = await fetch(CFFB_WEBAPP_URL, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching standings');
+  const d = await res.json();
+  if (d.error) throw new Error(d.error);
+
+  // Conference id -> { name, logo } (drop the synthetic 'all' entry).
+  const confMap = {};
+  (d.conferences || []).forEach((c) => { if (c.id !== 'all') confMap[c.id] = c; });
+
+  // Per-franchise lookups used to resolve opponents inside each schedule.
+  const idName = {}, idConf = {}, idPill = {}, idBg = {}, idFg = {};
+  (d.teams || []).forEach((t) => {
+    idName[t.id] = t.name;
+    idConf[t.id] = (confMap[t.conf] && confMap[t.conf].name) || t.conf;
+    idPill[t.id] = t.pill || null;
+    idBg[t.id] = t.bg || null;
+    idFg[t.id] = t.fg || null;
+  });
+
+  const confLogos = {};
+
+  const teams = (d.teams || []).map((t) => {
+    const confName = (confMap[t.conf] && confMap[t.conf].name) || t.conf || '—';
+    confLogos[confName] = (confMap[t.conf] && confMap[t.conf].logo) || null;
+
+    const mkGame = (g, played) => {
+      const oppId = String(g.opp != null ? g.opp : '');
+      // isConf: prefer the authoritative per-game flag; else compare conferences.
+      const isConf = (g.conf != null)
+        ? !!g.conf
+        : (oppId && idConf[oppId] ? idConf[oppId] === confName : false);
+      const result = played
+        ? String(g.result || (g.win ? 'W' : 'L')).toUpperCase()
+        : '';
+      return {
+        week: num(g.week),
+        oppId,
+        oppName: idName[oppId] || '—',
+        oppRank: num(g.oppRank),
+        oppPill: idPill[oppId] || null,
+        oppBg: idBg[oppId] || null,
+        oppFg: idFg[oppId] || null,
+        teamScore: played ? num(g.my) : null,
+        oppScore: played ? num(g.ov) : null,
+        result,
+        isConf,
+        isRivalry: !!g.rivalry,
+        isGotw: false,
+        isGameday: !!g.gameday,
+      };
+    };
+
+    const games = (t.games || [])
+      .filter((g) => !g.bye && g.opp != null)
+      .map((g) => mkGame(g, true))
+      .concat((t.upcoming || [])
+        .filter((g) => g.opp != null)
+        .map((g) => mkGame(g, false)));
+
+    return {
+      id: String(t.id),
+      name: t.name || String(t.id),
+      conf: confName,
+      confSlug: confSlug(confName),
+      pill: t.pill || null,
+      bg: t.bg || null,
+      fg: t.fg || null,
+      wins: num(t.W),
+      losses: num(t.L),
+      ties: 0,
+      confWins: num(t.cW),
+      confLosses: num(t.cL),
+      pointsFor: num(t.pf),
+      // payload allPlayPct is 0-100 (normalizePct); st-app fmtPct multiplies by 100.
+      allPlayPct: num(t.allPlayPct) / 100,
+      rankScore: num(t.rankingScore),
+      natRankRaw: num(t.rank),
+      games,
+    };
+  });
+
+  deriveRanks(teams);
+
+  const conferences = [...new Set(teams.map((t) => t.conf))].sort((a, b) => a.localeCompare(b));
+
+  return {
+    teams,
+    conferences,
+    confLogos,
+    weeksPlayed: num(d.weeksPlayed),
+    year: d.season != null ? String(d.season) : '',
+    source: 'live',
+  };
+}
+
+Object.assign(window, { loadStandings, confSlug });
+
+
+/* ---- st-app.jsx ---- */
+// CFFB · Standings — app
+const { useState, useEffect, useMemo, useRef } = React;
+
+const fmtPct = (p) => (p * 100).toFixed(2) + '%';
+const fmtPts = (n) => n.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+const recOverall = (t) => t.wins + '\u2013' + t.losses + (t.ties ? '\u2013' + t.ties : '');
+const recConf = (t) => t.confWins + '\u2013' + t.confLosses;
+
+function useIsMobile() {
+  const [m, setM] = useState(typeof matchMedia !== 'undefined' && matchMedia('(max-width: 560px)').matches);
+  useEffect(() => {
+    const mq = matchMedia('(max-width: 560px)');
+    const on = () => setM(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return m;
+}
+
+function tiebreakNote(t) {
+  const tb = t.tiebreak;
+  const who = tb.tiedWith.join(', ');
+  const base = `Tied at ${tb.confRec} in conference with ${who}.`;
+  const h2h = tb.h2hW + '\u2013' + tb.h2hL;
+  let how;
+  if (tb.decidedBy === 'Head-to-head') how = `Conference seed set by head-to-head \u2014 went ${h2h} against the tied team${tb.tiedWith.length > 1 ? 's' : ''}.`;
+  else if (tb.decidedBy === 'All-play %') how = `Head-to-head ${tb.h2hPlayed ? `was even (${h2h})` : 'did not separate them'}; seed set by all-play % (${fmtPct(t.allPlayPct)}).`;
+  else if (tb.decidedBy === 'Total points') how = `Head-to-head and all-play were even; seed set by total points (${fmtPts(t.pointsFor)}).`;
+  else how = `Separated by national ranking score.`;
+  return base + ' ' + how;
+}
+
+// Team mark: franchise logo (FranchiseLookup URL from the payload) when present,
+// else a deterministic circular chip in the team's own colors (falling back to a
+// hashed hue when no colors are supplied — e.g. the standalone sample data).
+const PILL_SIZE = { sm: 'cffb-team--sm', md: 'cffb-team--sm', lg: 'cffb-team--md' };
+
+function TeamChip({ name, size, pill, bg, fg }) {
+  const [src, setSrc] = React.useState(pill || null);
+  React.useEffect(() => { setSrc(pill || null); }, [pill]);
+  if (src) return <img className={'cffb-team ' + (PILL_SIZE[size] || 'cffb-team--sm')} src={src} alt={name} onError={() => setSrc(null)} />;
+  let background = bg;
+  if (!background) {
+    const hues = ['#7BAFD4','#990000','#BF5700','#154733','#00274C','#461D7C','#782F40','#F47321','#0051BA','#CC0000','#002E5D','#841617','#BB0000','#013CA6','#C8102E'];
+    let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    background = hues[h % hues.length];
+  }
+  const abbr = name.replace(/[^A-Za-z ]/g, '').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const cls = 'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : '');
+  return <span className={cls} style={{ background, color: fg || '#fff' }}>{abbr}</span>;
+}
+
+function RankCell({ rank }) {
+  const tier = rank === 1 ? 't1' : rank <= 5 ? 't5' : rank <= 10 ? 't10' : rank <= 25 ? 't25' : 'tout';
+  return <span className={'st-natrank ' + tier}>#{rank}</span>;
+}
+
+// ── Team detail modal — season results + schedule ────────────────────────────
+function TeamModal({ team, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    if (ref.current) ref.current.scrollTop = 0;
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+  if (!team) return null;
+  const played = team.games.filter((g) => g.result);
+  const upcoming = team.games.filter((g) => !g.result && g.oppName && g.oppName !== '—');
+  const nextUp = upcoming.length ? Math.min(...upcoming.map((g) => g.week)) : null;
+
+  const GameRow = ({ g }) => {
+    const done = !!g.result;
+    const win = g.result === 'W', loss = g.result === 'L';
+    return (
+      <tr className={done ? '' : 'st-sched__future'}>
+        <td className="st-sched__wk cffb-num">{g.week}</td>
+        <td className="st-sched__rk cffb-num">{g.oppRank > 0 && g.oppRank <= 25
+          ? <span className={'st-natrank ' + (g.oppRank === 1 ? 't1' : g.oppRank <= 5 ? 't5' : g.oppRank <= 10 ? 't10' : 't25')}>#{g.oppRank}</span>
+          : ''}</td>
+        <td>
+          <div className="st-sched__opp">
+            <TeamChip name={g.oppName} size="sm" pill={g.oppPill} bg={g.oppBg} fg={g.oppFg} />
+            <span className="st-sched__oppname">{g.oppName}</span>
+            {g.isRivalry && (
+              <span className="cffb-rivalry cffb-rivalry--solo" title="Rivalry game">
+                <svg className="cffb-rivalry__icon"><use href="#cffb-icon-rivalry" /></svg>
+              </span>
+            )}
+            {g.isConf && <span className="st-sched__tag" title="Conference game">CONF</span>}
+          </div>
+        </td>
+        <td className="st-sched__res">
+          {done
+            ? <span className={'st-wl ' + (win ? 'st-wl--w' : loss ? 'st-wl--l' : 'st-wl--t')}>{g.result}</span>
+            : <span className="st-wl st-wl--upc">{g.week === nextUp ? 'NEXT' : '—'}</span>}
+        </td>
+        <td className="st-sched__score cffb-num">
+          {done
+            ? <span><b className={win ? 'st-sc--win' : ''}>{fmtPts(g.teamScore)}</b> <span className="st-sc--sep">{'\u2013'}</span> {fmtPts(g.oppScore)}</span>
+            : <span className="cffb-tertiary">—</span>}
+        </td>
+      </tr>
+    );
+  };
+
+  return (
+    <div className="st-modal" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="st-modal__panel" ref={ref}>
+        <button className="st-modal__x" onClick={onClose} aria-label="Close">×</button>
+        <div className="st-modal__head">
+          <TeamChip name={team.name} size="lg" pill={team.pill} bg={team.bg} fg={team.fg} />
+          <div className="st-modal__id">
+            <div className="st-modal__conf">
+              <span className="cffb-label">Nat #{team.natRank} · Conf #{team.confRank}</span>
+            </div>
+            <h2 className="st-modal__name">{team.name}</h2>
+          </div>
+        </div>
+
+        <div className="st-modal__kpis">
+          {[
+            ['Overall', recOverall(team)],
+            ['Conf', recConf(team)],
+            ['All-Play', fmtPct(team.allPlayPct)],
+            ['Points For', fmtPts(team.pointsFor)],
+          ].map(([l, v]) => (
+            <div className="st-mk" key={l}>
+              <span className="cffb-label">{l}</span>
+              <span className="st-mk__v cffb-num">{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {team.tiebreak && (
+          <div className="st-tie">
+            <span className="st-tie__badge">H2H</span>
+            <div className="st-tie__txt">
+              <span className="st-tie__lead">Conference Tiebreaker †</span>
+              <span>{tiebreakNote(team)}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="st-modal__section">
+          <span className="cffb-eyebrow">Season Results &amp; Schedule</span>
+        </div>
+        <div className="cffb-table-wrap st-sched-wrap">
+          <table className="cffb-table st-sched">
+            <thead>
+              <tr>
+                <th style={{ width: 44 }}>Wk</th>
+                <th style={{ width: 48 }} title="Opponent national rank (top 25)">Rk</th>
+                <th>Opponent</th>
+                <th style={{ width: 70 }}>Result</th>
+                <th className="cffb-table__num" style={{ width: 140 }}>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {team.games.slice().sort((a, b) => a.week - b.week).map((g) => <GameRow key={g.week} g={g} />)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Standings table ──────────────────────────────────────────────────────────
+function StandingsTable({ rows, view, onPick }) {
+  const confView = view !== 'national';
+  return (
+    <div className="cffb-table-wrap">
+      <table className="cffb-table st-table">
+        <thead>
+          <tr>
+            {confView && <th style={{ width: 58 }} title="Conference Rank">Conf</th>}
+            <th style={{ width: 64 }} title="National Rank">Nat</th>
+            <th>Team</th>
+            {!confView && <th style={{ width: 96 }}>Conf</th>}
+            <th className="cffb-table__num" style={{ width: 92 }} title="Overall Record">Overall</th>
+            <th className="cffb-table__num" style={{ width: 92 }} title="Conference Record">Conf Rec</th>
+            <th className="cffb-table__num" style={{ width: 108 }} title="All-Play Percentage">All-Play%</th>
+            <th className="cffb-table__num" style={{ width: 112 }} title="Total Points Scored">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((t) => {
+            const hero = t.natRank === 1;
+            return (
+              <tr key={t.id} className={'st-row' + (hero ? ' st-row--hero' : '') + (t.confRank <= 2 ? ' st-row--ccg' : '') + (t.confRank === 2 ? ' st-row--ccgline' : '')} onClick={() => onPick(t)} tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') onPick(t); }}>
+                {confView && (
+                  <td className={'st-confrank cffb-num' + (t.confRank <= 2 ? ' st-confrank--ccg' : '')}>
+                    {t.tiebreak && <sup className="st-confrank__tb" title={'Conference tiebreaker vs ' + t.tiebreak.tiedWith.join(', ') + ' \u2014 decided by ' + t.tiebreak.decidedBy.toLowerCase()}>†</sup>}
+                    {t.confRank}
+                    {t.confRank <= 2 && <span className="st-ccg" title="Projected conference championship">CCG</span>}
+                  </td>
+                )}
+                <td><RankCell rank={t.natRank} /></td>
+                <td>
+                  <div className="st-team">
+                    <TeamChip name={t.name} size="md" pill={t.pill} bg={t.bg} fg={t.fg} />
+                    <span className="st-team__name">{t.name}</span>
+                  </div>
+                </td>
+                {!confView && <td><span className={'cffb-conf cffb-conf--' + t.confSlug}>{t.conf}</span></td>}
+                <td className="cffb-table__num st-rec">{recOverall(t)}</td>
+                <td className="cffb-table__num st-rec cffb-muted">{recConf(t)}</td>
+                <td className="cffb-table__num">
+                  <span className={t.isApLeader ? 'st-leader' : ''}>
+                    {t.isApLeader && <span className="st-leader__star" title="All-Play leader">★</span>}
+                    {fmtPct(t.allPlayPct)}
+                  </span>
+                </td>
+                <td className="cffb-table__num">
+                  <span className={t.isPtsLeader ? 'st-leader' : ''}>
+                    {t.isPtsLeader && <span className="st-leader__star" title="Points leader">★</span>}
+                    {fmtPts(t.pointsFor)}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Mobile card list ─────────────────────────────────────────────────────────
+function MobileList({ rows, onPick }) {
+  const tierOf = (r) => r === 1 ? 't1' : r <= 5 ? 't5' : r <= 10 ? 't10' : r <= 25 ? 't25' : 'tout';
+  return (
+    <div className="st-mlist">
+      {rows.map((t) => {
+        const hero = t.natRank === 1;
+        return (
+          <button key={t.id} className={'st-mcard' + (hero ? ' st-mcard--hero' : '') + (t.confRank <= 2 ? ' st-mcard--ccg' : '')} onClick={() => onPick(t)}>
+            <div className={'st-mcard__confrank cffb-num' + (t.confRank <= 2 ? ' st-confrank--ccg' : '')}>
+              {t.tiebreak && <sup className="st-confrank__tb" title={'Tiebreaker \u2014 ' + t.tiebreak.decidedBy.toLowerCase()}>†</sup>}
+              {t.confRank}
+              {t.confRank <= 2 && <span className="st-ccg">CCG</span>}
+            </div>
+            <TeamChip name={t.name} size="md" pill={t.pill} bg={t.bg} fg={t.fg} />
+            <div className="st-mcard__main">
+              <div className="st-mcard__top">
+                <span className="st-mcard__name">{t.name}</span>
+                <span className={'st-natrank ' + tierOf(t.natRank)}>#{t.natRank}</span>
+              </div>
+              <div className="st-mcard__stats cffb-num">
+                <span><b>{recOverall(t)}</b> OVR</span>
+                <span><b>{recConf(t)}</b> CONF</span>
+                <span className={t.isApLeader ? 'st-leader' : ''}>{t.isApLeader && <span className="st-leader__star">★</span>}<b>{fmtPct(t.allPlayPct)}</b> AP</span>
+                <span className={t.isPtsLeader ? 'st-leader' : ''}>{t.isPtsLeader && <span className="st-leader__star">★</span>}<b>{fmtPts(t.pointsFor)}</b> PF</span>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────────────────────
+const CONF_LOGO_FILE = { b1g: 'b1g', pac: 'pac12' };
+const confLogo = (name) => { const s = confSlug(name); return '../assets/conferences/' + (CONF_LOGO_FILE[s] || s) + '.png'; };
+
+function App() {
+  const [model, setModel] = useState(null);
+  const [view, setView] = useState(null); // active conference name
+  const [sel, setSel] = useState(null);
+  const [err, setErr] = useState(false);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    loadStandings().then((m) => { setModel(m); setView(m.conferences[0] || null); }).catch(() => setErr(true));
+  }, []);
+
+  const counts = useMemo(() => {
+    const c = {};
+    if (model) model.teams.forEach((t) => { c[t.conf] = (c[t.conf] || 0) + 1; });
+    return c;
+  }, [model]);
+
+  const rows = useMemo(() => {
+    if (!model || !view) return [];
+    return model.teams.filter((t) => t.conf === view).slice().sort((a, b) => a.confRank - b.confRank);
+  }, [model, view]);
+
+  if (err) return <div className="st-page"><p className="cffb-muted">Couldn’t load standings.</p></div>;
+  if (!model) return <div className="st-page"><div className="st-loading"><span className="cffb-live__dot" /> Loading standings…</div></div>;
+
+  return (
+    <div className="st-page">
+      <header className="st-head">
+        <div className="st-head__title">
+          <span className="cffb-eyebrow">{model.year || '2025'} Season · Through Week {model.weeksPlayed}</span>
+          <h1 className="st-head__h1">League Standings</h1>
+        </div>
+        <div className="st-head__meta cffb-label">
+          {model.teams.length} teams · {model.conferences.length} conferences
+        </div>
+      </header>
+
+      <nav className="st-conffilter" role="tablist" aria-label="Conference">
+        {model.conferences.map((c) => (
+          <button key={c} role="tab" aria-selected={view === c}
+            className={'st-conftab' + (view === c ? ' is-active' : '')} onClick={() => setView(c)}>
+            <img className="st-conftab__logo" src={(model.confLogos && model.confLogos[c]) || confLogo(c)} alt=""
+              onError={(e) => { e.target.style.display = 'none'; }} />
+            <span className="st-conftab__name">{c}</span>
+            <span className="st-conftab__count cffb-num">{counts[c] || 0}</span>
+          </button>
+        ))}
+      </nav>
+
+      {isMobile
+        ? <MobileList rows={rows} onPick={setSel} />
+        : <StandingsTable rows={rows} view={view} onPick={setSel} />}
+
+      <p className="st-legend cffb-body-sm">
+        <span className="st-leader__star">★</span> league leader · <span className="st-ccg st-ccg--inline">CCG</span> projected conference championship (top 2) · <span className="st-confrank__tb">†</span> conference tiebreaker · click any team for season results &amp; schedule
+        {model.source && model.source !== 'live' && <span className="st-legend__src"> · showing sample data — paste your sheet URL in <code>st-data.jsx</code></span>}
+      </p>
+
+      {sel && <TeamModal team={sel} onClose={() => setSel(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('cffb-st-root')).render(<App />);
+
+
+</script>
