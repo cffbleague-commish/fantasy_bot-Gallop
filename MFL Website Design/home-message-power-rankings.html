@@ -431,6 +431,9 @@ img { display: block; }
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 <div id="cffb-pr-root"></div>
 <script type="text/babel" data-presets="react">
+(function () {
+  if (window.__cffbPowerRankingsBooted) return;
+  window.__cffbPowerRankingsBooted = true;
 /* ---- data-live.jsx ---- */
 // CFFB · Power Rankings — LIVE data loader
 // Replaces the demo's PRNG-generated data.jsx at build time.
@@ -1153,4 +1156,5 @@ const CFFBBoot = () => {
 ReactDOM.createRoot(document.getElementById('cffb-pr-root')).render(<CFFBBoot />);
 
 
+})();
 </script>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFFB — Standings + Power Rankings (coexistence test)</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #0A0A0A; color: #ccc;
+           font-family: system-ui, -apple-system, sans-serif; font-size: 14px; }
+    .preview-note { max-width: 960px; margin: 0 auto 16px; padding: 8px 12px;
+      background: #1a1a2e; border: 1px solid #333; border-radius: 4px;
+      font-size: 12px; color: #888; text-align: center; }
+    .preview-sep { max-width: 1280px; margin: 32px auto; border-top: 1px dashed #333; }
+  </style>
+</head>
+<body>
+  <div class="preview-note">
+    Coexistence test — loads BOTH the Standings and Power Rankings MFL fragments on one page,
+    sharing a single React/Babel load (as they would fight over on MFL). Both should mount with
+    NO "already been declared" errors in the console. Serve over http:// if file:// fetch is blocked.
+  </div>
+  <script>
+    (async function () {
+      const FRAGMENTS = ['home-message-standings.html', 'home-message-power-rankings.html'];
+      try {
+        const docs = [];
+        for (const url of FRAGMENTS) {
+          const html = await (await fetch(url, { cache: 'no-store' })).text();
+          docs.push(new DOMParser().parseFromString(html, 'text/html'));
+        }
+
+        // 1. Inject each fragment's non-script nodes (styles, sprite svg, root div),
+        //    with a separator between the two widgets.
+        docs.forEach((doc, i) => {
+          if (i > 0) {
+            const sep = document.createElement('div');
+            sep.className = 'preview-sep';
+            document.body.appendChild(sep);
+          }
+          Array.from(doc.body.childNodes).forEach((n) => {
+            if (n.nodeName.toLowerCase() !== 'script') document.body.appendChild(document.importNode(n, true));
+          });
+        });
+
+        // 2. Load the shared CDN scripts ONCE (react, react-dom, babel), deduped by src.
+        const loadExternal = (src, crossorigin) => new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          if (crossorigin) s.crossOrigin = crossorigin;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error('failed to load ' + src));
+          document.body.appendChild(s);
+        });
+        const seen = new Set();
+        for (const doc of docs) {
+          for (const s of Array.from(doc.querySelectorAll('script[src]'))) {
+            if (seen.has(s.src)) continue;
+            seen.add(s.src);
+            await loadExternal(s.src, s.getAttribute('crossorigin'));
+          }
+        }
+
+        // 3. Append both type="text/babel" bundles, then let Babel transform them together —
+        //    exactly the scenario that broke on MFL before the guarded-IIFE wrap.
+        docs.forEach((doc) => {
+          const babelSrc = (Array.from(doc.querySelectorAll('script'))
+            .find((x) => (x.type || '').includes('babel')) || {}).textContent || '';
+          if (!babelSrc) return;
+          const b = document.createElement('script');
+          b.type = 'text/babel';
+          b.setAttribute('data-presets', 'react');
+          b.textContent = babelSrc;
+          document.body.appendChild(b);
+        });
+        if (window.Babel && Babel.transformScriptTags) Babel.transformScriptTags();
+      } catch (err) {
+        document.body.innerHTML += '<p style="color:#ff6b6b">Preview failed: ' + err.message + '</p>';
+      }
+    })();
+  </script>
+</body>
+</html>

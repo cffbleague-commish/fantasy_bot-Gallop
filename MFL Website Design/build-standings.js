@@ -81,6 +81,20 @@ const jsxBundle = jsxSources.map(({ name, code }) => {
   return `/* ---- ${name} ---- */\n${out}\n`;
 }).join('\n');
 
+// Wrap the whole bundle in a guarded IIFE so its top-level declarations are
+// function-scoped. Without this, a second in-page Babel bundle (e.g. Power
+// Rankings) that redeclares the same consts (CFFB_WEBAPP_URL, useState, …)
+// throws "Identifier '…' has already been declared" and fails to mount. The
+// guard flag also makes execution idempotent if @babel/standalone happens to
+// run transformScriptTags twice (each fragment loads its own Babel).
+const wrappedBundle = [
+  '(function () {',
+  '  if (window.__cffbStandingsBooted) return;',
+  '  window.__cffbStandingsBooted = true;',
+  jsxBundle,
+  '})();'
+].join('\n');
+
 // ---------------------------------------------------------------------------
 // Assemble CSS
 // ---------------------------------------------------------------------------
@@ -131,7 +145,7 @@ let out = [
   cdnScripts,
   '<div id="cffb-st-root"></div>',
   '<script type="text/babel" data-presets="react">',
-  jsxBundle,
+  wrappedBundle,
   '</script>'
 ].join('\n');
 

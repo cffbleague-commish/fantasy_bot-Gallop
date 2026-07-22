@@ -55,6 +55,19 @@ function RankCell({ rank }) {
   return <span className={'st-natrank ' + tier}>#{rank}</span>;
 }
 
+// Rivalry pendant — compact gold flag tag with crossed swords (matches Power Rankings).
+function RivalryTag() {
+  return (
+    <span className="rivalry-tag" title="Rivalry game">
+      <svg className="rivalry-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3.5 3.5 L20 20" /><path d="M17 20.5 L20.5 17" /><path d="M19 22 L22 19" />
+        <path d="M20.5 3.5 L4 20" /><path d="M3.5 17 L7 20.5" /><path d="M2 19 L5 22" />
+      </svg>Rivalry
+    </span>
+  );
+}
+
 // ── Team detail modal — season results + schedule ────────────────────────────
 function TeamModal({ team, onClose }) {
   const ref = useRef(null);
@@ -79,14 +92,9 @@ function TeamModal({ team, onClose }) {
           ? <span className={'st-natrank ' + (g.oppRank === 1 ? 't1' : g.oppRank <= 5 ? 't5' : g.oppRank <= 10 ? 't10' : 't25')}>#{g.oppRank}</span>
           : ''}</td>
         <td>
-          <div className="st-sched__opp">
+          <div className="st-sched__opp" title={g.oppName}>
             <TeamChip name={g.oppName} size="sm" pill={g.oppPill} bg={g.oppBg} fg={g.oppFg} />
-            <span className="st-sched__oppname">{g.oppName}</span>
-            {g.isRivalry && (
-              <span className="cffb-rivalry cffb-rivalry--solo" title="Rivalry game">
-                <svg className="cffb-rivalry__icon"><use href="#cffb-icon-rivalry" /></svg>
-              </span>
-            )}
+            {g.isRivalry && <RivalryTag />}
             {g.isConf && <span className="st-sched__tag" title="Conference game">CONF</span>}
           </div>
         </td>

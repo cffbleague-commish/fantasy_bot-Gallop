@@ -46,7 +46,7 @@ function deriveRanks(teams) {
         const ids = new Set(grp.map((t) => t.id));
         grp.forEach((t) => {
           let w = 0, l = 0;
-          t.games.forEach((g) => { if (g.result && ids.has(g.oppId)) { if (g.result === 'W') w++; else if (g.result === 'L') l++; } });
+          t.games.forEach((g) => { if (g.result && g.week <= 12 && ids.has(g.oppId)) { if (g.result === 'W') w++; else if (g.result === 'L') l++; } });
           t._h2hW = w; t._h2hL = l; t._h2hPct = (w + l) ? w / (w + l) : 0;
         });
         grp.sort((a, b) =>
@@ -113,15 +113,19 @@ async function loadStandings() {
 
     const mkGame = (g, played) => {
       const oppId = String(g.opp != null ? g.opp : '');
-      // isConf: prefer the authoritative per-game flag; else compare conferences.
-      const isConf = (g.conf != null)
+      const wk = num(g.week);
+      // Conference games only count in the regular season (weeks 1-12).
+      // Week 13 = conference championship; weeks 14+ = bowls / playoffs — none
+      // of those feed the conference record or the CONF tag.
+      const rawConf = (g.conf != null)
         ? !!g.conf
         : (oppId && idConf[oppId] ? idConf[oppId] === confName : false);
+      const isConf = rawConf && wk <= 12;
       const result = played
         ? String(g.result || (g.win ? 'W' : 'L')).toUpperCase()
         : '';
       return {
-        week: num(g.week),
+        week: wk,
         oppId,
         oppName: idName[oppId] || '—',
         oppRank: num(g.oppRank),
@@ -145,6 +149,16 @@ async function loadStandings() {
         .filter((g) => g.opp != null)
         .map((g) => mkGame(g, false)));
 
+    // Conference record is derived from regular-season conference games only
+    // (mkGame already limits isConf to weeks 1-12), NOT the payload's cW/cL,
+    // which would otherwise fold in week-13 conference-championship results.
+    let confWins = 0, confLosses = 0;
+    games.forEach((g) => {
+      if (!g.isConf) return;
+      if (g.result === 'W') confWins++;
+      else if (g.result === 'L') confLosses++;
+    });
+
     return {
       id: String(t.id),
       name: t.name || String(t.id),
@@ -156,8 +170,8 @@ async function loadStandings() {
       wins: num(t.W),
       losses: num(t.L),
       ties: 0,
-      confWins: num(t.cW),
-      confLosses: num(t.cL),
+      confWins,
+      confLosses,
       pointsFor: num(t.pf),
       // payload allPlayPct is 0-100 (normalizePct); st-app fmtPct multiplies by 100.
       allPlayPct: num(t.allPlayPct) / 100,

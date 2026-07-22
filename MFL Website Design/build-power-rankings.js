@@ -84,6 +84,20 @@ ReactDOM.createRoot(document.getElementById('cffb-pr-root')).render(<CFFBBoot />
   return `/* ---- ${name} ---- */\n${out}\n`;
 }).join('\n');
 
+// Wrap the whole bundle in a guarded IIFE so its top-level declarations are
+// function-scoped. Without this, a second in-page Babel bundle (e.g. Standings)
+// that redeclares the same consts (CFFB_WEBAPP_URL, useState, …) throws
+// "Identifier '…' has already been declared" and one of the two widgets fails
+// to mount. The guard flag also makes execution idempotent if
+// @babel/standalone runs transformScriptTags twice (each fragment loads Babel).
+const wrappedBundle = [
+  '(function () {',
+  '  if (window.__cffbPowerRankingsBooted) return;',
+  '  window.__cffbPowerRankingsBooted = true;',
+  jsxBundle,
+  '})();'
+].join('\n');
+
 // ---------------------------------------------------------------------------
 // Assemble HTML fragment
 // ---------------------------------------------------------------------------
@@ -122,7 +136,7 @@ let out = [
   cdnScripts,
   '<div id="cffb-pr-root"></div>',
   '<script type="text/babel" data-presets="react">',
-  jsxBundle,
+  wrappedBundle,
   '</script>'
 ].join('\n');
 
