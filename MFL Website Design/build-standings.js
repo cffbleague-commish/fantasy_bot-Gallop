@@ -85,22 +85,35 @@ const jsxBundle = jsxSources.map(({ name, code }) => {
   return `/* ---- ${name} ---- */\n${out}\n`;
 }).join('\n');
 
-// Wrap the whole bundle in a guarded IIFE so its top-level declarations are
-// function-scoped. Without this, a second in-page Babel bundle (e.g. Power
-// Rankings) that redeclares the same consts (CFFB_WEBAPP_URL, useState, …)
-// throws "Identifier '…' has already been declared" and fails to mount. The
-// guard flag also makes execution idempotent if @babel/standalone happens to
-// run transformScriptTags twice (each fragment loads its own Babel).
-const wrappedBundle = [
+// Precompile JSX → plain JS at build time (drops the runtime Babel dependency).
+const compiledApp = Babel.transform(jsxBundle, { presets: ['react'] }).code;
+
+// Boot wrapper. Runs inside a guarded IIFE (function-scoped — no cross-widget
+// const collisions, and idempotent). It boots the app only once React +
+// ReactDOM are available, and loads React ONCE, shared across every CFFB widget
+// on the page via a single window.__cffbReactPromise. This lets Standings and
+// Power Rankings coexist regardless of order or duplicate loads, and works even
+// if MFL injects the message via innerHTML/AJAX (where static <script src> tags
+// never execute) — the loader appends the scripts programmatically, which do.
+const bootScript = [
   '(function () {',
   '  if (window.__cffbStandingsBooted) return;',
   '  window.__cffbStandingsBooted = true;',
-  jsxBundle,
+  '  function __cffbApp() {',
+  compiledApp,
+  '  }',
+  '  var RV = "18.3.1";',
+  '  function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }',
+  '  if (ready()) { __cffbApp(); return; }',
+  '  window.__cffbReactPromise = window.__cffbReactPromise || new Promise(function (resolve) {',
+  '    function load(src, cb) { var s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous"; s.onload = cb; s.onerror = cb; document.head.appendChild(s); }',
+  '    load("https://unpkg.com/react@" + RV + "/umd/react.production.min.js", function () {',
+  '      load("https://unpkg.com/react-dom@" + RV + "/umd/react-dom.production.min.js", resolve);',
+  '    });',
+  '  });',
+  '  window.__cffbReactPromise.then(__cffbApp);',
   '})();'
 ].join('\n');
-
-// Precompile JSX → plain JS at build time (drops the runtime Babel dependency).
-const compiledBundle = Babel.transform(wrappedBundle, { presets: ['react'] }).code;
 
 // ---------------------------------------------------------------------------
 // Assemble CSS
@@ -136,22 +149,17 @@ if (!rivalrySprite) {
 //
 // MFL rejects messages containing <html>, <head>, <body>, or <textarea> tags —
 // the message is embedded inside MFL's own page, so we emit a bare fragment
-// (styles + sprite + CDN scripts + root div + Babel bundle).
-
-const cdnScripts = [
-  '<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>',
-  '<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>'
-].join('\n');
+// (styles + sprite + root div + self-booting bundle). React is loaded by the
+// boot script itself (shared, once), so no static CDN <script> tags are emitted.
 
 let out = [
   '<style>',
   scopedCss,
   '</style>',
   rivalrySprite,
-  cdnScripts,
   '<div id="cffb-st-root"></div>',
   '<script>',
-  compiledBundle,
+  bootScript,
   '</script>'
 ].join('\n');
 

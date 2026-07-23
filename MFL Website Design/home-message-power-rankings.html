@@ -426,909 +426,869 @@ img { display: block; }
 .cffb-boot--err { color: var(--delta-neg); }
 
 </style>
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <div id="cffb-pr-root"></div>
 <script>
 (function () {
   if (window.__cffbPowerRankingsBooted) return;
   window.__cffbPowerRankingsBooted = true;
-  /* ---- data-live.jsx ---- */
-  // CFFB · Power Rankings — LIVE data loader
-  // Replaces the demo's PRNG-generated data.jsx at build time.
-  // Fetches JSON from the Apps Script Web App and populates the same
-  // `window.*` globals that components.jsx / charts.jsx / app.jsx consume.
+  function __cffbApp() {
+/* ---- data-live.jsx ---- */
+// CFFB · Power Rankings — LIVE data loader
+// Replaces the demo's PRNG-generated data.jsx at build time.
+// Fetches JSON from the Apps Script Web App and populates the same
+// `window.*` globals that components.jsx / charts.jsx / app.jsx consume.
 
-  // The build script substitutes the real /exec URL for https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec.
-  const CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+// The build script substitutes the real /exec URL for https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec.
+const CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
 
-  // Conference accent colors — displayed as the strip on the team pill and
-  // tab tint. Keyed by the lowercase conf id emitted by the web app.
-  const CONF_ACCENT_MAP = {
-    sec: '#C9A227',
-    b1g: '#4A6FA5',
-    bten: '#4A6FA5',
-    bigten: '#4A6FA5',
-    acc: '#8B4A5C',
-    big12: '#B84545',
-    b12: '#B84545',
-    aac: '#6B5C8B',
-    pac: '#5C7A6A',
-    pac12: '#5C7A6A',
-    p12: '#5C7A6A'
+// Conference accent colors — displayed as the strip on the team pill and
+// tab tint. Keyed by the lowercase conf id emitted by the web app.
+const CONF_ACCENT_MAP = {
+  sec: '#C9A227',
+  b1g: '#4A6FA5',
+  bten: '#4A6FA5',
+  bigten: '#4A6FA5',
+  acc: '#8B4A5C',
+  big12: '#B84545',
+  b12: '#B84545',
+  aac: '#6B5C8B',
+  pac: '#5C7A6A',
+  pac12: '#5C7A6A',
+  p12: '#5C7A6A'
+};
+async function loadPowerRankings() {
+  const res = await fetch(CFFB_WEBAPP_URL, {
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching rankings');
+  const d = await res.json();
+  if (d.error) throw new Error(d.error);
+
+  // Bare-bones globals from payload
+  window.WEEKS_PLAYED = d.weeksPlayed;
+  window.WEEKS_TOTAL = d.weeksTotal;
+  window.CONFERENCES = d.conferences;
+  window.CONF_NAME = Object.fromEntries(d.conferences.filter(c => c.id !== 'all').map(c => [c.id, c.name]));
+  window.CONF_ACCENT = CONF_ACCENT_MAP;
+
+  // CFFB Score is the raw RankingScore from the PowerRankings sheet
+  // (formula: ((RS_Wins + 1) × (AllPlayPct + OppAllPlayPct)) + PostseasonWins).
+  // Rank ordering also comes straight from the sheet's Rank column.
+  const enriched = d.teams.map(t => {
+    const prev = t.prevRank == null ? t.rank : t.prevRank;
+    return Object.assign({}, t, {
+      cffb: t.rankingScore == null ? 0 : t.rankingScore,
+      move: prev - t.rank
+    });
+  });
+  window.TEAMS = Object.fromEntries(enriched.map(t => [t.id, t]));
+  window.IDS = enriched.map(t => t.id);
+  window.STANDINGS = enriched.slice().sort((a, b) => a.rank - b.rank);
+  window.CONF_COUNTS = enriched.reduce((m, t) => (m[t.conf] = (m[t.conf] || 0) + 1, m), {
+    all: enriched.length
+  });
+  const played = enriched.filter(t => t.ppg > 0);
+  window.LEAGUE_PPG = played.length ? Math.round(played.reduce((s, t) => s + t.ppg, 0) / played.length * 10) / 10 : 0;
+
+  // These globals are declared for symmetry with the demo; charts.jsx and
+  // components.jsx don't read them, so an empty stub is fine.
+  window.LEAGUE_WEEK_AVG = [];
+  window.WEEK_PTS = Object.fromEntries(enriched.map(t => [t.id, t.games.map(g => g.bye ? null : g.my)]));
+  window.CFFB_UPDATED_AT = d.updatedAt;
+  window.CFFB_SEASON = d.season;
+}
+window.__loadPowerRankings = loadPowerRankings;
+
+/* ---- components.jsx ---- */
+// CFFB · Power Rankings — components (pill, conf filter, ranking table, detail)
+
+const {
+  useState
+} = React;
+
+// ---- Team logo pill --------------------------------------------------------
+const TeamPill = ({
+  id,
+  h = 26
+}) => {
+  const t = TEAMS[id] || {
+    bg: '#2A2A2A',
+    fg: '#9A9A9A',
+    abbr: '??',
+    conf: 'sec'
   };
-  async function loadPowerRankings() {
-    const res = await fetch(CFFB_WEBAPP_URL, {
-      cache: 'no-store'
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching rankings');
-    const d = await res.json();
-    if (d.error) throw new Error(d.error);
-
-    // Bare-bones globals from payload
-    window.WEEKS_PLAYED = d.weeksPlayed;
-    window.WEEKS_TOTAL = d.weeksTotal;
-    window.CONFERENCES = d.conferences;
-    window.CONF_NAME = Object.fromEntries(d.conferences.filter(c => c.id !== 'all').map(c => [c.id, c.name]));
-    window.CONF_ACCENT = CONF_ACCENT_MAP;
-
-    // CFFB Score is the raw RankingScore from the PowerRankings sheet
-    // (formula: ((RS_Wins + 1) × (AllPlayPct + OppAllPlayPct)) + PostseasonWins).
-    // Rank ordering also comes straight from the sheet's Rank column.
-    const enriched = d.teams.map(t => {
-      const prev = t.prevRank == null ? t.rank : t.prevRank;
-      return Object.assign({}, t, {
-        cffb: t.rankingScore == null ? 0 : t.rankingScore,
-        move: prev - t.rank
-      });
-    });
-    window.TEAMS = Object.fromEntries(enriched.map(t => [t.id, t]));
-    window.IDS = enriched.map(t => t.id);
-    window.STANDINGS = enriched.slice().sort((a, b) => a.rank - b.rank);
-    window.CONF_COUNTS = enriched.reduce((m, t) => (m[t.conf] = (m[t.conf] || 0) + 1, m), {
-      all: enriched.length
-    });
-    const played = enriched.filter(t => t.ppg > 0);
-    window.LEAGUE_PPG = played.length ? Math.round(played.reduce((s, t) => s + t.ppg, 0) / played.length * 10) / 10 : 0;
-
-    // These globals are declared for symmetry with the demo; charts.jsx and
-    // components.jsx don't read them, so an empty stub is fine.
-    window.LEAGUE_WEEK_AVG = [];
-    window.WEEK_PTS = Object.fromEntries(enriched.map(t => [t.id, t.games.map(g => g.bye ? null : g.my)]));
-    window.CFFB_UPDATED_AT = d.updatedAt;
-    window.CFFB_SEASON = d.season;
+  if (t.pill) {
+    return /*#__PURE__*/React.createElement("span", {
+      className: "pill pill--img",
+      style: {
+        height: h
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: t.pill,
+      alt: t.name
+    }));
   }
-  window.__loadPowerRankings = loadPowerRankings;
-
-  /* ---- components.jsx ---- */
-  // CFFB · Power Rankings — components (pill, conf filter, ranking table, detail)
-
-  const {
-    useState
-  } = React;
-
-  // ---- Team logo pill --------------------------------------------------------
-  const TeamPill = ({
-    id,
-    h = 26
-  }) => {
-    const t = TEAMS[id] || {
-      bg: '#2A2A2A',
-      fg: '#9A9A9A',
-      abbr: '??',
-      conf: 'sec'
-    };
-    if (t.pill) {
-      return /*#__PURE__*/React.createElement("span", {
-        className: "pill pill--img",
-        style: {
-          height: h
-        }
-      }, /*#__PURE__*/React.createElement("img", {
-        src: t.pill,
-        alt: t.name
-      }));
+  const abbr = t.abbr.length > 4 ? t.abbr.slice(0, 4) : t.abbr;
+  return /*#__PURE__*/React.createElement("span", {
+    className: "pill pill--fb",
+    style: {
+      height: h,
+      borderRadius: Math.round(h * 0.22)
+    },
+    title: t.name
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pill__edge",
+    style: {
+      width: Math.round(h * 0.6),
+      background: CONF_ACCENT[t.conf] || '#5A5A5A'
     }
-    const abbr = t.abbr.length > 4 ? t.abbr.slice(0, 4) : t.abbr;
-    return /*#__PURE__*/React.createElement("span", {
-      className: "pill pill--fb",
-      style: {
-        height: h,
-        borderRadius: Math.round(h * 0.22)
-      },
-      title: t.name
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "pill__edge",
-      style: {
-        width: Math.round(h * 0.6),
-        background: CONF_ACCENT[t.conf] || '#5A5A5A'
-      }
-    }), /*#__PURE__*/React.createElement("span", {
-      className: "pill__body",
-      style: {
-        background: t.bg,
-        color: t.fg,
-        fontSize: Math.max(11, Math.round(h * 0.46))
-      }
-    }, abbr));
-  };
-
-  // ---- Rank movement indicator ----------------------------------------------
-  const Move = ({
-    move
-  }) => {
-    if (move > 0) return /*#__PURE__*/React.createElement("span", {
-      className: "r-move r-move--up"
-    }, "\u25B2", move);
-    if (move < 0) return /*#__PURE__*/React.createElement("span", {
-      className: "r-move r-move--down"
-    }, "\u25BC", -move);
-    return /*#__PURE__*/React.createElement("span", {
-      className: "r-move r-move--flat"
-    }, "\u2014");
-  };
-
-  // ---- Conference filter -----------------------------------------------------
-  const ConfFilter = ({
-    active,
-    onChange
-  }) => /*#__PURE__*/React.createElement("div", {
-    className: "conf-filter",
-    role: "tablist",
-    "aria-label": "Conference"
-  }, CONFERENCES.map(c => /*#__PURE__*/React.createElement("button", {
-    key: c.id,
-    role: "tab",
-    "aria-selected": active === c.id,
-    className: 'conf-tab' + (active === c.id ? ' is-active' : ''),
-    onClick: () => onChange(c.id)
-  }, c.logo ? /*#__PURE__*/React.createElement("img", {
-    className: "conf-tab__logo",
-    src: c.logo,
-    alt: c.name
-  }) : /*#__PURE__*/React.createElement("span", {
-    className: "conf-tab__all"
-  }, "\u2605"), /*#__PURE__*/React.createElement("span", {
-    className: "conf-tab__name"
-  }, c.name), /*#__PURE__*/React.createElement("span", {
-    className: "conf-tab__count"
-  }, CONF_COUNTS[c.id] || 0))));
-
-  // ---- Rank prestige tier (color ramp) --------------------------------------
-  const rankTier = n => n === 1 ? 't1' : n <= 5 ? 't5' : n <= 10 ? 't10' : n <= 25 ? 't25' : 'tout';
-  const tierColor = n => n === 1 ? '#E8C547' : n <= 5 ? '#C9A227' : n <= 10 ? '#3B82C4' : n <= 25 ? '#7BA4C9' : '#9A9A9A';
-
-  // ---- Ranking row + table ---------------------------------------------------
-  const RankRow = ({
-    r,
-    selected,
-    onSelect
-  }) => /*#__PURE__*/React.createElement("button", {
-    className: 'rrow' + (selected ? ' is-sel' : '') + (r.rank === 1 ? ' is-top1' : ''),
-    onClick: () => onSelect(r.id)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "r-rank"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: 'r-rank__n ' + rankTier(r.rank)
-  }, r.rank), /*#__PURE__*/React.createElement(Move, {
-    move: r.move
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "r-team"
-  }, /*#__PURE__*/React.createElement(TeamPill, {
-    id: r.id,
-    h: 30
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "r-c-spacer"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "r-cell r-c-overall"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "r-rec"
-  }, r.W, "\u2013", r.L), /*#__PURE__*/React.createElement("div", {
-    className: "r-rec__sub"
-  }, "OVERALL")), /*#__PURE__*/React.createElement("div", {
-    className: "r-cell r-c-conf"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "r-rec"
-  }, r.cW, "\u2013", r.cL), /*#__PURE__*/React.createElement("div", {
-    className: "r-rec__sub"
-  }, "CONF")), /*#__PURE__*/React.createElement("div", {
-    className: "r-num r-c-ap"
-  }, r.allPlayPct.toFixed(2), "%"), /*#__PURE__*/React.createElement("div", {
-    className: "r-num r-num--dim r-c-oppap"
-  }, r.oppAllPlayPct.toFixed(2), "%"), /*#__PURE__*/React.createElement("div", {
-    className: "r-score"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "r-score__val"
-  }, r.cffb.toFixed(3))));
-  const RankingTable = ({
-    rows,
-    selected,
-    onSelect,
-    confName
-  }) => /*#__PURE__*/React.createElement("section", {
-    className: "section"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section__head"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "section__title"
-  }, "The Ladder"), /*#__PURE__*/React.createElement("span", {
-    className: "section__meta"
-  }, rows.length, " teams \xB7 ", confName, " \xB7 sorted by CFFB Score"), /*#__PURE__*/React.createElement("span", {
-    className: "section__spacer"
   }), /*#__PURE__*/React.createElement("span", {
-    className: "section__meta"
-  }, "Scroll for all ", rows.length)), /*#__PURE__*/React.createElement("div", {
-    className: "rtbl"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rhead"
-  }, /*#__PURE__*/React.createElement("span", null, "Rank"), /*#__PURE__*/React.createElement("span", null, "Team"), /*#__PURE__*/React.createElement("span", {
-    className: "r-c-spacer"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "r-c-overall"
-  }, "Overall"), /*#__PURE__*/React.createElement("span", {
-    className: "r-c-conf"
-  }, "Conf"), /*#__PURE__*/React.createElement("span", {
-    className: "r-r r-c-ap"
-  }, "All-Play"), /*#__PURE__*/React.createElement("span", {
-    className: "r-r r-c-oppap"
-  }, "Opp AP"), /*#__PURE__*/React.createElement("span", {
-    className: "r-r"
-  }, "CFFB")), /*#__PURE__*/React.createElement("div", {
-    className: "rscroll"
-  }, rows.map(r => /*#__PURE__*/React.createElement(RankRow, {
-    key: r.id,
-    r: r,
-    selected: selected === r.id,
-    onSelect: onSelect
-  })))));
-
-  // ---- Rivalry badge (crossed swords + gold "RIVALRY" flag) ------------------
-  const RivalryIcon = ({
-    size = 15
-  }) => /*#__PURE__*/React.createElement("svg", {
-    className: "rivalry-icon",
-    width: size,
-    height: size,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.75",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M3.5 3.5 L20 20"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M17 20.5 L20.5 17"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M19 22 L22 19"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M20.5 3.5 L4 20"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M3.5 17 L7 20.5"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M2 19 L5 22"
-  }));
-  const RivalryTag = () => /*#__PURE__*/React.createElement("span", {
-    className: "rivalry-tag",
-    title: "Rivalry game"
-  }, /*#__PURE__*/React.createElement(RivalryIcon, {
-    size: 13
-  }), "Rivalry");
-
-  // ---- College Gameday badge -------------------------------------------------
-  const GAMEDAY_LOGO = 'https://i.imgur.com/9Kvqh5Y.png';
-  const GamedayBadge = () => /*#__PURE__*/React.createElement("span", {
-    className: "gameday-badge",
-    title: "College Gameday matchup"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: GAMEDAY_LOGO,
-    alt: "College Gameday"
-  }));
-
-  // ---- Detail panel ----------------------------------------------------------
-  const SchedRow = ({
-    g,
-    teamConf
-  }) => {
-    if (g.bye) {
-      return /*#__PURE__*/React.createElement("div", {
-        className: "srow"
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "srow__wk"
-      }, "Wk ", g.week), /*#__PURE__*/React.createElement("span", {
-        className: "srow__res srow__res--bye"
-      }, "\u2014"), /*#__PURE__*/React.createElement("span", {
-        className: "srow__bye"
-      }, "Bye week"), /*#__PURE__*/React.createElement("span", null));
+    className: "pill__body",
+    style: {
+      background: t.bg,
+      color: t.fg,
+      fontSize: Math.max(11, Math.round(h * 0.46))
     }
-    if (g.upcoming) {
-      const opp = g.opp && TEAMS[g.opp];
-      return /*#__PURE__*/React.createElement("div", {
-        className: "srow srow--up"
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "srow__wk"
-      }, "Wk ", g.week), /*#__PURE__*/React.createElement("span", {
-        className: "srow__res srow__res--up"
-      }, "vs"), /*#__PURE__*/React.createElement("span", {
-        className: "srow__opp"
-      }, opp ? /*#__PURE__*/React.createElement(TeamPill, {
-        id: g.opp,
-        h: 20
-      }) : /*#__PURE__*/React.createElement("span", {
-        className: "srow__bye"
-      }, "Bye"), g.rivalry ? /*#__PURE__*/React.createElement(RivalryTag, null) : null, g.gameday ? /*#__PURE__*/React.createElement(GamedayBadge, null) : null), /*#__PURE__*/React.createElement("span", {
-        className: "srow__score"
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "srow__opp-pre"
-      }, "upcoming")));
-    }
-    const opp = TEAMS[g.opp];
+  }, abbr));
+};
+
+// ---- Rank movement indicator ----------------------------------------------
+const Move = ({
+  move
+}) => {
+  if (move > 0) return /*#__PURE__*/React.createElement("span", {
+    className: "r-move r-move--up"
+  }, "\u25B2", move);
+  if (move < 0) return /*#__PURE__*/React.createElement("span", {
+    className: "r-move r-move--down"
+  }, "\u25BC", -move);
+  return /*#__PURE__*/React.createElement("span", {
+    className: "r-move r-move--flat"
+  }, "\u2014");
+};
+
+// ---- Conference filter -----------------------------------------------------
+const ConfFilter = ({
+  active,
+  onChange
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "conf-filter",
+  role: "tablist",
+  "aria-label": "Conference"
+}, CONFERENCES.map(c => /*#__PURE__*/React.createElement("button", {
+  key: c.id,
+  role: "tab",
+  "aria-selected": active === c.id,
+  className: 'conf-tab' + (active === c.id ? ' is-active' : ''),
+  onClick: () => onChange(c.id)
+}, c.logo ? /*#__PURE__*/React.createElement("img", {
+  className: "conf-tab__logo",
+  src: c.logo,
+  alt: c.name
+}) : /*#__PURE__*/React.createElement("span", {
+  className: "conf-tab__all"
+}, "\u2605"), /*#__PURE__*/React.createElement("span", {
+  className: "conf-tab__name"
+}, c.name), /*#__PURE__*/React.createElement("span", {
+  className: "conf-tab__count"
+}, CONF_COUNTS[c.id] || 0))));
+
+// ---- Rank prestige tier (color ramp) --------------------------------------
+const rankTier = n => n === 1 ? 't1' : n <= 5 ? 't5' : n <= 10 ? 't10' : n <= 25 ? 't25' : 'tout';
+const tierColor = n => n === 1 ? '#E8C547' : n <= 5 ? '#C9A227' : n <= 10 ? '#3B82C4' : n <= 25 ? '#7BA4C9' : '#9A9A9A';
+
+// ---- Ranking row + table ---------------------------------------------------
+const RankRow = ({
+  r,
+  selected,
+  onSelect
+}) => /*#__PURE__*/React.createElement("button", {
+  className: 'rrow' + (selected ? ' is-sel' : '') + (r.rank === 1 ? ' is-top1' : ''),
+  onClick: () => onSelect(r.id)
+}, /*#__PURE__*/React.createElement("div", {
+  className: "r-rank"
+}, /*#__PURE__*/React.createElement("span", {
+  className: 'r-rank__n ' + rankTier(r.rank)
+}, r.rank), /*#__PURE__*/React.createElement(Move, {
+  move: r.move
+})), /*#__PURE__*/React.createElement("div", {
+  className: "r-team"
+}, /*#__PURE__*/React.createElement(TeamPill, {
+  id: r.id,
+  h: 30
+})), /*#__PURE__*/React.createElement("div", {
+  className: "r-c-spacer"
+}), /*#__PURE__*/React.createElement("div", {
+  className: "r-cell r-c-overall"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "r-rec"
+}, r.W, "\u2013", r.L), /*#__PURE__*/React.createElement("div", {
+  className: "r-rec__sub"
+}, "OVERALL")), /*#__PURE__*/React.createElement("div", {
+  className: "r-cell r-c-conf"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "r-rec"
+}, r.cW, "\u2013", r.cL), /*#__PURE__*/React.createElement("div", {
+  className: "r-rec__sub"
+}, "CONF")), /*#__PURE__*/React.createElement("div", {
+  className: "r-num r-c-ap"
+}, r.allPlayPct.toFixed(2), "%"), /*#__PURE__*/React.createElement("div", {
+  className: "r-num r-num--dim r-c-oppap"
+}, r.oppAllPlayPct.toFixed(2), "%"), /*#__PURE__*/React.createElement("div", {
+  className: "r-score"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "r-score__val"
+}, r.cffb.toFixed(3))));
+const RankingTable = ({
+  rows,
+  selected,
+  onSelect,
+  confName
+}) => /*#__PURE__*/React.createElement("section", {
+  className: "section"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "section__head"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "section__title"
+}, "The Ladder"), /*#__PURE__*/React.createElement("span", {
+  className: "section__meta"
+}, rows.length, " teams \xB7 ", confName, " \xB7 sorted by CFFB Score"), /*#__PURE__*/React.createElement("span", {
+  className: "section__spacer"
+}), /*#__PURE__*/React.createElement("span", {
+  className: "section__meta"
+}, "Scroll for all ", rows.length)), /*#__PURE__*/React.createElement("div", {
+  className: "rtbl"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "rhead"
+}, /*#__PURE__*/React.createElement("span", null, "Rank"), /*#__PURE__*/React.createElement("span", null, "Team"), /*#__PURE__*/React.createElement("span", {
+  className: "r-c-spacer"
+}), /*#__PURE__*/React.createElement("span", {
+  className: "r-c-overall"
+}, "Overall"), /*#__PURE__*/React.createElement("span", {
+  className: "r-c-conf"
+}, "Conf"), /*#__PURE__*/React.createElement("span", {
+  className: "r-r r-c-ap"
+}, "All-Play"), /*#__PURE__*/React.createElement("span", {
+  className: "r-r r-c-oppap"
+}, "Opp AP"), /*#__PURE__*/React.createElement("span", {
+  className: "r-r"
+}, "CFFB")), /*#__PURE__*/React.createElement("div", {
+  className: "rscroll"
+}, rows.map(r => /*#__PURE__*/React.createElement(RankRow, {
+  key: r.id,
+  r: r,
+  selected: selected === r.id,
+  onSelect: onSelect
+})))));
+
+// ---- Rivalry badge (crossed swords + gold "RIVALRY" flag) ------------------
+const RivalryIcon = ({
+  size = 15
+}) => /*#__PURE__*/React.createElement("svg", {
+  className: "rivalry-icon",
+  width: size,
+  height: size,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "1.75",
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": "true"
+}, /*#__PURE__*/React.createElement("path", {
+  d: "M3.5 3.5 L20 20"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M17 20.5 L20.5 17"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M19 22 L22 19"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M20.5 3.5 L4 20"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M3.5 17 L7 20.5"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M2 19 L5 22"
+}));
+const RivalryTag = () => /*#__PURE__*/React.createElement("span", {
+  className: "rivalry-tag",
+  title: "Rivalry game"
+}, /*#__PURE__*/React.createElement(RivalryIcon, {
+  size: 13
+}), "Rivalry");
+
+// ---- College Gameday badge -------------------------------------------------
+const GAMEDAY_LOGO = 'https://i.imgur.com/9Kvqh5Y.png';
+const GamedayBadge = () => /*#__PURE__*/React.createElement("span", {
+  className: "gameday-badge",
+  title: "College Gameday matchup"
+}, /*#__PURE__*/React.createElement("img", {
+  src: GAMEDAY_LOGO,
+  alt: "College Gameday"
+}));
+
+// ---- Detail panel ----------------------------------------------------------
+const SchedRow = ({
+  g,
+  teamConf
+}) => {
+  if (g.bye) {
     return /*#__PURE__*/React.createElement("div", {
       className: "srow"
     }, /*#__PURE__*/React.createElement("span", {
       className: "srow__wk"
     }, "Wk ", g.week), /*#__PURE__*/React.createElement("span", {
-      className: 'srow__res srow__res--' + (g.win ? 'w' : 'l')
-    }, g.win ? 'W' : 'L'), /*#__PURE__*/React.createElement("span", {
+      className: "srow__res srow__res--bye"
+    }, "\u2014"), /*#__PURE__*/React.createElement("span", {
+      className: "srow__bye"
+    }, "Bye week"), /*#__PURE__*/React.createElement("span", null));
+  }
+  if (g.upcoming) {
+    const opp = g.opp && TEAMS[g.opp];
+    return /*#__PURE__*/React.createElement("div", {
+      className: "srow srow--up"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "srow__wk"
+    }, "Wk ", g.week), /*#__PURE__*/React.createElement("span", {
+      className: "srow__res srow__res--up"
+    }, "vs"), /*#__PURE__*/React.createElement("span", {
       className: "srow__opp"
     }, opp ? /*#__PURE__*/React.createElement(TeamPill, {
       id: g.opp,
       h: 20
     }) : /*#__PURE__*/React.createElement("span", {
       className: "srow__bye"
-    }, "Unknown"), g.rivalry ? /*#__PURE__*/React.createElement(RivalryTag, null) : null, g.gameday ? /*#__PURE__*/React.createElement(GamedayBadge, null) : null), /*#__PURE__*/React.createElement("span", {
+    }, "Bye"), g.rivalry ? /*#__PURE__*/React.createElement(RivalryTag, null) : null, g.gameday ? /*#__PURE__*/React.createElement(GamedayBadge, null) : null), /*#__PURE__*/React.createElement("span", {
       className: "srow__score"
     }, /*#__PURE__*/React.createElement("span", {
-      className: "srow__score-val"
-    }, g.my.toFixed(2), " \u2013 ", g.ov.toFixed(2)), /*#__PURE__*/React.createElement("span", {
-      className: "srow__score-ap"
-    }, g.ap.toFixed(2), "% AP \xB7 opp ", g.oppAp.toFixed(2), "%")));
-  };
-  const StreakVal = ({
-    streak
-  }) => {
-    const cls = streak[0] === 'W' ? ' is-pos' : streak[0] === 'L' ? ' is-neg' : '';
-    return /*#__PURE__*/React.createElement("div", {
-      className: 'stat__val' + cls
-    }, streak);
-  };
-  const DetailPanel = ({
-    r
-  }) => {
-    const rows = [...r.games, ...r.upcoming.map(u => ({
-      ...u,
-      upcoming: true
-    }))];
-    return /*#__PURE__*/React.createElement("section", {
-      className: "section detail"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__hero"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__top"
-    }, /*#__PURE__*/React.createElement(TeamPill, {
-      id: r.id,
-      h: 40
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "detail__id"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__owner"
-    }, /*#__PURE__*/React.createElement("span", null, r.owner))), /*#__PURE__*/React.createElement("div", {
-      className: "detail__figs"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig-lbl"
-    }, "Rank"), /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig-row"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig-val",
-      style: {
-        color: tierColor(r.rank)
-      }
-    }, r.rank), /*#__PURE__*/React.createElement(Move, {
-      move: r.move
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig-lbl"
-    }, "CFFB"), /*#__PURE__*/React.createElement("div", {
-      className: "detail__fig-val",
-      style: {
-        color: 'var(--gold-light)',
-        fontSize: '26px'
-      }
-    }, r.cffb.toFixed(3)))))), /*#__PURE__*/React.createElement("div", {
-      className: "detail__stats"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat__lbl"
-    }, "Overall"), /*#__PURE__*/React.createElement("div", {
-      className: "stat__val"
-    }, r.W, "\u2013", r.L)), /*#__PURE__*/React.createElement("div", {
-      className: "stat"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat__lbl"
-    }, "Conference"), /*#__PURE__*/React.createElement("div", {
-      className: "stat__val"
-    }, r.cW, "\u2013", r.cL)), /*#__PURE__*/React.createElement("div", {
-      className: "stat"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat__lbl"
-    }, "Streak"), /*#__PURE__*/React.createElement(StreakVal, {
-      streak: r.streak
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "stat"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat__lbl"
-    }, "All-Play %"), /*#__PURE__*/React.createElement("div", {
-      className: "stat__val"
-    }, r.allPlayPct.toFixed(2), /*#__PURE__*/React.createElement("small", null, "%"))), /*#__PURE__*/React.createElement("div", {
-      className: "stat"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat__lbl"
-    }, "Opp All-Play"), /*#__PURE__*/React.createElement("div", {
-      className: "stat__val"
-    }, r.oppAllPlayPct.toFixed(2), /*#__PURE__*/React.createElement("small", null, "%"))), /*#__PURE__*/React.createElement("div", {
-      className: "stat"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "stat__lbl"
-    }, "Pts / Game"), /*#__PURE__*/React.createElement("div", {
-      className: "stat__val"
-    }, r.ppg.toFixed(2)))), /*#__PURE__*/React.createElement("div", {
-      className: "sched"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "sched__head"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "sched__title"
-    }, "Schedule \xB7 Results"), /*#__PURE__*/React.createElement("span", {
-      className: "section__spacer"
-    }), /*#__PURE__*/React.createElement("span", {
-      className: "section__meta"
-    }, "Through Wk ", WEEKS_PLAYED)), /*#__PURE__*/React.createElement("div", {
-      className: "sched__list"
-    }, rows.map((g, i) => /*#__PURE__*/React.createElement(SchedRow, {
-      key: i,
-      g: g,
-      teamConf: r.conf
-    })))));
-  };
-  Object.assign(window, {
-    TeamPill,
-    Move,
-    ConfFilter,
-    RankingTable,
-    DetailPanel
-  });
-
-  /* ---- charts.jsx ---- */
-  // CFFB · Power Rankings — charts (league scatter + weekly performance)
-
-  const {
-    useState: useStateC
-  } = React;
-
-  // nice tick helper
-  const niceTicks = (min, max, n) => {
-    const span = max - min || 1;
-    const step0 = span / n;
-    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
-    const norm = step0 / mag;
-    let step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
-    step *= mag;
-    const lo = Math.floor(min / step) * step;
-    const hi = Math.ceil(max / step) * step;
-    const arr = [];
-    for (let v = lo; v <= hi + step * 1e-6; v += step) arr.push(+v.toFixed(6));
-    return {
-      lo,
-      hi,
-      arr
-    };
-  };
-
-  // ===========================================================================
-  // SCATTER — Points / Game (X) × All-Play % (Y). Each dot is a team.
-  // Selected team is ringed; hovering highlights one and dims the rest.
-  // ===========================================================================
-  const SVW = 560,
-    SVH = 372,
-    SM = {
-      l: 52,
-      r: 18,
-      t: 18,
-      b: 50
-    };
-  const LeagueScatter = ({
-    rows,
-    selected,
-    onSelect
-  }) => {
-    const [hover, setHover] = useStateC(null);
-    const xs = rows.map(r => r.ppg);
-    const ys = rows.map(r => r.allPlayPct);
-    const xT = niceTicks(Math.min(...xs) - 2, Math.max(...xs) + 2, 5);
-    const yT = niceTicks(Math.max(0, Math.min(...ys) - 5), Math.min(100, Math.max(...ys) + 5), 5);
-    const iw = SVW - SM.l - SM.r,
-      ih = SVH - SM.t - SM.b;
-    const X = v => SM.l + (v - xT.lo) / (xT.hi - xT.lo) * iw;
-    const Y = v => SM.t + (1 - (v - yT.lo) / (yT.hi - yT.lo)) * ih;
-    const focusing = hover != null;
-    const hv = hover ? rows.find(r => r.id === hover) : null;
-    return /*#__PURE__*/React.createElement("div", {
-      className: "chart-card"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__head"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__eyebrow"
-    }, "League Compare"), /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__title"
-    }, "Scoring \xD7 All-Play"), /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__sub"
-    }, "Each dot a team \xB7 X = pts/game \xB7 Y = all-play % \xB7 color = team"))), /*#__PURE__*/React.createElement("div", {
-      className: "scat-wrap"
-    }, /*#__PURE__*/React.createElement("svg", {
-      className: 'chart-svg' + (focusing ? ' is-focusing' : ''),
-      viewBox: `0 0 ${SVW} ${SVH}`,
-      preserveAspectRatio: "xMidYMid meet"
-    }, yT.arr.map(v => /*#__PURE__*/React.createElement("g", {
-      key: 'y' + v
-    }, /*#__PURE__*/React.createElement("line", {
-      className: "c-grid",
-      x1: SM.l,
-      y1: Y(v),
-      x2: SVW - SM.r,
-      y2: Y(v)
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-tick",
-      x: SM.l - 9,
-      y: Y(v) + 4,
-      textAnchor: "end"
-    }, v.toFixed(0), "%"))), xT.arr.map(v => /*#__PURE__*/React.createElement("g", {
-      key: 'x' + v
-    }, /*#__PURE__*/React.createElement("line", {
-      className: "c-grid",
-      x1: X(v),
-      y1: SM.t,
-      x2: X(v),
-      y2: SVH - SM.b
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-tick",
-      x: X(v),
-      y: SVH - SM.b + 19,
-      textAnchor: "middle"
-    }, v.toFixed(0)))), /*#__PURE__*/React.createElement("line", {
-      className: "c-ref",
-      x1: X(LEAGUE_PPG),
-      y1: SM.t,
-      x2: X(LEAGUE_PPG),
-      y2: SVH - SM.b
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-ref-lbl",
-      x: X(LEAGUE_PPG) + 5,
-      y: SM.t + 12
-    }, "LG AVG ", LEAGUE_PPG), /*#__PURE__*/React.createElement("line", {
-      className: "c-axis",
-      x1: SM.l,
-      y1: SVH - SM.b,
-      x2: SVW - SM.r,
-      y2: SVH - SM.b
-    }), /*#__PURE__*/React.createElement("line", {
-      className: "c-axis",
-      x1: SM.l,
-      y1: SM.t,
-      x2: SM.l,
-      y2: SVH - SM.b
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-axis-title",
-      x: SM.l + iw / 2,
-      y: SVH - 6,
-      textAnchor: "middle"
-    }, "Points / Game"), /*#__PURE__*/React.createElement("text", {
-      className: "c-axis-title",
-      textAnchor: "middle",
-      transform: `translate(13,${SM.t + ih / 2}) rotate(-90)`
-    }, "All-Play %"), rows.map(r => {
-      const isSel = r.id === selected;
-      const isHi = !focusing || hover === r.id;
-      return /*#__PURE__*/React.createElement("g", {
-        key: r.id,
-        className: 'scat-dot' + (isHi ? ' is-hi' : '') + (isSel ? ' is-sel' : ''),
-        onMouseEnter: () => setHover(r.id),
-        onMouseLeave: () => setHover(h => h === r.id ? null : h),
-        onClick: () => onSelect(r.id),
-        style: {
-          cursor: 'pointer'
-        }
-      }, /*#__PURE__*/React.createElement("circle", {
-        cx: X(r.ppg),
-        cy: Y(r.allPlayPct),
-        r: 13,
-        fill: "transparent"
-      }), /*#__PURE__*/React.createElement("circle", {
-        className: "scat-dot-fill",
-        cx: X(r.ppg),
-        cy: Y(r.allPlayPct),
-        r: isSel ? 8 : 6.5,
-        fill: r.bg,
-        stroke: isSel ? '#E8C547' : r.fg
-      }));
-    })), hv && /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip is-on",
-      style: {
-        left: X(hv.ppg) / SVW * 100 + '%',
-        top: Y(hv.allPlayPct) / SVH * 100 + '%',
-        transform: 'translate(14px,-50%)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip__head"
-    }, /*#__PURE__*/React.createElement(TeamPill, {
-      id: hv.id,
-      h: 24
-    })), /*#__PURE__*/React.createElement("dl", {
-      className: "scat-tip__rows"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip__row"
-    }, /*#__PURE__*/React.createElement("dt", null, "Rank"), /*#__PURE__*/React.createElement("dd", null, "#", hv.rank)), /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip__row"
-    }, /*#__PURE__*/React.createElement("dt", null, "Pts / Game"), /*#__PURE__*/React.createElement("dd", null, hv.ppg.toFixed(2))), /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip__row"
-    }, /*#__PURE__*/React.createElement("dt", null, "All-Play %"), /*#__PURE__*/React.createElement("dd", null, hv.allPlayPct.toFixed(2), "%")), /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip__row"
-    }, /*#__PURE__*/React.createElement("dt", null, "Opp All-Play"), /*#__PURE__*/React.createElement("dd", null, hv.oppAllPlayPct.toFixed(2), "%")), /*#__PURE__*/React.createElement("div", {
-      className: "scat-tip__row"
-    }, /*#__PURE__*/React.createElement("dt", null, "CFFB Score"), /*#__PURE__*/React.createElement("dd", {
-      className: "is-gold"
-    }, hv.cffb.toFixed(3)))))), /*#__PURE__*/React.createElement("div", {
-      className: "chart-foot"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw",
-      style: {
-        background: 'var(--gold)',
-        borderRadius: 999
-      }
-    }), " Selected team ringed gold"), /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw chart-foot__sw--line"
-    }), " League scoring average")));
-  };
-
-  // ===========================================================================
-  // WEEKLY — selected team's week-by-week Points or All-Play %.
-  // Points mode: team bars + opponent marker + league-avg line + W/L color.
-  // All-Play mode: weekly all-play % bars + 50% reference line.
-  // ===========================================================================
-  const WVW = 560,
-    WVH = 372,
-    WM = {
-      l: 44,
-      r: 18,
-      t: 18,
-      b: 42
-    };
-  const WeeklyChart = ({
-    r
-  }) => {
-    const [mode, setMode] = useStateC('points'); // 'points' | 'allplay'
-    const played = r.games.filter(g => !g.bye);
-    const n = played.length;
-    const iw = WVW - WM.l - WM.r,
-      ih = WVH - WM.t - WM.b;
-    const slot = iw / n;
-    const bw = Math.min(30, slot * 0.56);
-    let yT, valOf, fmt, refY, refLbl, oppOf;
-    if (mode === 'points') {
-      const allV = played.flatMap(g => [g.my, g.ov]);
-      yT = niceTicks(Math.max(0, Math.min(...allV) - 8), Math.max(...allV) + 8, 5);
-      valOf = g => g.my;
-      oppOf = g => g.ov;
-      fmt = v => v.toFixed(0);
-      refY = LEAGUE_PPG;
-      refLbl = 'LG AVG ' + LEAGUE_PPG;
-    } else {
-      yT = niceTicks(0, 100, 5);
-      valOf = g => g.ap;
-      oppOf = g => g.oppAp;
-      fmt = v => v.toFixed(0) + '%';
-      refY = 50;
-      refLbl = '50% — even';
+      className: "srow__opp-pre"
+    }, "upcoming")));
+  }
+  const opp = TEAMS[g.opp];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "srow"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "srow__wk"
+  }, "Wk ", g.week), /*#__PURE__*/React.createElement("span", {
+    className: 'srow__res srow__res--' + (g.win ? 'w' : 'l')
+  }, g.win ? 'W' : 'L'), /*#__PURE__*/React.createElement("span", {
+    className: "srow__opp"
+  }, opp ? /*#__PURE__*/React.createElement(TeamPill, {
+    id: g.opp,
+    h: 20
+  }) : /*#__PURE__*/React.createElement("span", {
+    className: "srow__bye"
+  }, "Unknown"), g.rivalry ? /*#__PURE__*/React.createElement(RivalryTag, null) : null, g.gameday ? /*#__PURE__*/React.createElement(GamedayBadge, null) : null), /*#__PURE__*/React.createElement("span", {
+    className: "srow__score"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "srow__score-val"
+  }, g.my.toFixed(2), " \u2013 ", g.ov.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+    className: "srow__score-ap"
+  }, g.ap.toFixed(2), "% AP \xB7 opp ", g.oppAp.toFixed(2), "%")));
+};
+const StreakVal = ({
+  streak
+}) => {
+  const cls = streak[0] === 'W' ? ' is-pos' : streak[0] === 'L' ? ' is-neg' : '';
+  return /*#__PURE__*/React.createElement("div", {
+    className: 'stat__val' + cls
+  }, streak);
+};
+const DetailPanel = ({
+  r
+}) => {
+  const rows = [...r.games, ...r.upcoming.map(u => ({
+    ...u,
+    upcoming: true
+  }))];
+  return /*#__PURE__*/React.createElement("section", {
+    className: "section detail"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__hero"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__top"
+  }, /*#__PURE__*/React.createElement(TeamPill, {
+    id: r.id,
+    h: 40
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "detail__id"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__owner"
+  }, /*#__PURE__*/React.createElement("span", null, r.owner))), /*#__PURE__*/React.createElement("div", {
+    className: "detail__figs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig-lbl"
+  }, "Rank"), /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig-val",
+    style: {
+      color: tierColor(r.rank)
     }
-    const Y = v => WM.t + (1 - (v - yT.lo) / (yT.hi - yT.lo)) * ih;
-    const cx = i => WM.l + slot * i + slot / 2;
-    return /*#__PURE__*/React.createElement("div", {
-      className: "chart-card"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__head"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__eyebrow"
-    }, "Week by Week"), /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__title"
-    }, r.name), /*#__PURE__*/React.createElement("div", {
-      className: "chart-card__sub"
-    }, mode === 'points' ? 'Points scored each week vs opponent' : 'All-play win % each week (vs the field)')), /*#__PURE__*/React.createElement("div", {
-      className: "modes",
-      role: "tablist"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: 'modes__btn' + (mode === 'points' ? ' is-active' : ''),
-      onClick: () => setMode('points')
-    }, "Points"), /*#__PURE__*/React.createElement("button", {
-      className: 'modes__btn' + (mode === 'allplay' ? ' is-active' : ''),
-      onClick: () => setMode('allplay')
-    }, "All-Play %"))), /*#__PURE__*/React.createElement("svg", {
-      className: "chart-svg",
-      viewBox: `0 0 ${WVW} ${WVH}`,
-      preserveAspectRatio: "xMidYMid meet"
-    }, yT.arr.map(v => /*#__PURE__*/React.createElement("g", {
-      key: 'y' + v
-    }, /*#__PURE__*/React.createElement("line", {
-      className: "c-grid",
-      x1: WM.l,
-      y1: Y(v),
-      x2: WVW - WM.r,
-      y2: Y(v)
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-tick",
-      x: WM.l - 8,
-      y: Y(v) + 4,
-      textAnchor: "end"
-    }, fmt(v)))), /*#__PURE__*/React.createElement("line", {
-      className: "c-ref",
-      x1: WM.l,
-      y1: Y(refY),
-      x2: WVW - WM.r,
-      y2: Y(refY)
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-ref-lbl",
-      x: WVW - WM.r,
-      y: Y(refY) - 5,
-      textAnchor: "end"
-    }, refLbl), /*#__PURE__*/React.createElement("line", {
-      className: "c-axis",
-      x1: WM.l,
-      y1: WVH - WM.b,
-      x2: WVW - WM.r,
-      y2: WVH - WM.b
-    }), played.map((g, i) => {
-      const v = valOf(g);
-      const x = cx(i),
-        y0 = WVH - WM.b,
-        y1 = Y(v);
-      const win = mode === 'points' ? g.win : v >= 50;
-      const fill = win ? r.bg : '#2A2A2A';
-      const stroke = win ? r.fg : '#4A4A4A';
-      return /*#__PURE__*/React.createElement("g", {
-        key: i
-      }, /*#__PURE__*/React.createElement("rect", {
-        className: "c-bar",
-        x: x - bw / 2,
-        y: y1,
-        width: bw,
-        height: Math.max(0, y0 - y1),
-        rx: "2",
-        fill: fill,
-        stroke: stroke,
-        strokeWidth: "1"
-      }), oppOf && /*#__PURE__*/React.createElement("line", {
-        className: "c-opp",
-        x1: x - bw / 2 - 2,
-        x2: x + bw / 2 + 2,
-        y1: Y(oppOf(g)),
-        y2: Y(oppOf(g)),
-        stroke: "#9A9A9A"
-      }), /*#__PURE__*/React.createElement("text", {
-        className: "c-bar-lbl",
-        x: x,
-        y: y1 - 6
-      }, fmt(v)), /*#__PURE__*/React.createElement("text", {
-        className: "c-wk-lbl",
-        x: x,
-        y: WVH - WM.b + 16
-      }, g.week));
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-axis-title",
-      x: WM.l + iw / 2,
-      y: WVH - 4,
-      textAnchor: "middle"
-    }, "Week")), /*#__PURE__*/React.createElement("div", {
-      className: "chart-foot"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw",
-      style: {
-        background: r.bg,
-        boxShadow: 'inset 0 0 0 1px ' + r.fg
-      }
-    }), " ", mode === 'points' ? 'Win' : 'Above 50%'), /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw",
-      style: {
-        background: '#2A2A2A'
-      }
-    }), " ", mode === 'points' ? 'Loss' : 'Below 50%'), oppOf && /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw",
-      style: {
-        background: '#9A9A9A',
-        height: 2
-      }
-    }), " Opponent ", mode === 'points' ? 'score' : 'all-play')));
-  };
-
-  // ===========================================================================
-  // RANK TRAIL — the selected team's discrete week-by-week ladder movement.
-  //   'trail' : bump line of league rank over the season (rank 1 = top).
-  //   'shift' : diverging step-area of net spots CLIMBED (up/green) or DROPPED
-  //             (down/red) since the Week 1 baseline.
-  // ===========================================================================
-  const RTVW = 1120,
-    RTVH = 288,
-    RTM = {
-      l: 48,
-      r: 22,
-      t: 24,
-      b: 40
-    };
-  const _lum = hex => {
-    const c = hex.replace('#', '');
-    const r = parseInt(c.slice(0, 2), 16),
-      g = parseInt(c.slice(2, 4), 16),
-      b = parseInt(c.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  };
-  const RankTrail = ({
-    r
-  }) => {
-    const [mode, setMode] = useStateC('trail'); // 'trail' | 'shift'
-    const hist = r.rankHist || [];
-    const moves = r.moves || [];
-    const n = hist.length;
-    if (n === 0) {
-      return /*#__PURE__*/React.createElement("div", {
-        className: "chart-card chart-card--wide"
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "chart-card__head"
-      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-        className: "chart-card__eyebrow"
-      }, "Ladder Movement"), /*#__PURE__*/React.createElement("div", {
-        className: "chart-card__title"
-      }, "Rank Trail \u2014 ", r.name), /*#__PURE__*/React.createElement("div", {
-        className: "chart-card__sub"
-      }, "No weekly rank history yet."))));
+  }, r.rank), /*#__PURE__*/React.createElement(Move, {
+    move: r.move
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig-lbl"
+  }, "CFFB"), /*#__PURE__*/React.createElement("div", {
+    className: "detail__fig-val",
+    style: {
+      color: 'var(--gold-light)',
+      fontSize: '26px'
     }
-    const iw = RTVW - RTM.l - RTM.r,
-      ih = RTVH - RTM.t - RTM.b;
-    const slot = iw / n;
-    const cx = i => RTM.l + slot * i + slot / 2;
-    const lineCol = _lum(r.bg) < 0.3 ? r.fg : r.bg;
-    const best = Math.min.apply(null, hist);
-    const worst = Math.max.apply(null, hist);
-    const start = hist[0];
-    const cum = hist.map(rk => start - rk);
-    const net = cum[n - 1];
-    const lo = 1,
-      hi = 100;
-    const Yr = rank => RTM.t + (rank - lo) / (hi - lo) * ih;
-    const rTicks = [1, 20, 40, 60, 80, 100];
-    let trailD = `M ${cx(0)} ${Yr(hist[0])}`;
-    for (let i = 1; i < n; i++) trailD += ` L ${cx(i)} ${Yr(hist[i - 1])} L ${cx(i)} ${Yr(hist[i])}`;
-    const cMax = Math.max(1, ...cum.map(v => Math.abs(v)));
-    const zeroY = RTM.t + ih / 2;
-    const half = ih / 2 - 10;
-    const Yc = v => zeroY - v / cMax * half;
-    const cStep = Math.max(1, Math.ceil(cMax / 2));
-    const cTicks = [];
-    for (let v = -cMax; v <= cMax; v += cStep) cTicks.push(v);
-    if (cTicks.indexOf(0) < 0) cTicks.push(0);
-    let cumLineD = `M ${cx(0)} ${Yc(cum[0])}`;
-    for (let i = 1; i < n; i++) cumLineD += ` L ${cx(i)} ${Yc(cum[i - 1])} L ${cx(i)} ${Yc(cum[i])}`;
-    const cumAreaD = `M ${cx(0)} ${zeroY} L ${cx(0)} ${Yc(cum[0])}` + cum.slice(1).map((v, k) => ` L ${cx(k + 1)} ${Yc(cum[k])} L ${cx(k + 1)} ${Yc(v)}`).join('') + ` L ${cx(n - 1)} ${zeroY} Z`;
+  }, r.cffb.toFixed(3)))))), /*#__PURE__*/React.createElement("div", {
+    className: "detail__stats"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat__lbl"
+  }, "Overall"), /*#__PURE__*/React.createElement("div", {
+    className: "stat__val"
+  }, r.W, "\u2013", r.L)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat__lbl"
+  }, "Conference"), /*#__PURE__*/React.createElement("div", {
+    className: "stat__val"
+  }, r.cW, "\u2013", r.cL)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat__lbl"
+  }, "Streak"), /*#__PURE__*/React.createElement(StreakVal, {
+    streak: r.streak
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat__lbl"
+  }, "All-Play %"), /*#__PURE__*/React.createElement("div", {
+    className: "stat__val"
+  }, r.allPlayPct.toFixed(2), /*#__PURE__*/React.createElement("small", null, "%"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat__lbl"
+  }, "Opp All-Play"), /*#__PURE__*/React.createElement("div", {
+    className: "stat__val"
+  }, r.oppAllPlayPct.toFixed(2), /*#__PURE__*/React.createElement("small", null, "%"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat__lbl"
+  }, "Pts / Game"), /*#__PURE__*/React.createElement("div", {
+    className: "stat__val"
+  }, r.ppg.toFixed(2)))), /*#__PURE__*/React.createElement("div", {
+    className: "sched"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sched__head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "sched__title"
+  }, "Schedule \xB7 Results"), /*#__PURE__*/React.createElement("span", {
+    className: "section__spacer"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "section__meta"
+  }, "Through Wk ", WEEKS_PLAYED)), /*#__PURE__*/React.createElement("div", {
+    className: "sched__list"
+  }, rows.map((g, i) => /*#__PURE__*/React.createElement(SchedRow, {
+    key: i,
+    g: g,
+    teamConf: r.conf
+  })))));
+};
+Object.assign(window, {
+  TeamPill,
+  Move,
+  ConfFilter,
+  RankingTable,
+  DetailPanel
+});
+
+/* ---- charts.jsx ---- */
+// CFFB · Power Rankings — charts (league scatter + weekly performance)
+
+const {
+  useState: useStateC
+} = React;
+
+// nice tick helper
+const niceTicks = (min, max, n) => {
+  const span = max - min || 1;
+  const step0 = span / n;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const norm = step0 / mag;
+  let step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  step *= mag;
+  const lo = Math.floor(min / step) * step;
+  const hi = Math.ceil(max / step) * step;
+  const arr = [];
+  for (let v = lo; v <= hi + step * 1e-6; v += step) arr.push(+v.toFixed(6));
+  return {
+    lo,
+    hi,
+    arr
+  };
+};
+
+// ===========================================================================
+// SCATTER — Points / Game (X) × All-Play % (Y). Each dot is a team.
+// Selected team is ringed; hovering highlights one and dims the rest.
+// ===========================================================================
+const SVW = 560,
+  SVH = 372,
+  SM = {
+    l: 52,
+    r: 18,
+    t: 18,
+    b: 50
+  };
+const LeagueScatter = ({
+  rows,
+  selected,
+  onSelect
+}) => {
+  const [hover, setHover] = useStateC(null);
+  const xs = rows.map(r => r.ppg);
+  const ys = rows.map(r => r.allPlayPct);
+  const xT = niceTicks(Math.min(...xs) - 2, Math.max(...xs) + 2, 5);
+  const yT = niceTicks(Math.max(0, Math.min(...ys) - 5), Math.min(100, Math.max(...ys) + 5), 5);
+  const iw = SVW - SM.l - SM.r,
+    ih = SVH - SM.t - SM.b;
+  const X = v => SM.l + (v - xT.lo) / (xT.hi - xT.lo) * iw;
+  const Y = v => SM.t + (1 - (v - yT.lo) / (yT.hi - yT.lo)) * ih;
+  const focusing = hover != null;
+  const hv = hover ? rows.find(r => r.id === hover) : null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__eyebrow"
+  }, "League Compare"), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__title"
+  }, "Scoring \xD7 All-Play"), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__sub"
+  }, "Each dot a team \xB7 X = pts/game \xB7 Y = all-play % \xB7 color = team"))), /*#__PURE__*/React.createElement("div", {
+    className: "scat-wrap"
+  }, /*#__PURE__*/React.createElement("svg", {
+    className: 'chart-svg' + (focusing ? ' is-focusing' : ''),
+    viewBox: `0 0 ${SVW} ${SVH}`,
+    preserveAspectRatio: "xMidYMid meet"
+  }, yT.arr.map(v => /*#__PURE__*/React.createElement("g", {
+    key: 'y' + v
+  }, /*#__PURE__*/React.createElement("line", {
+    className: "c-grid",
+    x1: SM.l,
+    y1: Y(v),
+    x2: SVW - SM.r,
+    y2: Y(v)
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-tick",
+    x: SM.l - 9,
+    y: Y(v) + 4,
+    textAnchor: "end"
+  }, v.toFixed(0), "%"))), xT.arr.map(v => /*#__PURE__*/React.createElement("g", {
+    key: 'x' + v
+  }, /*#__PURE__*/React.createElement("line", {
+    className: "c-grid",
+    x1: X(v),
+    y1: SM.t,
+    x2: X(v),
+    y2: SVH - SM.b
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-tick",
+    x: X(v),
+    y: SVH - SM.b + 19,
+    textAnchor: "middle"
+  }, v.toFixed(0)))), /*#__PURE__*/React.createElement("line", {
+    className: "c-ref",
+    x1: X(LEAGUE_PPG),
+    y1: SM.t,
+    x2: X(LEAGUE_PPG),
+    y2: SVH - SM.b
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-ref-lbl",
+    x: X(LEAGUE_PPG) + 5,
+    y: SM.t + 12
+  }, "LG AVG ", LEAGUE_PPG), /*#__PURE__*/React.createElement("line", {
+    className: "c-axis",
+    x1: SM.l,
+    y1: SVH - SM.b,
+    x2: SVW - SM.r,
+    y2: SVH - SM.b
+  }), /*#__PURE__*/React.createElement("line", {
+    className: "c-axis",
+    x1: SM.l,
+    y1: SM.t,
+    x2: SM.l,
+    y2: SVH - SM.b
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-axis-title",
+    x: SM.l + iw / 2,
+    y: SVH - 6,
+    textAnchor: "middle"
+  }, "Points / Game"), /*#__PURE__*/React.createElement("text", {
+    className: "c-axis-title",
+    textAnchor: "middle",
+    transform: `translate(13,${SM.t + ih / 2}) rotate(-90)`
+  }, "All-Play %"), rows.map(r => {
+    const isSel = r.id === selected;
+    const isHi = !focusing || hover === r.id;
+    return /*#__PURE__*/React.createElement("g", {
+      key: r.id,
+      className: 'scat-dot' + (isHi ? ' is-hi' : '') + (isSel ? ' is-sel' : ''),
+      onMouseEnter: () => setHover(r.id),
+      onMouseLeave: () => setHover(h => h === r.id ? null : h),
+      onClick: () => onSelect(r.id),
+      style: {
+        cursor: 'pointer'
+      }
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: X(r.ppg),
+      cy: Y(r.allPlayPct),
+      r: 13,
+      fill: "transparent"
+    }), /*#__PURE__*/React.createElement("circle", {
+      className: "scat-dot-fill",
+      cx: X(r.ppg),
+      cy: Y(r.allPlayPct),
+      r: isSel ? 8 : 6.5,
+      fill: r.bg,
+      stroke: isSel ? '#E8C547' : r.fg
+    }));
+  })), hv && /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip is-on",
+    style: {
+      left: X(hv.ppg) / SVW * 100 + '%',
+      top: Y(hv.allPlayPct) / SVH * 100 + '%',
+      transform: 'translate(14px,-50%)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip__head"
+  }, /*#__PURE__*/React.createElement(TeamPill, {
+    id: hv.id,
+    h: 24
+  })), /*#__PURE__*/React.createElement("dl", {
+    className: "scat-tip__rows"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip__row"
+  }, /*#__PURE__*/React.createElement("dt", null, "Rank"), /*#__PURE__*/React.createElement("dd", null, "#", hv.rank)), /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip__row"
+  }, /*#__PURE__*/React.createElement("dt", null, "Pts / Game"), /*#__PURE__*/React.createElement("dd", null, hv.ppg.toFixed(2))), /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip__row"
+  }, /*#__PURE__*/React.createElement("dt", null, "All-Play %"), /*#__PURE__*/React.createElement("dd", null, hv.allPlayPct.toFixed(2), "%")), /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip__row"
+  }, /*#__PURE__*/React.createElement("dt", null, "Opp All-Play"), /*#__PURE__*/React.createElement("dd", null, hv.oppAllPlayPct.toFixed(2), "%")), /*#__PURE__*/React.createElement("div", {
+    className: "scat-tip__row"
+  }, /*#__PURE__*/React.createElement("dt", null, "CFFB Score"), /*#__PURE__*/React.createElement("dd", {
+    className: "is-gold"
+  }, hv.cffb.toFixed(3)))))), /*#__PURE__*/React.createElement("div", {
+    className: "chart-foot"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw",
+    style: {
+      background: 'var(--gold)',
+      borderRadius: 999
+    }
+  }), " Selected team ringed gold"), /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw chart-foot__sw--line"
+  }), " League scoring average")));
+};
+
+// ===========================================================================
+// WEEKLY — selected team's week-by-week Points or All-Play %.
+// Points mode: team bars + opponent marker + league-avg line + W/L color.
+// All-Play mode: weekly all-play % bars + 50% reference line.
+// ===========================================================================
+const WVW = 560,
+  WVH = 372,
+  WM = {
+    l: 44,
+    r: 18,
+    t: 18,
+    b: 42
+  };
+const WeeklyChart = ({
+  r
+}) => {
+  const [mode, setMode] = useStateC('points'); // 'points' | 'allplay'
+  const played = r.games.filter(g => !g.bye);
+  const n = played.length;
+  const iw = WVW - WM.l - WM.r,
+    ih = WVH - WM.t - WM.b;
+  const slot = iw / n;
+  const bw = Math.min(30, slot * 0.56);
+  let yT, valOf, fmt, refY, refLbl, oppOf;
+  if (mode === 'points') {
+    const allV = played.flatMap(g => [g.my, g.ov]);
+    yT = niceTicks(Math.max(0, Math.min(...allV) - 8), Math.max(...allV) + 8, 5);
+    valOf = g => g.my;
+    oppOf = g => g.ov;
+    fmt = v => v.toFixed(0);
+    refY = LEAGUE_PPG;
+    refLbl = 'LG AVG ' + LEAGUE_PPG;
+  } else {
+    yT = niceTicks(0, 100, 5);
+    valOf = g => g.ap;
+    oppOf = g => g.oppAp;
+    fmt = v => v.toFixed(0) + '%';
+    refY = 50;
+    refLbl = '50% — even';
+  }
+  const Y = v => WM.t + (1 - (v - yT.lo) / (yT.hi - yT.lo)) * ih;
+  const cx = i => WM.l + slot * i + slot / 2;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__eyebrow"
+  }, "Week by Week"), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__title"
+  }, r.name), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__sub"
+  }, mode === 'points' ? 'Points scored each week vs opponent' : 'All-play win % each week (vs the field)')), /*#__PURE__*/React.createElement("div", {
+    className: "modes",
+    role: "tablist"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: 'modes__btn' + (mode === 'points' ? ' is-active' : ''),
+    onClick: () => setMode('points')
+  }, "Points"), /*#__PURE__*/React.createElement("button", {
+    className: 'modes__btn' + (mode === 'allplay' ? ' is-active' : ''),
+    onClick: () => setMode('allplay')
+  }, "All-Play %"))), /*#__PURE__*/React.createElement("svg", {
+    className: "chart-svg",
+    viewBox: `0 0 ${WVW} ${WVH}`,
+    preserveAspectRatio: "xMidYMid meet"
+  }, yT.arr.map(v => /*#__PURE__*/React.createElement("g", {
+    key: 'y' + v
+  }, /*#__PURE__*/React.createElement("line", {
+    className: "c-grid",
+    x1: WM.l,
+    y1: Y(v),
+    x2: WVW - WM.r,
+    y2: Y(v)
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-tick",
+    x: WM.l - 8,
+    y: Y(v) + 4,
+    textAnchor: "end"
+  }, fmt(v)))), /*#__PURE__*/React.createElement("line", {
+    className: "c-ref",
+    x1: WM.l,
+    y1: Y(refY),
+    x2: WVW - WM.r,
+    y2: Y(refY)
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-ref-lbl",
+    x: WVW - WM.r,
+    y: Y(refY) - 5,
+    textAnchor: "end"
+  }, refLbl), /*#__PURE__*/React.createElement("line", {
+    className: "c-axis",
+    x1: WM.l,
+    y1: WVH - WM.b,
+    x2: WVW - WM.r,
+    y2: WVH - WM.b
+  }), played.map((g, i) => {
+    const v = valOf(g);
+    const x = cx(i),
+      y0 = WVH - WM.b,
+      y1 = Y(v);
+    const win = mode === 'points' ? g.win : v >= 50;
+    const fill = win ? r.bg : '#2A2A2A';
+    const stroke = win ? r.fg : '#4A4A4A';
+    return /*#__PURE__*/React.createElement("g", {
+      key: i
+    }, /*#__PURE__*/React.createElement("rect", {
+      className: "c-bar",
+      x: x - bw / 2,
+      y: y1,
+      width: bw,
+      height: Math.max(0, y0 - y1),
+      rx: "2",
+      fill: fill,
+      stroke: stroke,
+      strokeWidth: "1"
+    }), oppOf && /*#__PURE__*/React.createElement("line", {
+      className: "c-opp",
+      x1: x - bw / 2 - 2,
+      x2: x + bw / 2 + 2,
+      y1: Y(oppOf(g)),
+      y2: Y(oppOf(g)),
+      stroke: "#9A9A9A"
+    }), /*#__PURE__*/React.createElement("text", {
+      className: "c-bar-lbl",
+      x: x,
+      y: y1 - 6
+    }, fmt(v)), /*#__PURE__*/React.createElement("text", {
+      className: "c-wk-lbl",
+      x: x,
+      y: WVH - WM.b + 16
+    }, g.week));
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-axis-title",
+    x: WM.l + iw / 2,
+    y: WVH - 4,
+    textAnchor: "middle"
+  }, "Week")), /*#__PURE__*/React.createElement("div", {
+    className: "chart-foot"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw",
+    style: {
+      background: r.bg,
+      boxShadow: 'inset 0 0 0 1px ' + r.fg
+    }
+  }), " ", mode === 'points' ? 'Win' : 'Above 50%'), /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw",
+    style: {
+      background: '#2A2A2A'
+    }
+  }), " ", mode === 'points' ? 'Loss' : 'Below 50%'), oppOf && /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw",
+    style: {
+      background: '#9A9A9A',
+      height: 2
+    }
+  }), " Opponent ", mode === 'points' ? 'score' : 'all-play')));
+};
+
+// ===========================================================================
+// RANK TRAIL — the selected team's discrete week-by-week ladder movement.
+//   'trail' : bump line of league rank over the season (rank 1 = top).
+//   'shift' : diverging step-area of net spots CLIMBED (up/green) or DROPPED
+//             (down/red) since the Week 1 baseline.
+// ===========================================================================
+const RTVW = 1120,
+  RTVH = 288,
+  RTM = {
+    l: 48,
+    r: 22,
+    t: 24,
+    b: 40
+  };
+const _lum = hex => {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16),
+    g = parseInt(c.slice(2, 4), 16),
+    b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+};
+const RankTrail = ({
+  r
+}) => {
+  const [mode, setMode] = useStateC('trail'); // 'trail' | 'shift'
+  const hist = r.rankHist || [];
+  const moves = r.moves || [];
+  const n = hist.length;
+  if (n === 0) {
     return /*#__PURE__*/React.createElement("div", {
       className: "chart-card chart-card--wide"
     }, /*#__PURE__*/React.createElement("div", {
@@ -1339,267 +1299,317 @@ img { display: block; }
       className: "chart-card__title"
     }, "Rank Trail \u2014 ", r.name), /*#__PURE__*/React.createElement("div", {
       className: "chart-card__sub"
-    }, mode === 'trail' ? 'League rank after each week · rank 1 at the top' : 'Cumulative spots climbed or dropped since the Week 1 ranking')), /*#__PURE__*/React.createElement("div", {
-      className: "rt-head-right"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "rt-summary"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum__lbl"
-    }, "Best"), /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum__val"
-    }, "#", best)), /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum__lbl"
-    }, "Worst"), /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum__val"
-    }, "#", worst)), /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "rt-sum__lbl"
-    }, "Season Shift"), /*#__PURE__*/React.createElement("span", {
-      className: 'rt-sum__val ' + (net > 0 ? 'is-pos' : net < 0 ? 'is-neg' : 'is-flat')
-    }, net > 0 ? '▲' + net : net < 0 ? '▼' + -net : '—'))), /*#__PURE__*/React.createElement("div", {
-      className: "modes",
-      role: "tablist"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: 'modes__btn' + (mode === 'trail' ? ' is-active' : ''),
-      onClick: () => setMode('trail')
-    }, "Trail"), /*#__PURE__*/React.createElement("button", {
-      className: 'modes__btn' + (mode === 'shift' ? ' is-active' : ''),
-      onClick: () => setMode('shift')
-    }, "Cumulative Shift")))), /*#__PURE__*/React.createElement("svg", {
-      className: "chart-svg",
-      viewBox: `0 0 ${RTVW} ${RTVH}`,
-      preserveAspectRatio: "xMidYMid meet"
-    }, mode === 'trail' ? /*#__PURE__*/React.createElement(React.Fragment, null, rTicks.map(v => /*#__PURE__*/React.createElement("g", {
-      key: 'r' + v
-    }, /*#__PURE__*/React.createElement("line", {
-      className: "c-grid",
-      x1: RTM.l,
-      y1: Yr(v),
-      x2: RTVW - RTM.r,
-      y2: Yr(v)
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-tick",
-      x: RTM.l - 9,
-      y: Yr(v) + 4,
-      textAnchor: "end"
-    }, "#", v))), /*#__PURE__*/React.createElement("path", {
-      className: "rt-line",
-      d: trailD,
-      stroke: lineCol
-    }), hist.map((rk, i) => {
-      const mv = moves[i];
-      return /*#__PURE__*/React.createElement("g", {
-        key: i
-      }, i > 0 && mv !== 0 && /*#__PURE__*/React.createElement("text", {
-        className: 'rt-mv ' + (mv > 0 ? 'is-pos' : 'is-neg'),
-        x: cx(i),
-        y: Yr(rk) - 14,
-        textAnchor: "middle"
-      }, mv > 0 ? '▲' + mv : '▼' + -mv), /*#__PURE__*/React.createElement("circle", {
-        className: "rt-dot",
-        cx: cx(i),
-        cy: Yr(rk),
-        r: i === n - 1 ? 6.5 : 5,
-        fill: r.bg,
-        stroke: r.fg
-      }), /*#__PURE__*/React.createElement("text", {
-        className: "rt-rank-lbl",
-        x: cx(i),
-        y: Yr(rk) + (rk <= (lo + hi) / 2 ? 20 : -12),
-        textAnchor: "middle"
-      }, "#", rk), /*#__PURE__*/React.createElement("text", {
-        className: "c-wk-lbl",
-        x: cx(i),
-        y: RTVH - RTM.b + 18
-      }, i + 1));
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-axis-title",
-      x: RTM.l + iw / 2,
-      y: RTVH - 4,
+    }, "No weekly rank history yet."))));
+  }
+  const iw = RTVW - RTM.l - RTM.r,
+    ih = RTVH - RTM.t - RTM.b;
+  const slot = iw / n;
+  const cx = i => RTM.l + slot * i + slot / 2;
+  const lineCol = _lum(r.bg) < 0.3 ? r.fg : r.bg;
+  const best = Math.min.apply(null, hist);
+  const worst = Math.max.apply(null, hist);
+  const start = hist[0];
+  const cum = hist.map(rk => start - rk);
+  const net = cum[n - 1];
+  const lo = 1,
+    hi = 100;
+  const Yr = rank => RTM.t + (rank - lo) / (hi - lo) * ih;
+  const rTicks = [1, 20, 40, 60, 80, 100];
+  let trailD = `M ${cx(0)} ${Yr(hist[0])}`;
+  for (let i = 1; i < n; i++) trailD += ` L ${cx(i)} ${Yr(hist[i - 1])} L ${cx(i)} ${Yr(hist[i])}`;
+  const cMax = Math.max(1, ...cum.map(v => Math.abs(v)));
+  const zeroY = RTM.t + ih / 2;
+  const half = ih / 2 - 10;
+  const Yc = v => zeroY - v / cMax * half;
+  const cStep = Math.max(1, Math.ceil(cMax / 2));
+  const cTicks = [];
+  for (let v = -cMax; v <= cMax; v += cStep) cTicks.push(v);
+  if (cTicks.indexOf(0) < 0) cTicks.push(0);
+  let cumLineD = `M ${cx(0)} ${Yc(cum[0])}`;
+  for (let i = 1; i < n; i++) cumLineD += ` L ${cx(i)} ${Yc(cum[i - 1])} L ${cx(i)} ${Yc(cum[i])}`;
+  const cumAreaD = `M ${cx(0)} ${zeroY} L ${cx(0)} ${Yc(cum[0])}` + cum.slice(1).map((v, k) => ` L ${cx(k + 1)} ${Yc(cum[k])} L ${cx(k + 1)} ${Yc(v)}`).join('') + ` L ${cx(n - 1)} ${zeroY} Z`;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "chart-card chart-card--wide"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__eyebrow"
+  }, "Ladder Movement"), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__title"
+  }, "Rank Trail \u2014 ", r.name), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card__sub"
+  }, mode === 'trail' ? 'League rank after each week · rank 1 at the top' : 'Cumulative spots climbed or dropped since the Week 1 ranking')), /*#__PURE__*/React.createElement("div", {
+    className: "rt-head-right"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rt-summary"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum__lbl"
+  }, "Best"), /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum__val"
+  }, "#", best)), /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum__lbl"
+  }, "Worst"), /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum__val"
+  }, "#", worst)), /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rt-sum__lbl"
+  }, "Season Shift"), /*#__PURE__*/React.createElement("span", {
+    className: 'rt-sum__val ' + (net > 0 ? 'is-pos' : net < 0 ? 'is-neg' : 'is-flat')
+  }, net > 0 ? '▲' + net : net < 0 ? '▼' + -net : '—'))), /*#__PURE__*/React.createElement("div", {
+    className: "modes",
+    role: "tablist"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: 'modes__btn' + (mode === 'trail' ? ' is-active' : ''),
+    onClick: () => setMode('trail')
+  }, "Trail"), /*#__PURE__*/React.createElement("button", {
+    className: 'modes__btn' + (mode === 'shift' ? ' is-active' : ''),
+    onClick: () => setMode('shift')
+  }, "Cumulative Shift")))), /*#__PURE__*/React.createElement("svg", {
+    className: "chart-svg",
+    viewBox: `0 0 ${RTVW} ${RTVH}`,
+    preserveAspectRatio: "xMidYMid meet"
+  }, mode === 'trail' ? /*#__PURE__*/React.createElement(React.Fragment, null, rTicks.map(v => /*#__PURE__*/React.createElement("g", {
+    key: 'r' + v
+  }, /*#__PURE__*/React.createElement("line", {
+    className: "c-grid",
+    x1: RTM.l,
+    y1: Yr(v),
+    x2: RTVW - RTM.r,
+    y2: Yr(v)
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-tick",
+    x: RTM.l - 9,
+    y: Yr(v) + 4,
+    textAnchor: "end"
+  }, "#", v))), /*#__PURE__*/React.createElement("path", {
+    className: "rt-line",
+    d: trailD,
+    stroke: lineCol
+  }), hist.map((rk, i) => {
+    const mv = moves[i];
+    return /*#__PURE__*/React.createElement("g", {
+      key: i
+    }, i > 0 && mv !== 0 && /*#__PURE__*/React.createElement("text", {
+      className: 'rt-mv ' + (mv > 0 ? 'is-pos' : 'is-neg'),
+      x: cx(i),
+      y: Yr(rk) - 14,
       textAnchor: "middle"
-    }, "Week")) : /*#__PURE__*/React.createElement(React.Fragment, null, cTicks.map(v => /*#__PURE__*/React.createElement("g", {
-      key: 'c' + v
-    }, /*#__PURE__*/React.createElement("line", {
-      className: v === 0 ? 'c-axis' : 'c-grid',
-      x1: RTM.l,
-      y1: Yc(v),
-      x2: RTVW - RTM.r,
-      y2: Yc(v)
+    }, mv > 0 ? '▲' + mv : '▼' + -mv), /*#__PURE__*/React.createElement("circle", {
+      className: "rt-dot",
+      cx: cx(i),
+      cy: Yr(rk),
+      r: i === n - 1 ? 6.5 : 5,
+      fill: r.bg,
+      stroke: r.fg
     }), /*#__PURE__*/React.createElement("text", {
-      className: "c-tick",
-      x: RTM.l - 9,
-      y: Yc(v) + 4,
-      textAnchor: "end"
-    }, v > 0 ? '+' + v : v))), /*#__PURE__*/React.createElement("text", {
-      className: "c-ref-lbl",
-      x: RTVW - RTM.r,
-      y: Yc(0) - 6,
-      textAnchor: "end"
-    }, "WK 1 BASELINE"), /*#__PURE__*/React.createElement("path", {
-      className: "rt-cum-area",
-      d: cumAreaD,
-      fill: lineCol
-    }), /*#__PURE__*/React.createElement("path", {
-      className: "rt-line",
-      d: cumLineD,
-      stroke: lineCol
-    }), cum.map((v, i) => {
-      const x = cx(i);
-      return /*#__PURE__*/React.createElement("g", {
-        key: i
-      }, /*#__PURE__*/React.createElement("circle", {
-        className: "rt-dot",
-        cx: x,
-        cy: Yc(v),
-        r: i === n - 1 ? 6.5 : 4.5,
-        fill: r.bg,
-        stroke: r.fg
-      }), /*#__PURE__*/React.createElement("text", {
-        className: 'rt-mv ' + (v > 0 ? 'is-pos' : v < 0 ? 'is-neg' : 'is-flat'),
-        x: x,
-        y: Yc(v) + (v < 0 ? 22 : -13),
-        textAnchor: "middle"
-      }, v > 0 ? '+' + v : v === 0 ? '±0' : v), /*#__PURE__*/React.createElement("text", {
-        className: "c-wk-lbl",
-        x: x,
-        y: RTVH - RTM.b + 18
-      }, i + 1));
-    }), /*#__PURE__*/React.createElement("text", {
-      className: "c-axis-title",
-      x: RTM.l + iw / 2,
-      y: RTVH - 4,
+      className: "rt-rank-lbl",
+      x: cx(i),
+      y: Yr(rk) + (rk <= (lo + hi) / 2 ? 20 : -12),
       textAnchor: "middle"
-    }, "Week"))), /*#__PURE__*/React.createElement("div", {
-      className: "chart-foot"
-    }, mode === 'trail' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw",
-      style: {
-        background: lineCol,
-        borderRadius: 999
-      }
-    }), " ", r.name, " rank"), /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__mv is-pos"
-    }, "\u25B2"), " Climbed vs prior week"), /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__mv is-neg"
-    }, "\u25BC"), " Dropped vs prior week")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__sw",
-      style: {
-        background: lineCol,
-        borderRadius: 999
-      }
-    }), " Cumulative shift vs Wk 1"), /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__mv is-pos"
-    }, "\uFF0B"), " Above baseline = net climb"), /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__key"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "chart-foot__mv is-neg"
-    }, "\uFF0D"), " Below baseline = net drop"))));
+    }, "#", rk), /*#__PURE__*/React.createElement("text", {
+      className: "c-wk-lbl",
+      x: cx(i),
+      y: RTVH - RTM.b + 18
+    }, i + 1));
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-axis-title",
+    x: RTM.l + iw / 2,
+    y: RTVH - 4,
+    textAnchor: "middle"
+  }, "Week")) : /*#__PURE__*/React.createElement(React.Fragment, null, cTicks.map(v => /*#__PURE__*/React.createElement("g", {
+    key: 'c' + v
+  }, /*#__PURE__*/React.createElement("line", {
+    className: v === 0 ? 'c-axis' : 'c-grid',
+    x1: RTM.l,
+    y1: Yc(v),
+    x2: RTVW - RTM.r,
+    y2: Yc(v)
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-tick",
+    x: RTM.l - 9,
+    y: Yc(v) + 4,
+    textAnchor: "end"
+  }, v > 0 ? '+' + v : v))), /*#__PURE__*/React.createElement("text", {
+    className: "c-ref-lbl",
+    x: RTVW - RTM.r,
+    y: Yc(0) - 6,
+    textAnchor: "end"
+  }, "WK 1 BASELINE"), /*#__PURE__*/React.createElement("path", {
+    className: "rt-cum-area",
+    d: cumAreaD,
+    fill: lineCol
+  }), /*#__PURE__*/React.createElement("path", {
+    className: "rt-line",
+    d: cumLineD,
+    stroke: lineCol
+  }), cum.map((v, i) => {
+    const x = cx(i);
+    return /*#__PURE__*/React.createElement("g", {
+      key: i
+    }, /*#__PURE__*/React.createElement("circle", {
+      className: "rt-dot",
+      cx: x,
+      cy: Yc(v),
+      r: i === n - 1 ? 6.5 : 4.5,
+      fill: r.bg,
+      stroke: r.fg
+    }), /*#__PURE__*/React.createElement("text", {
+      className: 'rt-mv ' + (v > 0 ? 'is-pos' : v < 0 ? 'is-neg' : 'is-flat'),
+      x: x,
+      y: Yc(v) + (v < 0 ? 22 : -13),
+      textAnchor: "middle"
+    }, v > 0 ? '+' + v : v === 0 ? '±0' : v), /*#__PURE__*/React.createElement("text", {
+      className: "c-wk-lbl",
+      x: x,
+      y: RTVH - RTM.b + 18
+    }, i + 1));
+  }), /*#__PURE__*/React.createElement("text", {
+    className: "c-axis-title",
+    x: RTM.l + iw / 2,
+    y: RTVH - 4,
+    textAnchor: "middle"
+  }, "Week"))), /*#__PURE__*/React.createElement("div", {
+    className: "chart-foot"
+  }, mode === 'trail' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw",
+    style: {
+      background: lineCol,
+      borderRadius: 999
+    }
+  }), " ", r.name, " rank"), /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__mv is-pos"
+  }, "\u25B2"), " Climbed vs prior week"), /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__mv is-neg"
+  }, "\u25BC"), " Dropped vs prior week")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__sw",
+    style: {
+      background: lineCol,
+      borderRadius: 999
+    }
+  }), " Cumulative shift vs Wk 1"), /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__mv is-pos"
+  }, "\uFF0B"), " Above baseline = net climb"), /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__key"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "chart-foot__mv is-neg"
+  }, "\uFF0D"), " Below baseline = net drop"))));
+};
+Object.assign(window, {
+  LeagueScatter,
+  WeeklyChart,
+  RankTrail
+});
+
+/* ---- app.jsx ---- */
+// CFFB · Power Rankings — app composition
+
+const {
+  useState: useStateA,
+  useMemo
+} = React;
+const App = () => {
+  const [conf, setConf] = useStateA('all');
+  const [selected, setSelected] = useStateA(STANDINGS[0].id);
+  const confName = (CONFERENCES.find(c => c.id === conf) || {}).name;
+
+  // Filtered + re-ranked within the active conference view.
+  const rows = useMemo(() => {
+    const base = conf === 'all' ? STANDINGS : STANDINGS.filter(r => r.conf === conf);
+    return base; // already sorted by CFFB Score; rank shown is league rank
+  }, [conf]);
+
+  // Keep a valid selection inside the current filter.
+  const selRow = rows.find(r => r.id === selected) || rows[0];
+  const selId = selRow ? selRow.id : null;
+  const onConf = c => {
+    setConf(c);
+    const base = c === 'all' ? STANDINGS : STANDINGS.filter(r => r.conf === c);
+    if (!base.some(r => r.id === selected)) setSelected(base[0].id);
   };
-  Object.assign(window, {
-    LeagueScatter,
-    WeeklyChart,
-    RankTrail
+  return /*#__PURE__*/React.createElement("div", {
+    className: "frame"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "topbar"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "topbar__h1"
+  }, "Power Rankings"), /*#__PURE__*/React.createElement("span", {
+    className: "topbar__spacer"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "topbar__week"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "topbar__week-lbl"
+  }, (window.CFFB_SEASON || 2025) + ' Season'), /*#__PURE__*/React.createElement("span", {
+    className: "topbar__week-val"
+  }, "Through Week ", WEEKS_PLAYED))), /*#__PURE__*/React.createElement("div", {
+    className: "page"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "page-head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "page-head__sub"
+  }, conf === 'all' ? /*#__PURE__*/React.createElement(React.Fragment, null, "All ", /*#__PURE__*/React.createElement("strong", null, STANDINGS.length), " managers, ranked by ", /*#__PURE__*/React.createElement("strong", null, "CFFB Score"), " \u2014 all-play %, head-to-head record and scoring, weighted. Top 25 shown first; scroll the ladder for the full field.") : /*#__PURE__*/React.createElement(React.Fragment, null, "Showing ", /*#__PURE__*/React.createElement("strong", null, confName), " \u2014 ", rows.length, " teams, league rank preserved. Click any team for its weekly results."))), /*#__PURE__*/React.createElement(ConfFilter, {
+    active: conf,
+    onChange: onConf
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "layout"
+  }, /*#__PURE__*/React.createElement(RankingTable, {
+    rows: rows,
+    selected: selId,
+    onSelect: setSelected,
+    confName: confName
+  }), selRow && /*#__PURE__*/React.createElement(DetailPanel, {
+    r: selRow
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "charts"
+  }, /*#__PURE__*/React.createElement(LeagueScatter, {
+    rows: rows,
+    selected: selId,
+    onSelect: setSelected
+  }), selRow && /*#__PURE__*/React.createElement(WeeklyChart, {
+    r: selRow
+  })), selRow && /*#__PURE__*/React.createElement(RankTrail, {
+    r: selRow
+  })));
+};
+const CFFBBoot = () => {
+  const [ready, setReady] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+  React.useEffect(() => {
+    window.__loadPowerRankings().then(() => setReady(true)).catch(e => setErr(e && e.message ? e.message : String(e)));
+  }, []);
+  if (err) return /*#__PURE__*/React.createElement("div", {
+    className: "cffb-boot cffb-boot--err"
+  }, "Couldn't load rankings: ", err);
+  if (!ready) return /*#__PURE__*/React.createElement("div", {
+    className: "cffb-boot"
+  }, "Loading rankings\u2026");
+  return /*#__PURE__*/React.createElement(App, null);
+};
+ReactDOM.createRoot(document.getElementById('cffb-pr-root')).render(/*#__PURE__*/React.createElement(CFFBBoot, null));
+  }
+  var RV = "18.3.1";
+  function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }
+  if (ready()) { __cffbApp(); return; }
+  window.__cffbReactPromise = window.__cffbReactPromise || new Promise(function (resolve) {
+    function load(src, cb) { var s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous"; s.onload = cb; s.onerror = cb; document.head.appendChild(s); }
+    load("https://unpkg.com/react@" + RV + "/umd/react.production.min.js", function () {
+      load("https://unpkg.com/react-dom@" + RV + "/umd/react-dom.production.min.js", resolve);
+    });
   });
-
-  /* ---- app.jsx ---- */
-  // CFFB · Power Rankings — app composition
-
-  const {
-    useState: useStateA,
-    useMemo
-  } = React;
-  const App = () => {
-    const [conf, setConf] = useStateA('all');
-    const [selected, setSelected] = useStateA(STANDINGS[0].id);
-    const confName = (CONFERENCES.find(c => c.id === conf) || {}).name;
-
-    // Filtered + re-ranked within the active conference view.
-    const rows = useMemo(() => {
-      const base = conf === 'all' ? STANDINGS : STANDINGS.filter(r => r.conf === conf);
-      return base; // already sorted by CFFB Score; rank shown is league rank
-    }, [conf]);
-
-    // Keep a valid selection inside the current filter.
-    const selRow = rows.find(r => r.id === selected) || rows[0];
-    const selId = selRow ? selRow.id : null;
-    const onConf = c => {
-      setConf(c);
-      const base = c === 'all' ? STANDINGS : STANDINGS.filter(r => r.conf === c);
-      if (!base.some(r => r.id === selected)) setSelected(base[0].id);
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      className: "frame"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "topbar"
-    }, /*#__PURE__*/React.createElement("h1", {
-      className: "topbar__h1"
-    }, "Power Rankings"), /*#__PURE__*/React.createElement("span", {
-      className: "topbar__spacer"
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "topbar__week"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "topbar__week-lbl"
-    }, (window.CFFB_SEASON || 2025) + ' Season'), /*#__PURE__*/React.createElement("span", {
-      className: "topbar__week-val"
-    }, "Through Week ", WEEKS_PLAYED))), /*#__PURE__*/React.createElement("div", {
-      className: "page"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "page-head"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "page-head__sub"
-    }, conf === 'all' ? /*#__PURE__*/React.createElement(React.Fragment, null, "All ", /*#__PURE__*/React.createElement("strong", null, STANDINGS.length), " managers, ranked by ", /*#__PURE__*/React.createElement("strong", null, "CFFB Score"), " \u2014 all-play %, head-to-head record and scoring, weighted. Top 25 shown first; scroll the ladder for the full field.") : /*#__PURE__*/React.createElement(React.Fragment, null, "Showing ", /*#__PURE__*/React.createElement("strong", null, confName), " \u2014 ", rows.length, " teams, league rank preserved. Click any team for its weekly results."))), /*#__PURE__*/React.createElement(ConfFilter, {
-      active: conf,
-      onChange: onConf
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "layout"
-    }, /*#__PURE__*/React.createElement(RankingTable, {
-      rows: rows,
-      selected: selId,
-      onSelect: setSelected,
-      confName: confName
-    }), selRow && /*#__PURE__*/React.createElement(DetailPanel, {
-      r: selRow
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "charts"
-    }, /*#__PURE__*/React.createElement(LeagueScatter, {
-      rows: rows,
-      selected: selId,
-      onSelect: setSelected
-    }), selRow && /*#__PURE__*/React.createElement(WeeklyChart, {
-      r: selRow
-    })), selRow && /*#__PURE__*/React.createElement(RankTrail, {
-      r: selRow
-    })));
-  };
-  const CFFBBoot = () => {
-    const [ready, setReady] = React.useState(false);
-    const [err, setErr] = React.useState(null);
-    React.useEffect(() => {
-      window.__loadPowerRankings().then(() => setReady(true)).catch(e => setErr(e && e.message ? e.message : String(e)));
-    }, []);
-    if (err) return /*#__PURE__*/React.createElement("div", {
-      className: "cffb-boot cffb-boot--err"
-    }, "Couldn't load rankings: ", err);
-    if (!ready) return /*#__PURE__*/React.createElement("div", {
-      className: "cffb-boot"
-    }, "Loading rankings\u2026");
-    return /*#__PURE__*/React.createElement(App, null);
-  };
-  ReactDOM.createRoot(document.getElementById('cffb-pr-root')).render(/*#__PURE__*/React.createElement(CFFBBoot, null));
+  window.__cffbReactPromise.then(__cffbApp);
 })();
 </script>
