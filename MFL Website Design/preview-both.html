@@ -60,19 +60,15 @@
           }
         }
 
-        // 3. Append both type="text/babel" bundles, then let Babel transform them together —
-        //    exactly the scenario that broke on MFL before the guarded-IIFE wrap.
+        // 3. Execute both compiled inline bundles (plain JS — no Babel) in order —
+        //    the scenario that broke on MFL before the guarded-IIFE wrap.
         docs.forEach((doc) => {
-          const babelSrc = (Array.from(doc.querySelectorAll('script'))
-            .find((x) => (x.type || '').includes('babel')) || {}).textContent || '';
-          if (!babelSrc) return;
-          const b = document.createElement('script');
-          b.type = 'text/babel';
-          b.setAttribute('data-presets', 'react');
-          b.textContent = babelSrc;
-          document.body.appendChild(b);
+          const inline = Array.from(doc.querySelectorAll('script')).find((x) => !x.src);
+          if (!inline) return;
+          const s = document.createElement('script');
+          s.textContent = inline.textContent;
+          document.body.appendChild(s);
         });
-        if (window.Babel && Babel.transformScriptTags) Babel.transformScriptTags();
       } catch (err) {
         document.body.innerHTML += '<p style="color:#ff6b6b">Preview failed: ' + err.message + '</p>';
       }

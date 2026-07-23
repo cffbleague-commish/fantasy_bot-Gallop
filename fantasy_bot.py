@@ -883,10 +883,15 @@ async def schedule_submit(
             dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
             dm_embed.add_field(
                 name="To Confirm",
-                value=f"Submit matching details:\n`/schedule submit week:{week} opponent:@{team['name']}`",
+                value=(
+                    f"Go to <#{SCHEDULING_CHANNEL_ID}> and submit matching details:\n"
+                    f"`/schedule submit week:{week} opponent:@{team['name']}`"
+                ),
                 inline=False
             )
-            dm_embed.set_footer(text="Both teams must submit the same week to confirm.")
+            dm_embed.set_footer(
+                text="Both teams must submit the same week in the scheduling channel to confirm."
+            )
 
             dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
 
@@ -1017,10 +1022,15 @@ async def schedule_submit_for(
             dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
             dm_embed.add_field(
                 name="To Confirm",
-                value=f"Submit matching details:\n`/schedule submit week:{week} opponent:@{team['name']}`",
+                value=(
+                    f"Go to <#{SCHEDULING_CHANNEL_ID}> and submit matching details:\n"
+                    f"`/schedule submit week:{week} opponent:@{team['name']}`"
+                ),
                 inline=False
             )
-            dm_embed.set_footer(text="Both teams must submit the same week to confirm.")
+            dm_embed.set_footer(
+                text="Both teams must submit the same week in the scheduling channel to confirm."
+            )
 
             dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
 
@@ -1774,16 +1784,47 @@ async def submissions_open(
     # Announce to scheduling channel
     channel = bot.get_channel(SCHEDULING_CHANNEL_ID)
     if channel:
+        opened_rivalries = submission_type.value in ["rivalries", "all"]
+        opened_nc = submission_type.value in ["nc_games", "all"]
+
         announce_embed = discord.Embed(
             title="📢 Submissions Now Open!",
             description="\n".join(results),
             color=discord.Color.green()
         )
-        announce_embed.add_field(
-            name="How to Submit",
-            value="• `/rival submit` - Submit a rivalry request\n• `/schedule submit` - Submit an NC game request",
-            inline=False
-        )
+
+        how_lines = [f"All submissions must be made **right here** in <#{SCHEDULING_CHANNEL_ID}>."]
+        if opened_rivalries:
+            how_lines.append("• `/rival submit` — submit a rivalry request")
+        if opened_nc:
+            how_lines.append(
+                "• `/schedule submit week:<1-4> opponent:@owner` — submit an NC game request"
+            )
+        announce_embed.add_field(name="How to Submit", value="\n".join(how_lines), inline=False)
+
+        if opened_nc:
+            announce_embed.add_field(
+                name="Confirming an NC Game",
+                value=(
+                    "An NC game is a two-way agreement: **both owners** must submit the same "
+                    "matchup for the same week before it's locked in. When someone submits "
+                    "against you, you'll get a DM — come back to this channel and run "
+                    "`/schedule submit` with the matching week and opponent to confirm."
+                ),
+                inline=False
+            )
+            announce_embed.add_field(
+                name="NC Game Rules",
+                value=(
+                    f"• Weeks **{NC_WEEK_MIN}–{NC_WEEK_MAX}** only\n"
+                    f"• Opponent must be in a **different conference**\n"
+                    f"• Max **{MAX_NC_GAMES_PER_TEAM}** NC games per team\n"
+                    "• You can't play the **same opponent** more than once\n"
+                    "• Only **one** NC game per team per week"
+                ),
+                inline=False
+            )
+
         announce_embed.set_footer(text=f"Opened by {interaction.user.display_name}")
         await channel.send(embed=announce_embed)
 

@@ -6,6 +6,10 @@ const fmtPts = (n) => n.toLocaleString('en-US', { maximumFractionDigits: 2, mini
 const recOverall = (t) => t.wins + '\u2013' + t.losses + (t.ties ? '\u2013' + t.ties : '');
 const recConf = (t) => t.confWins + '\u2013' + t.confLosses;
 
+// Short badge code for whichever step actually broke the conference tie.
+const TB_BADGE = { 'Head-to-head': 'H2H', 'All-play %': 'AP%', 'Total points': 'PTS', 'National ranking': 'RANK' };
+const tbBadge = (d) => TB_BADGE[d] || 'TIE';
+
 function useIsMobile() {
   const [m, setM] = useState(typeof matchMedia !== 'undefined' && matchMedia('(max-width: 560px)').matches);
   useEffect(() => {
@@ -142,7 +146,7 @@ function TeamModal({ team, onClose }) {
 
         {team.tiebreak && (
           <div className="st-tie">
-            <span className="st-tie__badge">H2H</span>
+            <span className="st-tie__badge">{tbBadge(team.tiebreak.decidedBy)}</span>
             <div className="st-tie__txt">
               <span className="st-tie__lead">Conference Tiebreaker †</span>
               <span>{tiebreakNote(team)}</span>
