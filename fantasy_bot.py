@@ -57,6 +57,11 @@ except gspread.exceptions.WorksheetNotFound:
 MAX_RIVALS_PER_TEAM = 2
 MAX_WAGER = 5
 
+# NC (non-conference) scheduling limits — mirror apps_script_scheduling/Config.gs
+MAX_NC_GAMES_PER_TEAM = 4   # Config.gs getLeagueParams().nonConferenceGames
+NC_WEEK_MIN = 1             # Config.gs WEEK_WINDOWS.NC.start
+NC_WEEK_MAX = 4             # Config.gs WEEK_WINDOWS.NC.end
+
 # ----------------- Submission Status Helper Functions -----------------
 def get_submission_status(setting_name: str) -> bool:
     """Get the current status of a submission setting (RIVALRIES_OPEN or NC_GAMES_OPEN)."""
@@ -260,6 +265,137 @@ def get_team_by_discord_id(discord_id: int):
                 "name": row.get("Team Name"),
                 "conference": row.get("Conference")
             }
+    return None
+
+def _norm_team_name(name) -> str:
+    """Normalize a team name for NC-game comparisons (matches how match_key is built)."""
+    return str(name or "").strip().lower()
+
+def get_team_nc_games(team_name: str) -> list:
+    """
+    Return the distinct NC games a team is involved in (pending + confirmed).
+
+    Each entry: {"opponent": <raw name>, "week": <int-ish>, "status": "PENDING"|"CONFIRMED"}.
+    Confirmed games come from ManualGames (one row = one game). Pending games come from
+    Manual Submissions rows with Status == PENDING, deduped by Match Key (a pending game may
+    have 1-2 rows, one per side).
+    """
+    target = _norm_team_name(team_name)
+    games = []
+
+    # Confirmed games (one row per game)
+    confirmed = manual_games_ws.get_all_records(expected_headers=[])
+    for g in confirmed:
+        a = _norm_team_name(g.get("Team A"))
+        b = _norm_team_name(g.get("Team B"))
+        if target == a:
+            games.append({"opponent": g.get("Team B"), "week": g.get("Week"), "status": "CONFIRMED"})
+        elif target == b:
+            games.append({"opponent": g.get("Team A"), "week": g.get("Week"), "status": "CONFIRMED"})
+
+    # Pending submissions (dedup by Match Key)
+    subs = manual_sub_ws.get_all_records(expected_headers=[])
+    seen_keys = set()
+    for r in subs:
+        if r.get("Status") != "PENDING":
+            continue
+        key = r.get("Match Key")
+        if key in seen_keys:
+            continue
+        a = _norm_team_name(r.get("Team A"))
+        b = _norm_team_name(r.get("Team B"))
+        if target == a:
+            opponent = r.get("Team B")
+        elif target == b:
+            opponent = r.get("Team A")
+        else:
+            continue
+        seen_keys.add(key)
+        games.append({"opponent": opponent, "week": r.get("Week"), "status": "PENDING"})
+
+    return games
+
+def validate_nc_submission(team: dict, opponent_team: dict, week: int):
+    """
+    Validate a proposed NC game submission against league scheduling limits.
+
+    Returns an error message string if the submission should be rejected, or None if it's
+    allowed. The reciprocal submission is itself "team vs opponent, same week," so conflict
+    checks exclude the current (opponent, week) matchup to avoid blocking a legitimate
+    second-side confirmation.
+    """
+    team_name = team["name"]
+    opponent_name = opponent_team["name"]
+    target_opp = _norm_team_name(opponent_name)
+
+    # 1. Week window
+    try:
+        week_num = int(week)
+    except (ValueError, TypeError):
+        return "Week must be a number."
+    if not (NC_WEEK_MIN <= week_num <= NC_WEEK_MAX):
+        return f"NC games must be scheduled in weeks {NC_WEEK_MIN}–{NC_WEEK_MAX}."
+
+    # 2. Non-conference
+    if opponent_team["conference"] == team["conference"]:
+        return "Manual games must be non-conference."
+
+    # A game is "the current matchup" if it's vs this opponent in this week (the reciprocal).
+    def _week_of(g):
+        try:
+            return int(g.get("week"))
+        except (ValueError, TypeError):
+            return None
+
+    my_games = get_team_nc_games(team_name)
+
+    # 3. Repeat opponent — a game vs this opponent in a DIFFERENT week is a repeat; same week
+    #    is the reciprocal (allowed). Also block the team's own re-submission of this matchup.
+    for g in my_games:
+        if _norm_team_name(g["opponent"]) != target_opp:
+            continue
+        if _week_of(g) == week_num:
+            # Same opponent, same week: either the opponent's reciprocal (allowed) or the
+            # team's own duplicate submission (reject).
+            subs = manual_sub_ws.get_all_records(expected_headers=[])
+            for r in subs:
+                if (
+                    r.get("Status") == "PENDING"
+                    and _norm_team_name(r.get("Team A")) == _norm_team_name(team_name)
+                    and _norm_team_name(r.get("Team B")) == target_opp
+                    and _week_of({"week": r.get("Week")}) == week_num
+                ):
+                    return f"You've already submitted this matchup — waiting on {opponent_name} to confirm."
+            # Otherwise it's the reciprocal — allow it through.
+        else:
+            return f"You already have an NC game scheduled against {opponent_name}."
+
+    # Games excluding the current matchup (this team vs opponent in this week).
+    def _excluding_current(games, other_side):
+        other = _norm_team_name(other_side)
+        return [
+            g for g in games
+            if not (_norm_team_name(g["opponent"]) == other and _week_of(g) == week_num)
+        ]
+
+    opp_games = get_team_nc_games(opponent_name)
+    my_other = _excluding_current(my_games, opponent_name)
+    opp_other = _excluding_current(opp_games, team_name)
+
+    # 4. Max games per team (both sides)
+    if len(my_other) >= MAX_NC_GAMES_PER_TEAM:
+        return f"{team_name} already has {MAX_NC_GAMES_PER_TEAM} NC games scheduled."
+    if len(opp_other) >= MAX_NC_GAMES_PER_TEAM:
+        return f"{opponent_name} already has {MAX_NC_GAMES_PER_TEAM} NC games scheduled."
+
+    # 5. One game per team per week (both sides), excluding the current matchup
+    for g in my_other:
+        if _week_of(g) == week_num:
+            return f"You already have an NC game in Week {week_num}."
+    for g in opp_other:
+        if _week_of(g) == week_num:
+            return f"{opponent_name} already has an NC game in Week {week_num}."
+
     return None
 
 def try_confirm_manual_game(match_key: str):
@@ -700,8 +836,11 @@ async def schedule_submit(
             await interaction.followup.send(f"{opponent.mention} is not registered as a team owner.")
             return
 
-        if opponent_team["conference"] == team["conference"]:
-            await interaction.followup.send("Manual games must be non-conference.")
+        # Enforce all NC scheduling limits (conference, week window, max games,
+        # repeat opponent, one game per week) before recording the submission.
+        error = await asyncio.to_thread(validate_nc_submission, team, opponent_team, week)
+        if error:
+            await interaction.followup.send(error, ephemeral=True)
             return
 
         opponent_id = str(opponent_team["id"]).zfill(3)
@@ -827,8 +966,11 @@ async def schedule_submit_for(
             )
             return
 
-        if opponent_team["conference"] == team["conference"]:
-            await interaction.followup.send("Manual games must be non-conference.")
+        # Enforce all NC scheduling limits (conference, week window, max games,
+        # repeat opponent, one game per week) before recording the submission.
+        error = await asyncio.to_thread(validate_nc_submission, team, opponent_team, week)
+        if error:
+            await interaction.followup.send(error, ephemeral=True)
             return
 
         opponent_id = str(opponent_team["id"]).zfill(3)

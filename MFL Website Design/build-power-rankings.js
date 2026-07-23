@@ -12,8 +12,12 @@
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
+const fs    = require('fs');
+const path  = require('path');
+// Build-only: compiles JSX → plain JS so the browser doesn't have to download
+// (~2.9 MB) and run @babel/standalone at page load. Same `react` preset the
+// browser used to apply at runtime, so the output is behavior-identical.
+const Babel = require('@babel/standalone');
 
 const DIR       = __dirname;
 const SRC_DIR   = path.join(DIR, 'Power Rankings');
@@ -98,6 +102,9 @@ const wrappedBundle = [
   '})();'
 ].join('\n');
 
+// Precompile JSX → plain JS at build time (drops the runtime Babel dependency).
+const compiledBundle = Babel.transform(wrappedBundle, { presets: ['react'] }).code;
+
 // ---------------------------------------------------------------------------
 // Assemble HTML fragment
 // ---------------------------------------------------------------------------
@@ -124,8 +131,7 @@ const scopedCss = css
 
 const cdnScripts = [
   '<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>',
-  '<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>',
-  '<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>'
+  '<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>'
 ].join('\n');
 
 let out = [
@@ -135,8 +141,8 @@ let out = [
   '</style>',
   cdnScripts,
   '<div id="cffb-pr-root"></div>',
-  '<script type="text/babel" data-presets="react">',
-  wrappedBundle,
+  '<script>',
+  compiledBundle,
   '</script>'
 ].join('\n');
 
