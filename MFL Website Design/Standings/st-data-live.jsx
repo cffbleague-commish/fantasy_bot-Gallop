@@ -143,13 +143,63 @@ function deriveRanks(teams) {
   teams.sort((a, b) => a.natRank - b.natRank);
 }
 
-// ── Loader: fetch the web app JSON and build the standings model ─────────────
-async function loadStandings() {
+// ── Per-browser cache (stale-while-revalidate) ───────────────────────────────
+// The web-app payload only changes ~weekly, so a recent copy from localStorage
+// is safe to render instantly instead of blocking on a live fetch every load.
+// Shared with the Power Rankings widget via the SAME key — both fetch the
+// identical JSON from the same endpoint, so one cache serves both. Every
+// storage/JSON op is wrapped in try/catch: any failure falls through to a normal
+// live fetch, so the worst case is exactly today's behavior.
+const CFFB_CACHE_KEY = 'cffb_webapp_payload_v1';
+const CFFB_FRESH_MS  = 6 * 60 * 60 * 1000;       // serve cache without refetch
+const CFFB_MAX_MS    = 7 * 24 * 60 * 60 * 1000;  // hard cap; older = ignore
+
+function cffbReadCache() {
+  try {
+    const raw = localStorage.getItem(CFFB_CACHE_KEY);
+    if (!raw) return null;
+    const rec = JSON.parse(raw);
+    if (!rec || typeof rec.ts !== 'number' || rec.payload == null) return null;
+    const age = Date.now() - rec.ts;
+    if (age < 0 || age > CFFB_MAX_MS) return null;
+    return { payload: rec.payload, age };
+  } catch (e) { return null; }
+}
+
+function cffbWriteCache(payload) {
+  try {
+    localStorage.setItem(CFFB_CACHE_KEY, JSON.stringify({ ts: Date.now(), payload }));
+  } catch (e) { /* quota / disabled / private mode — ignore; live fetch still works */ }
+}
+
+async function cffbFetchPayload() {
   const res = await fetch(CFFB_WEBAPP_URL, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching standings');
   const d = await res.json();
   if (d.error) throw new Error(d.error);
+  return d;
+}
 
+// ── Loader: fetch the web app JSON (or reuse cache) and build the model ───────
+async function loadStandings() {
+  const cached = cffbReadCache();
+  if (cached) {
+    // Past the fresh window → refresh in the background so the NEXT load is
+    // current, without blocking this render.
+    if (cached.age > CFFB_FRESH_MS) {
+      cffbFetchPayload()
+        .then((d) => cffbWriteCache(d))
+        .catch(() => { /* keep serving the cached copy */ });
+    }
+    return buildStandingsModel(cached.payload);
+  }
+  const d = await cffbFetchPayload();
+  cffbWriteCache(d);
+  return buildStandingsModel(d);
+}
+
+// Reshape a raw web-app payload into the model st-app.jsx consumes.
+function buildStandingsModel(d) {
   // Conference id -> { name, logo } (drop the synthetic 'all' entry).
   const confMap = {};
   (d.conferences || []).forEach((c) => { if (c.id !== 'all') confMap[c.id] = c; });

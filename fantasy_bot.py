@@ -1057,44 +1057,130 @@ async def schedule_submit_for(
 
 
 # ----------------- Schedule Status Matchup Command -----------------
+def build_schedule_status_embed(
+    franchise_id, team_name, team_schedule, nc_by_week,
+    emoji_map, name_map, name_to_id, rivalry_set, year, num_weeks=12
+):
+    """Build a Discord embed showing a team's full schedule with NC game state.
+
+    Weeks in the NC window (NC_WEEK_MIN..NC_WEEK_MAX) are overlaid with the
+    team's non-conference game status (confirmed / pending / open). Remaining
+    weeks show the finalized opponent from the Schedule sheet, or TBD if the
+    scheduler has not run yet.
+    """
+    confirmed_ct = sum(1 for g in nc_by_week.values() if g["status"] == "CONFIRMED")
+    pending_ct = sum(1 for g in nc_by_week.values() if g["status"] == "PENDING")
+    open_slots = max(0, MAX_NC_GAMES_PER_TEAM - confirmed_ct - pending_ct)
+
+    embed = discord.Embed(
+        title=f"📋 Your {year} Schedule",
+        description=(
+            f"**{team_name}**\n"
+            f"Non-conference games — ✅ {confirmed_ct} confirmed · "
+            f"🕒 {pending_ct} pending · 🔓 {open_slots} open"
+        ),
+        color=discord.Color.blue()
+    )
+
+    def _opp_display(name):
+        fid = name_to_id.get(_norm_team_name(name))
+        emoji = emoji_map.get(fid, "") if fid else ""
+        return f"{emoji} {name}".strip()
+
+    for week in range(1, num_weeks + 1):
+        nc = nc_by_week.get(week)
+        opponent_id = team_schedule.get(week)
+
+        if nc and nc["status"] == "CONFIRMED":
+            value = f"✅ {_opp_display(nc['opponent'])}\n*NC · confirmed*"
+        elif nc and nc["status"] == "PENDING":
+            value = f"🕒 {_opp_display(nc['opponent'])}\n*NC · pending*"
+        elif opponent_id:
+            opp_emoji = emoji_map.get(opponent_id, "")
+            opp_name = name_map.get(opponent_id, f"Team {opponent_id}")
+            is_rivalry = frozenset({franchise_id, opponent_id}) in rivalry_set
+            rivalry_marker = " ⚔️" if is_rivalry else ""
+            value = f"{opp_emoji} {opp_name}{rivalry_marker}".strip()
+        elif NC_WEEK_MIN <= week <= NC_WEEK_MAX:
+            value = "🔓 OPEN"
+        else:
+            value = "🗓️ TBD"
+
+        embed.add_field(name=f"Week {week}", value=value, inline=True)
+
+    embed.set_footer(
+        text="✅ Confirmed · 🕒 Pending · 🔓 Open NC slot · ⚔️ Rivalry · 🗓️ TBD"
+    )
+    return embed
+
+
 @schedule.command(
     name="status",
-    description="View your submitted manual scheduling requests"
+    description="View your 12-week schedule and non-conference game status"
 )
 async def schedule_status(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
 
     try:
-        user_id = str(interaction.user.id)
-
-        subs = await asyncio.to_thread(manual_sub_ws.get_all_records)
-
-        my_subs = [
-            r for r in subs
-            if normalize_discord_id(r.get("Submitter Discord ID")) == user_id
-        ]
-
-        if not my_subs:
+        team = await asyncio.to_thread(get_team_by_discord_id, interaction.user.id)
+        if not team:
             await interaction.followup.send(
-                "You have not submitted any manual scheduling requests."
+                "You are not registered as a team owner.", ephemeral=True
             )
             return
 
-        lines = []
-        for r in my_subs:
-            week = r.get("Week", "?")
-            team_a = r.get("Team A", "?")
-            team_b = r.get("Team B", "?")
-            status = r.get("Status", "UNKNOWN")
+        franchise_id = str(team["id"]).zfill(3)
+        team_name = team["name"]
 
-            lines.append(
-                f"**Week {week}**: {team_a} vs {team_b} → **{status}**"
+        # Non-conference games (pending + confirmed) for this team, keyed by week.
+        nc_games = await asyncio.to_thread(get_team_nc_games, team_name)
+        nc_by_week = {}
+        for g in nc_games:
+            try:
+                wk = int(g.get("week"))
+            except (ValueError, TypeError):
+                continue
+            existing = nc_by_week.get(wk)
+            # A confirmed game always wins over a stale pending one for the same week.
+            if existing and existing["status"] == "CONFIRMED":
+                continue
+            nc_by_week[wk] = {"status": g.get("status"), "opponent": g.get("opponent")}
+
+        # Finalized schedule (Schedule sheet may not exist until the scheduler runs).
+        team_schedule = {}
+        try:
+            schedule_ws = await asyncio.to_thread(scheduler_sheet.worksheet, "Schedule")
+            schedule_records = await asyncio.to_thread(
+                schedule_ws.get_all_records, expected_headers=[]
             )
+            team_schedule = build_schedule_map(schedule_records).get(franchise_id, {})
+        except gspread.exceptions.WorksheetNotFound:
+            team_schedule = {}
+        except Exception as e:
+            print(f"schedule_status: could not read Schedule sheet: {e}")
+            team_schedule = {}
 
-        await interaction.followup.send(
-            "**Your Manual Scheduling Submissions**\n\n" + "\n".join(lines),
-            ephemeral=True
+        # Team lookups for display.
+        emoji_map = await asyncio.to_thread(get_team_emoji_map)
+        name_map = await asyncio.to_thread(get_team_name_map)
+        name_to_id = {_norm_team_name(v): k for k, v in name_map.items()}
+
+        try:
+            rivalry_records = await asyncio.to_thread(
+                rivalries_ws.get_all_records, expected_headers=[]
+            )
+            rivalry_set = build_confirmed_rivalry_set(rivalry_records)
+        except Exception as e:
+            print(f"schedule_status: could not load rivalries: {e}")
+            rivalry_set = set()
+
+        year = await asyncio.to_thread(get_current_year)
+
+        embed = build_schedule_status_embed(
+            franchise_id, team_name, team_schedule, nc_by_week,
+            emoji_map, name_map, name_to_id, rivalry_set, year
         )
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     except Exception as e:
         traceback.print_exc()
