@@ -1059,7 +1059,7 @@ async def schedule_submit_for(
 # ----------------- Schedule Status Matchup Command -----------------
 def build_schedule_status_embed(
     franchise_id, team_name, team_schedule, nc_by_week,
-    emoji_map, name_map, name_to_id, rivalry_set, year, num_weeks=12
+    emoji_map, name_map, name_to_id, rivalry_set, my_rivalries, year, num_weeks=12
 ):
     """Build a Discord embed showing a team's full schedule with NC game state.
 
@@ -1067,6 +1067,12 @@ def build_schedule_status_embed(
     team's non-conference game status (confirmed / pending / open). Remaining
     weeks show the finalized opponent from the Schedule sheet, or TBD if the
     scheduler has not run yet.
+
+    A confirmed rivalry is marked with ⚔️ on whatever week its matchup lands in
+    — including NC-window weeks, since a cross-conference rivalry is played as a
+    non-conference game. `my_rivalries` is the list of this team's confirmed
+    rivalries (see get_confirmed_rivalries_for_team), rendered as a summary field
+    so a confirmed rivalry always appears even if its week isn't populated yet.
     """
     confirmed_ct = sum(1 for g in nc_by_week.values() if g["status"] == "CONFIRMED")
     pending_ct = sum(1 for g in nc_by_week.values() if g["status"] == "PENDING")
@@ -1082,10 +1088,14 @@ def build_schedule_status_embed(
         color=discord.Color.blue()
     )
 
+    def _is_rival(opp_id):
+        return bool(opp_id) and frozenset({franchise_id, opp_id}) in rivalry_set
+
     def _opp_display(name):
         fid = name_to_id.get(_norm_team_name(name))
         emoji = emoji_map.get(fid, "") if fid else ""
-        return f"{emoji} {name}".strip()
+        marker = " ⚔️" if _is_rival(fid) else ""
+        return f"{emoji} {name}{marker}".strip()
 
     for week in range(1, num_weeks + 1):
         nc = nc_by_week.get(week)
@@ -1098,8 +1108,7 @@ def build_schedule_status_embed(
         elif opponent_id:
             opp_emoji = emoji_map.get(opponent_id, "")
             opp_name = name_map.get(opponent_id, f"Team {opponent_id}")
-            is_rivalry = frozenset({franchise_id, opponent_id}) in rivalry_set
-            rivalry_marker = " ⚔️" if is_rivalry else ""
+            rivalry_marker = " ⚔️" if _is_rival(opponent_id) else ""
             value = f"{opp_emoji} {opp_name}{rivalry_marker}".strip()
         elif NC_WEEK_MIN <= week <= NC_WEEK_MAX:
             value = "🔓 OPEN"
@@ -1108,10 +1117,64 @@ def build_schedule_status_embed(
 
         embed.add_field(name=f"Week {week}", value=value, inline=True)
 
+    # Confirmed rivalries listed explicitly (most recently confirmed first) so
+    # they show regardless of whether the matchup week has been scheduled yet.
+    if my_rivalries:
+        rival_lines = []
+        for r in my_rivalries:
+            opp_emoji = emoji_map.get(r["opponent_id"], "")
+            rival_lines.append(
+                f"⚔️ **{r['name']}** — {opp_emoji} {r['opponent_name']} "
+                f"({r['type']}, ${r['wager']})".replace("  ", " ").strip()
+            )
+        embed.add_field(
+            name=f"Confirmed Rivalries ({len(my_rivalries)})",
+            value="\n".join(rival_lines),
+            inline=False
+        )
+
     embed.set_footer(
         text="✅ Confirmed · 🕒 Pending · 🔓 Open NC slot · ⚔️ Rivalry · 🗓️ TBD"
     )
     return embed
+
+
+def get_confirmed_rivalries_for_team(franchise_id, rivalry_records, name_map):
+    """Return this team's confirmed rivalries, most-recently-confirmed first.
+
+    Each entry: {opponent_id, opponent_name, name, type, wager, confirmed_at}.
+    One row per rivalry (confirmation updates the pending row in place), but we
+    dedupe by opponent pair defensively. `confirmed_at` is the Submitted column,
+    which is overwritten with the confirmation timestamp when a rivalry confirms,
+    so sorting by it descending surfaces the newest confirmations.
+    """
+    franchise_id = str(franchise_id).zfill(3)
+    rivalries = []
+    seen = set()
+    for r in rivalry_records:
+        if r.get("Status") != "CONFIRMED":
+            continue
+        team_a = str(r.get("Team A", "")).strip().zfill(3)
+        team_b = str(r.get("Team B", "")).strip().zfill(3)
+        if franchise_id == team_a:
+            opp_id, opp_name = team_b, r.get("Team B Name", "")
+        elif franchise_id == team_b:
+            opp_id, opp_name = team_a, r.get("Team A Name", "")
+        else:
+            continue
+        if opp_id in seen:
+            continue
+        seen.add(opp_id)
+        rivalries.append({
+            "opponent_id": opp_id,
+            "opponent_name": opp_name or name_map.get(opp_id, f"Team {opp_id}"),
+            "name": r.get("Rivalry Name", "Unnamed"),
+            "type": r.get("Type", "?"),
+            "wager": r.get("Wager", 0),
+            "confirmed_at": str(r.get("Submitted", "")),
+        })
+    rivalries.sort(key=lambda x: x["confirmed_at"], reverse=True)
+    return rivalries
 
 
 @schedule.command(
@@ -1170,15 +1233,22 @@ async def schedule_status(interaction: discord.Interaction):
                 rivalries_ws.get_all_records, expected_headers=[]
             )
             rivalry_set = build_confirmed_rivalry_set(rivalry_records)
+            my_rivalries = get_confirmed_rivalries_for_team(
+                franchise_id, rivalry_records, name_map
+            )
         except Exception as e:
             print(f"schedule_status: could not load rivalries: {e}")
             rivalry_set = set()
+            my_rivalries = []
 
-        year = await asyncio.to_thread(get_current_year)
+        # Scheduling happens in a fixed offseason window, so the schedule being
+        # built always belongs to the current calendar year — unlike results-based
+        # commands, which use get_current_year() (last completed season).
+        year = datetime.now().year
 
         embed = build_schedule_status_embed(
             franchise_id, team_name, team_schedule, nc_by_week,
-            emoji_map, name_map, name_to_id, rivalry_set, year
+            emoji_map, name_map, name_to_id, rivalry_set, my_rivalries, year
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -1997,6 +2067,62 @@ async def submissions_status(interaction: discord.Interaction):
     )
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
+
+# ----------------- Commish: Post Command Help Board -----------------
+
+# Groups/commands hidden from the public help board (admin/internal)
+HIDDEN_HELP_GROUPS = {"commish"}
+HIDDEN_HELP_COMMANDS = {"list_commands", "toggle_autoposts", "post_teams"}
+
+@commish.command(
+    name="post_commands",
+    description="Post a help board of all league slash commands to this channel")
+async def post_commands(interaction: discord.Interaction):
+    if not has_commish_role(interaction):
+        await interaction.response.send_message(
+            "You must have the **Commish** role to use this command.",
+            ephemeral=True
+        )
+        return
+
+    embed = discord.Embed(
+        title="📋 League Bot Commands",
+        description="Slash commands available to team owners.",
+        color=discord.Color.blue()
+    )
+
+    general_lines = []
+    for cmd in sorted(bot.tree.get_commands(), key=lambda c: c.name):
+        if isinstance(cmd, app_commands.Group):
+            if cmd.name in HIDDEN_HELP_GROUPS:
+                continue
+            lines = [
+                f"`/{cmd.name} {sub.name}` — {sub.description}"
+                for sub in sorted(cmd.commands, key=lambda c: c.name)
+            ]
+            if not lines:
+                continue
+            value = "\n".join(lines)
+            if len(value) > 1024:  # Discord per-field limit
+                value = value[:1010] + "\n…"
+            embed.add_field(
+                name=f"/{cmd.name} — {cmd.description}",
+                value=value,
+                inline=False
+            )
+        else:
+            if cmd.name in HIDDEN_HELP_COMMANDS:
+                continue
+            general_lines.append(f"`/{cmd.name}` — {cmd.description}")
+
+    if general_lines:
+        embed.add_field(
+            name="General Commands",
+            value="\n".join(general_lines),
+            inline=False
+        )
+
+    await interaction.response.send_message(embed=embed)  # public (not ephemeral)
 
 # ----------------- Recruiting Dollars Commands -----------------
 
