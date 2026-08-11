@@ -315,6 +315,74 @@ def get_team_nc_games(team_name: str) -> list:
 
     return games
 
+def build_nc_schedule_index():
+    """Single-pass index of every NC game (confirmed + pending) in the league.
+
+    Reads ManualGames and Manual Submissions ONCE each (not per-team) so the
+    availability board can be built without a per-team sheet read. NC games store
+    team NAMES, so the index is keyed by normalized team name.
+
+    Returns: {normalized_team_name: {"weeks": set[int], "opponents": set[str]}}
+    where "weeks" are the NC weeks the team already has a game in, and "opponents"
+    are the normalized names it is already matched against.
+    """
+    def _week(v):
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return None
+
+    index = defaultdict(lambda: {"weeks": set(), "opponents": set()})
+
+    def _record(a, b, wk):
+        a = _norm_team_name(a)
+        b = _norm_team_name(b)
+        if not (a and b):
+            return
+        for x, y in ((a, b), (b, a)):
+            if wk:
+                index[x]["weeks"].add(wk)
+            index[x]["opponents"].add(y)
+
+    for g in manual_games_ws.get_all_records(expected_headers=[]):
+        _record(g.get("Team A"), g.get("Team B"), _week(g.get("Week")))
+
+    seen_keys = set()
+    for r in manual_sub_ws.get_all_records(expected_headers=[]):
+        if r.get("Status") != "PENDING":
+            continue
+        key = r.get("Match Key")
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        _record(r.get("Team A"), r.get("Team B"), _week(r.get("Week")))
+
+    return index
+
+def get_franchise_directory():
+    """Read FranchiseLookup once → {franchise_id(3-digit): {...}}.
+
+    Fields: name, conference, discord_id, emoji. Consolidates what the separate
+    name/emoji/owner map helpers each read individually, so a caller needing
+    several attributes for every team pays a single sheet read.
+    """
+    directory = {}
+    for row in teams_ws.get_all_records(expected_headers=[]):
+        fid = str(row.get("Franchise ID", "")).strip()
+        if not fid:
+            continue
+        try:
+            fid = str(int(fid)).zfill(3)
+        except (ValueError, TypeError):
+            continue
+        directory[fid] = {
+            "name": str(row.get("Team Name", "")).strip(),
+            "conference": str(row.get("Conference", "")).strip(),
+            "discord_id": normalize_discord_id(row.get("Owner Discord ID", "")),
+            "emoji": str(row.get("Emoji", "")).strip(),
+        }
+    return directory
+
 def validate_nc_submission(team: dict, opponent_team: dict, week: int):
     """
     Validate a proposed NC game submission against league scheduling limits.
@@ -1256,6 +1324,174 @@ async def schedule_status(interaction: discord.Interaction):
         traceback.print_exc()
         await interaction.followup.send(
             "An error occurred while checking your schedule status. Please try again.",
+            ephemeral=True
+        )
+
+# ----------------- Schedule Availability Command -----------------
+@schedule.command(
+    name="available",
+    description="See which teams still have open non-conference weeks, and their owners"
+)
+@app_commands.describe(
+    week="Only show a specific NC week (1-4). Defaults to all four weeks.",
+    conference="Only show teams from this conference (e.g. SEC)",
+    include_own_conference="Include teams in your own conference (hidden by default; they can't be NC opponents)"
+)
+async def schedule_available(
+    interaction: discord.Interaction,
+    week: int = None,
+    conference: str = None,
+    include_own_conference: bool = False
+):
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        nc_weeks = list(range(NC_WEEK_MIN, NC_WEEK_MAX + 1))
+        if week is not None and week not in nc_weeks:
+            await interaction.followup.send(
+                f"NC games are only in weeks {NC_WEEK_MIN}–{NC_WEEK_MAX}.",
+                ephemeral=True
+            )
+            return
+
+        directory = await asyncio.to_thread(get_franchise_directory)
+        nc_index = await asyncio.to_thread(build_nc_schedule_index)
+
+        # Identify the caller (optional — board still renders for non-owners).
+        caller_id = normalize_discord_id(interaction.user.id)
+        me = None
+        for fid, info in directory.items():
+            if info["discord_id"] and info["discord_id"] == caller_id:
+                me = {"id": fid, **info}
+                break
+
+        my_conf_norm = me["conference"].strip().lower() if me else None
+
+        # Confirmed rivalries (for the ⚔️ flag). Only meaningful if we know the caller.
+        rivalry_set = set()
+        if me:
+            try:
+                rivalry_records = await asyncio.to_thread(
+                    rivalries_ws.get_all_records, expected_headers=[]
+                )
+                rivalry_set = build_confirmed_rivalry_set(rivalry_records)
+            except Exception as e:
+                print(f"schedule_available: could not load rivalries: {e}")
+
+        # Validate / normalize the conference filter.
+        conf_filter = conference.strip().lower() if conference else None
+        valid_confs = {info["conference"] for info in directory.values() if info["conference"]}
+        if conf_filter and conf_filter not in {c.lower() for c in valid_confs}:
+            await interaction.followup.send(
+                f"Unknown conference `{conference}`. Valid: {', '.join(sorted(valid_confs))}.",
+                ephemeral=True
+            )
+            return
+
+        # An explicit conference filter overrides the own-conference exclusion.
+        exclude_own = bool(me) and not include_own_conference and not conf_filter
+
+        target_weeks = [week] if week is not None else nc_weeks
+        MULTI = week is None
+        per_week_cap = 10 if MULTI else 30
+        field_chunk = 8  # keep each field well under Discord's 1024-char limit
+        MAX_FIELDS = 24  # Discord hard limit is 25; keep one in reserve.
+
+        def _open_weeks(team_name):
+            used = nc_index.get(_norm_team_name(team_name), {}).get("weeks", set())
+            return [w for w in nc_weeks if w not in used]
+
+        def _line(fid, info):
+            is_rival = bool(me) and frozenset({me["id"], fid}) in rivalry_set
+            rival_pfx = "⚔️ " if is_rival else ""
+            emoji = (info["emoji"] + " ") if info["emoji"] else ""
+            mention = f"<@{info['discord_id']}>" if info["discord_id"] else "*(no Discord linked)*"
+            open_csv = ",".join(str(w) for w in _open_weeks(info["name"]))
+            return f"{rival_pfx}{emoji}{info['name']} ({info['conference']}) — {mention} · open {open_csv}"
+
+        embed = discord.Embed(
+            title="📅 NC Availability" + (f" — Week {week}" if week is not None else ""),
+            color=discord.Color.green()
+        )
+
+        fields_added = 0
+        for w in target_weeks:
+            candidates = []
+            for fid, info in directory.items():
+                if me and fid == me["id"]:
+                    continue
+                info_conf = info["conference"].strip().lower()
+                if exclude_own and info_conf == my_conf_norm:
+                    continue
+                if conf_filter and info_conf != conf_filter:
+                    continue
+                used = nc_index.get(_norm_team_name(info["name"]), {}).get("weeks", set())
+                if w in used:
+                    continue  # has a game that week → not open
+                candidates.append((fid, info))
+
+            candidates.sort(key=lambda t: (t[1]["conference"], t[1]["name"].lower()))
+
+            if not candidates:
+                if fields_added < MAX_FIELDS:
+                    embed.add_field(
+                        name=f"Week {w} — 0 open",
+                        value="_No available teams._",
+                        inline=False
+                    )
+                    fields_added += 1
+                continue
+
+            shown = candidates[:per_week_cap]
+            extra = len(candidates) - len(shown)
+            lines = [_line(fid, info) for fid, info in shown]
+
+            for i in range(0, len(lines), field_chunk):
+                if fields_added >= MAX_FIELDS:
+                    break
+                part = f" ({i // field_chunk + 1})" if len(lines) > field_chunk else ""
+                embed.add_field(
+                    name=f"Week {w} — {len(candidates)} open{part}",
+                    value="\n".join(lines[i:i + field_chunk]),
+                    inline=False
+                )
+                fields_added += 1
+
+            if extra > 0 and fields_added < MAX_FIELDS:
+                embed.add_field(
+                    name=f"Week {w} — more",
+                    value=f"…and **{extra}** more. Narrow with `conference:` to see them.",
+                    inline=False
+                )
+                fields_added += 1
+
+        # Header / context.
+        if me:
+            desc = f"**{me['name']}** ({me['conference']})\n"
+            if exclude_own:
+                desc += "Your conference is hidden — use `include_own_conference:true` to show it.\n"
+        else:
+            desc = "*You're not registered as a team owner — showing all teams, no rival flags.*\n"
+        if conf_filter:
+            desc += f"Filtered to **{conference.strip().upper()}**.\n"
+        embed.description = desc
+
+        submissions_open = await asyncio.to_thread(are_nc_games_open)
+        footer = "⚔️ = confirmed rival · non-conference scheduling"
+        if not submissions_open:
+            footer = "🔒 NC submissions are currently CLOSED · " + footer
+        embed.set_footer(text=footer)
+
+        await interaction.followup.send(
+            embed=embed,
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        await interaction.followup.send(
+            "An error occurred while checking availability. Please try again.",
             ephemeral=True
         )
 
@@ -6501,6 +6737,65 @@ def get_team_devy_roster(franchise_id: str, conference: str = None):
         print(f"Error getting team devy roster: {e}")
         return []
 
+def log_devy_retention(player_id: str, conference: str, franchise_id: str,
+                       first_name: str, last_name: str, position: str,
+                       retention_year: int):
+    """Append one row to DevyRetentionHistory for a retention event.
+
+    Centralizes the field order and rebate math so live retentions match the
+    backfill importer (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per
+    consecutive retention year, floored at 0. ConsecutiveYear = number of prior
+    retention rows for this PlayerID + 1.
+    """
+    if devy_retention_history_ws is None:
+        return
+
+    normalized_id = str(franchise_id).zfill(3)
+
+    # ConsecutiveYear = prior retention rows for this PlayerID + 1
+    prior_retentions = 0
+    try:
+        existing = devy_retention_history_ws.get_all_records(expected_headers=[])
+        prior_retentions = sum(1 for r in existing if r.get("PlayerID") == player_id)
+    except Exception as e:
+        print(f"Could not read DevyRetentionHistory for consecutive-year count: {e}")
+    consecutive_year = prior_retentions + 1
+
+    base_rebate = 20
+    rebate_remaining = max(0, base_rebate - 5 * (consecutive_year - 1))
+
+    # Resolve TeamName from the franchise lookup (same pattern as devy_retention_start)
+    team_name = ""
+    try:
+        for t in teams_ws.get_all_records(expected_headers=[]):
+            if str(t.get("Franchise ID", "")).zfill(3) == normalized_id:
+                team_name = t.get("Team Name", "")
+                break
+    except Exception as e:
+        print(f"Could not resolve team name for franchise {normalized_id}: {e}")
+
+    player_name_mfl = f"{last_name}, {first_name}"
+
+    # Order must match DEVY_RETENTION_HISTORY_HEADERS in DevyDraft.gs
+    devy_retention_history_ws.append_row([
+        retention_year,        # Year
+        conference,
+        normalized_id,         # FranchiseID
+        team_name,
+        player_id,
+        player_name_mfl,       # MFL format for matching with RookieLedger
+        first_name,
+        last_name,
+        position,
+        consecutive_year,      # ConsecutiveYear
+        "Round 2",             # PickUsed (assumption, matches backfill)
+        base_rebate,           # BaseRebate
+        rebate_remaining,      # RebateRemaining
+        "",                    # IsRookie - populated by IMPORTRANGE formula
+        datetime.utcnow().isoformat(),  # Timestamp
+    ])
+
+
 def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
     """Retain a devy player for a franchise.
 
@@ -6539,6 +6834,22 @@ def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
                 devy_player_pool_ws.update_cell(idx, 8, "Retained")  # Status
                 devy_player_pool_ws.update_cell(idx, 12, normalized_id)  # RetainedBy
                 devy_player_pool_ws.update_cell(idx, 13, retention_year)  # RetentionYear
+
+                # Log the retention to DevyRetentionHistory (rebate ledger).
+                # Wrapped so a logging failure never blocks the retention itself,
+                # which already succeeded above. Mirrors the backfill rebate math.
+                try:
+                    log_devy_retention(
+                        player_id=player_id,
+                        conference=row.get("Conference", ""),
+                        franchise_id=normalized_id,
+                        first_name=row.get("FirstName", ""),
+                        last_name=row.get("LastName", ""),
+                        position=row.get("Position", ""),
+                        retention_year=retention_year,
+                    )
+                except Exception as log_err:
+                    print(f"Failed to log devy retention for {player_id}: {log_err}")
 
                 return {
                     "success": True,

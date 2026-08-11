@@ -95,6 +95,75 @@ function menuViewDraftStatus() {
 }
 
 /**
+ * Menu: Open the Commissioner Guide
+ *
+ * In-sheet runbook for running the devy draft each year, plus how the
+ * DevyRetentionHistory ledger works. This is the single source of truth for
+ * the annual process. Shown as a modal dialog so the formatting survives.
+ */
+function menuOpenCommissionerGuide() {
+  const html = HtmlService.createHtmlOutput(getCommissionerGuideHtml())
+    .setWidth(720)
+    .setHeight(640);
+  SpreadsheetApp.getUi().showModalDialog(html, "Devy Draft — Commissioner Guide");
+}
+
+/**
+ * Build the HTML for the Commissioner Guide modal.
+ * Kept as a single string so the whole runbook lives in one place.
+ */
+function getCommissionerGuideHtml() {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: #1f2933; margin: 0; padding: 16px 20px; line-height: 1.5; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 20px 0 6px; color: #0b5394; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+  p.sub { color: #52606d; margin: 0 0 8px; font-size: 12px; }
+  ol { margin: 6px 0 0; padding-left: 22px; }
+  ol > li { margin-bottom: 10px; }
+  code { background: #f1f5f9; border-radius: 3px; padding: 1px 5px; font-size: 12px; }
+  .menu { color: #0b5394; font-weight: 600; }
+  .note { background: #fff8e1; border-left: 3px solid #f0b429; padding: 8px 12px; margin: 8px 0; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 6px; font-size: 12px; }
+  th, td { border: 1px solid #e2e8f0; padding: 4px 8px; text-align: left; }
+  th { background: #f8fafc; }
+</style>
+</head>
+<body>
+  <h1>🏈 Devy Draft — Commissioner Guide</h1>
+  <p class="sub">The annual steps for running the conference devy drafts, and how the retention ledger works.</p>
+
+  <h2>Running the draft each year</h2>
+  <ol>
+    <li><b>Refresh the player pool.</b> <span class="menu">🏈 Devy Draft → 📥 Import / 🔄 Refresh Players from KeepTradeCut</span>. Pulls current devy rankings and creates one copy of each player <em>per conference</em> (each conference drafts from its own pool).</li>
+    <li><b>Confirm the sheets exist.</b> <span class="menu">🏈 Devy Draft → 📋 Initialize Draft Sheets</span> creates <code>DevyPlayerPool</code>, <code>DevyDraftOrder</code>, <code>DevyDraftHistory</code>, <code>DevyRetentionHistory</code>, and <code>DevyDraftSettings</code> if they are missing.</li>
+    <li><b>Run retention first.</b> In Discord, run <code>/devy retention_start &lt;year&gt;</code> to DM every owner. Owners choose retain / release; released players return to the pool. Each retention is logged to <code>DevyRetentionHistory</code> automatically (see below).</li>
+    <li><b>Generate the draft order.</b> <span class="menu">🏈 Devy Draft → 📋 Draft Order → Generate from Standings</span> (reads the <code>ConferenceStandings</code> sheet). Rule: <b>draft year = standings year + 1</b>. Worst team picks first, <b>2 rounds</b>, same order each round (no snake).</li>
+    <li><b>Start the draft per conference.</b> In Discord, <code>/devy start &lt;conference&gt; &lt;year&gt;</code>. Each pick has a <b>24-hour</b> timer and there is <b>no pick trading</b>.</li>
+    <li><b>Owners pick.</b> <code>/devy pick</code> records the selection in <code>DevyDraftHistory</code> and marks that conference's pool copy as Drafted. Repeat for every conference.</li>
+    <li><b>After the draft.</b> Mark players who went pro via <span class="menu">🔒 Player Retention → Mark Player as Entered NFL</span>. Then refresh graduation detection: <span class="menu">📜 Backfill History → 🔗 Setup RookieLedger IMPORTRANGE</span> (first time only) and <span class="menu">📋 Apply IsRookie Formulas</span>.</li>
+  </ol>
+
+  <h2>Retention history &amp; rebates</h2>
+  <p class="sub">Every live retention appends one row to <code>DevyRetentionHistory</code>. It is the year-over-year rebate ledger.</p>
+  <table>
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td>ConsecutiveYear</td><td>1 the first time a player is retained, 2 the next year, and so on.</td></tr>
+    <tr><td>PickUsed</td><td>Which pick the retention consumes (currently <code>Round 2</code>).</td></tr>
+    <tr><td>BaseRebate</td><td>Always <code>$20</code>.</td></tr>
+    <tr><td>RebateRemaining</td><td><code>max(0, $20 − $5 × (ConsecutiveYear − 1))</code>: $20, then $15, $10, $5, $0…</td></tr>
+    <tr><td>IsRookie</td><td>Formula column — TRUE once the player appears in the RookieLedger (entered the NFL).</td></tr>
+  </table>
+  <div class="note"><b>Note:</b> Releasing a player returns their pool copy to Available but does <em>not</em> delete past ledger rows — a retention that happened is historical fact. Historical seasons are loaded separately via <span class="menu">📜 Backfill History</span>.</div>
+</body>
+</html>`;
+}
+
+/**
  * Menu: Reset draft for a conference
  */
 function menuResetDraft() {
@@ -1075,6 +1144,22 @@ function retainDevyPlayer(playerId, franchiseId, retentionYear) {
       sheet.getRange(i + 1, colMap["RetainedBy"] + 1).setValue(franchiseId);
       sheet.getRange(i + 1, colMap["RetentionYear"] + 1).setValue(retentionYear);
 
+      // Log the retention to DevyRetentionHistory (rebate ledger). Wrapped so a
+      // logging failure never blocks the retention itself, which already succeeded.
+      try {
+        appendDevyRetentionRecord({
+          playerId: playerId,
+          conference: data[i][colMap["Conference"]],
+          franchiseId: franchiseId,
+          firstName: data[i][colMap["FirstName"]],
+          lastName: data[i][colMap["LastName"]],
+          position: data[i][colMap["Position"]],
+          retentionYear: retentionYear
+        });
+      } catch (e) {
+        Logger.log(`Failed to log devy retention for ${playerId}: ${e}`);
+      }
+
       return {
         success: true,
         message: `${playerName} retained by franchise ${franchiseId} for ${retentionYear}`
@@ -1086,6 +1171,62 @@ function retainDevyPlayer(playerId, franchiseId, retentionYear) {
     success: false,
     message: "Player not found"
   };
+}
+
+/**
+ * Append one row to DevyRetentionHistory for a retention event.
+ * Centralizes the field order and rebate math so live retentions match the
+ * backfill importer (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per
+ * consecutive retention year, floored at 0.
+ *
+ * @param {Object} info - { playerId, conference, franchiseId, firstName, lastName, position, retentionYear }
+ * @returns {number} The ConsecutiveYear that was recorded
+ */
+function appendDevyRetentionRecord(info) {
+  const sheet = getDevyRetentionHistorySheet();
+  const data = sheet.getDataRange().getValues();
+  const colMap = {};
+  data[0].forEach((h, i) => colMap[h] = i);
+
+  // ConsecutiveYear = number of prior retention rows for this PlayerID + 1
+  let priorRetentions = 0;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colMap["PlayerID"]] === info.playerId) {
+      priorRetentions++;
+    }
+  }
+  const consecutiveYear = priorRetentions + 1;
+
+  const baseRebate = 20;
+  const rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
+
+  const teamInfo = getTeamInfoByFranchiseId(info.franchiseId);
+  const teamName = teamInfo ? teamInfo.teamName : "";
+  const playerNameMFL = `${info.lastName}, ${info.firstName}`;
+
+  // Order must match DEVY_RETENTION_HISTORY_HEADERS
+  const row = [
+    info.retentionYear,   // Year
+    info.conference,
+    info.franchiseId,
+    teamName,
+    info.playerId,
+    playerNameMFL,        // MFL format for matching with RookieLedger
+    info.firstName,
+    info.lastName,
+    info.position,
+    consecutiveYear,
+    "Round 2",            // PickUsed (assumption, matches backfill)
+    baseRebate,
+    rebateRemaining,
+    "",                   // IsRookie - populated by IMPORTRANGE formula
+    new Date().toISOString()
+  ];
+
+  const lastRow = sheet.getLastRow();
+  sheet.getRange(lastRow + 1, 1, 1, DEVY_RETENTION_HISTORY_HEADERS.length).setValues([row]);
+
+  return consecutiveYear;
 }
 
 /**
