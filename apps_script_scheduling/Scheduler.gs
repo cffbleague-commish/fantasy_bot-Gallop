@@ -524,6 +524,18 @@ function applyManualGamesToGrid(grid, manualGames, params) {
     const a = game.teamA;
     const b = game.teamB;
 
+    // Guard: both teams must exist in the roster/grid (mirrors the guards in
+    // loadExistingScheduleIntoGrid and the NC rivalry loader)
+    if (!grid[a] || !grid[b] || !TEAMS_BY_ID[a] || !TEAMS_BY_ID[b]) {
+      logSchedulerEvent({
+        phase: "PHASE_2",
+        severity: "ERROR",
+        type: "UNKNOWN_TEAM",
+        message: `Manual game references unknown team ID (A=${a}, B=${b}) - not in Teams sheet; skipping`
+      });
+      return;
+    }
+
     // Validate week is in NC window
     if (week < WEEK_WINDOWS.NC.start || week > WEEK_WINDOWS.NC.end) {
       logSchedulerEvent({

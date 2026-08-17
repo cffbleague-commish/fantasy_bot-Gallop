@@ -264,7 +264,7 @@ function importHistoricalPicks(dryRun = false) {
 
         // Headers: Year, Conference, FranchiseID, TeamName, PlayerID, PlayerName,
         //          PlayerFirstName, PlayerLastName, PlayerPosition, ConsecutiveYear,
-        //          PickUsed, BaseRebate, RebateRemaining, IsRookie, Timestamp
+        //          PickUsed, BaseRebate, RebateRemaining, IsRookie, Timestamp, Decision
         retentionRows.push([
           retentionYear,
           conference,
@@ -280,7 +280,8 @@ function importHistoricalPicks(dryRun = false) {
           baseRebate,
           rebateRemaining,
           "",                // IsRookie - populated by formula
-          `${retentionYear}-01-01T00:00:00Z`
+          `${retentionYear}-01-01T00:00:00Z`,
+          "RETAIN"           // Decision (all historical rows are retentions)
         ]);
       }
     }

@@ -223,10 +223,13 @@ def try_confirm_rivalry(submitter_id: str, opponent_id: str, name: str, wager: i
     else:
         return {"matched": False, "existing": pending, "mismatch": True}
 
-async def notify_opponent_dm(opponent_id: str, subject: str, message: str, embed: discord.Embed = None):
+async def notify_opponent_dm(opponent_id: str, subject: str, message: str, embed: discord.Embed = None, view: discord.ui.View = None):
     """
     Send a DM notification to an opponent team owner.
-    Returns: {"sent": bool, "error": str or None}
+    Returns: {"sent": bool, "error": str or None, "message": discord.Message or None}
+
+    When a `view` is passed (e.g. NCConfirmView), its `.message` is set to the sent
+    DM so the view can disable its own buttons on timeout.
     """
     try:
         # Get Discord ID for the opponent's franchise
@@ -239,21 +242,28 @@ async def notify_opponent_dm(opponent_id: str, subject: str, message: str, embed
                 break
 
         if not discord_id:
-            return {"sent": False, "error": "No Discord ID found for opponent"}
+            return {"sent": False, "error": "No Discord ID found for opponent", "message": None}
 
         user = await bot.fetch_user(int(discord_id))
+        send_kwargs = {}
         if embed:
-            await user.send(embed=embed)
+            send_kwargs["embed"] = embed
+        if view is not None:
+            send_kwargs["view"] = view
+        if send_kwargs:
+            sent = await user.send(**send_kwargs)
         else:
-            await user.send(message)
-        return {"sent": True, "error": None}
+            sent = await user.send(message)
+        if view is not None:
+            view.message = sent
+        return {"sent": True, "error": None, "message": sent}
     except discord.Forbidden:
-        return {"sent": False, "error": "User has DMs disabled"}
+        return {"sent": False, "error": "User has DMs disabled", "message": None}
     except discord.NotFound:
-        return {"sent": False, "error": "User not found on Discord"}
+        return {"sent": False, "error": "User not found on Discord", "message": None}
     except Exception as e:
         print(f"Failed to DM opponent {opponent_id}: {e}")
-        return {"sent": False, "error": str(e)}
+        return {"sent": False, "error": str(e), "message": None}
 
 # ----------------- Team Lookup Helpter ---------------
 def get_team_by_discord_id(discord_id: int):
@@ -512,6 +522,81 @@ def try_confirm_manual_game(match_key: str):
         manual_sub_ws.update_cell(row_idx, 6, "CONFIRMED")
 
     return True
+
+def delete_pending_submissions(match_key: str) -> int:
+    """Delete every PENDING Manual Submissions row for a match key.
+
+    Used by the DM Decline button — removing the row (rather than marking it
+    DECLINED) keeps it out of get_team_nc_games, availability, and status views.
+    Rows are deleted bottom-up so earlier row indices stay valid. Returns count.
+    """
+    subs = manual_sub_ws.get_all_records(expected_headers=[])
+    rows = [
+        i + 2  # +2: 1 for the header row, 1 for 1-based indexing
+        for i, r in enumerate(subs)
+        if r.get("Match Key") == match_key and r.get("Status") == "PENDING"
+    ]
+    for row_idx in sorted(rows, reverse=True):
+        manual_sub_ws.delete_rows(row_idx)
+    return len(rows)
+
+def process_nc_button_confirm(submitter_team: dict, opponent_team: dict, week) -> dict:
+    """Confirm an NC game from the opponent's DM Confirm button.
+
+    Mirrors what the opponent typing the reciprocal `/schedule submit` would do:
+    ensures the opponent has a PENDING row for the match, then reuses
+    try_confirm_manual_game to write the ManualGames row and flip both sides to
+    CONFIRMED. Re-validates the opponent side against current limits (they may have
+    booked that week since the request was sent).
+
+    Returns {"status": ...} where status is one of:
+      "confirmed" | "already" | "gone" | "error" | "pending"
+    ("error" includes a "message"; "pending" means the reciprocal row was added
+    but confirmation didn't complete — should not normally happen.)
+    """
+    submitter_name = submitter_team["name"]
+    opponent_name = opponent_team["name"]
+    match_key = f"{week}-{'-'.join(sorted([submitter_name, opponent_name]))}"
+
+    # Already confirmed? (ManualGames has one row per game.)
+    for g in manual_games_ws.get_all_records(expected_headers=[]):
+        if g.get("Week") == week and set([g.get("Team A"), g.get("Team B")]) == set([submitter_name, opponent_name]):
+            return {"status": "already"}
+
+    subs = manual_sub_ws.get_all_records(expected_headers=[])
+
+    def _is(row, a, b):
+        return (
+            row.get("Status") == "PENDING"
+            and row.get("Match Key") == match_key
+            and _norm_team_name(row.get("Team A")) == _norm_team_name(a)
+            and _norm_team_name(row.get("Team B")) == _norm_team_name(b)
+        )
+
+    # The requester's pending row must still exist.
+    if not any(_is(r, submitter_name, opponent_name) for r in subs):
+        return {"status": "gone"}
+
+    # Re-validate the opponent side against current limits.
+    error = validate_nc_submission(opponent_team, submitter_team, week)
+    if error:
+        return {"status": "error", "message": error}
+
+    # Ensure the opponent's reciprocal PENDING row exists, then confirm.
+    if not any(_is(r, opponent_name, submitter_name) for r in subs):
+        manual_sub_ws.append_row([
+            datetime.utcnow().isoformat(),
+            week,
+            opponent_name,
+            submitter_name,
+            opponent_team.get("discord_id", ""),
+            "PENDING",
+            match_key,
+        ])
+
+    confirmed = try_confirm_manual_game(match_key)
+    return {"status": "confirmed" if confirmed else "pending"}
+
 # ----------------- Discord Normalize ID Helper -------
 def normalize_discord_id(val):
     """
@@ -864,6 +949,169 @@ async def list_commands(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("\n".join(cmds), ephemeral=True)
 
+# ----------------- NC Game Confirm/Decline DM Buttons -----------------
+class NCConfirmView(discord.ui.View):
+    """Confirm / Decline buttons attached to the NC-game request DM.
+
+    In-memory (non-persistent): the buttons work until the timeout or a bot
+    restart, after which the opponent falls back to `/schedule submit`. Only the
+    requested opponent may act (interaction_check). Confirm reuses the normal
+    two-sided confirm path; Decline deletes the pending submission row(s).
+    """
+
+    def __init__(self, submitter_discord_id, opponent_discord_id, week, submitter_name, opponent_name):
+        super().__init__(timeout=604800)  # 7 days
+        self.submitter_discord_id = str(submitter_discord_id)
+        self.opponent_discord_id = int(opponent_discord_id)
+        self.week = week
+        self.submitter_name = submitter_name
+        self.opponent_name = opponent_name
+        self.message = None
+        self.resolved = False
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.opponent_discord_id:
+            await interaction.response.send_message(
+                "Only the requested opponent can respond to this matchup.", ephemeral=True
+            )
+            return False
+        return True
+
+    def _disable_buttons(self):
+        for child in self.children:
+            child.disabled = True
+
+    async def on_timeout(self):
+        if self.resolved or self.message is None:
+            return
+        self._disable_buttons()
+        try:
+            await self.message.edit(
+                content="⏱️ This NC game request expired. Use `/schedule submit` to try again.",
+                view=self
+            )
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Confirm Matchup", style=discord.ButtonStyle.success, emoji="✅")
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        if self.resolved:
+            await interaction.followup.send("This request has already been handled.", ephemeral=True)
+            return
+
+        opponent_team = await asyncio.to_thread(get_team_by_discord_id, interaction.user.id)
+        submitter_team = await asyncio.to_thread(get_team_by_discord_id, int(self.submitter_discord_id))
+        if not opponent_team or not submitter_team:
+            await interaction.followup.send(
+                "Couldn't look up both teams — please use `/schedule submit` instead.", ephemeral=True
+            )
+            return
+        opponent_team["discord_id"] = str(interaction.user.id)
+
+        result = await asyncio.to_thread(
+            process_nc_button_confirm, submitter_team, opponent_team, self.week
+        )
+        status = result["status"]
+        target_msg = self.message or interaction.message
+
+        if status == "confirmed":
+            self.resolved = True
+            self._disable_buttons()
+            if target_msg:
+                await target_msg.edit(
+                    content=(
+                        f"✅ **Confirmed** — Week {self.week}: "
+                        f"{submitter_team['name']} vs {opponent_team['name']} is locked in."
+                    ),
+                    view=self
+                )
+            await interaction.followup.send("✅ Matchup confirmed and locked in!", ephemeral=True)
+            try:
+                sub_dm = discord.Embed(
+                    title="NC Game Confirmed!",
+                    description=(
+                        f"**{opponent_team['name']}** confirmed your Week {self.week} "
+                        f"non-conference game."
+                    ),
+                    color=discord.Color.green()
+                )
+                await notify_opponent_dm(
+                    str(submitter_team["id"]).zfill(3), "NC Game Confirmed", "", embed=sub_dm
+                )
+            except Exception as e:
+                print(f"NCConfirmView: could not DM requester about confirm: {e}")
+
+        elif status == "already":
+            self.resolved = True
+            self._disable_buttons()
+            if target_msg:
+                await target_msg.edit(
+                    content=f"✅ This Week {self.week} matchup is already confirmed.", view=self
+                )
+            await interaction.followup.send("This matchup was already confirmed.", ephemeral=True)
+
+        elif status == "gone":
+            self.resolved = True
+            self._disable_buttons()
+            if target_msg:
+                await target_msg.edit(
+                    content="This request is no longer active (it may have been withdrawn).", view=self
+                )
+            await interaction.followup.send("This request is no longer active.", ephemeral=True)
+
+        elif status == "error":
+            await interaction.followup.send(f"⚠️ {result['message']}", ephemeral=True)
+
+        else:  # "pending" / unexpected
+            await interaction.followup.send(
+                "Couldn't confirm automatically. Please use `/schedule submit` to confirm.",
+                ephemeral=True
+            )
+
+    @discord.ui.button(label="Decline", style=discord.ButtonStyle.danger, emoji="❌")
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        if self.resolved:
+            await interaction.followup.send("This request has already been handled.", ephemeral=True)
+            return
+
+        match_key = f"{self.week}-{'-'.join(sorted([self.submitter_name, self.opponent_name]))}"
+        await asyncio.to_thread(delete_pending_submissions, match_key)
+
+        self.resolved = True
+        self._disable_buttons()
+        target_msg = self.message or interaction.message
+        if target_msg:
+            await target_msg.edit(
+                content=(
+                    f"❌ **Declined** — Week {self.week} game vs "
+                    f"{self.submitter_name} was turned down."
+                ),
+                view=self
+            )
+        await interaction.followup.send("Request declined and removed.", ephemeral=True)
+
+        try:
+            submitter_team = await asyncio.to_thread(
+                get_team_by_discord_id, int(self.submitter_discord_id)
+            )
+            if submitter_team:
+                dm = discord.Embed(
+                    title="NC Game Declined",
+                    description=(
+                        f"**{self.opponent_name}** declined your Week {self.week} "
+                        f"non-conference game request."
+                    ),
+                    color=discord.Color.red()
+                )
+                await notify_opponent_dm(
+                    str(submitter_team["id"]).zfill(3), "NC Game Declined", "", embed=dm
+                )
+        except Exception as e:
+            print(f"NCConfirmView: could not DM requester about decline: {e}")
+
+
 # ----------------- Schedule Request Matchup Command -----------------
 @schedule.command(name="submit", description="Submit a manual non-conference game")
 @app_commands.describe(
@@ -941,7 +1189,7 @@ async def schedule_submit(
                 )
             )
         else:
-            # Game is pending - DM the opponent
+            # Game is pending - DM the opponent with Confirm/Decline buttons
             dm_embed = discord.Embed(
                 title="NC Game Request Received!",
                 description=f"**{team['name']}** wants to schedule a non-conference game with you.",
@@ -950,22 +1198,32 @@ async def schedule_submit(
             dm_embed.add_field(name="Week", value=str(week), inline=True)
             dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
             dm_embed.add_field(
-                name="To Confirm",
+                name="To Respond",
                 value=(
-                    f"Go to <#{SCHEDULING_CHANNEL_ID}> and submit matching details:\n"
-                    f"`/schedule submit week:{week} opponent:@{team['name']}`"
+                    "Use the buttons below to **Confirm** or **Decline** this matchup.\n"
+                    f"*(Fallback: run `/schedule submit week:{week} opponent:@{team['name']}` "
+                    f"in <#{SCHEDULING_CHANNEL_ID}>.)*"
                 ),
                 inline=False
             )
             dm_embed.set_footer(
-                text="Both teams must submit the same week in the scheduling channel to confirm."
+                text="Only you can confirm or decline this request."
             )
 
-            dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
+            view = NCConfirmView(
+                submitter_discord_id=interaction.user.id,
+                opponent_discord_id=opponent.id,
+                week=week,
+                submitter_name=team['name'],
+                opponent_name=opponent_name,
+            )
+            dm_result = await notify_opponent_dm(
+                opponent_id, "NC Game Request", "", embed=dm_embed, view=view
+            )
 
             dm_status = ""
             if dm_result["sent"]:
-                dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+                dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM (with Confirm/Decline buttons)."
             else:
                 dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
 
@@ -1077,7 +1335,7 @@ async def schedule_submit_for(
                 )
             )
         else:
-            # Game is pending - DM the opponent
+            # Game is pending - DM the opponent with Confirm/Decline buttons
             dm_embed = discord.Embed(
                 title="NC Game Request Received!",
                 description=(
@@ -1089,22 +1347,32 @@ async def schedule_submit_for(
             dm_embed.add_field(name="Week", value=str(week), inline=True)
             dm_embed.add_field(name="Opponent", value=team['name'], inline=True)
             dm_embed.add_field(
-                name="To Confirm",
+                name="To Respond",
                 value=(
-                    f"Go to <#{SCHEDULING_CHANNEL_ID}> and submit matching details:\n"
-                    f"`/schedule submit week:{week} opponent:@{team['name']}`"
+                    "Use the buttons below to **Confirm** or **Decline** this matchup.\n"
+                    f"*(Fallback: run `/schedule submit week:{week} opponent:@{team['name']}` "
+                    f"in <#{SCHEDULING_CHANNEL_ID}>.)*"
                 ),
                 inline=False
             )
             dm_embed.set_footer(
-                text="Both teams must submit the same week in the scheduling channel to confirm."
+                text="Only you can confirm or decline this request."
             )
 
-            dm_result = await notify_opponent_dm(opponent_id, "NC Game Request", "", embed=dm_embed)
+            view = NCConfirmView(
+                submitter_discord_id=team_owner.id,
+                opponent_discord_id=opponent.id,
+                week=week,
+                submitter_name=team['name'],
+                opponent_name=opponent_name,
+            )
+            dm_result = await notify_opponent_dm(
+                opponent_id, "NC Game Request", "", embed=dm_embed, view=view
+            )
 
             dm_status = ""
             if dm_result["sent"]:
-                dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM."
+                dm_status = f"\n\n📬 **{opponent_name}** has been notified via DM (with Confirm/Decline buttons)."
             else:
                 dm_status = f"\n\n⚠️ Could not DM {opponent_name} ({dm_result['error']}). Please notify them directly."
 
@@ -6737,32 +7005,59 @@ def get_team_devy_roster(franchise_id: str, conference: str = None):
         print(f"Error getting team devy roster: {e}")
         return []
 
+def count_devy_retentions(player_id: str, franchise_id: str, year):
+    """Count existing RETAIN rows in DevyRetentionHistory.
+
+    A blank Decision on legacy rows is treated as RETAIN for back-compat.
+    Returns (player_prior_retentions, team_retentions_this_year).
+    """
+    if devy_retention_history_ws is None:
+        return 0, 0
+    normalized_id = str(franchise_id).zfill(3)
+    player_prior = 0
+    team_this_year = 0
+    try:
+        for r in devy_retention_history_ws.get_all_records(expected_headers=[]):
+            decision = str(r.get("Decision") or "RETAIN").upper()
+            if decision != "RETAIN":
+                continue
+            if r.get("PlayerID") == player_id:
+                player_prior += 1
+            if (str(r.get("FranchiseID", "")).zfill(3) == normalized_id and
+                    str(r.get("Year")) == str(year)):
+                team_this_year += 1
+    except Exception as e:
+        print(f"Could not read DevyRetentionHistory for counts: {e}")
+    return player_prior, team_this_year
+
+
 def log_devy_retention(player_id: str, conference: str, franchise_id: str,
                        first_name: str, last_name: str, position: str,
-                       retention_year: int):
-    """Append one row to DevyRetentionHistory for a retention event.
+                       retention_year: int, decision: str = "RETAIN"):
+    """Append one row to DevyRetentionHistory for a retain/release decision.
 
-    Centralizes the field order and rebate math so live retentions match the
-    backfill importer (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per
-    consecutive retention year, floored at 0. ConsecutiveYear = number of prior
-    retention rows for this PlayerID + 1.
+    Centralizes field order + rebate math so live rows match the backfill importer
+    (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per consecutive retention
+    year, floored at 0. The first retention a team makes in a year spends Round 2, the
+    second spends Round 1. RELEASE rows are decision-only (blank rebate/pick fields).
     """
     if devy_retention_history_ws is None:
         return
 
     normalized_id = str(franchise_id).zfill(3)
+    decision = (decision or "RETAIN").upper()
 
-    # ConsecutiveYear = prior retention rows for this PlayerID + 1
-    prior_retentions = 0
-    try:
-        existing = devy_retention_history_ws.get_all_records(expected_headers=[])
-        prior_retentions = sum(1 for r in existing if r.get("PlayerID") == player_id)
-    except Exception as e:
-        print(f"Could not read DevyRetentionHistory for consecutive-year count: {e}")
-    consecutive_year = prior_retentions + 1
-
-    base_rebate = 20
-    rebate_remaining = max(0, base_rebate - 5 * (consecutive_year - 1))
+    consecutive_year = ""
+    pick_used = ""
+    base_rebate = ""
+    rebate_remaining = ""
+    if decision == "RETAIN":
+        player_prior, team_this_year = count_devy_retentions(player_id, normalized_id, retention_year)
+        consecutive_year = player_prior + 1
+        # 1st retention of the year -> Round 2, 2nd -> Round 1
+        pick_used = "Round 2" if team_this_year == 0 else "Round 1"
+        base_rebate = 20
+        rebate_remaining = max(0, base_rebate - 5 * (consecutive_year - 1))
 
     # Resolve TeamName from the franchise lookup (same pattern as devy_retention_start)
     team_name = ""
@@ -6788,11 +7083,12 @@ def log_devy_retention(player_id: str, conference: str, franchise_id: str,
         last_name,
         position,
         consecutive_year,      # ConsecutiveYear
-        "Round 2",             # PickUsed (assumption, matches backfill)
+        pick_used,             # PickUsed (Round 2 then Round 1)
         base_rebate,           # BaseRebate
         rebate_remaining,      # RebateRemaining
         "",                    # IsRookie - populated by IMPORTRANGE formula
         datetime.utcnow().isoformat(),  # Timestamp
+        decision,              # Decision (RETAIN / RELEASE)
     ])
 
 
@@ -6827,6 +7123,11 @@ def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
                 if status == "EnteredNFL":
                     return {"success": False, "message": "This player has entered the NFL and cannot be retained"}
 
+                # Enforce the 2-per-team-per-year cap BEFORE flipping the pool status.
+                _, team_this_year = count_devy_retentions(player_id, normalized_id, retention_year)
+                if team_this_year >= 2:
+                    return {"success": False, "message": f"Retention limit reached: a team may retain at most 2 players per year ({retention_year})."}
+
                 player_name = f"{row.get('FirstName')} {row.get('LastName')}"
 
                 # Update to retained status
@@ -6847,6 +7148,7 @@ def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
                         last_name=row.get("LastName", ""),
                         position=row.get("Position", ""),
                         retention_year=retention_year,
+                        decision="RETAIN",
                     )
                 except Exception as log_err:
                     print(f"Failed to log devy retention for {player_id}: {log_err}")
@@ -6863,8 +7165,13 @@ def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
         print(f"Error retaining devy player: {e}")
         return {"success": False, "message": f"Error: {str(e)}"}
 
-def release_devy_player(player_id: str, franchise_id: str):
-    """Release a retained devy player back to the available pool."""
+def release_devy_player(player_id: str, franchise_id: str, decision_year=None):
+    """Release an owned devy player back to the available pool.
+
+    "Release" = the owner is not keeping this player. Works for a player in either
+    Drafted or Retained status; both return to the pool for the coming draft. A
+    Decision=RELEASE row is logged to DevyRetentionHistory for the audit.
+    """
     if devy_player_pool_ws is None:
         return {"success": False, "message": "Devy player pool sheet not configured"}
 
@@ -6876,11 +7183,14 @@ def release_devy_player(player_id: str, franchise_id: str):
             if row.get("PlayerID") == player_id:
                 status = row.get("Status", "")
                 retained_by = str(row.get("RetainedBy", "")).zfill(3) if row.get("RetainedBy") else ""
+                drafted_by = str(row.get("DraftedBy", "")).zfill(3) if row.get("DraftedBy") else ""
 
-                if status != "Retained":
-                    return {"success": False, "message": "This player is not currently retained"}
+                # Only owned players (Drafted or Retained) can be released.
+                if status not in ("Retained", "Drafted"):
+                    return {"success": False, "message": "This player is not currently owned (must be Drafted or Retained to release)"}
 
-                if retained_by != normalized_id:
+                owner = retained_by if status == "Retained" else drafted_by
+                if owner != normalized_id:
                     return {"success": False, "message": "You don't own this player"}
 
                 player_name = f"{row.get('FirstName')} {row.get('LastName')}"
@@ -6893,6 +7203,22 @@ def release_devy_player(player_id: str, franchise_id: str):
                 devy_player_pool_ws.update_cell(idx, 11, "")  # DraftYear
                 devy_player_pool_ws.update_cell(idx, 12, "")  # RetainedBy
                 devy_player_pool_ws.update_cell(idx, 13, "")  # RetentionYear
+
+                # Log the RELEASE decision (audit). Wrapped so it never blocks the release.
+                year = decision_year or get_devy_draft_setting("DraftYear")
+                try:
+                    log_devy_retention(
+                        player_id=player_id,
+                        conference=row.get("Conference", ""),
+                        franchise_id=normalized_id,
+                        first_name=row.get("FirstName", ""),
+                        last_name=row.get("LastName", ""),
+                        position=row.get("Position", ""),
+                        retention_year=year,
+                        decision="RELEASE",
+                    )
+                except Exception as log_err:
+                    print(f"Failed to log devy release for {player_id}: {log_err}")
 
                 return {
                     "success": True,
@@ -7175,6 +7501,22 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
         print(f"Error making devy pick: {e}")
         return {"success": False, "message": f"Error: {str(e)}"}
 
+def get_filled_devy_slots(year, conference):
+    """Set of "round-pick" slot keys already filled in DevyDraftHistory for a
+    year/conference. A slot is "consumed" if a history row exists for it — whether
+    from a retention pre-fill or an already-made live pick."""
+    filled = set()
+    if devy_draft_history_ws is None:
+        return filled
+    try:
+        for row in devy_draft_history_ws.get_all_records(expected_headers=[]):
+            if str(row.get("Year")) == str(year) and row.get("Conference") == conference:
+                filled.add(f"{row.get('Round')}-{row.get('Pick')}")
+    except Exception as e:
+        print(f"Error reading filled devy slots: {e}")
+    return filled
+
+
 def advance_devy_draft(conference: str):
     """Advance to the next pick in the draft."""
     draft_year = int(get_devy_draft_setting("DraftYear"))
@@ -7197,14 +7539,23 @@ def advance_devy_draft(conference: str):
                 current_idx = i
                 break
 
-        if current_idx is None or current_idx >= len(conf_picks) - 1:
+        # Skip forward over slots already consumed by a retention (or prior pick).
+        filled = get_filled_devy_slots(draft_year, conference)
+        next_idx = (current_idx + 1) if current_idx is not None else len(conf_picks)
+        while next_idx < len(conf_picks):
+            cand = conf_picks[next_idx]
+            if f"{cand.get('Round')}-{cand.get('Pick')}" not in filled:
+                break
+            next_idx += 1
+
+        if current_idx is None or next_idx >= len(conf_picks):
             # Draft complete
             set_devy_draft_setting("DraftStatus", "completed")
             set_devy_draft_setting("CurrentPickDeadline", "")
             return {"draftComplete": True, "message": f"Devy draft complete for {conference}"}
 
-        # Move to next pick
-        next_pick_row = conf_picks[current_idx + 1]
+        # Move to next open pick
+        next_pick_row = conf_picks[next_idx]
         set_devy_draft_setting("CurrentRound", str(next_pick_row.get("Round")))
         set_devy_draft_setting("CurrentPick", str(next_pick_row.get("Pick")))
 
@@ -7226,6 +7577,166 @@ def advance_devy_draft(conference: str):
     except Exception as e:
         print(f"Error advancing devy draft: {e}")
         return {"draftComplete": False, "error": str(e)}
+
+
+def apply_retentions_to_draft(draft_year, conferences=None):
+    """Pre-fill retained players into the coming draft's DevyDraftHistory at the slot
+    their retention consumed (Round 2 for the team's first retention, Round 1 for the
+    second). Run AFTER the draft order exists and the retention window closes.
+    Idempotent: a slot that already has a history row is left untouched.
+
+    Row layout matches make_devy_pick so retained and live-pick rows are consistent.
+    """
+    if devy_retention_history_ws is None or devy_draft_order_ws is None or devy_draft_history_ws is None:
+        return {"success": False, "message": "Devy sheets not configured"}
+
+    year = int(draft_year)
+    conf_filter = [c.upper() for c in conferences] if conferences else None
+
+    try:
+        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
+    except Exception as e:
+        return {"success": False, "message": f"Error reading draft order: {e}"}
+
+    # Order lookup: "conf|round|franchise" -> {pick, overallPick, teamName}
+    order_lookup = {}
+    for row in order_data:
+        if row.get("Year") != year:
+            continue
+        key = f"{row.get('Conference')}|{row.get('Round')}|{str(row.get('FranchiseID')).zfill(3)}"
+        order_lookup[key] = {
+            "pick": row.get("Pick"),
+            "overallPick": row.get("OverallPick"),
+            "teamName": row.get("TeamName"),
+        }
+
+    try:
+        ret_data = devy_retention_history_ws.get_all_records(expected_headers=[])
+    except Exception as e:
+        return {"success": False, "message": f"Error reading retention history: {e}"}
+
+    filled_by_conf = {}
+    applied, skipped = [], []
+    timestamp = datetime.now().isoformat()
+
+    for row in ret_data:
+        if row.get("Year") != year:
+            continue
+        if str(row.get("Decision") or "RETAIN").upper() != "RETAIN":
+            continue
+        conference = row.get("Conference")
+        if conf_filter and str(conference).upper() not in conf_filter:
+            continue
+
+        franchise_id = str(row.get("FranchiseID")).zfill(3)
+        round_num = 1 if "1" in str(row.get("PickUsed")) else 2
+        slot = order_lookup.get(f"{conference}|{round_num}|{franchise_id}")
+        player_name = row.get("PlayerName")
+        if not slot:
+            skipped.append(f"{player_name} ({conference}): no Round {round_num} slot in order")
+            continue
+
+        if conference not in filled_by_conf:
+            filled_by_conf[conference] = get_filled_devy_slots(year, conference)
+        slot_key = f"{round_num}-{slot['pick']}"
+        if slot_key in filled_by_conf[conference]:
+            skipped.append(f"{player_name} ({conference}): slot {slot_key} already filled")
+            continue
+
+        # Append matching make_devy_pick's column layout
+        devy_draft_history_ws.append_row([
+            year,
+            conference,
+            round_num,
+            slot["pick"],
+            slot["overallPick"],
+            franchise_id,
+            slot["teamName"],
+            row.get("PlayerID"),
+            row.get("PlayerFirstName"),
+            row.get("PlayerLastName"),
+            row.get("PlayerPosition"),
+            timestamp,
+        ])
+        filled_by_conf[conference].add(slot_key)
+        applied.append(f"{player_name} -> {conference} R{round_num}.{slot['pick']}")
+
+    return {
+        "success": True,
+        "message": f"Applied {len(applied)} retention(s) to the {year} draft; skipped {len(skipped)}.",
+        "applied": applied,
+        "skipped": skipped,
+    }
+
+
+def finalize_devy_retention(year, conference=None):
+    """Auto-retain every owned player (Drafted or Retained) that has no recorded
+    decision for the year, up to the 2-per-team cap; release any beyond the cap.
+    Idempotent: players who already have a decision for the year are skipped. Run
+    after the retention window closes and BEFORE apply_retentions_to_draft.
+    """
+    if devy_player_pool_ws is None or devy_retention_history_ws is None:
+        return {"success": False, "message": "Devy sheets not configured"}
+
+    year = int(year)
+    conf_upper = conference.upper() if conference else None
+
+    # Players who already have a decision this year + per-team RETAIN counts.
+    decided = set()
+    existing_retains_by_team = {}
+    try:
+        for r in devy_retention_history_ws.get_all_records(expected_headers=[]):
+            if str(r.get("Year")) != str(year):
+                continue
+            decided.add(r.get("PlayerID"))
+            if str(r.get("Decision") or "RETAIN").upper() == "RETAIN":
+                fid = str(r.get("FranchiseID")).zfill(3)
+                existing_retains_by_team[fid] = existing_retains_by_team.get(fid, 0) + 1
+    except Exception as e:
+        return {"success": False, "message": f"Error reading retention history: {e}"}
+
+    # Eligible owned players (Drafted or Retained), grouped by owning franchise.
+    undecided_by_team = {}
+    try:
+        for row in devy_player_pool_ws.get_all_records(expected_headers=[]):
+            status = row.get("Status", "")
+            if status not in ("Drafted", "Retained"):
+                continue
+            conf = row.get("Conference", "")
+            if conf_upper and str(conf).upper() != conf_upper:
+                continue
+            player_id = row.get("PlayerID")
+            if player_id in decided:
+                continue
+            owner = str((row.get("RetainedBy") if status == "Retained" else row.get("DraftedBy")) or "").zfill(3)
+            if not owner or owner == "000":
+                continue
+            undecided_by_team.setdefault(owner, []).append(player_id)
+    except Exception as e:
+        return {"success": False, "message": f"Error reading player pool: {e}"}
+
+    retained, released = [], []
+    for fid, player_ids in undecided_by_team.items():
+        remaining = max(0, 2 - existing_retains_by_team.get(fid, 0))
+        for player_id in player_ids:
+            if remaining > 0:
+                r = retain_devy_player(player_id, fid, year)
+                if r.get("success"):
+                    retained.append(player_id)
+                    remaining -= 1
+                else:
+                    release_devy_player(player_id, fid, year)
+                    released.append(player_id)
+            else:
+                release_devy_player(player_id, fid, year)
+                released.append(player_id)
+
+    return {
+        "success": True,
+        "message": f"Finalized {year}: auto-retained {len(retained)}, auto-released {len(released)}.",
+        "retained": retained,
+        "released": released,
+    }
 
 # ----------------- Devy Draft Commands -----------------
 @devy.command(name="status", description="Check the current devy draft status")
@@ -7740,12 +8251,31 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
         await interaction.followup.send(f"Error checking draft order: {e}")
         return
 
-    # Start the draft
+    # Find the first slot NOT already consumed by a retention (or prior pick).
+    conf_picks = sorted(
+        [r for r in order_data if r.get("Year") == draft_year and r.get("Conference") == conference.upper()],
+        key=lambda x: x.get("OverallPick", 0)
+    )
+    filled = get_filled_devy_slots(draft_year, conference.upper())
+    first_open = next(
+        (r for r in conf_picks if f"{r.get('Round')}-{r.get('Pick')}" not in filled),
+        None
+    )
+
     set_devy_draft_setting("DraftYear", str(draft_year))
-    set_devy_draft_setting("DraftStatus", "in_progress")
     set_devy_draft_setting("CurrentConference", conference.upper())
-    set_devy_draft_setting("CurrentRound", "1")
-    set_devy_draft_setting("CurrentPick", "1")
+
+    if first_open is None:
+        # Every slot is already filled by retentions - nothing to draft.
+        set_devy_draft_setting("DraftStatus", "completed")
+        set_devy_draft_setting("CurrentPickDeadline", "")
+        await interaction.followup.send(f"All picks for {conference.upper()} ({draft_year}) are already filled by retentions.")
+        return
+
+    # Start the draft at the first open slot
+    set_devy_draft_setting("DraftStatus", "in_progress")
+    set_devy_draft_setting("CurrentRound", str(first_open.get("Round")))
+    set_devy_draft_setting("CurrentPick", str(first_open.get("Pick")))
 
     deadline_hours = int(get_devy_draft_setting("PickDeadlineHours") or 24)
     deadline = datetime.now()
@@ -8176,12 +8706,12 @@ class DevyRetentionView(discord.ui.View):
                 await interaction.response.send_message(f"Error: {result['message']}", ephemeral=True)
                 return
         else:  # release
-            # If currently retained, release them
-            if player.get("status") == "Retained":
-                result = release_devy_player(player_id, self.franchise_id)
-                if not result["success"]:
-                    await interaction.response.send_message(f"Error: {result['message']}", ephemeral=True)
-                    return
+            # Return the player to the pool and log the RELEASE decision, whether
+            # they were Drafted or already Retained.
+            result = release_devy_player(player_id, self.franchise_id, self.retention_year)
+            if not result["success"]:
+                await interaction.response.send_message(f"Error: {result['message']}", ephemeral=True)
+                return
             self.decisions[player_id] = "release"
 
         # Update the message
@@ -8525,6 +9055,79 @@ async def devy_retention_remind(interaction: discord.Interaction, conference: st
             failed_count += 1
 
     await interaction.followup.send(f"📨 Reminder sent to **{sent_count}** team(s). Failed: {failed_count}")
+
+
+@devy.command(name="retention_finalize", description="[Commish] Auto-retain every undecided owned player for a year")
+@app_commands.describe(
+    year="The retention year to finalize (e.g., 2026)",
+    conference="Optional: limit to a single conference"
+)
+async def devy_retention_finalize(interaction: discord.Interaction, year: int, conference: str = None):
+    await interaction.response.defer()
+
+    commissioner_role_name = os.getenv("COMMISSIONER_ROLE_NAME", "Commish")
+    if not any(role.name == commissioner_role_name for role in interaction.user.roles):
+        await interaction.followup.send("❌ You must be a Commissioner to finalize retention.")
+        return
+
+    if devy_player_pool_ws is None or devy_retention_history_ws is None:
+        await interaction.followup.send("Devy sheets not configured.")
+        return
+
+    target_conference = conference.upper() if conference else None
+    result = finalize_devy_retention(year, target_conference)
+
+    if not result.get("success"):
+        await interaction.followup.send(f"❌ {result.get('message')}")
+        return
+
+    embed = discord.Embed(
+        title="🔒 Retention Finalized",
+        description=result["message"],
+        color=discord.Color.green()
+    )
+    embed.add_field(name="Auto-retained", value=str(len(result["retained"])), inline=True)
+    embed.add_field(name="Auto-released", value=str(len(result["released"])), inline=True)
+    embed.set_footer(text="Run /devy retention_apply next to slot retained players into the draft.")
+    await interaction.followup.send(embed=embed)
+
+
+@devy.command(name="retention_apply", description="[Commish] Slot retained players into the coming draft's history")
+@app_commands.describe(
+    year="The draft year to slot retentions into (e.g., 2026)",
+    conference="Optional: limit to a single conference"
+)
+async def devy_retention_apply(interaction: discord.Interaction, year: int, conference: str = None):
+    await interaction.response.defer()
+
+    commissioner_role_name = os.getenv("COMMISSIONER_ROLE_NAME", "Commish")
+    if not any(role.name == commissioner_role_name for role in interaction.user.roles):
+        await interaction.followup.send("❌ You must be a Commissioner to apply retentions.")
+        return
+
+    conferences = [conference.upper()] if conference else None
+    result = apply_retentions_to_draft(year, conferences)
+
+    if not result.get("success"):
+        await interaction.followup.send(f"❌ {result.get('message')}")
+        return
+
+    embed = discord.Embed(
+        title="📋 Retentions Applied to Draft",
+        description=result["message"],
+        color=discord.Color.blue()
+    )
+    if result["applied"]:
+        applied_text = "\n".join(f"• {a}" for a in result["applied"][:15])
+        if len(result["applied"]) > 15:
+            applied_text += f"\n*...and {len(result['applied']) - 15} more*"
+        embed.add_field(name="Applied", value=applied_text, inline=False)
+    if result["skipped"]:
+        skipped_text = "\n".join(f"• {s}" for s in result["skipped"][:10])
+        if len(result["skipped"]) > 10:
+            skipped_text += f"\n*...and {len(result['skipped']) - 10} more*"
+        embed.add_field(name="Skipped", value=skipped_text, inline=False)
+    await interaction.followup.send(embed=embed)
 
 
 # ----------------- Scheduled Rankings Updates -----------------

@@ -39,14 +39,18 @@ function onOpen() {
     .addSeparator()
     .addSubMenu(ui.createMenu('🔒 Player Retention')
       .addItem('View Retained Players...', 'menuViewRetainedPlayers')
+      .addItem('Finalize Retention (auto-retain)...', 'menuFinalizeDevyRetention')
+      .addItem('Sweep NFL Graduates (RookieLedger)...', 'menuSweepGraduatedDevyPlayers')
       .addItem('Mark Player as Entered NFL...', 'menuMarkEnteredNFL'))
     .addSeparator()
     .addSubMenu(ui.createMenu('📋 Draft Order')
       .addItem('Generate from Standings...', 'menuGenerateDraftOrderFromStandings')
+      .addItem('Apply Retentions to Draft...', 'menuApplyRetentionsToDraft')
       .addItem('View Draft Order...', 'menuViewDraftOrder')
       .addItem('Clear Draft Order...', 'menuClearDraftOrder'))
     .addSeparator()
     .addSubMenu(ui.createMenu('⚙️ Utilities')
+      .addItem('Reconcile Pool from History...', 'menuReconcileDevyPool')
       .addItem('Reset Draft for Conference...', 'menuResetDraft')
       .addItem('Clear All Available Players', 'menuClearUndrafted')
       .addItem('View Conferences', 'menuViewConferences'))
@@ -138,27 +142,32 @@ function getCommissionerGuideHtml() {
   <p class="sub">The annual steps for running the conference devy drafts, and how the retention ledger works.</p>
 
   <h2>Running the draft each year</h2>
+  <p class="sub">Order matters: graduate NFL players and rebuild ownership from the ledger <em>before</em> asking anyone for retention decisions.</p>
   <ol>
+    <li><b>Sweep NFL graduates.</b> <span class="menu">🔒 Player Retention → Sweep NFL Graduates (RookieLedger)</span>. Any owned devy whose name is in the <code>RookieLedger</code> (they were drafted into the NFL) is marked <code>EnteredNFL</code> and leaves the devy cycle. Run this at the auction / season start, first.</li>
     <li><b>Refresh the player pool.</b> <span class="menu">🏈 Devy Draft → 📥 Import / 🔄 Refresh Players from KeepTradeCut</span>. Pulls current devy rankings and creates one copy of each player <em>per conference</em> (each conference drafts from its own pool).</li>
-    <li><b>Confirm the sheets exist.</b> <span class="menu">🏈 Devy Draft → 📋 Initialize Draft Sheets</span> creates <code>DevyPlayerPool</code>, <code>DevyDraftOrder</code>, <code>DevyDraftHistory</code>, <code>DevyRetentionHistory</code>, and <code>DevyDraftSettings</code> if they are missing.</li>
-    <li><b>Run retention first.</b> In Discord, run <code>/devy retention_start &lt;year&gt;</code> to DM every owner. Owners choose retain / release; released players return to the pool. Each retention is logged to <code>DevyRetentionHistory</code> automatically (see below).</li>
+    <li><b>Reconcile the pool from history.</b> <span class="menu">🏈 Devy Draft → ⚙️ Utilities → Reconcile Pool from History</span>. Replays <code>DevyDraftHistory</code> + <code>DevyRetentionHistory</code> to rebuild each copy's <code>Status</code>/owner (last event wins). After this, the pool is a faithful projection of the ledger — the retention decision list and everything downstream read from it.</li>
+    <li><b>Open the retention window.</b> In Discord, run <code>/devy retention_start &lt;year&gt;</code> to DM every owner their still-devy players. Owners choose retain / release per player; both decisions are logged to <code>DevyRetentionHistory</code>, and released players return to the pool. A team may retain at most <b>2</b> players (the 1st spends their Round 2 pick, the 2nd spends Round 1).</li>
+    <li><b>Finalize retention.</b> After the deadline, run <code>/devy retention_finalize &lt;year&gt;</code> (or <span class="menu">🔒 Player Retention → Finalize Retention</span>). Every owned player with <em>no</em> decision is <b>auto-retained</b> up to the 2-pick cap (cost still applies); any beyond the cap is auto-released.</li>
     <li><b>Generate the draft order.</b> <span class="menu">🏈 Devy Draft → 📋 Draft Order → Generate from Standings</span> (reads the <code>ConferenceStandings</code> sheet). Rule: <b>draft year = standings year + 1</b>. Worst team picks first, <b>2 rounds</b>, same order each round (no snake).</li>
-    <li><b>Start the draft per conference.</b> In Discord, <code>/devy start &lt;conference&gt; &lt;year&gt;</code>. Each pick has a <b>24-hour</b> timer and there is <b>no pick trading</b>.</li>
+    <li><b>Slot retentions into the draft.</b> Run <code>/devy retention_apply &lt;year&gt;</code> (or <span class="menu">📋 Draft Order → Apply Retentions to Draft</span>). Each retained player is written into their team's consumed slot (Round 2, then Round 1) in <code>DevyDraftHistory</code>, and the live draft will skip those slots automatically.</li>
+    <li><b>Start the draft per conference.</b> In Discord, <code>/devy start &lt;conference&gt; &lt;year&gt;</code>. Each pick has a <b>24-hour</b> timer and there is <b>no pick trading</b>. Slots already filled by retentions are skipped.</li>
     <li><b>Owners pick.</b> <code>/devy pick</code> records the selection in <code>DevyDraftHistory</code> and marks that conference's pool copy as Drafted. Repeat for every conference.</li>
-    <li><b>After the draft.</b> Mark players who went pro via <span class="menu">🔒 Player Retention → Mark Player as Entered NFL</span>. Then refresh graduation detection: <span class="menu">📜 Backfill History → 🔗 Setup RookieLedger IMPORTRANGE</span> (first time only) and <span class="menu">📋 Apply IsRookie Formulas</span>.</li>
+    <li><b>Next cycle.</b> Graduation is handled at the top of the next cycle by the <b>Sweep NFL Graduates</b> step, which reads the <code>RookieLedger</code> tab (columns <code>Name</code>, <code>Year</code> = NFL draft year). Keep that tab current; it supersedes the old RookieLedger IMPORTRANGE / <code>IsRookie</code>-formula approach. <span class="menu">🔒 Player Retention → Mark Player as Entered NFL</span> is still available for one-off manual removals.</li>
   </ol>
 
   <h2>Retention history &amp; rebates</h2>
-  <p class="sub">Every live retention appends one row to <code>DevyRetentionHistory</code>. It is the year-over-year rebate ledger.</p>
+  <p class="sub">Every retain/release decision appends one row to <code>DevyRetentionHistory</code>. It is both the decision audit and the year-over-year rebate ledger.</p>
   <table>
     <tr><th>Field</th><th>Meaning</th></tr>
-    <tr><td>ConsecutiveYear</td><td>1 the first time a player is retained, 2 the next year, and so on.</td></tr>
-    <tr><td>PickUsed</td><td>Which pick the retention consumes (currently <code>Round 2</code>).</td></tr>
-    <tr><td>BaseRebate</td><td>Always <code>$20</code>.</td></tr>
+    <tr><td>Decision</td><td><code>RETAIN</code> or <code>RELEASE</code> (blank on legacy rows = RETAIN).</td></tr>
+    <tr><td>ConsecutiveYear</td><td>1 the first time a player is retained, 2 the next year, and so on (RETAIN only).</td></tr>
+    <tr><td>PickUsed</td><td>Which pick the retention consumes — <code>Round 2</code> for a team's first retention that year, <code>Round 1</code> for the second.</td></tr>
+    <tr><td>BaseRebate</td><td>Always <code>$20</code> (RETAIN only).</td></tr>
     <tr><td>RebateRemaining</td><td><code>max(0, $20 − $5 × (ConsecutiveYear − 1))</code>: $20, then $15, $10, $5, $0…</td></tr>
     <tr><td>IsRookie</td><td>Formula column — TRUE once the player appears in the RookieLedger (entered the NFL).</td></tr>
   </table>
-  <div class="note"><b>Note:</b> Releasing a player returns their pool copy to Available but does <em>not</em> delete past ledger rows — a retention that happened is historical fact. Historical seasons are loaded separately via <span class="menu">📜 Backfill History</span>.</div>
+  <div class="note"><b>Notes:</b> Releasing a player returns their pool copy to Available and logs a <code>RELEASE</code> row, but does <em>not</em> delete past ledger rows — a retention that happened is historical fact. Historical seasons are loaded separately via <span class="menu">📜 Backfill History</span>. The <code>Decision</code> column is added automatically to older sheets the next time the sheet is opened or <span class="menu">Initialize Draft Sheets</span> is run.</div>
 </body>
 </html>`;
 }
@@ -456,7 +465,8 @@ const DEVY_RETENTION_HISTORY_HEADERS = [
   "BaseRebate",        // Starting rebate (e.g., $20)
   "RebateRemaining",   // BaseRebate - ($5 × (ConsecutiveYear - 1))
   "IsRookie",          // Formula column: TRUE if player found in RookieLedger (no longer a devy)
-  "Timestamp"
+  "Timestamp",
+  "Decision"           // "RETAIN" or "RELEASE" (blank on legacy rows = RETAIN)
 ];
 
 // ============================================================================
@@ -557,9 +567,27 @@ function getDevyRetentionHistorySheet() {
     sheet.getRange(1, 1, 1, DEVY_RETENTION_HISTORY_HEADERS.length).setValues([DEVY_RETENTION_HISTORY_HEADERS]);
     sheet.getRange(1, 1, 1, DEVY_RETENTION_HISTORY_HEADERS.length).setFontWeight("bold");
     sheet.setFrozenRows(1);
+  } else {
+    // Migrate older sheets that predate the "Decision" column (added to the end).
+    ensureRetentionHistoryDecisionColumn(sheet);
   }
 
   return sheet;
+}
+
+/**
+ * One-time migration: add the "Decision" header to an existing DevyRetentionHistory
+ * sheet if it's missing. Appended at the end so existing rows stay aligned; a blank
+ * Decision on legacy rows is treated as RETAIN by the counting logic.
+ */
+function ensureRetentionHistoryDecisionColumn(sheet) {
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  if (headers.indexOf("Decision") === -1) {
+    const cell = sheet.getRange(1, lastCol + 1);
+    cell.setValue("Decision");
+    cell.setFontWeight("bold");
+  }
 }
 
 // ============================================================================
@@ -1140,6 +1168,15 @@ function retainDevyPlayer(playerId, franchiseId, retentionYear) {
     if (data[i][colMap["PlayerID"]] === playerId) {
       const playerName = `${data[i][colMap["FirstName"]]} ${data[i][colMap["LastName"]]}`;
 
+      // Enforce the 2-per-team-per-year cap BEFORE flipping the pool status.
+      const counts = getDevyRetentionCounts(playerId, franchiseId, retentionYear);
+      if (counts.teamRetentionsThisYear >= 2) {
+        return {
+          success: false,
+          message: `Retention limit reached: a team may retain at most 2 players per year (${retentionYear}).`
+        };
+      }
+
       sheet.getRange(i + 1, colMap["Status"] + 1).setValue("Retained");
       sheet.getRange(i + 1, colMap["RetainedBy"] + 1).setValue(franchiseId);
       sheet.getRange(i + 1, colMap["RetentionYear"] + 1).setValue(retentionYear);
@@ -1154,7 +1191,8 @@ function retainDevyPlayer(playerId, franchiseId, retentionYear) {
           firstName: data[i][colMap["FirstName"]],
           lastName: data[i][colMap["LastName"]],
           position: data[i][colMap["Position"]],
-          retentionYear: retentionYear
+          retentionYear: retentionYear,
+          decision: "RETAIN"
         });
       } catch (e) {
         Logger.log(`Failed to log devy retention for ${playerId}: ${e}`);
@@ -1174,35 +1212,72 @@ function retainDevyPlayer(playerId, franchiseId, retentionYear) {
 }
 
 /**
- * Append one row to DevyRetentionHistory for a retention event.
- * Centralizes the field order and rebate math so live retentions match the
- * backfill importer (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per
- * consecutive retention year, floored at 0.
- *
- * @param {Object} info - { playerId, conference, franchiseId, firstName, lastName, position, retentionYear }
- * @returns {number} The ConsecutiveYear that was recorded
+ * Count existing RETAIN rows in DevyRetentionHistory. A blank Decision on legacy
+ * rows is treated as RETAIN for back-compat.
+ * @returns {Object} { playerPriorRetentions, teamRetentionsThisYear }
  */
-function appendDevyRetentionRecord(info) {
+function getDevyRetentionCounts(playerId, franchiseId, year) {
   const sheet = getDevyRetentionHistorySheet();
   const data = sheet.getDataRange().getValues();
   const colMap = {};
   data[0].forEach((h, i) => colMap[h] = i);
 
-  // ConsecutiveYear = number of prior retention rows for this PlayerID + 1
-  let priorRetentions = 0;
+  const normFid = String(franchiseId).padStart(3, "0");
+  let playerPriorRetentions = 0;
+  let teamRetentionsThisYear = 0;
+
   for (let i = 1; i < data.length; i++) {
-    if (data[i][colMap["PlayerID"]] === info.playerId) {
-      priorRetentions++;
+    const row = data[i];
+    // colMap["Decision"] may be undefined on a not-yet-migrated read; blank = RETAIN
+    const decisionRaw = colMap["Decision"] !== undefined ? row[colMap["Decision"]] : "";
+    const isRetain = String(decisionRaw || "RETAIN").toUpperCase() === "RETAIN";
+    if (!isRetain) continue;
+
+    if (row[colMap["PlayerID"]] === playerId) {
+      playerPriorRetentions++;
+    }
+    if (String(row[colMap["FranchiseID"]]).padStart(3, "0") === normFid &&
+        Number(row[colMap["Year"]]) === Number(year)) {
+      teamRetentionsThisYear++;
     }
   }
-  const consecutiveYear = priorRetentions + 1;
 
-  const baseRebate = 20;
-  const rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
+  return { playerPriorRetentions, teamRetentionsThisYear };
+}
+
+/**
+ * Append one row to DevyRetentionHistory for a retention decision.
+ * Centralizes field order + rebate math so live rows match the backfill importer
+ * (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per consecutive retention
+ * year, floored at 0. The first retention a team makes in a year spends Round 2, the
+ * second spends Round 1 (max 2 per team per year).
+ *
+ * @param {Object} info - { playerId, conference, franchiseId, firstName, lastName,
+ *                          position, retentionYear, decision }
+ *                          decision defaults to "RETAIN"; "RELEASE" writes a decision-only row.
+ * @returns {number} The ConsecutiveYear recorded (0 for RELEASE rows)
+ */
+function appendDevyRetentionRecord(info) {
+  const sheet = getDevyRetentionHistorySheet();
+  const decision = (info.decision || "RETAIN").toUpperCase();
 
   const teamInfo = getTeamInfoByFranchiseId(info.franchiseId);
   const teamName = teamInfo ? teamInfo.teamName : "";
   const playerNameMFL = `${info.lastName}, ${info.firstName}`;
+
+  let consecutiveYear = "";
+  let pickUsed = "";
+  let baseRebate = "";
+  let rebateRemaining = "";
+
+  if (decision === "RETAIN") {
+    const counts = getDevyRetentionCounts(info.playerId, info.franchiseId, info.retentionYear);
+    consecutiveYear = counts.playerPriorRetentions + 1;
+    // 1st retention of the year -> Round 2, 2nd -> Round 1
+    pickUsed = counts.teamRetentionsThisYear === 0 ? "Round 2" : "Round 1";
+    baseRebate = 20;
+    rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
+  }
 
   // Order must match DEVY_RETENTION_HISTORY_HEADERS
   const row = [
@@ -1216,17 +1291,18 @@ function appendDevyRetentionRecord(info) {
     info.lastName,
     info.position,
     consecutiveYear,
-    "Round 2",            // PickUsed (assumption, matches backfill)
+    pickUsed,
     baseRebate,
     rebateRemaining,
     "",                   // IsRookie - populated by IMPORTRANGE formula
-    new Date().toISOString()
+    new Date().toISOString(),
+    decision
   ];
 
   const lastRow = sheet.getLastRow();
   sheet.getRange(lastRow + 1, 1, 1, DEVY_RETENTION_HISTORY_HEADERS.length).setValues([row]);
 
-  return consecutiveYear;
+  return decision === "RETAIN" ? consecutiveYear : 0;
 }
 
 /**
@@ -1262,11 +1338,226 @@ function markPlayerEnteredNFL(basePlayerId) {
 }
 
 /**
+ * Normalize a player name for matching across sheets (RookieLedger, pool, history).
+ * Lowercases, drops commas/periods, strips Jr/Sr/II-V suffixes, collapses spaces.
+ * Works for MFL "Last, First" format on both sides.
+ */
+function normalizeDevyName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/[.,]/g, " ")
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Graduation sweep: mark every owned devy copy whose PlayerName appears in the
+ * RookieLedger (they were drafted into the NFL) as EnteredNFL. Run at auction /
+ * season start, BEFORE reconcileDevyPoolFromLedger. Matches by normalized name
+ * (RookieLedger.Name and pool.PlayerName are both MFL "Last, First").
+ *
+ * @returns {Object} Result with counts
+ */
+function sweepGraduatedDevyPlayers() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ledger = ss.getSheetByName("RookieLedger");
+  if (!ledger) {
+    return { success: false, message: "RookieLedger tab not found." };
+  }
+
+  const ledgerData = ledger.getDataRange().getValues();
+  const lc = {};
+  ledgerData[0].forEach((h, i) => lc[String(h).trim()] = i);
+  if (lc["Name"] === undefined) {
+    return { success: false, message: "RookieLedger is missing a 'Name' column." };
+  }
+
+  const gradNames = new Set();
+  for (let i = 1; i < ledgerData.length; i++) {
+    const n = normalizeDevyName(ledgerData[i][lc["Name"]]);
+    if (n) gradNames.add(n);
+  }
+
+  const poolSheet = getDevyPlayerPoolSheet();
+  const data = poolSheet.getDataRange().getValues();
+  const pc = {};
+  data[0].forEach((h, i) => pc[h] = i);
+  if (pc["Status"] === undefined || pc["PlayerName"] === undefined) {
+    return { success: false, message: "DevyPlayerPool is missing 'Status' or 'PlayerName'. Rebuild the pool first." };
+  }
+
+  let copiesMarked = 0;
+  const gradedPlayers = new Set();
+  const statusValues = [];
+  for (let i = 1; i < data.length; i++) {
+    let status = data[i][pc["Status"]];
+    const norm = normalizeDevyName(data[i][pc["PlayerName"]]);
+    if (status !== "EnteredNFL" && norm && gradNames.has(norm)) {
+      status = "EnteredNFL";
+      copiesMarked++;
+      gradedPlayers.add(norm);
+    }
+    statusValues.push([status]);
+  }
+
+  if (statusValues.length > 0) {
+    poolSheet.getRange(2, pc["Status"] + 1, statusValues.length, 1).setValues(statusValues);
+  }
+
+  return {
+    success: true,
+    message: `Graduation sweep: ${gradedPlayers.size} player(s) matched RookieLedger; ${copiesMarked} pool copies marked EnteredNFL.`,
+    playersGraduated: gradedPlayers.size,
+    copiesMarked
+  };
+}
+
+/**
+ * Menu: run the NFL graduation sweep
+ */
+function menuSweepGraduatedDevyPlayers() {
+  const ui = SpreadsheetApp.getUi();
+  const confirm = ui.alert(
+    "Sweep NFL Graduates",
+    "Mark every owned devy whose name is in the RookieLedger as EnteredNFL?\n\nRun this at auction / season start, before reconciling the pool.",
+    ui.ButtonSet.YES_NO
+  );
+  if (confirm !== ui.Button.YES) return;
+  const r = sweepGraduatedDevyPlayers();
+  ui.alert("Graduation Sweep", r.message, ui.ButtonSet.OK);
+}
+
+/**
+ * Reconcile the pool from the ledger (the "replay"). For each copy, replay its
+ * DevyDraftHistory picks + DevyRetentionHistory decisions in time order and let the
+ * last event win, writing Status/Drafted/DraftedBy/DraftYear/RetainedBy/RetentionYear
+ * back into DevyPlayerPool. EnteredNFL copies are left untouched (they've left the
+ * system), so run sweepGraduatedDevyPlayers() first.
+ *
+ * Within a year, retention decisions precede that year's draft (phase 0 before 1).
+ *
+ * @returns {Object} Result with counts
+ */
+function reconcileDevyPoolFromLedger() {
+  const poolSheet = getDevyPlayerPoolSheet();
+  const data = poolSheet.getDataRange().getValues();
+  const pc = {};
+  data[0].forEach((h, i) => pc[h] = i);
+  const cols = ["Status", "Drafted", "DraftedBy", "DraftYear", "RetainedBy", "RetentionYear"];
+  for (const c of cols.concat(["PlayerID"])) {
+    if (pc[c] === undefined) {
+      return { success: false, message: `DevyPlayerPool is missing the '${c}' column. Rebuild the pool first.` };
+    }
+  }
+
+  // Build the event timeline per PlayerID (which is conference-specific).
+  const events = {};
+  const addEvent = (pid, ev) => { (events[pid] = events[pid] || []).push(ev); };
+
+  const histData = getDevyDraftHistorySheet().getDataRange().getValues();
+  const hc = {};
+  histData[0].forEach((h, i) => hc[h] = i);
+  for (let i = 1; i < histData.length; i++) {
+    const pid = histData[i][hc["PlayerID"]];
+    if (!pid) continue;
+    addEvent(pid, {
+      year: Number(histData[i][hc["Year"]]),
+      phase: 1, // draft happens after the retention window within a year
+      type: "DRAFT",
+      franchise: String(histData[i][hc["FranchiseID"]]).padStart(3, "0")
+    });
+  }
+
+  const retData = getDevyRetentionHistorySheet().getDataRange().getValues();
+  const rc = {};
+  retData[0].forEach((h, i) => rc[h] = i);
+  for (let i = 1; i < retData.length; i++) {
+    const pid = retData[i][rc["PlayerID"]];
+    if (!pid) continue;
+    addEvent(pid, {
+      year: Number(retData[i][rc["Year"]]),
+      phase: 0, // retention decision precedes that year's draft
+      type: String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase(),
+      franchise: String(retData[i][rc["FranchiseID"]]).padStart(3, "0")
+    });
+  }
+
+  const out = {};
+  cols.forEach(c => out[c] = []);
+  let reconciled = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+
+    // Preserve graduated players - they've left the devy system.
+    if (row[pc["Status"]] === "EnteredNFL") {
+      cols.forEach(c => out[c].push([row[pc[c]]]));
+      continue;
+    }
+
+    const evs = (events[row[pc["PlayerID"]]] || []).slice()
+      .sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
+
+    let status = "Available", drafted = "No", draftedBy = "", draftYear = "", retainedBy = "", retentionYear = "";
+    let lastDraft = null;
+    evs.forEach(e => { if (e.type === "DRAFT") lastDraft = e; });
+    const last = evs.length ? evs[evs.length - 1] : null;
+
+    if (last) {
+      reconciled++;
+      if (last.type === "DRAFT") {
+        status = "Drafted"; drafted = "Yes"; draftedBy = last.franchise; draftYear = last.year;
+      } else if (last.type === "RETAIN") {
+        status = "Retained"; drafted = "Yes";
+        draftedBy = lastDraft ? lastDraft.franchise : last.franchise;
+        draftYear = lastDraft ? lastDraft.year : "";
+        retainedBy = last.franchise; retentionYear = last.year;
+      } // RELEASE (or anything else) -> stays Available with cleared ownership
+    }
+
+    out["Status"].push([status]);
+    out["Drafted"].push([drafted]);
+    out["DraftedBy"].push([draftedBy]);
+    out["DraftYear"].push([draftYear]);
+    out["RetainedBy"].push([retainedBy]);
+    out["RetentionYear"].push([retentionYear]);
+  }
+
+  const numRows = data.length - 1;
+  if (numRows > 0) {
+    cols.forEach(c => poolSheet.getRange(2, pc[c] + 1, numRows, 1).setValues(out[c]));
+  }
+
+  return {
+    success: true,
+    message: `Reconciled ${reconciled} owned copies from the ledger (of ${numRows} pool rows).`,
+    reconciled,
+    totalRows: numRows
+  };
+}
+
+/**
+ * Menu: reconcile the pool from history
+ */
+function menuReconcileDevyPool() {
+  const ui = SpreadsheetApp.getUi();
+  const confirm = ui.alert(
+    "Reconcile Pool from History",
+    "Rebuild each player's Status/ownership from DevyDraftHistory + DevyRetentionHistory?\n\nRun the NFL graduate sweep first.",
+    ui.ButtonSet.YES_NO
+  );
+  if (confirm !== ui.Button.YES) return;
+  const r = reconcileDevyPoolFromLedger();
+  ui.alert("Reconcile Pool", r.message, ui.ButtonSet.OK);
+}
+
+/**
  * Release a retained player back to available status
  * @param {string} playerId - The conference-specific player ID
  * @returns {Object} Result with success status
  */
-function releaseRetainedPlayer(playerId) {
+function releaseRetainedPlayer(playerId, decisionYear) {
   const sheet = getDevyPlayerPoolSheet();
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
@@ -1277,18 +1568,44 @@ function releaseRetainedPlayer(playerId) {
     if (data[i][colMap["PlayerID"]] === playerId) {
       const status = data[i][colMap["Status"]];
 
-      if (status !== "Retained") {
+      // "Release" = the owner is not keeping this player. Only owned players
+      // (Drafted or Retained) can be released back to the pool.
+      if (status !== "Retained" && status !== "Drafted") {
         return {
           success: false,
-          message: "Player is not currently retained"
+          message: "Player is not currently owned (must be Drafted or Retained to release)"
         };
       }
 
       const playerName = `${data[i][colMap["FirstName"]]} ${data[i][colMap["LastName"]]}`;
+      const franchiseId = String(
+        data[i][colMap["RetainedBy"]] || data[i][colMap["DraftedBy"]] || ""
+      ).padStart(3, "0");
 
+      // Return the pool copy to the available pool for the coming draft.
       sheet.getRange(i + 1, colMap["Status"] + 1).setValue("Available");
       sheet.getRange(i + 1, colMap["RetainedBy"] + 1).setValue("");
       sheet.getRange(i + 1, colMap["RetentionYear"] + 1).setValue("");
+      sheet.getRange(i + 1, colMap["Drafted"] + 1).setValue("No");
+      sheet.getRange(i + 1, colMap["DraftedBy"] + 1).setValue("");
+      sheet.getRange(i + 1, colMap["DraftYear"] + 1).setValue("");
+
+      // Log the RELEASE decision (audit). Wrapped so it never blocks the release.
+      const year = decisionYear || getDevyDraftSetting("DraftYear");
+      try {
+        appendDevyRetentionRecord({
+          playerId: playerId,
+          conference: data[i][colMap["Conference"]],
+          franchiseId: franchiseId,
+          firstName: data[i][colMap["FirstName"]],
+          lastName: data[i][colMap["LastName"]],
+          position: data[i][colMap["Position"]],
+          retentionYear: year,
+          decision: "RELEASE"
+        });
+      } catch (e) {
+        Logger.log(`Failed to log devy release for ${playerId}: ${e}`);
+      }
 
       return {
         success: true,
@@ -1367,20 +1684,40 @@ function startDevyDraft(conference) {
   const colMap = {};
   headers.forEach((h, i) => colMap[h] = i);
 
-  const conferenceExists = orderData.slice(1).some(row =>
+  const conferencePicks = orderData.slice(1).filter(row =>
     row[colMap["Year"]] === Number(draftYear) &&
     row[colMap["Conference"]] === conference
-  );
+  ).sort((a, b) => a[colMap["OverallPick"]] - b[colMap["OverallPick"]]);
 
-  if (!conferenceExists) {
+  if (conferencePicks.length === 0) {
     throw new Error(`Conference '${conference}' not found in draft order for ${draftYear}`);
   }
 
-  // Set draft in progress
+  // Find the first slot NOT already consumed by a retention (or prior pick).
+  const filled = getFilledSlotSet(Number(draftYear), conference);
+  const firstOpen = conferencePicks.find(row =>
+    !filled.has(`${row[colMap["Round"]]}-${row[colMap["Pick"]]}`)
+  );
+
+  if (!firstOpen) {
+    // Every slot is already filled (e.g., all retentions) - nothing to draft.
+    setDevyDraftSetting("DraftStatus", "completed");
+    setDevyDraftSetting("CurrentConference", conference);
+    setDevyDraftSetting("CurrentPickDeadline", "");
+    return {
+      success: true,
+      draftComplete: true,
+      message: `All picks for ${conference} are already filled by retentions`,
+      draftYear,
+      conference
+    };
+  }
+
+  // Set draft in progress at the first open slot
   setDevyDraftSetting("DraftStatus", "in_progress");
   setDevyDraftSetting("CurrentConference", conference);
-  setDevyDraftSetting("CurrentRound", "1");
-  setDevyDraftSetting("CurrentPick", "1");
+  setDevyDraftSetting("CurrentRound", String(firstOpen[colMap["Round"]]));
+  setDevyDraftSetting("CurrentPick", String(firstOpen[colMap["Pick"]]));
 
   // Set initial pick deadline
   const deadlineHours = parseInt(settings["PickDeadlineHours"]) || 24;
@@ -1395,6 +1732,28 @@ function startDevyDraft(conference) {
     conference,
     pickDeadline: deadline.toISOString()
   };
+}
+
+/**
+ * Build a Set of "round-pick" slot keys that are already filled in DevyDraftHistory
+ * for a given year/conference. A slot is "consumed" if a history row exists for it —
+ * whether from a retention pre-fill or an already-made live pick.
+ */
+function getFilledSlotSet(year, conference) {
+  const sheet = getDevyDraftHistorySheet();
+  const data = sheet.getDataRange().getValues();
+  const colMap = {};
+  data[0].forEach((h, i) => colMap[h] = i);
+
+  const filled = new Set();
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (Number(row[colMap["Year"]]) === Number(year) &&
+        row[colMap["Conference"]] === conference) {
+      filled.add(`${row[colMap["Round"]]}-${row[colMap["Pick"]]}`);
+    }
+  }
+  return filled;
 }
 
 /**
@@ -1603,7 +1962,18 @@ function advanceDevyDraft(conference) {
 
   const currentIndex = conferencePicks.indexOf(currentOverall);
 
-  if (currentIndex >= conferencePicks.length - 1) {
+  // Skip forward over any slots already consumed by a retention (or prior pick).
+  const filled = getFilledSlotSet(draftYear, conference);
+  let nextIndex = currentIndex + 1;
+  while (nextIndex < conferencePicks.length) {
+    const candidate = conferencePicks[nextIndex];
+    if (!filled.has(`${candidate[colMap["Round"]]}-${candidate[colMap["Pick"]]}`)) {
+      break;
+    }
+    nextIndex++;
+  }
+
+  if (nextIndex >= conferencePicks.length) {
     // Draft complete for this conference
     setDevyDraftSetting("DraftStatus", "completed");
     setDevyDraftSetting("CurrentPickDeadline", "");
@@ -1614,8 +1984,8 @@ function advanceDevyDraft(conference) {
     };
   }
 
-  // Move to next pick
-  const nextPickRow = conferencePicks[currentIndex + 1];
+  // Move to next open pick
+  const nextPickRow = conferencePicks[nextIndex];
   const nextRound = nextPickRow[colMap["Round"]];
   const nextPick = nextPickRow[colMap["Pick"]];
 
@@ -1791,10 +2161,22 @@ function handleDevyDraftRequest(action, params) {
         return retainDevyPlayer(params.playerId, params.franchiseId, params.retentionYear);
 
       case "releasePlayer":
-        return releaseRetainedPlayer(params.playerId);
+        return releaseRetainedPlayer(params.playerId, params.decisionYear || params.retentionYear);
 
       case "getRetainedPlayers":
         return { success: true, players: getRetainedPlayers(params.franchiseId, params.conference) };
+
+      case "applyRetentionsToDraft":
+        return applyRetentionsToDraft(params.draftYear, params.conferences || null);
+
+      case "finalizeRetention":
+        return finalizeDevyRetention(params.year, params.conference || null);
+
+      case "sweepGraduated":
+        return sweepGraduatedDevyPlayers();
+
+      case "reconcilePool":
+        return reconcileDevyPoolFromLedger();
 
       case "markEnteredNFL":
         return markPlayerEnteredNFL(params.basePlayerId);
@@ -2486,6 +2868,252 @@ function generateDraftOrderFromStandings(draftYear, conferences = null) {
     totalPicks,
     conferences: conferenceResults
   };
+}
+
+/**
+ * Pre-fill retained players into the coming draft's DevyDraftHistory at the slot
+ * their retention consumed (Round 2 for the team's first retention, Round 1 for the
+ * second). Run AFTER generateDraftOrderFromStandings and after the retention window
+ * closes. Idempotent: a slot that already has a history row is left untouched.
+ *
+ * @param {number} draftYear - The draft year to slot retentions into
+ * @param {string[]|null} conferences - Conference codes, or null for all
+ * @returns {Object} Result with applied/skipped counts
+ */
+function applyRetentionsToDraft(draftYear, conferences = null) {
+  const year = Number(draftYear);
+  const confFilter = conferences ? conferences.map(c => c.toUpperCase()) : null;
+
+  // RETAIN rows for this year
+  const retSheet = getDevyRetentionHistorySheet();
+  const retData = retSheet.getDataRange().getValues();
+  const rc = {};
+  retData[0].forEach((h, i) => rc[h] = i);
+
+  // Draft order lookup: "conf|round|franchise" -> { pick, overallPick, teamName }
+  const orderSheet = getDevyDraftOrderSheet();
+  const orderData = orderSheet.getDataRange().getValues();
+  const oc = {};
+  orderData[0].forEach((h, i) => oc[h] = i);
+  const orderLookup = {};
+  for (let i = 1; i < orderData.length; i++) {
+    const row = orderData[i];
+    if (Number(row[oc["Year"]]) !== year) continue;
+    const key = `${row[oc["Conference"]]}|${row[oc["Round"]]}|${String(row[oc["FranchiseID"]]).padStart(3, "0")}`;
+    orderLookup[key] = {
+      pick: row[oc["Pick"]],
+      overallPick: row[oc["OverallPick"]],
+      teamName: row[oc["TeamName"]]
+    };
+  }
+
+  // Existing filled slots per conference, so we stay idempotent
+  const historySheet = getDevyDraftHistorySheet();
+  const filledByConf = {};
+
+  const applied = [];
+  const skipped = [];
+
+  for (let i = 1; i < retData.length; i++) {
+    const row = retData[i];
+    if (Number(row[rc["Year"]]) !== year) continue;
+    const decision = String(row[rc["Decision"]] || "RETAIN").toUpperCase();
+    if (decision !== "RETAIN") continue;
+
+    const conference = row[rc["Conference"]];
+    if (confFilter && !confFilter.includes(String(conference).toUpperCase())) continue;
+
+    const franchiseId = String(row[rc["FranchiseID"]]).padStart(3, "0");
+    const round = String(row[rc["PickUsed"]]).indexOf("1") !== -1 ? 1 : 2;
+
+    const slot = orderLookup[`${conference}|${round}|${franchiseId}`];
+    if (!slot) {
+      skipped.push(`${row[rc["PlayerName"]]} (${conference}): no ${`Round ${round}`} slot in order`);
+      continue;
+    }
+
+    if (!filledByConf[conference]) {
+      filledByConf[conference] = getFilledSlotSet(year, conference);
+    }
+    const slotKey = `${round}-${slot.pick}`;
+    if (filledByConf[conference].has(slotKey)) {
+      skipped.push(`${row[rc["PlayerName"]]} (${conference}): slot ${slotKey} already filled`);
+      continue;
+    }
+
+    // Append the retained player into DevyDraftHistory at their consumed slot.
+    // Order must match DEVY_DRAFT_HISTORY_HEADERS.
+    const historyRow = [
+      year,
+      conference,
+      round,
+      slot.pick,
+      slot.overallPick,
+      franchiseId,
+      slot.teamName,
+      row[rc["PlayerID"]],
+      row[rc["PlayerName"]],        // MFL format
+      row[rc["PlayerFirstName"]],
+      row[rc["PlayerLastName"]],
+      row[rc["PlayerPosition"]],
+      "",                            // IsRookie - populated by IMPORTRANGE formula
+      new Date().toISOString()
+    ];
+    const lastRow = historySheet.getLastRow();
+    historySheet.getRange(lastRow + 1, 1, 1, DEVY_DRAFT_HISTORY_HEADERS.length).setValues([historyRow]);
+    filledByConf[conference].add(slotKey);
+    applied.push(`${row[rc["PlayerName"]]} → ${conference} R${round}.${slot.pick}`);
+  }
+
+  return {
+    success: true,
+    message: `Applied ${applied.length} retention(s) to the ${year} draft; skipped ${skipped.length}.`,
+    applied,
+    skipped
+  };
+}
+
+/**
+ * Menu: Apply retentions to the draft order for a year
+ */
+function menuApplyRetentionsToDraft() {
+  const ui = SpreadsheetApp.getUi();
+  const yearResponse = ui.prompt(
+    "Apply Retentions to Draft",
+    "Enter the draft year to slot retained players into:",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (yearResponse.getSelectedButton() !== ui.Button.OK) return;
+  const year = parseInt(yearResponse.getResponseText().trim());
+  if (isNaN(year)) {
+    ui.alert("Invalid Input", "Please enter a valid year.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const result = applyRetentionsToDraft(year);
+  let message = result.message;
+  if (result.applied.length > 0) {
+    message += `\n\nApplied:\n• ${result.applied.slice(0, 20).join("\n• ")}`;
+  }
+  if (result.skipped.length > 0) {
+    message += `\n\nSkipped:\n• ${result.skipped.slice(0, 20).join("\n• ")}`;
+  }
+  ui.alert("Apply Retentions to Draft", message, ui.ButtonSet.OK);
+}
+
+/**
+ * Finalize the retention window for a year: every owned player (Drafted or
+ * Retained) with no recorded decision is auto-retained up to the 2-per-team cap;
+ * any beyond the cap is auto-released. Idempotent — players who already have a
+ * decision for the year are skipped. Run after the retention window closes and
+ * BEFORE applyRetentionsToDraft.
+ *
+ * @param {number} year - The retention/decision year
+ * @param {string|null} conference - Limit to one conference, or null for all
+ * @returns {Object} Result with retained/released lists
+ */
+function finalizeDevyRetention(year, conference) {
+  year = Number(year);
+  const confUpper = conference ? String(conference).toUpperCase() : null;
+
+  // Players who already have a decision for this year, and per-team RETAIN counts.
+  const retSheet = getDevyRetentionHistorySheet();
+  const retData = retSheet.getDataRange().getValues();
+  const rc = {};
+  retData[0].forEach((h, i) => rc[h] = i);
+
+  const decided = new Set();
+  const existingRetainsByTeam = {};
+  for (let i = 1; i < retData.length; i++) {
+    const row = retData[i];
+    if (Number(row[rc["Year"]]) !== year) continue;
+    decided.add(row[rc["PlayerID"]]);
+    const dec = String(row[rc["Decision"]] || "RETAIN").toUpperCase();
+    if (dec === "RETAIN") {
+      const fid = String(row[rc["FranchiseID"]]).padStart(3, "0");
+      existingRetainsByTeam[fid] = (existingRetainsByTeam[fid] || 0) + 1;
+    }
+  }
+
+  // Eligible owned players (Drafted or Retained), grouped by owning franchise.
+  const poolSheet = getDevyPlayerPoolSheet();
+  const poolData = poolSheet.getDataRange().getValues();
+  const pc = {};
+  poolData[0].forEach((h, i) => pc[h] = i);
+
+  const undecidedByTeam = {};
+  for (let i = 1; i < poolData.length; i++) {
+    const row = poolData[i];
+    const status = row[pc["Status"]];
+    if (status !== "Drafted" && status !== "Retained") continue;
+    const conf = row[pc["Conference"]];
+    if (confUpper && String(conf).toUpperCase() !== confUpper) continue;
+    const playerId = row[pc["PlayerID"]];
+    if (decided.has(playerId)) continue;
+    const owner = String(
+      (status === "Retained" ? row[pc["RetainedBy"]] : row[pc["DraftedBy"]]) || ""
+    ).padStart(3, "0");
+    if (!owner || owner === "000") continue;
+    if (!undecidedByTeam[owner]) undecidedByTeam[owner] = [];
+    undecidedByTeam[owner].push(playerId);
+  }
+
+  const retained = [];
+  const released = [];
+  for (const fid in undecidedByTeam) {
+    let remaining = Math.max(0, 2 - (existingRetainsByTeam[fid] || 0));
+    for (const playerId of undecidedByTeam[fid]) {
+      if (remaining > 0) {
+        const r = retainDevyPlayer(playerId, fid, year);
+        if (r.success) {
+          retained.push(playerId);
+          remaining--;
+        } else {
+          releaseRetainedPlayer(playerId, year);
+          released.push(playerId);
+        }
+      } else {
+        releaseRetainedPlayer(playerId, year);
+        released.push(playerId);
+      }
+    }
+  }
+
+  return {
+    success: true,
+    message: `Finalized ${year}: auto-retained ${retained.length}, auto-released ${released.length}.`,
+    retained,
+    released
+  };
+}
+
+/**
+ * Menu: Finalize retention for a year (auto-retain undecided players)
+ */
+function menuFinalizeDevyRetention() {
+  const ui = SpreadsheetApp.getUi();
+  const yearResponse = ui.prompt(
+    "Finalize Retention",
+    "Enter the retention year to finalize.\n\nEvery undecided owned player will be auto-retained (up to 2 per team); any beyond the cap will be released:",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (yearResponse.getSelectedButton() !== ui.Button.OK) return;
+  const year = parseInt(yearResponse.getResponseText().trim());
+  if (isNaN(year)) {
+    ui.alert("Invalid Input", "Please enter a valid year.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const confResponse = ui.prompt(
+    "Finalize Retention",
+    "Enter a conference code to limit to (or leave blank for all):",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (confResponse.getSelectedButton() !== ui.Button.OK) return;
+  const conference = confResponse.getResponseText().toUpperCase().trim() || null;
+
+  const result = finalizeDevyRetention(year, conference);
+  ui.alert("Finalize Retention", result.message, ui.ButtonSet.OK);
 }
 
 /**
