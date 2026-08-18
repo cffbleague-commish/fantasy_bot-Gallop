@@ -531,7 +531,7 @@ function applyManualGamesToGrid(grid, manualGames, params) {
         phase: "PHASE_2",
         severity: "ERROR",
         type: "UNKNOWN_TEAM",
-        message: `Manual game references unknown team ID (A=${a}, B=${b}) - not in Teams sheet; skipping`
+        message: `Manual game references a team not in the Teams sheet (A=${a}, B=${b}) - could not resolve name/ID; skipping`
       });
       return;
     }

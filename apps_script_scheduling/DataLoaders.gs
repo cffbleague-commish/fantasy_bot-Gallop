@@ -138,13 +138,55 @@ function loadConfirmedManualGames() {
   const teamACol = colMap["Team A"] ?? colMap["TeamA"] ?? 1;
   const teamBCol = colMap["Team B"] ?? colMap["TeamB"] ?? 2;
 
+  // The Discord bot writes team NAMES (not franchise IDs) into ManualGames'
+  // Team A / Team B columns, so build a normalized name -> ID map to resolve
+  // them. Rows may also contain a raw franchise ID; resolveTeamRef handles both.
+  const teams = loadTeams();
+  const idByName = {};
+  const validId = {};
+  teams.forEach(t => {
+    idByName[normalizeTeamName(t.name)] = t.id;
+    validId[t.id] = true;
+  });
+
   return data.slice(1)
     .filter(r => r[weekCol] && r[teamACol] && r[teamBCol])
     .map(r => ({
       week: Number(r[weekCol]),
-      teamA: String(r[teamACol]).padStart(3, "0"),
-      teamB: String(r[teamBCol]).padStart(3, "0")
+      teamA: resolveTeamRef(r[teamACol], idByName, validId),
+      teamB: resolveTeamRef(r[teamBCol], idByName, validId)
     }));
+}
+
+/**
+ * Normalize a team name for lookup. Mirrors the Discord bot's _norm_team_name
+ * (strip + lowercase) so names written by the bot match the Teams sheet.
+ */
+function normalizeTeamName(name) {
+  return String(name || "").trim().toLowerCase();
+}
+
+/**
+ * Resolve a ManualGames team reference (a team name OR a franchise ID) to its
+ * 3-digit franchise ID. Returns the trimmed raw value unchanged if it can't be
+ * resolved, so the caller's guard can log and skip it.
+ * @param {*} raw - cell value from the Team A / Team B column
+ * @param {Object} idByName - normalized team name -> franchise ID
+ * @param {Object} validId - set of valid franchise IDs (id -> true)
+ */
+function resolveTeamRef(raw, idByName, validId) {
+  const rawStr = String(raw).trim();
+
+  // Already a valid franchise ID (e.g. "5" -> "005", or "005")?
+  const padded = rawStr.padStart(3, "0");
+  if (validId[padded]) return padded;
+
+  // Otherwise resolve by team name.
+  const byName = idByName[normalizeTeamName(rawStr)];
+  if (byName) return byName;
+
+  // Unresolved — return raw so applyManualGamesToGrid's guard logs/skips it.
+  return rawStr;
 }
 
 /**
