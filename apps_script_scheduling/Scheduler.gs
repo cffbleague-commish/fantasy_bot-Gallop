@@ -189,6 +189,17 @@ function runNonConferenceScheduler() {
     });
   }
 
+  // Wipe any NC games (weeks 1-4) carried over from a previous run so stale
+  // auto-filled games don't occupy slots and block Priority-1 manual games.
+  // Conference games (weeks 5-12) are preserved.
+  clearNonConferenceWindow(grid, teams);
+  logSchedulerEvent({
+    phase: "PHASE_2",
+    severity: "INFO",
+    type: "NC_WINDOW_CLEARED",
+    message: "Cleared non-conference window (weeks 1-4) for fresh regeneration"
+  });
+
   // Load confirmed manual NC games
   const manualGames = loadConfirmedManualGames();
   logSchedulerEvent({

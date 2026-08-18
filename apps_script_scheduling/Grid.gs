@@ -13,6 +13,21 @@ function initScheduleGrid(teams, params) {
   return grid;
 }
 
+/**
+ * Clear the non-conference window (weeks 1-4) for every team.
+ * Phase 2 regenerates NC games from scratch each run, so any NC games loaded
+ * from a previous run must be wiped first — otherwise stale auto-filled games
+ * occupy slots and block Priority-1 confirmed manual games. Conference games
+ * (weeks 5-12) are untouched.
+ */
+function clearNonConferenceWindow(grid, teams) {
+  teams.forEach(t => {
+    for (let w = WEEK_WINDOWS.NC.start; w <= WEEK_WINDOWS.NC.end; w++) {
+      grid[t.id][w] = null;
+    }
+  });
+}
+
 /*********************************
  * CORE HELPERS
  *********************************/
