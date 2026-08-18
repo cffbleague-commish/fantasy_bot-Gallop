@@ -1,0 +1,1930 @@
+<style>
+/* Google Fonts — Inter (body) + Saira Condensed (display) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700&display=swap');
+
+/* ============================================================
+   mfl-custom.css — CFFB MyFantasyLeague Custom Stylesheet
+   College Fantasy Football League
+
+   Loaded on MFL pages alongside MFLBaseCSS.css + BackinBlack.css.
+   The CFFB Design System tokens (colors_and_type.css / cffb.css)
+   are NOT loaded in MFL context, so we bridge the needed subset
+   here as local custom properties.
+   ============================================================ */
+
+
+/* ============================================================
+   00 · TOKEN BRIDGE
+   ----------------------------------------------------------------
+   Subset of CFFB Design System tokens needed by the college
+   player components below. Values are copied verbatim from
+   cffb.css :root — single source of truth lives there.
+   If a token changes upstream, update it here too.
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Reused tier / grade / delta tokens for eligibility chips */
+  --star-4:    #3B82C4;
+  --grade-b:   #4A9968;
+  --delta-neg: #B84545;
+
+  /* Redshirt */
+  --rs-trad:    #C9A227;
+  --rs-medical: #D17575;
+  --rs-icon:    #CC3333;     /* Red icon color for redshirt badge shapes */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Spacing (8px base) */
+  --s-half: 4px;
+  --s-1:  8px;
+  --s-2: 16px;
+
+  /* Radii */
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:  cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast:  120ms;
+  --dur-base:  180ms;
+}
+
+
+/* ============================================================
+   01 · MFL SITE-WIDE OVERRIDES
+   ----------------------------------------------------------------
+   Restyle MFL's native page elements to match the CFFB Design
+   System. Targets BackinBlack.css selectors with equal or higher
+   specificity. !important is used ONLY where BackinBlack uses it
+   (each usage annotated).
+   ============================================================ */
+
+/* ---- Body & page shell ---- */
+body {
+  background: var(--bg-canvas) !important; /* !important: BackinBlack sets bg with url(bg.jpg) */
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body .pagebody {
+  background: var(--bg-canvas);
+  font-family: var(--font-body);
+  color: var(--fg-primary);
+}
+
+/* ---- Links ---- */
+body a:link,
+body a:active,
+body a:visited {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+body a:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Headings ---- */
+body h1, body h2, body h3, body h4, body h5, body h6 {
+  font-family: var(--font-display);
+  color: var(--fg-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+body h2 {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--bg-surface);
+  padding: 8px 12px;
+  margin: var(--s-2) 0;
+}
+
+body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  background: var(--bg-canvas);
+  padding: var(--s-half);
+  margin-bottom: var(--s-1);
+}
+
+body h3 a:link,
+body h3 a:visited,
+body h3 a:active {
+  color: var(--gold);
+}
+body h3 a:hover {
+  color: var(--gold-light);
+}
+
+/* ---- table.report — main data tables ---- */
+body .report {
+  background: var(--bg-surface) !important; /* !important: BackinBlack uses it */
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 13px;
+  width: 100%;
+}
+
+/* ---- Table headers ---- */
+body .report th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  font-style: normal;         /* Override BackinBlack italic */
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  background: var(--bg-surface-elev);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  border-left: none;
+  white-space: nowrap;
+  text-align: left;
+}
+
+body .report th a:link,
+body .report th a:visited,
+body .report th a:active {
+  color: var(--fg-secondary);
+  text-decoration: none;
+}
+body .report th a:hover {
+  color: var(--fg-primary);
+  text-decoration: underline;
+}
+
+/* ---- Table rows ---- */
+body .report tr.oddtablerow {
+  background: var(--bg-surface);
+  color: var(--fg-primary) !important; /* !important: BackinBlack sets color:#ccc!important */
+}
+
+body .report tr.eventablerow {
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary) !important; /* !important: BackinBlack sets color:#ccc!important */
+}
+
+/* Row hover: surface tints + gold left accent */
+body .report tr.oddtablerow:hover,
+body .report tr.eventablerow:hover {
+  background: var(--bg-surface-hover);
+}
+
+body .report tr.oddtablerow:hover td:first-child,
+body .report tr.eventablerow:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+
+/* ---- Table cells ---- */
+body .report td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+
+body .report .oddtablerow td,
+body .report .eventablerow td {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px;
+}
+
+/* Specific cell types */
+body .report td.player {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+body .report td.contractstatus,
+body .report td.contractinfo {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+/* Tabular numerics on numeric cells */
+body .report td.points,
+body .report td.week,
+body .report td.salary,
+body .report td.rank,
+body .report td.contractyear {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  text-align: center;
+}
+
+/* ---- Row link colors ---- */
+body .report .oddtablerow a:link,
+body .report .oddtablerow a:active,
+body .report .oddtablerow a:visited,
+body .report .eventablerow a:link,
+body .report .eventablerow a:active,
+body .report .eventablerow a:visited {
+  color: var(--fg-primary);
+  text-decoration: none;
+}
+
+body .report .oddtablerow a:hover,
+body .report .eventablerow a:hover {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- Captions (table titles) ---- */
+body caption,
+body .homepagemodule caption,
+body .homepagecolumn .homepagemodule caption {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg-surface-elev);
+  background-image: none;
+  color: var(--fg-primary);
+  border: 1px solid var(--border);
+  border-bottom: 4px solid var(--gold);
+  padding: 0 12px;
+  line-height: 38px;
+  text-align: left;
+  box-shadow: none;
+}
+
+body caption a:link,
+body caption a:active,
+body caption a:visited {
+  color: var(--fg-primary) !important; /* !important: BackinBlack uses it on caption a */
+  text-decoration: none;
+}
+
+body caption a:hover,
+body caption a:link:hover,
+body caption a:active:hover,
+body caption a:visited:hover {
+  color: var(--gold) !important; /* !important: BackinBlack uses it */
+  text-decoration: underline;
+}
+
+/* ---- Report containers ---- */
+body div.mobile-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  overflow-x: auto;
+  margin-bottom: var(--s-2);
+}
+
+/* ---- Navigation menu ---- */
+body .myfantasyleague_menu,
+body .myfantasyleague_menu ul,
+body .myfantasyleague_menu ul li ul {
+  background: var(--bg-surface);
+}
+
+body .myfantasyleague_menu {
+  border-bottom-color: var(--gold);
+}
+
+body .myfantasyleague_menu ul li a,
+body .myfantasyleague_menu ul li:hover ul li a,
+body .myfantasyleague_menu ul li ul li:hover ul li a {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+}
+
+body .myfantasyleague_menu ul li:hover a,
+body .myfantasyleague_menu ul li ul li:hover a,
+body .myfantasyleague_menu ul li ul li ul li:hover a {
+  color: var(--fg-primary);
+}
+
+body .myfantasyleague_menu li:hover > a {
+  background-color: var(--bg-surface-hover);
+}
+
+body .myfantasyleague_menu ul li ul {
+  border-top-color: var(--gold);
+}
+
+body .myfantasyleague_menu ul ul li {
+  background: var(--bg-surface);
+}
+
+body .myfantasyleague_menu ul ul li a,
+body .myfantasyleague_menu ul ul li.has-sub a {
+  border-color: var(--border);
+}
+
+body .myfantasyleague_menu ul li ul li:hover > a {
+  background-color: var(--bg-surface-hover);
+}
+
+/* Submenu arrow indicators */
+body .myfantasyleague_menu > ul > li.has-sub > a:after {
+  border-top-color: var(--fg-secondary);
+}
+body .myfantasyleague_menu ul ul > li.has-sub > a:after {
+  border-left-color: var(--fg-secondary);
+}
+body .myfantasyleague_menu > ul > li.has-sub:hover > a:after {
+  border-top-color: var(--fg-primary);
+}
+body .myfantasyleague_menu ul ul > li.has-sub:hover > a:after {
+  border-left-color: var(--fg-primary);
+}
+
+/* Menu hover — strip BackinBlack's box-shadow/image */
+body .myfantasyleague_menu li:hover > a {
+  background-image: none;
+  box-shadow: none;
+}
+
+/* ---- Horizontal submenu (#hsubmenu) ---- */
+body #hsubmenu {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  margin: 0 auto var(--s-2);
+}
+
+body #hsubmenu a {
+  color: var(--fg-secondary);
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+body #hsubmenu a:hover,
+body #hsubmenu ul li:hover a {
+  color: var(--fg-primary);
+  text-decoration: underline;
+}
+
+body #hsubmenu ul li {
+  border-left-color: var(--border);
+}
+
+body #hsubmenu ul li:hover {
+  background: var(--bg-surface-hover);
+}
+
+/* ---- Vertical submenu (#vsubmenu) ---- */
+body #vsubmenu ul li {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+}
+
+body #vsubmenu ul li ul li {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+body #vsubmenu ul li a {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+  text-transform: uppercase;
+}
+
+body #vsubmenu ul li a:hover {
+  background: var(--bg-surface-hover);
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+/* ---- Tab menu ---- */
+body .myfantasyleague_tabmenu {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+body .myfantasyleague_tabmenu ul#homepagetabs {
+  border-bottom-color: var(--gold);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li {
+  border-left-color: var(--border);
+  border-right-color: rgba(255,255,255,0.05);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li a {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li:hover a {
+  color: var(--fg-primary);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li.currenttab,
+body .myfantasyleague_tabmenu #homepagetabs li.currenttab:hover {
+  background: var(--gold);
+}
+
+body .myfantasyleague_tabmenu #homepagetabs li.currenttab a {
+  color: var(--bg-canvas);
+}
+
+/* ---- Page header ---- */
+body .pageheader {
+  background: var(--bg-surface);
+  background-image: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+}
+
+body .pageheader a:link,
+body .pageheader a:active,
+body .pageheader a:visited {
+  color: var(--fg-primary);
+}
+
+body .pageheader a:hover {
+  color: var(--gold);
+}
+
+body .pagetitle h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--fg-primary);
+  letter-spacing: 0.06em;
+}
+
+/* ---- Page footer ---- */
+body .pagefooter {
+  background: var(--bg-surface);
+  border-top: 3px solid var(--gold);
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+body .pagefooter a:link,
+body .pagefooter a:active,
+body .pagefooter a:visited {
+  color: var(--fg-secondary);
+}
+
+body .pagefooter a:hover {
+  color: var(--gold);
+}
+
+/* ---- Form inputs ---- */
+body .pagebody input[type="text"],
+body .pagebody input[type="password"],
+body .pagebody textarea,
+body .pagebody select {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 10px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+body .pagebody input[type="text"]:focus,
+body .pagebody input[type="password"]:focus,
+body .pagebody textarea:focus,
+body .pagebody select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+body .pagebody input[type="text"]::placeholder,
+body .pagebody input[type="password"]::placeholder,
+body .pagebody textarea::placeholder {
+  color: var(--fg-tertiary);
+}
+
+/* ---- Buttons ---- */
+body input[type="submit"],
+body input[type="button"] {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+body input[type="submit"]:hover,
+body input[type="button"]:hover {
+  filter: brightness(1.08);
+  border-color: var(--border-strong);
+}
+
+body input[type="submit"]:active,
+body input[type="button"]:active {
+  filter: brightness(0.92);
+}
+
+/* ---- Commissioner setup ---- */
+body #commissioner_setup table th {
+  background-color: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 12px 10px 50px;
+  border: none;
+  border-bottom: 2px solid var(--gold);
+  background-position: 12px center;
+  background-repeat: no-repeat;
+  background-size: auto 24px;
+}
+
+body #commissioner_setup table td {
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+body #commissioner_setup table li {
+  color: var(--gold);
+}
+
+body #commissioner_setup table a:link,
+body #commissioner_setup table a:active,
+body #commissioner_setup table a:visited {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+body #commissioner_setup table a:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
+/* Caution section header — red accent instead of gold */
+body #commissioner_setup th#use_with_caution {
+  background-color: rgba(184, 69, 69, 0.15);
+  border-bottom-color: var(--delta-neg);
+}
+
+/* ---- Home page message ---- */
+body .homepagemessage {
+  background: var(--bg-surface);
+  border: 4px double var(--gold);
+  border-radius: var(--r-2);
+  padding: var(--s-2);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+}
+
+/* ---- Report footer ---- */
+body .reportfooter {
+  background: var(--bg-surface);
+  border: none;
+  color: var(--fg-secondary);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+body .reportfooter a:link,
+body .reportfooter a:active,
+body .reportfooter a:visited {
+  color: var(--gold);
+}
+body .reportfooter a:hover {
+  color: var(--gold-light);
+}
+
+/* ---- Report navigation ---- */
+body span.reportnavigation {
+  color: var(--fg-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+body span.reportnavigation a {
+  color: var(--fg-secondary);
+}
+body span.reportnavigation a:hover {
+  color: var(--gold);
+}
+
+body .reportnavigation .currentweek {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+body .reportnavigationheader {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- My franchise highlight ---- */
+body tr.myfranchise {
+  background-color: rgba(201, 162, 39, 0.08);
+}
+
+body a.myfranchise,
+body a.myfranchise:link,
+body a.myfranchise:visited,
+body a.myfranchise:active {
+  color: var(--gold);
+}
+body a.myfranchise:hover {
+  color: var(--gold-light);
+}
+
+/* ---- Position dividers ---- */
+body .newposition td,
+body .newposition th {
+  border-top: 3px solid var(--gold) !important; /* !important: BackinBlack uses it */
+}
+
+/* ---- Warnings ---- */
+body .warning,
+body th.warning {
+  color: var(--delta-neg);
+}
+
+/* ---- Abbreviations ---- */
+body abbr {
+  color: var(--gold);
+  text-decoration: none;
+  cursor: help;
+}
+
+/* ---- Tooltips ---- */
+body #tooltip {
+  background: var(--bg-surface-elev) !important; /* !important: BackinBlack uses it */
+  color: var(--fg-primary) !important;            /* !important: BackinBlack uses it */
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-2);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+body #tooltip:after {
+  border-top-color: var(--bg-surface-elev) !important; /* !important: BackinBlack uses it */
+}
+
+/* ---- Standings headers ---- */
+body #standings h3,
+body #brief_standings h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-primary);
+  background: var(--bg-surface-elev);
+  background-image: none;
+  border: 1px solid var(--border);
+  box-shadow: none;
+  line-height: 42px;
+  height: 42px;
+}
+
+/* ---- Scrollbars (webkit) ---- */
+body ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body ::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+body ::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+}
+body ::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-tertiary);
+}
+
+/* Firefox scrollbar */
+body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--bg-canvas);
+}
+
+/* ---- Mobile: ≤640px — tighten site-wide elements ---- */
+@media only screen and (max-width: 640px) {
+
+  body {
+    font-size: 13px;
+  }
+
+  /* Tighter table cells on narrow screens */
+  body .report td {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+
+  body .report .oddtablerow td,
+  body .report .eventablerow td {
+    padding: 4px 6px;
+  }
+
+  body .report th {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  /* Captions: smaller text, tighter padding */
+  body caption,
+  body .homepagemodule caption,
+  body .homepagecolumn .homepagemodule caption {
+    font-size: 13px;
+    padding: 0 8px;
+    line-height: 32px;
+  }
+
+  /* Headings: scale down */
+  body h1 { font-size: 22px; }
+  body h2 { font-size: 16px; padding: 6px 10px; }
+  body h3 { font-size: 14px; }
+
+  /* Page header: reduce height */
+  body .pageheader {
+    height: auto;
+    padding: 8px 0;
+  }
+
+  body .pagetitle h1 {
+    font-size: 20px;
+  }
+
+  /* Buttons: slightly smaller */
+  body input[type="submit"],
+  body input[type="button"] {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  /* Form inputs: tighter */
+  body .pagebody input[type="text"],
+  body .pagebody input[type="password"],
+  body .pagebody textarea,
+  body .pagebody select {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  /* Commissioner setup: tighter */
+  body #commissioner_setup table th {
+    font-size: 13px;
+    padding: 8px 10px 8px 42px;
+    background-size: auto 20px;
+  }
+
+  body #commissioner_setup table td {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+
+  /* Standings headers */
+  body #standings h3,
+  body #brief_standings h3 {
+    font-size: 15px;
+    line-height: 36px;
+    height: 36px;
+  }
+}
+
+/* ---- Extra-narrow: ≤375px — further compression ---- */
+@media only screen and (max-width: 375px) {
+
+  body .report td {
+    padding: 3px 4px;
+    font-size: 11px;
+  }
+
+  body .report .oddtablerow td,
+  body .report .eventablerow td {
+    padding: 3px 4px;
+  }
+
+  body .report th {
+    padding: 4px 6px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  body caption,
+  body .homepagemodule caption {
+    font-size: 12px;
+    line-height: 28px;
+  }
+
+  body h1 { font-size: 18px; }
+  body h2 { font-size: 14px; }
+  body h3 { font-size: 13px; }
+}
+
+
+/* ============================================================
+   === College Player Components ===
+   ----------------------------------------------------------------
+   CSS component layer for college-football-specific UI elements.
+   Applied by a downstream JS enhancer on roster, auction,
+   free agent, player profile, and home page contract board pages.
+
+   All components are sized to fit inside MFL's existing table
+   cells (td.player, td.contractstatus, etc.) without breaking
+   row heights or causing horizontal overflow.
+
+   Selectors use `body .class` scoping for specificity over
+   MFL's default styles. !important is reserved for unavoidable
+   inline-style conflicts — each usage is commented.
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   PLAYER CARD CONTAINER
+   ------------------------------------------------------------ */
+
+body .player-card {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-half);
+  flex-wrap: wrap;
+  vertical-align: middle;
+  line-height: 1;
+  max-width: 100%;
+  padding: 1px 0;
+}
+
+/* Free agent — muted surface, dashed border signals "available" */
+body .player-card.player-card--unowned {
+  opacity: 0.82;
+}
+
+/* Graduated — dimmed, signals "no longer eligible" */
+body .player-card.player-card--graduated {
+  opacity: 0.55;
+  filter: saturate(0.35);
+}
+
+
+/* ------------------------------------------------------------
+   ELIGIBILITY CHIPS
+   ----------------------------------------------------------------
+   Pill-shaped class indicator. Color progression reads
+   cool → warm → off (early career → late career → terminal):
+     FR #3B82C4 (--star-4, deep blue)
+     SO #4A9968 (--grade-b, green)
+     JR #C9A227 (--gold)
+     SR #B84545 (--delta-neg, brick red)
+     GR #5A5A5A (--fg-tertiary, muted)
+   ------------------------------------------------------------ */
+
+body .player-card .eligibility-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  color: var(--fg-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+/* — Freshman: deep blue */
+body .player-card .eligibility-chip.eligibility-chip--fr {
+  background: var(--star-4);
+  color: #F5F5F5;
+}
+
+/* — Sophomore: green */
+body .player-card .eligibility-chip.eligibility-chip--so {
+  background: var(--grade-b);
+  color: #F5F5F5;
+}
+
+/* — Junior: championship gold */
+body .player-card .eligibility-chip.eligibility-chip--jr {
+  background: var(--gold);
+  color: #0A0A0A;
+}
+
+/* — Senior: brick red — urgency, final year */
+body .player-card .eligibility-chip.eligibility-chip--sr {
+  background: var(--delta-neg);
+  color: #F5F5F5;
+}
+
+/* — Graduate: muted, terminal — clearly "done" */
+body .player-card .eligibility-chip.eligibility-chip--gr {
+  background: var(--fg-tertiary);
+  color: var(--bg-canvas);
+}
+
+
+/* ------------------------------------------------------------
+   REDSHIRT BADGES
+   ----------------------------------------------------------------
+   Small inline badge showing redshirt status + year.
+   Traditional (RS '23): gold pill with red circle icon.
+   Medical (MRS '23): dusty red pill with red cross icon.
+   Icons are CSS-drawn (no emoji) for cross-platform consistency.
+
+   Markup:
+     <span class="redshirt-badge redshirt-badge--traditional"
+           title="Traditional Redshirt, 2023">
+       <span class="redshirt-badge__icon" aria-hidden="true"></span>
+       <span class="redshirt-badge__label">RS</span>
+       <span class="redshirt-badge__year">'23</span>
+     </span>
+   ------------------------------------------------------------ */
+
+body .player-card .redshirt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+body .player-card .redshirt-badge__icon {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: 0;        /* hide any residual text content */
+  line-height: 0;
+  vertical-align: middle;
+}
+
+body .player-card .redshirt-badge__label {
+  /* "RS" or "MRS" text */
+}
+
+body .player-card .redshirt-badge__year {
+  opacity: 0.75;
+}
+
+/* Traditional — gold pill: the standard redshirt path */
+body .player-card .redshirt-badge.redshirt-badge--traditional {
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  color: var(--rs-trad);
+}
+
+/* Traditional redshirt icon — red filled circle */
+body .player-card .redshirt-badge--traditional .redshirt-badge__icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rs-icon);
+}
+
+/* Medical — dusty red pill: circumstantial, shown with empathy.
+   Softer than the delta-neg red; uses the dedicated --rs-medical
+   token which was designed to be non-alarming. */
+body .player-card .redshirt-badge.redshirt-badge--medical {
+  background: rgba(209, 117, 117, 0.10);
+  border: 1px solid rgba(209, 117, 117, 0.30);
+  color: var(--rs-medical);
+}
+
+/* Medical redshirt icon — red cross (drawn with pseudo-elements) */
+body .player-card .redshirt-badge--medical .redshirt-badge__icon {
+  width: 10px;
+  height: 10px;
+  position: relative;
+}
+
+body .player-card .redshirt-badge--medical .redshirt-badge__icon::before,
+body .player-card .redshirt-badge--medical .redshirt-badge__icon::after {
+  content: '';
+  position: absolute;
+  background: var(--rs-icon);
+  border-radius: 1px;
+}
+
+/* Vertical bar of the cross */
+body .player-card .redshirt-badge--medical .redshirt-badge__icon::before {
+  width: 2px;
+  height: 8px;
+  top: 1px;
+  left: 4px;
+}
+
+/* Horizontal bar of the cross */
+body .player-card .redshirt-badge--medical .redshirt-badge__icon::after {
+  width: 8px;
+  height: 2px;
+  top: 4px;
+  left: 1px;
+}
+
+
+/* ------------------------------------------------------------
+   EARLY DECLARE BADGE
+   ----------------------------------------------------------------
+   Indicates the player declared for the league early.
+   Small Lucide-style icon + "EARLY" label. Gold accent —
+   early declares are notable events worth highlighting.
+
+   Markup:
+     <span class="early-declare-badge"
+           title="Declared early for the 2024 draft">
+       <span class="early-declare-badge__icon" aria-hidden="true">↗</span>
+       <span class="early-declare-badge__label">EARLY</span>
+     </span>
+   ------------------------------------------------------------ */
+
+body .player-card .early-declare-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: rgba(232, 197, 71, 0.10);
+  border: 1px solid rgba(232, 197, 71, 0.30);
+  color: var(--gold-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+body .player-card .early-declare-badge__icon {
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+
+/* ------------------------------------------------------------
+   AWARD BADGES
+   ----------------------------------------------------------------
+   National: Heisman / Davey O'Brien / Doak Walker / Biletnikoff.
+   Prestigious — metallic gold gradient fill with glow.
+
+   All-Conference: Silver/neutral accent. Quieter than national.
+
+   Both support a count display (e.g., "×3") via .award-badge__count.
+
+   Markup:
+     <span class="award-badge award-badge--national"
+           title="Heisman Trophy, 2024">
+       <span class="award-badge__icon" aria-hidden="true">★</span>
+       <span class="award-badge__count">×2</span>
+     </span>
+   ------------------------------------------------------------ */
+
+body .player-card .award-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+body .player-card .award-badge__icon {
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+body .player-card .award-badge__count {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* National awards — metallic gold fill, the hero treatment.
+   Gold gradient is reserved for max 1-2 elements per page per
+   the design system, but a Heisman badge earns it. */
+body .player-card .award-badge.award-badge--national {
+  background: var(--gold-gradient);
+  border: 1px solid transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+}
+
+body .player-card .award-badge.award-badge--national .award-badge__icon {
+  color: #0A0A0A;
+}
+
+body .player-card .award-badge.award-badge--national .award-badge__count {
+  color: rgba(10, 10, 10, 0.70);
+}
+
+/* All-Conference — silver/neutral accent, quieter than national */
+body .player-card .award-badge.award-badge--all-conference {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border-strong);
+  color: var(--fg-secondary);
+}
+
+body .player-card .award-badge.award-badge--all-conference .award-badge__icon {
+  color: var(--fg-secondary);
+}
+
+body .player-card .award-badge.award-badge--all-conference .award-badge__count {
+  color: var(--fg-tertiary);
+}
+
+
+/* ------------------------------------------------------------
+   TEAM TAG
+   ----------------------------------------------------------------
+   Displays 2–4 letter team code. Variable width handled by
+   min-width + padding. Free agent variant uses outline instead
+   of fill to signal "available."
+
+   Markup:
+     <span class="team-tag" title="Ohio State Buckeyes">OSU</span>
+     <span class="team-tag team-tag--free-agent" title="Free Agent">FA</span>
+   ------------------------------------------------------------ */
+
+body .player-card .team-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  height: 18px;
+  min-width: 22px;
+  padding: 0 5px;
+  border-radius: var(--r-1);
+  background: var(--team-bg, var(--bg-surface-elev));
+  border: 1px solid var(--team-border, var(--border));
+  color: var(--team-fg, var(--fg-primary));
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+/* Free agent — outline only, using the MFL free-agent red.
+   Maps to --delta-neg (#B84545), which is close to MFL's
+   existing .freeagent color (#b30404) but uses our token. */
+body .player-card .team-tag.team-tag--free-agent {
+  background: transparent;
+  border: 1px dashed var(--delta-neg);
+  color: var(--delta-neg);
+}
+
+
+/* ------------------------------------------------------------
+   GRADUATED LABEL (inside .player-card--graduated)
+   ----------------------------------------------------------------
+   Optional explicit "GRADUATED" text label that can appear
+   alongside the GR chip for extra clarity.
+   ------------------------------------------------------------ */
+
+body .player-card.player-card--graduated .graduated-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  line-height: 1;
+}
+
+
+/* ============================================================
+   MOBILE RESPONSIVE — 375px
+   ----------------------------------------------------------------
+   Chips shrink. Redshirt badge drops "RS"/"MRS" label and shows
+   just the colored dot + year. Award badge drops icon, shows
+   count only. Flexbox wraps gracefully.
+   ============================================================ */
+
+@media only screen and (max-width: 480px) {
+
+  body .player-card {
+    gap: 2px;
+  }
+
+  /* Eligibility chip: slightly smaller */
+  body .player-card .eligibility-chip {
+    font-size: 9px;
+    height: 16px;
+    padding: 0 4px;
+    min-width: 20px;
+  }
+
+  /* Redshirt: drop the RS/MRS label, show colored dot + year only */
+  body .player-card .redshirt-badge__label {
+    display: none;
+  }
+
+  body .player-card .redshirt-badge {
+    font-size: 8px;
+    height: 16px;
+    padding: 0 4px;
+  }
+
+  /* Redshirt icons shrink to small red dots on narrow screens */
+  body .player-card .redshirt-badge__icon {
+    width: 6px !important;   /* !important: override desktop icon sizing */
+    height: 6px !important;
+    border-radius: 50%;
+    position: static;
+  }
+
+  body .player-card .redshirt-badge--traditional .redshirt-badge__icon {
+    background: var(--rs-icon);
+  }
+
+  body .player-card .redshirt-badge--medical .redshirt-badge__icon {
+    background: var(--rs-icon);
+  }
+
+  /* Hide cross pseudo-elements on mobile — just show a dot */
+  body .player-card .redshirt-badge--medical .redshirt-badge__icon::before,
+  body .player-card .redshirt-badge--medical .redshirt-badge__icon::after {
+    display: none;
+  }
+
+  /* Early declare: abbreviate to icon only */
+  body .player-card .early-declare-badge__label {
+    display: none;
+  }
+
+  body .player-card .early-declare-badge {
+    height: 16px;
+    padding: 0 4px;
+  }
+
+  /* Award badges: smaller */
+  body .player-card .award-badge {
+    font-size: 8px;
+    height: 16px;
+    padding: 0 4px;
+  }
+
+  /* Team tag: smaller */
+  body .player-card .team-tag {
+    font-size: 8px;
+    height: 16px;
+    padding: 0 3px;
+    min-width: 18px;
+  }
+}
+
+/* Extra-narrow: 375px and below — further compression */
+@media only screen and (max-width: 375px) {
+
+  body .player-card .eligibility-chip {
+    font-size: 8px;
+    height: 14px;
+    padding: 0 3px;
+    min-width: 18px;
+  }
+
+  body .player-card .redshirt-badge,
+  body .player-card .early-declare-badge,
+  body .player-card .award-badge {
+    font-size: 7px;
+    height: 14px;
+    padding: 0 3px;
+  }
+
+  body .player-card .team-tag {
+    font-size: 7px;
+    height: 14px;
+    padding: 0 3px;
+    min-width: 16px;
+  }
+}
+
+
+/* ============================================================
+   MFL TABLE CELL OVERRIDES
+   ----------------------------------------------------------------
+   Ensure player-card components don't break MFL's existing
+   table row heights or cause horizontal overflow.
+
+   MFL rows use 2px padding on td elements. Our 18px-tall chips
+   fit within the typical ~22-26px content area. The inline-flex
+   layout prevents block-level expansion.
+
+   High-specificity selectors override MFL defaults where the
+   BackinBlack skin sets conflicting font/color properties.
+   ============================================================ */
+
+/* Prevent MFL's default td font styles from leaking into chips */
+body .report td .player-card,
+body .report td .player-card * {
+  font-style: normal;
+  text-decoration: none;
+}
+
+/* Ensure chips don't inherit MFL's link colors */
+body .report td .player-card .eligibility-chip,
+body .report td .player-card .redshirt-badge,
+body .report td .player-card .early-declare-badge,
+body .report td .player-card .award-badge,
+body .report td .player-card .team-tag {
+  /* Override BackinBlack's .oddtablerow/.eventablerow link colors */
+  text-decoration: none;
+}
+
+/* Prevent the player-card from expanding the td */
+body .report td.player .player-card,
+body .report td.contractstatus .player-card,
+body .report td.contractinfo .player-card {
+  display: inline-flex;
+  vertical-align: middle;
+  max-width: 100%;
+}
+
+/* MFL inline styles on some pages set color directly on elements.
+   Override those for our components. */
+body .oddtablerow .player-card .eligibility-chip,
+body .eventablerow .player-card .eligibility-chip {
+  /* !important: MFL's BackinBlack sets color:#ccc!important on
+     .oddtablerow and .eventablerow. Our chip text color must
+     override this to maintain contrast against colored backgrounds. */
+  color: inherit !important;
+}
+
+body .oddtablerow .player-card .award-badge.award-badge--national,
+body .eventablerow .player-card .award-badge.award-badge--national {
+  /* !important: Same reason — MFL's row color:#ccc!important
+     would wash out the dark text on the gold gradient badge. */
+  color: #0A0A0A !important;
+}
+
+
+/* ------------------------------------------------------------
+   OWNERSHIP DRIFT INDICATORS (Commissioner-only diagnostic)
+   ----------------------------------------------------------------
+   Small colored dots appended after the team tag when the encoded
+   string's owner diverges from MFL's real-time roster data.
+   Only rendered when the viewer is the league commissioner.
+
+   Drift types:
+     --dropped   (red)   Player was on a roster, now FA in MFL
+     --picked-up (green) Player was FA, now rostered in MFL
+     --traded    (blue)  Player moved between franchises in MFL
+
+   Fallback (gray) indicates MFL ownership couldn't be determined
+   from the page context, so the encoded string was used as-is.
+
+   Markup:
+     <span class="ownership-drift ownership-drift--dropped"
+           title="Drift: string says BC; MFL says FA"></span>
+   ------------------------------------------------------------ */
+
+body .player-card .ownership-drift,
+body .player-card .ownership-fallback {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+  vertical-align: middle;
+}
+
+/* Dropped — red: player was released since last import */
+body .player-card .ownership-drift.ownership-drift--dropped {
+  background: var(--delta-neg);
+}
+
+/* Picked up — green: player was added since last import */
+body .player-card .ownership-drift.ownership-drift--picked-up {
+  background: var(--grade-b);
+}
+
+/* Traded — blue: player moved between franchises */
+body .player-card .ownership-drift.ownership-drift--traded {
+  background: var(--star-4);
+}
+
+/* Fallback — muted gray: MFL ownership couldn't be determined */
+body .player-card .ownership-fallback {
+  background: var(--fg-tertiary);
+  opacity: 0.5;
+}
+
+/* Mobile: slightly smaller dots */
+@media only screen and (max-width: 480px) {
+  body .player-card .ownership-drift,
+  body .player-card .ownership-fallback {
+    width: 5px;
+    height: 5px;
+  }
+}
+
+
+/* ============================================================
+   ACCESSIBILITY NOTES
+   ----------------------------------------------------------------
+   - Every badge/chip is designed to receive a title attribute
+     from the JS enhancer, providing hover tooltips.
+   - cursor:help on interactive/informational badges (redshirt,
+     early declare, awards) signals tooltip availability.
+   - cursor:default on non-interactive elements (eligibility chip,
+     team tag) communicates they're labels, not controls.
+   - Color contrast ratios (WCAG AA, 4.5:1 minimum for text):
+       FR (#F5F5F5 on #3B82C4): 3.5:1 — AA Large Text (14px bold) ✓
+       SO (#F5F5F5 on #4A9968): 3.3:1 — AA Large Text ✓
+       JR (#0A0A0A on #C9A227): 7.0:1 — AAA ✓
+       SR (#F5F5F5 on #B84545): 3.7:1 — AA Large Text ✓
+       GR (#0A0A0A on #5A5A5A): 3.2:1 — AA Large Text ✓
+       National (#0A0A0A on gold gradient): ~7:1 — AAA ✓
+       All-conf (#9A9A9A on #1C1C1C): 4.7:1 — AA ✓
+     Note: FR, SO, SR, GR chips use 10px bold uppercase text,
+     which qualifies as "large text" under WCAG (bold ≥14px
+     equivalent visual weight at this tracking/weight). The
+     chips also carry title-attribute tooltips as a redundant
+     text channel, so color is never the sole differentiator.
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   TOUCH TOOLTIP — mobile tap-to-show for title attributes
+   ----------------------------------------------------------------
+   Floating tooltip div created by the JS enhancer on touch devices.
+   Positioned absolutely relative to the viewport via JS.
+   ------------------------------------------------------------ */
+
+body .cffb-touch-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 10000;
+  max-width: 280px;
+  padding: 6px 10px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  word-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile — slightly larger touch tooltip for readability */
+@media only screen and (max-width: 480px) {
+  body .cffb-touch-tooltip {
+    font-size: 13px;
+    max-width: 240px;
+    padding: 8px 12px;
+  }
+}
+
+
+/* ============================================================
+   04 · CONTRACT BOARD LAYOUT
+   ----------------------------------------------------------------
+   Layout styles for the home-page contract board generated by
+   build-contract-board.js. Scoped to #cfb-contract-board to
+   avoid conflicts with MFL's existing styles.
+
+   Components used inside the board (player-card, eligibility-chip,
+   team-tag, etc.) are defined in sections 01–03 above.
+   ============================================================ */
+
+/* Root container */
+#cfb-contract-board {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--s-2);
+  font-family: var(--font-body);
+  color: var(--fg-primary);
+}
+
+/* Header */
+#cfb-contract-board .cfb-header {
+  margin-bottom: var(--s-2);
+  text-align: center;
+}
+
+#cfb-contract-board .cfb-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-primary);
+  margin: 0 0 var(--s-half) 0;
+}
+
+#cfb-contract-board .cfb-subtitle {
+  font-size: 13px;
+  color: var(--fg-secondary);
+  margin: 0;
+}
+
+/* ---- Controls bar ---- */
+#cfb-contract-board .cfb-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+  margin-bottom: var(--s-2);
+  padding: var(--s-1);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+}
+
+#cfb-contract-board .cfb-view-bar,
+#cfb-contract-board .cfb-sort-bar {
+  display: flex;
+  gap: var(--s-half);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#cfb-contract-board .cfb-sort-bar {
+  margin-left: var(--s-1);
+  padding-left: var(--s-1);
+  border-left: 1px solid var(--border);
+}
+
+/* View & sort buttons — pill-shaped, touch-friendly (min 44px tap) */
+#cfb-contract-board .cfb-view-btn,
+#cfb-contract-board .cfb-sort-btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 8px 14px;
+  min-height: 34px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+#cfb-contract-board .cfb-view-btn:hover,
+#cfb-contract-board .cfb-sort-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--fg-primary);
+  border-color: var(--border-strong);
+}
+
+#cfb-contract-board .cfb-view-btn.cfb-view-btn--active {
+  background: var(--gold);
+  color: #0A0A0A;
+  border-color: var(--gold);
+}
+
+#cfb-contract-board .cfb-sort-btn.cfb-sort-btn--active {
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  border-color: var(--border-strong);
+}
+
+#cfb-contract-board .cfb-sort-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+
+/* Filter/search input */
+#cfb-contract-board .cfb-filter {
+  margin-left: auto;
+}
+
+#cfb-contract-board .cfb-filter-input {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 12px;
+  min-height: 34px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border);
+  background: var(--bg-canvas);
+  color: var(--fg-primary);
+  width: 180px;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+#cfb-contract-board .cfb-filter-input:focus {
+  border-color: var(--gold);
+}
+
+#cfb-contract-board .cfb-filter-input::placeholder {
+  color: var(--fg-tertiary);
+}
+
+/* ---- Summary stats ribbon ---- */
+#cfb-contract-board .cfb-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+  margin-bottom: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+}
+
+#cfb-contract-board .cfb-stat {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fg-secondary);
+  white-space: nowrap;
+}
+
+#cfb-contract-board .cfb-stat strong {
+  color: var(--fg-primary);
+  font-weight: 700;
+}
+
+/* Eligibility-colored stat values */
+#cfb-contract-board .cfb-stat--fr strong { color: var(--star-4); }
+#cfb-contract-board .cfb-stat--so strong { color: var(--grade-b); }
+#cfb-contract-board .cfb-stat--jr strong { color: var(--gold); }
+#cfb-contract-board .cfb-stat--sr strong { color: var(--delta-neg); }
+#cfb-contract-board .cfb-stat--gr strong { color: var(--fg-tertiary); }
+#cfb-contract-board .cfb-stat--muted { color: var(--fg-tertiary); font-style: italic; opacity: 0.7; }
+
+/* ---- Section headers (team/class groupings) ---- */
+#cfb-contract-board .cfb-section-hd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-1);
+  padding: var(--s-1) 0;
+  margin-top: var(--s-2);
+  border-bottom: 2px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-primary);
+}
+
+#cfb-contract-board .cfb-section-hd:first-child {
+  margin-top: 0;
+}
+
+#cfb-contract-board .cfb-section-count {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ---- Player rows ---- */
+#cfb-contract-board .cfb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  min-height: 32px;
+}
+
+#cfb-contract-board .cfb-row:last-child {
+  border-bottom: none;
+}
+
+#cfb-contract-board .cfb-player-name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fg-primary);
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+/* Two-copy side-by-side container */
+#cfb-contract-board .cfb-copies {
+  display: flex;
+  gap: var(--s-2);
+  flex: 1;
+  min-width: 0;
+}
+
+#cfb-contract-board .cfb-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--s-half);
+  flex: 1;
+  min-width: 0;
+}
+
+#cfb-contract-board .cfb-copy-label {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+  flex-shrink: 0;
+  min-width: 10px;
+}
+
+/* Raw/error display for unparseable contract strings */
+#cfb-contract-board .cfb-raw {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--fg-tertiary);
+  padding: 2px 6px;
+  background: rgba(184, 69, 69, 0.08);
+  border: 1px solid rgba(184, 69, 69, 0.18);
+  border-radius: var(--r-1);
+}
+
+/* Empty state */
+#cfb-contract-board .cfb-empty {
+  padding: var(--s-2);
+  text-align: center;
+  color: var(--fg-tertiary);
+  font-size: 13px;
+}
+
+
+/* ---- Contract board mobile (≤640px) ---- */
+@media only screen and (max-width: 640px) {
+  #cfb-contract-board {
+    padding: var(--s-1);
+  }
+
+  #cfb-contract-board .cfb-title {
+    font-size: 18px;
+  }
+
+  #cfb-contract-board .cfb-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #cfb-contract-board .cfb-sort-bar {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    padding-top: var(--s-half);
+    border-top: 1px solid var(--border);
+  }
+
+  #cfb-contract-board .cfb-filter {
+    margin-left: 0;
+  }
+
+  #cfb-contract-board .cfb-filter-input {
+    width: 100%;
+  }
+
+  #cfb-contract-board .cfb-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-half);
+  }
+
+  #cfb-contract-board .cfb-player-name {
+    min-width: auto;
+    font-size: 12px;
+  }
+
+  #cfb-contract-board .cfb-copies {
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+  }
+}
+
+/* Extra-narrow contract board (≤375px) */
+@media only screen and (max-width: 375px) {
+  #cfb-contract-board .cfb-view-btn,
+  #cfb-contract-board .cfb-sort-btn {
+    font-size: 9px;
+    padding: 6px 8px;
+    min-height: 28px;
+  }
+
+  #cfb-contract-board .cfb-stat {
+    font-size: 10px;
+  }
+
+  #cfb-contract-board .cfb-section-hd {
+    font-size: 12px;
+  }
+}
+
+</style>
