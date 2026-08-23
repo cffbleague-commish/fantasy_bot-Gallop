@@ -355,11 +355,18 @@ function plReadAwardsGrouped(playerId) {
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return out;
   const idx = headerIndexMap(data[0].map(String));
+  const rankIdx = idx["Rank"];
   data.slice(1).forEach(function (row) {
     if (String(row[idx["MFL_Player_ID"]] || "").trim() !== playerId) return;
     const copyId = String(row[idx["PlayerCopyID"]] || "").trim();
     if (!copyId) return;
-    const award = plMapAward(String(row[idx["AwardType"]] || ""), numOrZero(row[idx["Year"]]));
+    const awardType = String(row[idx["AwardType"]] || "");
+    // National awards (Heisman + National_*) are a shortlist in the sheet — only
+    // Rank 1 actually WINS. Shortlisted (Rank > 1) copies must NOT be flagged.
+    // All-Conference rows are real 1st/2nd/3rd-team selections, so keep them all.
+    const isNational = /^Heisman$/i.test(awardType) || /^National_/i.test(awardType);
+    if (isNational && rankIdx != null && (Number(row[rankIdx]) || 0) !== 1) return;
+    const award = plMapAward(awardType, numOrZero(row[idx["Year"]]));
     if (!award) return;
     if (!out[copyId]) out[copyId] = [];
     out[copyId].push(award);

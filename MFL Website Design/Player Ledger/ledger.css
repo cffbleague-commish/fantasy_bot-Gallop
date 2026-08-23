@@ -15,9 +15,11 @@ html, body { margin: 0; background: var(--bg-canvas); }
 .cffb-rs--sm .cffb-rs__icon { height: 15px; }
 .cffb-rs--md .cffb-rs__icon { height: 20px; }
 
-/* ---------- STAGE / FRAME / TOGGLE (responsive desktop ↔ mobile) ---------- */
+/* ---------- STAGE / FRAME (auto-responsive via container queries) ---------- */
+/* The frame is a CSS container; the @container pl (...) rules below adapt the
+   layout to its own rendered width — no desktop/mobile toggle needed. */
 .pl-stage { width: 100%; }
-.pl-frame { container-type: inline-size; container-name: pl; background: var(--bg-canvas); }
+.pl-frame { width: 100%; container-type: inline-size; container-name: pl; background: var(--bg-canvas); }
 .pl-stage--desktop .pl-frame { width: 100%; min-height: 100vh; }
 
 .pl-stage--mobile {

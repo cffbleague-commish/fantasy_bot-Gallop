@@ -153,8 +153,11 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS) => {
       award: a, label: 'HONOR', tag: 'award',
       note: `${a.name} ${a.year} — earned while rostered by ${tm.name || iv.team} (${tm.owner || '@—'}).` });
   });
-  const ORDER = { auction: 0, redshirt: 1, award: 2, drop: 3 };
-  ledger.sort((x, y) => (x.season - y.season) || (ORDER[x.type] - ORDER[y.type]));
+  // Transaction events arrive from the server already in timestamp order, so a
+  // STABLE sort by season alone preserves that order within a season (e.g. a
+  // same-year drop-then-reacquire stays in the right order). Awards were pushed
+  // last, so the stable sort slots each into its season after that year's moves.
+  ledger.sort((x, y) => x.season - y.season);
 
   const elig = deriveElig(ledger, entered, realRS);
   const honors = ledger.filter((e) => e.type === 'award').length;
@@ -235,26 +238,31 @@ async function plFetch(url) {
   return d;
 }
 // SWR: serve cache instantly (refresh in background when stale); else fetch live.
-async function plLoad(key, url) {
+// `valid` guards against caching/serving a wrong-shaped payload (e.g. the Power
+// Rankings feed fetched before the ledger route was deployed) — such a payload is
+// never written to cache and a previously-poisoned cache entry is ignored.
+async function plLoad(key, url, valid) {
+  const ok = (p) => !valid || valid(p);
   const cached = plCacheRead(key);
-  if (cached) {
-    if (cached.age > PL_FRESH_MS) plFetch(url).then((d) => plCacheWrite(key, d)).catch(() => {});
+  if (cached && ok(cached.payload)) {
+    if (cached.age > PL_FRESH_MS) plFetch(url).then((d) => { if (ok(d)) plCacheWrite(key, d); }).catch(() => {});
     return cached.payload;
   }
   const d = await plFetch(url);
-  plCacheWrite(key, d);
+  if (ok(d)) plCacheWrite(key, d);
   return d;
 }
 
 // ===========================================================================
 // Public loaders (called from pl-app.jsx)
 // ===========================================================================
-const PL_INDEX_KEY = 'cffb_ledger_index_v1';
-const PL_PLAYER_KEY = (id) => 'cffb_ledger_p_' + id;
+const PL_INDEX_KEY = 'cffb_ledger_index_v2';
+const PL_PLAYER_KEY = (id) => 'cffb_ledger_p2_' + id;
 
 // Load the index → populate TEAMS/CONFERENCES/ROSTER. Returns the ROSTER array.
 async function loadLedgerIndex() {
-  const d = await plLoad(PL_INDEX_KEY, ledgerUrl('feed=ledger'));
+  const d = await plLoad(PL_INDEX_KEY, ledgerUrl('feed=ledger'),
+    (p) => p && Array.isArray(p.players) && p.players.length > 0);
 
   if (d.season) CURRENT_SEASON = Number(d.season);
 
@@ -283,7 +291,8 @@ async function loadLedgerIndex() {
 // with bio/awards/draft. Returns LEDGER[pid].
 async function loadPlayerLedger(pid) {
   if (LEDGER[pid]) return LEDGER[pid];
-  const d = await plLoad(PL_PLAYER_KEY(pid), ledgerUrl('feed=ledger&player=' + encodeURIComponent(pid)));
+  const d = await plLoad(PL_PLAYER_KEY(pid), ledgerUrl('feed=ledger&player=' + encodeURIComponent(pid)),
+    (p) => p && Array.isArray(p.copies));
 
   const entry = buildLedgerEntry(pid, d.copies || [], d.entered);
   LEDGER[pid] = entry;

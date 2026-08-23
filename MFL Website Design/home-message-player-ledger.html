@@ -928,9 +928,11 @@
 .cffb-rs--sm .cffb-rs__icon { height: 15px; }
 .cffb-rs--md .cffb-rs__icon { height: 20px; }
 
-/* ---------- STAGE / FRAME / TOGGLE (responsive desktop ↔ mobile) ---------- */
+/* ---------- STAGE / FRAME (auto-responsive via container queries) ---------- */
+/* The frame is a CSS container; the @container pl (...) rules below adapt the
+   layout to its own rendered width — no desktop/mobile toggle needed. */
 .pl-stage { width: 100%; }
-.pl-frame { container-type: inline-size; container-name: pl; background: var(--bg-canvas); }
+.pl-frame { width: 100%; container-type: inline-size; container-name: pl; background: var(--bg-canvas); }
 .pl-stage--desktop .pl-frame { width: 100%; min-height: 100vh; }
 
 .pl-stage--mobile {
@@ -1801,13 +1803,11 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS) => {
       note: `${a.name} ${a.year} — earned while rostered by ${tm.name || iv.team} (${tm.owner || '@—'}).`
     });
   });
-  const ORDER = {
-    auction: 0,
-    redshirt: 1,
-    award: 2,
-    drop: 3
-  };
-  ledger.sort((x, y) => x.season - y.season || ORDER[x.type] - ORDER[y.type]);
+  // Transaction events arrive from the server already in timestamp order, so a
+  // STABLE sort by season alone preserves that order within a season (e.g. a
+  // same-year drop-then-reacquire stays in the right order). Awards were pushed
+  // last, so the stable sort slots each into its season after that year's moves.
+  ledger.sort((x, y) => x.season - y.season);
   const elig = deriveElig(ledger, entered, realRS);
   const honors = ledger.filter(e => e.type === 'award').length;
   const DECLARE_AT = 2;
@@ -1914,26 +1914,32 @@ async function plFetch(url) {
   return d;
 }
 // SWR: serve cache instantly (refresh in background when stale); else fetch live.
-async function plLoad(key, url) {
+// `valid` guards against caching/serving a wrong-shaped payload (e.g. the Power
+// Rankings feed fetched before the ledger route was deployed) — such a payload is
+// never written to cache and a previously-poisoned cache entry is ignored.
+async function plLoad(key, url, valid) {
+  const ok = p => !valid || valid(p);
   const cached = plCacheRead(key);
-  if (cached) {
-    if (cached.age > PL_FRESH_MS) plFetch(url).then(d => plCacheWrite(key, d)).catch(() => {});
+  if (cached && ok(cached.payload)) {
+    if (cached.age > PL_FRESH_MS) plFetch(url).then(d => {
+      if (ok(d)) plCacheWrite(key, d);
+    }).catch(() => {});
     return cached.payload;
   }
   const d = await plFetch(url);
-  plCacheWrite(key, d);
+  if (ok(d)) plCacheWrite(key, d);
   return d;
 }
 
 // ===========================================================================
 // Public loaders (called from pl-app.jsx)
 // ===========================================================================
-const PL_INDEX_KEY = 'cffb_ledger_index_v1';
-const PL_PLAYER_KEY = id => 'cffb_ledger_p_' + id;
+const PL_INDEX_KEY = 'cffb_ledger_index_v2';
+const PL_PLAYER_KEY = id => 'cffb_ledger_p2_' + id;
 
 // Load the index → populate TEAMS/CONFERENCES/ROSTER. Returns the ROSTER array.
 async function loadLedgerIndex() {
-  const d = await plLoad(PL_INDEX_KEY, ledgerUrl('feed=ledger'));
+  const d = await plLoad(PL_INDEX_KEY, ledgerUrl('feed=ledger'), p => p && Array.isArray(p.players) && p.players.length > 0);
   if (d.season) CURRENT_SEASON = Number(d.season);
   Object.keys(d.franchises || {}).forEach(fid => {
     TEAMS[fid] = d.franchises[fid];
@@ -1974,7 +1980,7 @@ async function loadLedgerIndex() {
 // with bio/awards/draft. Returns LEDGER[pid].
 async function loadPlayerLedger(pid) {
   if (LEDGER[pid]) return LEDGER[pid];
-  const d = await plLoad(PL_PLAYER_KEY(pid), ledgerUrl('feed=ledger&player=' + encodeURIComponent(pid)));
+  const d = await plLoad(PL_PLAYER_KEY(pid), ledgerUrl('feed=ledger&player=' + encodeURIComponent(pid)), p => p && Array.isArray(p.copies));
   const entry = buildLedgerEntry(pid, d.copies || [], d.entered);
   LEDGER[pid] = entry;
   PLAYER_AUG[pid] = {
@@ -2593,10 +2599,7 @@ const ProfileHero = ({
   rel: "noopener noreferrer"
 }, "MFL profile \u2197")), (p.ht || p.home) && /*#__PURE__*/React.createElement("div", {
   className: "pl-hero__meta"
-}, p.ht, " ", p.wt, " ", p.home ? '· ' + p.home : ''), p.awards && p.awards.length > 0 && /*#__PURE__*/React.createElement(Awards, {
-  awards: p.awards,
-  size: "sm"
-}), p.draft && p.draft.length > 0 && /*#__PURE__*/React.createElement("div", {
+}, p.ht, " ", p.wt, " ", p.home ? '· ' + p.home : ''), p.draft && p.draft.length > 0 && /*#__PURE__*/React.createElement("div", {
   className: "pl-hero__draft"
 }, /*#__PURE__*/React.createElement("span", {
   className: "pl-hero__draftlbl"
@@ -2746,7 +2749,7 @@ const CopyRow = ({
   id: copy.owner,
   showOwner: showOwners,
   mark: "sm",
-  emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+  emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
 })), /*#__PURE__*/React.createElement("span", {
   className: "pl-row__elig"
 }, /*#__PURE__*/React.createElement(CopyEligInline, {
@@ -2858,7 +2861,7 @@ const CopyDetail = ({
   id: copy.owner,
   showOwner: showOwners,
   mark: "sm",
-  emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+  emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
 })), /*#__PURE__*/React.createElement("button", {
   className: "pl-detail__close",
   onClick: onClose
@@ -2897,7 +2900,7 @@ const CopyCard = ({
   showOwner: showOwners,
   mark: "md",
   stacked: true,
-  emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+  emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
 })), /*#__PURE__*/React.createElement("span", {
   className: "pl-card__elig"
 }, /*#__PURE__*/React.createElement(CopyEligInline, {
@@ -3078,7 +3081,7 @@ const Swimlane = ({
     id: copy.owner,
     showOwner: showOwners,
     mark: "sm",
-    emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+    emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
   }))), /*#__PURE__*/React.createElement("div", {
     className: "pl-lane__track"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3241,18 +3244,6 @@ const App = () => {
   const [entry, setEntry] = useState(null); // LEDGER[pid] once available
   const [loadingP, setLoadingP] = useState(false);
   const [expanded, setExpanded] = useState(null);
-  const [view, setView] = useState(() => {
-    try {
-      return localStorage.getItem('pl-view') || 'desktop';
-    } catch (e) {
-      return 'desktop';
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem('pl-view', view);
-    } catch (e) {}
-  }, [view]);
 
   // Load the search index once (live only; mock is ready immediately).
   useEffect(() => {
@@ -3296,8 +3287,12 @@ const App = () => {
       alive = false;
     };
   }, [pid]);
-  const shell = children => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: 'pl-stage pl-stage--' + view
+
+  // Single responsive stage — the frame is a CSS container (container-type:
+  // inline-size), so the layout adapts to its own rendered width via the
+  // @container queries in ledger.css. No manual desktop/mobile toggle.
+  const shell = children => /*#__PURE__*/React.createElement("div", {
+    className: "pl-stage"
   }, /*#__PURE__*/React.createElement("div", {
     className: "pl-frame"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3323,10 +3318,7 @@ const App = () => {
   }, "Trace every copy of a player \u2014 who owns it now, and how it changed hands.")), ready && /*#__PURE__*/React.createElement(SearchBar, {
     value: pid,
     onPick: setPid
-  })), children)))), /*#__PURE__*/React.createElement(ViewToggle, {
-    view: view,
-    setView: setView
-  }));
+  })), children))));
   if (err) return shell(/*#__PURE__*/React.createElement("div", {
     className: "pl-note pl-note--err"
   }, "Couldn\u2019t load the Player Ledger. ", err));

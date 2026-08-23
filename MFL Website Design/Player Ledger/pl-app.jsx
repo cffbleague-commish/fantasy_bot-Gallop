@@ -174,7 +174,6 @@ const ProfileHero = ({ p, roll, accentColor }) => (
         {p.profileUrl && <a className="pl-hero__mfl" href={p.profileUrl} target="_blank" rel="noopener noreferrer">MFL profile ↗</a>}
       </div>
       {(p.ht || p.home) && <div className="pl-hero__meta">{p.ht} {p.wt} {p.home ? '· ' + p.home : ''}</div>}
-      {p.awards && p.awards.length > 0 && <Awards awards={p.awards} size="sm" />}
       {p.draft && p.draft.length > 0 && (
         <div className="pl-hero__draft">
           <span className="pl-hero__draftlbl">Devy Draft</span>
@@ -257,7 +256,7 @@ const CopyRow = ({ copy, accentColor, open, onToggle, showOwners }) => (
       <span className="pl-row__n">Copy {copy.n}{copy.honors > 0 && <HonorsStar n={copy.honors} />}</span>
       <StatusChip status={copy.status} />
       <span className="pl-row__owner">
-        <TeamOwner id={copy.owner} showOwner={showOwners} mark="sm" emptyLabel={copy.graduated ? 'Retired' : 'Free agent'} />
+        <TeamOwner id={copy.owner} showOwner={showOwners} mark="sm" emptyLabel={copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'} />
       </span>
       <span className="pl-row__elig"><CopyEligInline elig={copy.elig} /></span>
       <span className="pl-row__acq">
@@ -319,7 +318,7 @@ const CopyDetail = ({ copy, accentColor, showOwners, onClose }) => (
       <span className="pl-detail__copy">Copy {copy.n}</span>
       <StatusChip status={copy.status} />
       <span className="pl-detail__elig"><EligDots elig={copy.elig} /></span>
-      <span className="pl-detail__owner"><TeamOwner id={copy.owner} showOwner={showOwners} mark="sm" emptyLabel={copy.graduated ? 'Retired' : 'Free agent'} /></span>
+      <span className="pl-detail__owner"><TeamOwner id={copy.owner} showOwner={showOwners} mark="sm" emptyLabel={copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'} /></span>
       <button className="pl-detail__close" onClick={onClose}>×</button>
     </div>
     <TransactionTimeline copy={copy} accentColor={accentColor} showOwners={showOwners} />
@@ -335,7 +334,7 @@ const CopyCard = ({ copy, accentColor, active, onClick, showOwners }) => (
       <StatusChip status={copy.status} size="sm" />
     </span>
     <span className="pl-card__owner">
-      <TeamOwner id={copy.owner} showOwner={showOwners} mark="md" stacked emptyLabel={copy.graduated ? 'Retired' : 'Free agent'} />
+      <TeamOwner id={copy.owner} showOwner={showOwners} mark="md" stacked emptyLabel={copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'} />
     </span>
     <span className="pl-card__elig"><CopyEligInline elig={copy.elig} /></span>
     <span className="pl-card__foot">
@@ -425,7 +424,7 @@ const Swimlane = ({ copy, years, accentColor, active, onClick, showOwners }) => 
         <span className="pl-lane__n">Copy {copy.n}{copy.honors > 0 && <HonorsStar n={copy.honors} />}</span>
         <StatusChip status={copy.status} size="sm" />
         <span className="pl-lane__elig"><CopyEligInline elig={copy.elig} showClass={false} /></span>
-        <span className="pl-lane__owner"><TeamOwner id={copy.owner} showOwner={showOwners} mark="sm" emptyLabel={copy.graduated ? 'Retired' : 'Free agent'} /></span>
+        <span className="pl-lane__owner"><TeamOwner id={copy.owner} showOwner={showOwners} mark="sm" emptyLabel={copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'} /></span>
       </button>
       <div className="pl-lane__track">
         <div className="pl-lane__grid">
@@ -523,10 +522,6 @@ const App = () => {
   const [entry, setEntry] = useState(null);      // LEDGER[pid] once available
   const [loadingP, setLoadingP] = useState(false);
   const [expanded, setExpanded] = useState(null);
-  const [view, setView] = useState(() => {
-    try { return localStorage.getItem('pl-view') || 'desktop'; } catch (e) { return 'desktop'; }
-  });
-  useEffect(() => { try { localStorage.setItem('pl-view', view); } catch (e) {} }, [view]);
 
   // Load the search index once (live only; mock is ready immediately).
   useEffect(() => {
@@ -554,32 +549,32 @@ const App = () => {
     return () => { alive = false; };
   }, [pid]);
 
+  // Single responsive stage — the frame is a CSS container (container-type:
+  // inline-size), so the layout adapts to its own rendered width via the
+  // @container queries in ledger.css. No manual desktop/mobile toggle.
   const shell = (children) => (
-    <React.Fragment>
-      <div className={'pl-stage pl-stage--' + view}>
-        <div className="pl-frame">
-          <div className={'pl-root pl--' + t.density + ' pl--layout-' + t.layout}>
-            <div className="pl-context">
-              <span className="pl-context__crumb">League</span>
-              <span className="pl-context__sep">/</span>
-              <span className="pl-context__here">Player Ledger</span>
-            </div>
+    <div className="pl-stage">
+      <div className="pl-frame">
+        <div className={'pl-root pl--' + t.density + ' pl--layout-' + t.layout}>
+          <div className="pl-context">
+            <span className="pl-context__crumb">League</span>
+            <span className="pl-context__sep">/</span>
+            <span className="pl-context__here">Player Ledger</span>
+          </div>
 
-            <div className="pl-panel">
-              <header className="pl-panel__head">
-                <div className="pl-panel__title">
-                  <h1 className="pl-panel__h1">Player Ledger</h1>
-                  <p className="pl-panel__desc">Trace every copy of a player — who owns it now, and how it changed hands.</p>
-                </div>
-                {ready && <SearchBar value={pid} onPick={setPid} />}
-              </header>
-              {children}
-            </div>
+          <div className="pl-panel">
+            <header className="pl-panel__head">
+              <div className="pl-panel__title">
+                <h1 className="pl-panel__h1">Player Ledger</h1>
+                <p className="pl-panel__desc">Trace every copy of a player — who owns it now, and how it changed hands.</p>
+              </div>
+              {ready && <SearchBar value={pid} onPick={setPid} />}
+            </header>
+            {children}
           </div>
         </div>
       </div>
-      <ViewToggle view={view} setView={setView} />
-    </React.Fragment>
+    </div>
   );
 
   if (err) return shell(<div className="pl-note pl-note--err">Couldn’t load the Player Ledger. {err}</div>);
