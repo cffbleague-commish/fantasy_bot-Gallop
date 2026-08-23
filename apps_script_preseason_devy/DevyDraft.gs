@@ -1517,15 +1517,21 @@ function reconcileDevyPoolFromLedger() {
     }
   }
 
-  // Build the event timeline keyed by "CONFERENCE|nameKey". PlayerIDs differ between
-  // the KTC-based pool and backfilled/manually-logged history, so we join on
-  // conference + order-agnostic normalized name instead of PlayerID.
-  const events = {};
-  const keyFor = (conf, name) => {
+  // Join on BOTH exact PlayerID and CONFERENCE|nameKey. PlayerIDs differ between the
+  // KTC pool and backfilled/manually-logged history, and the history names can be
+  // unreliable too, so a history row matches a pool copy if EITHER key lines up.
+  // Events dedup by row uid so a row reachable by both keys is only counted once.
+  const byId = {};
+  const byNc = {};
+  const ncKeyFor = (conf, name) => {
     const nk = devyNameKey(name);
     return nk ? `${String(conf).toUpperCase()}|${nk}` : null;
   };
-  const addEvent = (key, ev) => { if (key) (events[key] = events[key] || []).push(ev); };
+  const indexRow = (pid, conf, name, ev) => {
+    if (pid) (byId[pid] = byId[pid] || []).push(ev);
+    const nc = ncKeyFor(conf, name);
+    if (nc) (byNc[nc] = byNc[nc] || []).push(ev);
+  };
 
   const histData = getDevyDraftHistorySheet().getDataRange().getValues();
   const hc = {};
@@ -1533,7 +1539,8 @@ function reconcileDevyPoolFromLedger() {
   for (let i = 1; i < histData.length; i++) {
     const name = histData[i][hc["PlayerName"]] ||
       `${histData[i][hc["PlayerLastName"]]}, ${histData[i][hc["PlayerFirstName"]]}`;
-    addEvent(keyFor(histData[i][hc["Conference"]], name), {
+    indexRow(histData[i][hc["PlayerID"]], histData[i][hc["Conference"]], name, {
+      uid: "H" + i,
       year: Number(histData[i][hc["Year"]]),
       phase: 1, // draft happens after the retention window within a year
       type: "DRAFT",
@@ -1547,7 +1554,8 @@ function reconcileDevyPoolFromLedger() {
   for (let i = 1; i < retData.length; i++) {
     const name = retData[i][rc["PlayerName"]] ||
       `${retData[i][rc["PlayerLastName"]]}, ${retData[i][rc["PlayerFirstName"]]}`;
-    addEvent(keyFor(retData[i][rc["Conference"]], name), {
+    indexRow(retData[i][rc["PlayerID"]], retData[i][rc["Conference"]], name, {
+      uid: "R" + i,
       year: Number(retData[i][rc["Year"]]),
       phase: 0, // retention decision precedes that year's draft
       type: String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase(),
@@ -1569,8 +1577,13 @@ function reconcileDevyPoolFromLedger() {
     }
 
     const poolName = row[pc["PlayerName"]] || `${row[pc["LastName"]]}, ${row[pc["FirstName"]]}`;
-    const evs = (events[keyFor(row[pc["Conference"]], poolName)] || []).slice()
-      .sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
+    const ncKey = ncKeyFor(row[pc["Conference"]], poolName);
+    const seen = new Set();
+    const evs = [];
+    [byId[row[pc["PlayerID"]]], byNc[ncKey]].forEach(arr => {
+      (arr || []).forEach(ev => { if (!seen.has(ev.uid)) { seen.add(ev.uid); evs.push(ev); } });
+    });
+    evs.sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
 
     let status = "Available", drafted = "No", draftedBy = "", draftYear = "", retainedBy = "", retentionYear = "";
     let lastDraft = null;

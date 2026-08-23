@@ -101,13 +101,16 @@ function buildLedgerIndex() {
   const year = Number(getLeagueYear());
   const leagueId = getConfig().mfl.leagueId;
 
-  const rookies = plReadRookieLedger();       // id -> { id, name, pos, nflTeam, rookieYear }
-  const copiesByPlayer = plReadCopiesGrouped(); // id -> [copy rows]
+  const copiesByPlayer = plReadCopiesGrouped(); // id -> [copy rows] (authoritative universe + name)
+  const rookies = plReadRookieLedger();       // id -> { name, pos, nflTeam, rookieYear } (enrichment)
+  const positions = plReadPositions();        // id -> position (Awards fallback)
   const franchises = plBuildFranchises();     // fid -> branding (conf normalized)
 
-  const players = Object.keys(rookies).map(function (id) {
-    const r = rookies[id];
-    const copies = copiesByPlayer[id] || [];
+  // Universe = players that actually have copies (RookieLedger name cells are
+  // often blank, so we key off PlayerCopies and read the name from there).
+  const players = Object.keys(copiesByPlayer).map(function (id) {
+    const copies = copiesByPlayer[id];
+    const r = rookies[id] || {};
     let held = 0, awards = 0;
     copies.forEach(function (c) {
       if (c.currentFid) held += 1;
@@ -115,8 +118,8 @@ function buildLedgerIndex() {
     });
     return {
       id: id,
-      name: plToFirstLast(r.name),
-      pos: r.pos,
+      name: plToFirstLast(plCopiesName(copies) || r.name || id),
+      pos: r.pos || positions[id] || "",
       nflTeam: r.nflTeam || "",
       rookieYear: r.rookieYear || null,
       photo: plPhotoUrl(id, year),
@@ -125,11 +128,10 @@ function buildLedgerIndex() {
       fa: copies.length - held,
       awards: awards
     };
-  }).filter(function (p) { return p.copies > 0; })
-    .sort(function (a, b) {
-      // Award winners first, then most copies held, then name.
-      return (b.awards - a.awards) || (b.held - a.held) || a.name.localeCompare(b.name);
-    });
+  }).sort(function (a, b) {
+    // Award winners first, then most copies held, then name.
+    return (b.awards - a.awards) || (b.held - a.held) || a.name.localeCompare(b.name);
+  });
 
   const confSet = {};
   Object.keys(copiesByPlayer).forEach(function (id) {
@@ -156,11 +158,16 @@ function buildPlayerLedger(playerId) {
   const leagueId = getConfig().mfl.leagueId;
 
   const rookies = plReadRookieLedger();
-  const bio = rookies[id] || { id: id, name: id, pos: "", nflTeam: "", rookieYear: null };
+  const bio = rookies[id] || { name: "", pos: "", nflTeam: "", rookieYear: null };
 
   const copyRows = (plReadCopiesGrouped()[id] || []);
   const txnsByCopy = plReadTransactionsGrouped(id);     // copyId -> [events sorted]
   const awardsByCopy = plReadAwardsGrouped(id);         // copyId -> [award objs]
+
+  // Name comes from PlayerCopies (RookieLedger name is often blank); position
+  // falls back to the Awards tab if RookieLedger has none.
+  const rawName = plCopiesName(copyRows) || bio.name || id;
+  const position = bio.pos || plReadPositions()[id] || "";
 
   // Assemble each copy: compact events (auction/redshirt/drop) + its own awards.
   const copies = copyRows.map(function (c) {
@@ -184,8 +191,8 @@ function buildPlayerLedger(playerId) {
 
   return {
     id: id,
-    name: plToFirstLast(bio.name),
-    pos: bio.pos,
+    name: plToFirstLast(rawName),
+    pos: position,
     nflTeam: bio.nflTeam || "",
     entered: bio.rookieYear || year,
     photo: plPhotoUrl(id, year),
@@ -204,6 +211,18 @@ function plSheet(name) {
   return SpreadsheetApp.getActive().getSheetByName(name);
 }
 
+// Header-tolerant column ids (the live sheet's spellings vary from the writer's).
+const PL_H_PLAYERID = ["MFL_Player_ID", "MFL Player ID", "MFLPlayerID", "PlayerID", "Player ID", "MFL_ID"];
+const PL_H_NAME     = ["PlayerName", "Player Name", "Name", "Player"];
+const PL_H_POS      = ["Position", "Pos"];
+const PL_H_TEAM     = ["NFLTeam", "NFL Team", "Team", "NFL_Team"];
+const PL_H_YEAR     = ["RookieLeagueYear", "Rookie League Year", "RookieYear", "Year", "LeagueYear"];
+const PL_H_COPYID   = ["PlayerCopyID", "Player Copy ID", "CopyID", "Copy ID"];
+const PL_H_CONF     = ["Conference", "Conf"];
+const PL_H_CURFID   = ["CurrentFranchiseID", "Current Franchise ID", "FranchiseID", "Franchise ID"];
+const PL_H_NATL     = ["NationalAwards", "National Awards"];
+const PL_H_ALLCONF  = ["AllConferenceAwards", "All Conference Awards", "AllConfAwards"];
+
 function plReadRookieLedger() {
   const sheet = plSheet(getConfig().sheets.rookieLedger);
   const out = {};
@@ -212,20 +231,23 @@ function plReadRookieLedger() {
   if (data.length < 2) return out;
   const idx = headerIndexMap(data[0].map(String));
   data.slice(1).forEach(function (row) {
-    const id = String(row[idx["MFL_Player_ID"]] || "").trim();
+    const id = cellStr(row, idx, PL_H_PLAYERID).trim();
     if (!id) return;
     out[id] = {
       id: id,
-      name: String(row[idx["PlayerName"]] || "").trim(),
-      pos: String(row[idx["Position"]] || "").trim(),
-      nflTeam: String(row[idx["NFLTeam"]] || "").trim(),
-      rookieYear: numOrZero(row[idx["RookieLeagueYear"]]) || null
+      name: cellStr(row, idx, PL_H_NAME).trim(),
+      pos: cellStr(row, idx, PL_H_POS).trim(),
+      nflTeam: cellStr(row, idx, PL_H_TEAM).trim(),
+      rookieYear: Number(cellStr(row, idx, PL_H_YEAR)) || null
     };
   });
   return out;
 }
 
-// id -> [ { copyId, conf(slug), n, currentFid, nationalAwards, allConfAwards } ]
+// id -> [ { copyId, conf(slug), n, currentFid, name, nationalAwards, allConfAwards } ]
+// PlayerCopies is the authoritative source for player identity (name) — the
+// RookieLedger name/team columns are often blank, but every copy row carries the
+// player's name, so we read it here and treat RookieLedger as enrichment only.
 function plReadCopiesGrouped() {
   const sheet = plSheet(getConfig().sheets.playerCopies);
   const out = {};
@@ -234,20 +256,47 @@ function plReadCopiesGrouped() {
   if (data.length < 2) return out;
   const idx = headerIndexMap(data[0].map(String));
   data.slice(1).forEach(function (row) {
-    const pid = String(row[idx["MFL_Player_ID"]] || "").trim();
-    const copyId = String(row[idx["PlayerCopyID"]] || "").trim();
+    const pid = cellStr(row, idx, PL_H_PLAYERID).trim();
+    const copyId = cellStr(row, idx, PL_H_COPYID).trim();
     if (!pid || !copyId) return;
     // Copy ordinal = trailing number of PC-{id}-{conf}-{n}
     const m = copyId.match(/-(\d+)$/);
     if (!out[pid]) out[pid] = [];
     out[pid].push({
       copyId: copyId,
-      conf: plNormConf(row[idx["Conference"]]),
+      conf: plNormConf(cellStr(row, idx, PL_H_CONF)),
       n: m ? Number(m[1]) : (out[pid].length + 1),
-      currentFid: normalizeId(row[idx["CurrentFranchiseID"]]) || "",
-      nationalAwards: numOrZero(row[idx["NationalAwards"]]),
-      allConfAwards: numOrZero(row[idx["AllConferenceAwards"]])
+      currentFid: normalizeId(cellStr(row, idx, PL_H_CURFID)) || "",
+      name: cellStr(row, idx, PL_H_NAME).trim(),
+      nationalAwards: Number(cellStr(row, idx, PL_H_NATL)) || 0,
+      allConfAwards: Number(cellStr(row, idx, PL_H_ALLCONF)) || 0
     });
+  });
+  return out;
+}
+
+// First non-empty PlayerName across a player's copies.
+function plCopiesName(copies) {
+  for (var i = 0; i < copies.length; i++) {
+    if (copies[i].name) return copies[i].name;
+  }
+  return "";
+}
+
+// Best-effort position from the Awards tab (RookieLedger position may be blank).
+// Returns { playerId -> position }.
+function plReadPositions() {
+  const sheet = plSheet(getConfig().sheets.awards);
+  const out = {};
+  if (!sheet) return out;
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return out;
+  const idx = headerIndexMap(data[0].map(String));
+  if (idx["MFL_Player_ID"] == null || idx["Position"] == null) return out;
+  data.slice(1).forEach(function (row) {
+    const pid = String(row[idx["MFL_Player_ID"]] || "").trim();
+    const pos = String(row[idx["Position"]] || "").trim();
+    if (pid && pos && !out[pid]) out[pid] = pos;
   });
   return out;
 }
