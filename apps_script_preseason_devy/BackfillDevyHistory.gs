@@ -73,8 +73,7 @@ function addBackfillMenu() {
     .addItem('📊 View Import Stats', 'menuViewImportStats')
     .addItem('⚠️ View Missing Franchise IDs', 'menuViewMissingFranchiseIds')
     .addSeparator()
-    .addItem('🔗 Setup RookieLedger IMPORTRANGE', 'menuSetupRookieLedgerImport')
-    .addItem('📋 Apply IsRookie Formulas', 'menuApplyIsRookieFormulas')
+    .addItem('🔄 Refresh IsRookie Flags', 'menuApplyIsRookieFormulas')
     .addSeparator()
     .addItem('🗑️ Clear Year from History', 'menuClearYearFromHistory')
     .addToUi();
@@ -965,6 +964,18 @@ function getMissingFranchiseIds() {
  */
 function menuSetupRookieLedgerImport() {
   const ui = SpreadsheetApp.getUi();
+
+  // DEPRECATED: superseded by the native "RookieLedger" tab. IsRookie flags and the
+  // graduation sweep now read that tab directly (no IMPORTRANGE mirror needed). This
+  // function is retained only for reference and is no longer wired to a menu; the
+  // hidden "RookieLedger_Import" tab can be deleted.
+  const proceed = ui.alert(
+    "Deprecated",
+    "This IMPORTRANGE setup is no longer used — IsRookie now reads the native 'RookieLedger' tab directly.\n\nYou can delete the hidden 'RookieLedger_Import' tab.\n\nContinue anyway?",
+    ui.ButtonSet.YES_NO
+  );
+  if (proceed !== ui.Button.YES) return;
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // Check if sheet already exists
@@ -1034,98 +1045,59 @@ function menuSetupRookieLedgerImport() {
  */
 function menuApplyIsRookieFormulas() {
   const ui = SpreadsheetApp.getUi();
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // Check if RookieLedger_Import exists
-  const importSheet = ss.getSheetByName("RookieLedger_Import");
-  if (!importSheet) {
-    ui.alert(
-      "Setup Required",
-      "RookieLedger_Import sheet not found.\n\n" +
-      "Please run 'Setup RookieLedger IMPORTRANGE' first.",
-      ui.ButtonSet.OK
-    );
+  const ledgerResult = getRookieLedgerNameSet();
+  if (!ledgerResult.ok) {
+    ui.alert("RookieLedger Problem", ledgerResult.message + "\n\nMake sure the native 'RookieLedger' tab exists with a 'Name' column (MFL 'LastName, FirstName').", ui.ButtonSet.OK);
     return;
   }
 
-  // Prompt for which column in RookieLedger_Import contains the player name
-  const colResponse = ui.prompt(
-    "RookieLedger Player Name Column",
-    "Which column in RookieLedger contains the player name?\n\n" +
-    "Enter the column letter (e.g., A, B, C):\n\n" +
-    "The player name should be in MFL format: 'LastName, FirstName'",
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (colResponse.getSelectedButton() !== ui.Button.OK) return;
-
-  const rookieCol = colResponse.getResponseText().trim().toUpperCase() || "A";
-
-  // Apply to DevyDraftHistory
-  const historySheet = getDevyDraftHistorySheet();
-  const historyData = historySheet.getDataRange().getValues();
-  const historyHeaders = historyData[0];
-  const historyPlayerNameCol = historyHeaders.indexOf("PlayerName");
-  const historyIsRookieCol = historyHeaders.indexOf("IsRookie");
-
-  if (historyPlayerNameCol === -1 || historyIsRookieCol === -1) {
-    ui.alert(
-      "Error",
-      "DevyDraftHistory is missing PlayerName or IsRookie column.\n\n" +
-      "Please ensure the sheet has the correct headers.",
-      ui.ButtonSet.OK
-    );
-    return;
-  }
-
-  // Get column letters for formula
-  const playerNameColLetter = String.fromCharCode(65 + historyPlayerNameCol);  // A=65
-  const isRookieColLetter = String.fromCharCode(65 + historyIsRookieCol);
-
-  // Apply formula to all data rows in DevyDraftHistory
-  const historyLastRow = historySheet.getLastRow();
-  if (historyLastRow > 1) {
-    const formulas = [];
-    for (let row = 2; row <= historyLastRow; row++) {
-      // Formula: =IF(PlayerNameCell="", "", IF(COUNTIF(RookieLedger_Import!$A:$A, PlayerNameCell) > 0, TRUE, FALSE))
-      formulas.push([
-        `=IF(${playerNameColLetter}${row}="", "", IF(COUNTIF(RookieLedger_Import!$${rookieCol}:$${rookieCol}, ${playerNameColLetter}${row}) > 0, TRUE, FALSE))`
-      ]);
-    }
-    historySheet.getRange(2, historyIsRookieCol + 1, formulas.length, 1).setFormulas(formulas);
-  }
-
-  // Apply to DevyRetentionHistory
-  const retentionSheet = getDevyRetentionHistorySheet();
-  const retentionData = retentionSheet.getDataRange().getValues();
-  const retentionHeaders = retentionData[0];
-  const retentionPlayerNameCol = retentionHeaders.indexOf("PlayerName");
-  const retentionIsRookieCol = retentionHeaders.indexOf("IsRookie");
-
-  if (retentionPlayerNameCol !== -1 && retentionIsRookieCol !== -1) {
-    const retentionPlayerNameColLetter = String.fromCharCode(65 + retentionPlayerNameCol);
-    const retentionLastRow = retentionSheet.getLastRow();
-
-    if (retentionLastRow > 1) {
-      const formulas = [];
-      for (let row = 2; row <= retentionLastRow; row++) {
-        formulas.push([
-          `=IF(${retentionPlayerNameColLetter}${row}="", "", IF(COUNTIF(RookieLedger_Import!$${rookieCol}:$${rookieCol}, ${retentionPlayerNameColLetter}${row}) > 0, TRUE, FALSE))`
-        ]);
-      }
-      retentionSheet.getRange(2, retentionIsRookieCol + 1, formulas.length, 1).setFormulas(formulas);
-    }
-  }
+  const draftResult = applyIsRookieFlagsToSheet(getDevyDraftHistorySheet(), ledgerResult.names);
+  const retentionResult = applyIsRookieFlagsToSheet(getDevyRetentionHistorySheet(), ledgerResult.names);
 
   ui.alert(
-    "Formulas Applied",
-    `IsRookie formulas applied to:\n\n` +
-    `• DevyDraftHistory: ${historyLastRow - 1} rows\n` +
-    `• DevyRetentionHistory: ${retentionSheet.getLastRow() - 1} rows\n\n` +
-    `Players appearing in RookieLedger will show IsRookie = TRUE\n` +
-    `(meaning they've entered the NFL and are no longer devy players)`,
+    "IsRookie Flags Refreshed",
+    `Matched against the native RookieLedger by normalized name.\n\n` +
+    `• DevyDraftHistory: ${draftResult.trueCount}/${draftResult.rows} flagged TRUE\n` +
+    `• DevyRetentionHistory: ${retentionResult.trueCount}/${retentionResult.rows} flagged TRUE\n\n` +
+    `TRUE = player is in the RookieLedger (entered the NFL, no longer a devy).`,
     ui.ButtonSet.OK
   );
+}
+
+/**
+ * Recompute the IsRookie column on a history sheet as VALUES (not formulas), by
+ * matching PlayerName against the RookieLedger name Set with normalizeDevyName().
+ * Blank PlayerName rows stay blank.
+ *
+ * @param {Sheet} sheet - DevyDraftHistory or DevyRetentionHistory
+ * @param {Set} rookieNames - normalized names from getRookieLedgerNameSet()
+ * @returns {Object} { rows, trueCount }
+ */
+function applyIsRookieFlagsToSheet(sheet, rookieNames) {
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const nameCol = headers.indexOf("PlayerName");
+  const isRookieCol = headers.indexOf("IsRookie");
+  if (nameCol === -1 || isRookieCol === -1 || data.length < 2) {
+    return { rows: Math.max(0, data.length - 1), trueCount: 0 };
+  }
+
+  const values = [];
+  let trueCount = 0;
+  for (let i = 1; i < data.length; i++) {
+    const rawName = data[i][nameCol];
+    if (!rawName) {
+      values.push([""]);
+      continue;
+    }
+    const isRookie = rookieNames.has(normalizeDevyName(rawName));
+    if (isRookie) trueCount++;
+    values.push([isRookie]);
+  }
+
+  sheet.getRange(2, isRookieCol + 1, values.length, 1).setValues(values);
+  return { rows: data.length - 1, trueCount };
 }
 
 // ============================================================================

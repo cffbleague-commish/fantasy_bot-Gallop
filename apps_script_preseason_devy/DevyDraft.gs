@@ -1352,32 +1352,48 @@ function normalizeDevyName(name) {
 }
 
 /**
- * Graduation sweep: mark every owned devy copy whose PlayerName appears in the
- * RookieLedger (they were drafted into the NFL) as EnteredNFL. Run at auction /
- * season start, BEFORE reconcileDevyPoolFromLedger. Matches by normalized name
- * (RookieLedger.Name and pool.PlayerName are both MFL "Last, First").
+ * Read the native RookieLedger tab and return a Set of normalized player names
+ * (from the "Name" column, MFL "Last, First"). Single source of truth for "who is
+ * in the RookieLedger" — used by both the graduation sweep and the IsRookie flags.
  *
- * @returns {Object} Result with counts
+ * @returns {Object} { ok, names?: Set, message?: string }
  */
-function sweepGraduatedDevyPlayers() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const ledger = ss.getSheetByName("RookieLedger");
+function getRookieLedgerNameSet() {
+  const ledger = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("RookieLedger");
   if (!ledger) {
-    return { success: false, message: "RookieLedger tab not found." };
+    return { ok: false, message: "RookieLedger tab not found." };
   }
 
   const ledgerData = ledger.getDataRange().getValues();
   const lc = {};
   ledgerData[0].forEach((h, i) => lc[String(h).trim()] = i);
   if (lc["Name"] === undefined) {
-    return { success: false, message: "RookieLedger is missing a 'Name' column." };
+    return { ok: false, message: "RookieLedger is missing a 'Name' column." };
   }
 
-  const gradNames = new Set();
+  const names = new Set();
   for (let i = 1; i < ledgerData.length; i++) {
     const n = normalizeDevyName(ledgerData[i][lc["Name"]]);
-    if (n) gradNames.add(n);
+    if (n) names.add(n);
   }
+  return { ok: true, names };
+}
+
+/**
+ * Graduation sweep: mark every owned devy copy whose PlayerName appears in the
+ * RookieLedger (they were drafted into the NFL) as EnteredNFL, and refresh the
+ * IsRookie audit flags on DevyDraftHistory/DevyRetentionHistory in the same pass.
+ * Run at auction / season start, BEFORE reconcileDevyPoolFromLedger. Matches by
+ * normalized name (RookieLedger.Name and pool.PlayerName are both MFL "Last, First").
+ *
+ * @returns {Object} Result with counts
+ */
+function sweepGraduatedDevyPlayers() {
+  const ledgerResult = getRookieLedgerNameSet();
+  if (!ledgerResult.ok) {
+    return { success: false, message: ledgerResult.message };
+  }
+  const gradNames = ledgerResult.names;
 
   const poolSheet = getDevyPlayerPoolSheet();
   const data = poolSheet.getDataRange().getValues();
@@ -1405,11 +1421,18 @@ function sweepGraduatedDevyPlayers() {
     poolSheet.getRange(2, pc["Status"] + 1, statusValues.length, 1).setValues(statusValues);
   }
 
+  // Same RookieLedger set also refreshes the IsRookie audit flags on the history
+  // sheets, so one sweep keeps the pool status and the history flags in sync.
+  const draftFlags = applyIsRookieFlagsToSheet(getDevyDraftHistorySheet(), gradNames);
+  const retentionFlags = applyIsRookieFlagsToSheet(getDevyRetentionHistorySheet(), gradNames);
+
   return {
     success: true,
-    message: `Graduation sweep: ${gradedPlayers.size} player(s) matched RookieLedger; ${copiesMarked} pool copies marked EnteredNFL.`,
+    message: `Graduation sweep: ${gradedPlayers.size} player(s) matched RookieLedger; ${copiesMarked} pool copies marked EnteredNFL. ` +
+      `IsRookie flags refreshed (${draftFlags.trueCount} draft-history, ${retentionFlags.trueCount} retention-history rows TRUE).`,
     playersGraduated: gradedPlayers.size,
-    copiesMarked
+    copiesMarked,
+    isRookieFlagged: draftFlags.trueCount + retentionFlags.trueCount
   };
 }
 
@@ -1420,7 +1443,7 @@ function menuSweepGraduatedDevyPlayers() {
   const ui = SpreadsheetApp.getUi();
   const confirm = ui.alert(
     "Sweep NFL Graduates",
-    "Mark every owned devy whose name is in the RookieLedger as EnteredNFL?\n\nRun this at auction / season start, before reconciling the pool.",
+    "Mark every owned devy whose name is in the RookieLedger as EnteredNFL, and refresh the IsRookie flags on the history sheets?\n\nRun this at auction / season start, before reconciling the pool.",
     ui.ButtonSet.YES_NO
   );
   if (confirm !== ui.Button.YES) return;
