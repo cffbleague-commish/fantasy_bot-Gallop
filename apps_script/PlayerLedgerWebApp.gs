@@ -28,9 +28,10 @@
 // ============================================================================
 
 const PL_HOST = "https://www46.myfantasyleague.com";
-// Player headshot thumbnail (league-independent asset name under fflnetdynamic{year}).
+// Player headshot thumbnail. Confirmed live path is /player_photos_2014/{id}_thumb.jpg
+// (80×107 jpg); MFL serves a "no photo" placeholder for ids it has no shot for.
 function plPhotoUrl(playerId, year) {
-  return PL_HOST + "/fflnetdynamic" + year + "/" + playerId + "_thumb.jpg";
+  return PL_HOST + "/player_photos_2014/" + playerId + "_thumb.jpg";
 }
 const PL_NO_PHOTO = PL_HOST + "/player_photos_2010/no_photo_available.jpg";
 function plProfileUrl(playerId, year, leagueId) {

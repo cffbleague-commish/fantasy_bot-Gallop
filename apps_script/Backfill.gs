@@ -136,6 +136,13 @@ function backfillHistoricalOwnership(years, logTransactions = false, logOnlyYear
   // Key: playerId-conference -> rowNum of last owned copy
   const lastOwnedCopy = {};
 
+  // Per (playerId, franchiseId), the specific copy that franchise most recently WON.
+  // Used to attribute a FREE_AGENT drop of a graduated player whose copy was already
+  // freed (by graduation) before the real MFL drop. Keyed by FRANCHISE, not conference,
+  // because two franchises in one conference can each hold a different copy of the player.
+  // Key: `${playerId}-${franchiseId}` -> { copyId, rowNum, conference }
+  const lastCopyByPlayerFranchise = {};
+
   // Collect all redshirt updates in memory (batch apply at end)
   // Structure: rowNum -> { traditional: bool, medical: bool, traditionalYear: number, medicalYear: number }
   const allRedshirtUpdates = {};
@@ -252,6 +259,15 @@ function backfillHistoricalOwnership(years, logTransactions = false, logOnlyYear
         if (copyToAssign) {
           ownershipUpdates[copyToAssign.rowNum] = franchiseId;
           auctionsProcessed++;
+
+          // Remember the exact copy this franchise now holds, for later drop attribution.
+          // Runs on every replayed year (logged or not) so a win in an earlier non-logged
+          // year is still recoverable when this player is dropped after graduation.
+          lastCopyByPlayerFranchise[`${playerId}-${franchiseId}`] = {
+            copyId: copyToAssign.copyId,
+            rowNum: copyToAssign.rowNum,
+            conference: franchiseConference
+          };
 
           // Optional: Batch transaction logs in memory
           if (logThisYear) {
@@ -395,16 +411,42 @@ function backfillHistoricalOwnership(years, logTransactions = false, logOnlyYear
 
           if (logThisYear && !dropped) {
             const playerName = playerNameCache[playerId] || "";
-            transactionLogs.push({
-              year: year,
-              txn: txn,
-              action: "Drop - not owned",
-              playerId: playerId,
-              playerName: playerName,
-              copyAssigned: "",
-              franchiseId: franchiseId,
-              franchiseConference: franchiseMap[franchiseId] || "UNKNOWN"
-            });
+            const franchiseConference = franchiseMap[franchiseId] || "UNKNOWN";
+
+            // Graduated-player case: the copy this franchise held was already freed
+            // (by graduation) before the commissioner's real MFL drop. Work backwards
+            // through the replay to recover the specific copy they last held.
+            const lastHeld = lastCopyByPlayerFranchise[`${playerId}-${franchiseId}`];
+
+            if (lastHeld && lastHeld.conference === franchiseConference) {
+              // Attribute the drop to that copy. Do NOT touch ownershipUpdates — the
+              // copy is already free; graduation/eligibility logic owns that state.
+              transactionLogs.push({
+                year: year,
+                txn: txn,
+                action: "Dropped - graduated",
+                playerId: playerId,
+                playerName: playerName,
+                copyAssigned: lastHeld.copyId,
+                franchiseId: franchiseId,
+                franchiseConference: franchiseConference,
+                transferEligible: "" // graduated => no remaining eligibility
+              });
+              dropsProcessed++;
+            } else {
+              // Franchise legitimately never owned this player in the replay — keep the
+              // original behavior so genuinely-unmatched drops stay visible.
+              transactionLogs.push({
+                year: year,
+                txn: txn,
+                action: "Drop - not owned",
+                playerId: playerId,
+                playerName: playerName,
+                copyAssigned: "",
+                franchiseId: franchiseId,
+                franchiseConference: franchiseConference
+              });
+            }
           }
         });
       }

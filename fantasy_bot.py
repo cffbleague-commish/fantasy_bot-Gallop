@@ -7404,8 +7404,10 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
 
                 draft_year = int(get_devy_draft_setting("DraftYear"))
                 timestamp = datetime.now().isoformat()
+                # Conference-scoped, non-KTC id so a pool refresh won't erase this write-in.
+                manual_id = f"{conference}_MANUAL_{last_name}_{first_name}".replace(" ", "")
 
-                # Record pick in history with manual details (no pool row to update)
+                # Record pick in history with manual details
                 devy_draft_history_ws.append_row([
                     draft_year,
                     conference,
@@ -7414,12 +7416,33 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
                     current_pick_info["overallPick"],
                     normalized_id,
                     current_pick_info["teamName"],
-                    f"MANUAL_{last_name}_{first_name}",
+                    manual_id,
                     first_name,
                     last_name,
                     position,
                     timestamp
                 ])
+
+                # Also add the write-in to DevyPlayerPool (Status=Drafted) so they
+                # enter the retention cycle. The non-KTC id survives KTC refreshes.
+                try:
+                    devy_player_pool_ws.append_row([
+                        manual_id,
+                        conference,
+                        f"{last_name}, {first_name}",  # PlayerName (MFL format)
+                        first_name,
+                        last_name,
+                        position,
+                        "",                # Year (unknown for a write-in)
+                        "Drafted",         # Status
+                        "Yes",             # Drafted
+                        normalized_id,     # DraftedBy
+                        draft_year,        # DraftYear
+                        "",                # RetainedBy
+                        ""                 # RetentionYear
+                    ])
+                except Exception as pool_err:
+                    print(f"Write-in pool add failed for {manual_id}: {pool_err}")
 
                 # Advance draft
                 advance_result = advance_devy_draft(conference)

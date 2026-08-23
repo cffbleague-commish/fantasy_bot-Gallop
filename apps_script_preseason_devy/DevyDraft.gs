@@ -33,6 +33,7 @@ function onOpen() {
   ui.createMenu('🏈 Devy Draft')
     .addItem('📥 Import Players from KeepTradeCut', 'menuImportFromKTC')
     .addItem('🔄 Refresh Players from KeepTradeCut', 'menuRefreshFromKTC')
+    .addItem('➕ Add Player to Pool...', 'menuAddDevyPlayer')
     .addSeparator()
     .addItem('📋 Initialize Draft Sheets', 'menuInitializeSheets')
     .addItem('📊 View Draft Status', 'menuViewDraftStatus')
@@ -826,16 +827,22 @@ function importFromKeepTradeCut(clearExisting = false) {
     // Get or create the player pool sheet
     const sheet = getDevyPlayerPoolSheet();
 
-    // Optionally clear existing available players (preserve drafted and retained)
+    // Optionally clear existing available players before re-importing.
     if (clearExisting) {
       const existingData = sheet.getDataRange().getValues();
       const headers = existingData[0];
       const statusCol = headers.indexOf("Status");
+      const idCol = headers.indexOf("PlayerID");
 
-      // Delete available players from bottom up (preserve Drafted, Retained)
+      // Delete only KTC-sourced AVAILABLE players (whose PlayerID contains "_KTC_").
+      // Drafted/Retained are preserved by status, and any manually-added, write-in,
+      // backfilled, or reconcile-created players are preserved regardless of status
+      // because their IDs are not "_KTC_" (KTC won't re-add them, so they'd be lost).
       for (let i = existingData.length - 1; i >= 1; i--) {
         const status = existingData[i][statusCol];
-        if (status === "Available" || status === "" || !status) {
+        const pid = String(existingData[i][idCol] || "");
+        const isAvailable = (status === "Available" || status === "" || !status);
+        if (isAvailable && pid.indexOf("_KTC_") !== -1) {
           sheet.deleteRow(i + 1);
         }
       }
@@ -1058,6 +1065,38 @@ function addDevyPlayer(firstName, lastName, position, year) {
     playerIds,
     message: `Added ${firstName} ${lastName} (${position}) to devy pool for ${conferences.length} conferences`
   };
+}
+
+/**
+ * Menu: add a write-in / manual player to the pool for all conferences.
+ * Uses a non-KTC PlayerID (via addDevyPlayer) so a KTC refresh won't erase it.
+ */
+function menuAddDevyPlayer() {
+  const ui = SpreadsheetApp.getUi();
+
+  const fnResp = ui.prompt("Add Player to Pool", "Player first name:", ui.ButtonSet.OK_CANCEL);
+  if (fnResp.getSelectedButton() !== ui.Button.OK) return;
+  const firstName = fnResp.getResponseText().trim();
+
+  const lnResp = ui.prompt("Add Player to Pool", "Player last name:", ui.ButtonSet.OK_CANCEL);
+  if (lnResp.getSelectedButton() !== ui.Button.OK) return;
+  const lastName = lnResp.getResponseText().trim();
+
+  const posResp = ui.prompt("Add Player to Pool", "Position (QB / RB / WR / TE):", ui.ButtonSet.OK_CANCEL);
+  if (posResp.getSelectedButton() !== ui.Button.OK) return;
+  const position = posResp.getResponseText().trim().toUpperCase();
+
+  const yrResp = ui.prompt("Add Player to Pool", "Draft-class year (optional, e.g. 2027):", ui.ButtonSet.OK_CANCEL);
+  if (yrResp.getSelectedButton() !== ui.Button.OK) return;
+  const year = parseInt(yrResp.getResponseText().trim()) || (new Date().getFullYear() + 1);
+
+  if (!firstName || !lastName || !position) {
+    ui.alert("Invalid Input", "First name, last name, and position are all required.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const result = addDevyPlayer(firstName, lastName, position, year);
+  ui.alert(result.success ? "Player Added" : "Error", result.message, ui.ButtonSet.OK);
 }
 
 /**
@@ -1523,75 +1562,52 @@ function reconcileDevyPoolFromLedger() {
   // Events dedup by row uid so a row reachable by both keys is only counted once.
   const byId = {};
   const byNc = {};
+  const allEvents = [];
   const ncKeyFor = (conf, name) => {
     const nk = devyNameKey(name);
     return nk ? `${String(conf).toUpperCase()}|${nk}` : null;
   };
-  const indexRow = (pid, conf, name, ev) => {
+  const indexRow = (pid, conf, name, ident, ev) => {
+    ev.ncKey = ncKeyFor(conf, name);
+    ev.ident = ident;
+    allEvents.push(ev);
     if (pid) (byId[pid] = byId[pid] || []).push(ev);
-    const nc = ncKeyFor(conf, name);
-    if (nc) (byNc[nc] = byNc[nc] || []).push(ev);
+    if (ev.ncKey) (byNc[ev.ncKey] = byNc[ev.ncKey] || []).push(ev);
   };
 
   const histData = getDevyDraftHistorySheet().getDataRange().getValues();
   const hc = {};
   histData[0].forEach((h, i) => hc[h] = i);
   for (let i = 1; i < histData.length; i++) {
-    const name = histData[i][hc["PlayerName"]] ||
-      `${histData[i][hc["PlayerLastName"]]}, ${histData[i][hc["PlayerFirstName"]]}`;
-    indexRow(histData[i][hc["PlayerID"]], histData[i][hc["Conference"]], name, {
-      uid: "H" + i,
-      year: Number(histData[i][hc["Year"]]),
-      phase: 1, // draft happens after the retention window within a year
-      type: "DRAFT",
-      franchise: String(histData[i][hc["FranchiseID"]]).padStart(3, "0")
-    });
+    const fn = histData[i][hc["PlayerFirstName"]];
+    const ln = histData[i][hc["PlayerLastName"]];
+    const name = histData[i][hc["PlayerName"]] || `${ln}, ${fn}`;
+    const conf = histData[i][hc["Conference"]];
+    indexRow(histData[i][hc["PlayerID"]], conf, name,
+      { conference: conf, playerId: histData[i][hc["PlayerID"]], playerName: name, firstName: fn, lastName: ln, position: histData[i][hc["PlayerPosition"]] },
+      { uid: "H" + i, year: Number(histData[i][hc["Year"]]), phase: 1, type: "DRAFT", franchise: String(histData[i][hc["FranchiseID"]]).padStart(3, "0") });
   }
 
   const retData = getDevyRetentionHistorySheet().getDataRange().getValues();
   const rc = {};
   retData[0].forEach((h, i) => rc[h] = i);
   for (let i = 1; i < retData.length; i++) {
-    const name = retData[i][rc["PlayerName"]] ||
-      `${retData[i][rc["PlayerLastName"]]}, ${retData[i][rc["PlayerFirstName"]]}`;
-    indexRow(retData[i][rc["PlayerID"]], retData[i][rc["Conference"]], name, {
-      uid: "R" + i,
-      year: Number(retData[i][rc["Year"]]),
-      phase: 0, // retention decision precedes that year's draft
-      type: String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase(),
-      franchise: String(retData[i][rc["FranchiseID"]]).padStart(3, "0")
-    });
+    const fn = retData[i][rc["PlayerFirstName"]];
+    const ln = retData[i][rc["PlayerLastName"]];
+    const name = retData[i][rc["PlayerName"]] || `${ln}, ${fn}`;
+    const conf = retData[i][rc["Conference"]];
+    indexRow(retData[i][rc["PlayerID"]], conf, name,
+      { conference: conf, playerId: retData[i][rc["PlayerID"]], playerName: name, firstName: fn, lastName: ln, position: retData[i][rc["PlayerPosition"]] },
+      { uid: "R" + i, year: Number(retData[i][rc["Year"]]), phase: 0, type: String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase(), franchise: String(retData[i][rc["FranchiseID"]]).padStart(3, "0") });
   }
 
-  const out = {};
-  cols.forEach(c => out[c] = []);
-  let reconciled = 0;
-
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-
-    // Preserve graduated players - they've left the devy system.
-    if (row[pc["Status"]] === "EnteredNFL") {
-      cols.forEach(c => out[c].push([row[pc[c]]]));
-      continue;
-    }
-
-    const poolName = row[pc["PlayerName"]] || `${row[pc["LastName"]]}, ${row[pc["FirstName"]]}`;
-    const ncKey = ncKeyFor(row[pc["Conference"]], poolName);
-    const seen = new Set();
-    const evs = [];
-    [byId[row[pc["PlayerID"]]], byNc[ncKey]].forEach(arr => {
-      (arr || []).forEach(ev => { if (!seen.has(ev.uid)) { seen.add(ev.uid); evs.push(ev); } });
-    });
-    evs.sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
-
+  // Last-event-wins status from a chronologically sorted event list.
+  const computeStatus = (evs) => {
     let status = "Available", drafted = "No", draftedBy = "", draftYear = "", retainedBy = "", retentionYear = "";
     let lastDraft = null;
     evs.forEach(e => { if (e.type === "DRAFT") lastDraft = e; });
     const last = evs.length ? evs[evs.length - 1] : null;
-
     if (last) {
-      reconciled++;
       if (last.type === "DRAFT") {
         status = "Drafted"; drafted = "Yes"; draftedBy = last.franchise; draftYear = last.year;
       } else if (last.type === "RETAIN") {
@@ -1601,13 +1617,35 @@ function reconcileDevyPoolFromLedger() {
         retainedBy = last.franchise; retentionYear = last.year;
       } // RELEASE (or anything else) -> stays Available with cleared ownership
     }
+    return { status, drafted, draftedBy, draftYear, retainedBy, retentionYear };
+  };
 
-    out["Status"].push([status]);
-    out["Drafted"].push([drafted]);
-    out["DraftedBy"].push([draftedBy]);
-    out["DraftYear"].push([draftYear]);
-    out["RetainedBy"].push([retainedBy]);
-    out["RetentionYear"].push([retentionYear]);
+  const consumed = new Set();
+  const out = {};
+  cols.forEach(c => out[c] = []);
+  let reconciled = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const poolName = row[pc["PlayerName"]] || `${row[pc["LastName"]]}, ${row[pc["FirstName"]]}`;
+    const ncKey = ncKeyFor(row[pc["Conference"]], poolName);
+    const seen = new Set();
+    const evs = [];
+    [byId[row[pc["PlayerID"]]], byNc[ncKey]].forEach(arr => {
+      (arr || []).forEach(ev => { if (!seen.has(ev.uid)) { seen.add(ev.uid); evs.push(ev); } });
+    });
+    evs.forEach(e => consumed.add(e.uid)); // consume even for EnteredNFL, so we don't recreate
+
+    // Preserve graduated players - they've left the devy system.
+    if (row[pc["Status"]] === "EnteredNFL") {
+      cols.forEach(c => out[c].push([row[pc[c]]]));
+      continue;
+    }
+
+    evs.sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
+    if (evs.length) reconciled++;
+    const s = computeStatus(evs);
+    cols.forEach(c => out[c].push([s[c.charAt(0).toLowerCase() + c.slice(1)]]));
   }
 
   const numRows = data.length - 1;
@@ -1615,10 +1653,57 @@ function reconcileDevyPoolFromLedger() {
     cols.forEach(c => poolSheet.getRange(2, pc[c] + 1, numRows, 1).setValues(out[c]));
   }
 
+  // Append pool copies for OWNED ledger players who have no pool row (write-ins,
+  // backfilled historical players). Group unconsumed events by conference+name.
+  // New rows get non-KTC IDs so a KTC refresh won't erase them. Skip anyone already
+  // in the RookieLedger so we don't resurrect a graduated player.
+  const rl = getRookieLedgerIndex();
+  const rookieIndex = rl.ok ? rl.index : null;
+
+  const leftover = {};
+  allEvents.forEach(e => {
+    if (consumed.has(e.uid) || !e.ncKey) return;
+    (leftover[e.ncKey] = leftover[e.ncKey] || []).push(e);
+  });
+
+  const newRows = [];
+  Object.keys(leftover).forEach(ncKey => {
+    const evs = leftover[ncKey].slice().sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
+    const s = computeStatus(evs);
+    if (s.status !== "Drafted" && s.status !== "Retained") return; // only owned players need a copy
+    const id = leftover[ncKey][0].ident;
+    if (rookieIndex && isInRookieLedger(rookieIndex, id.playerName, id.position)) return; // graduated
+    const fallbackId = `${String(id.conference).toUpperCase()}_LEDGER_${devyNameKey(id.playerName).replace(/\s+/g, "").toUpperCase()}`;
+    // Order must match DEVY_PLAYER_POOL_HEADERS
+    newRows.push([
+      id.playerId || fallbackId,
+      id.conference,
+      id.playerName,
+      id.firstName,
+      id.lastName,
+      id.position,
+      "",             // Year (draft-class year unknown for a historical add)
+      s.status,
+      s.drafted,
+      s.draftedBy,
+      s.draftYear,
+      s.retainedBy,
+      s.retentionYear
+    ]);
+  });
+
+  let added = 0;
+  if (newRows.length > 0) {
+    const lastRow = poolSheet.getLastRow();
+    poolSheet.getRange(lastRow + 1, 1, newRows.length, DEVY_PLAYER_POOL_HEADERS.length).setValues(newRows);
+    added = newRows.length;
+  }
+
   return {
     success: true,
-    message: `Reconciled ${reconciled} owned copies from the ledger (of ${numRows} pool rows).`,
+    message: `Reconciled ${reconciled} existing copies; added ${added} owned player(s) that were missing from the pool.`,
     reconciled,
+    added,
     totalRows: numRows
   };
 }

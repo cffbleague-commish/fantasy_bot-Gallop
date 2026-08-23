@@ -45,7 +45,10 @@ const TXN_META = {
   graduate: { color: '#8B6F1F' },
 };
 
-// MFL "no photo" fallback (confirmed from the live player page's onerror handler).
+// MFL player headshot (confirmed live: /player_photos_2014/{id}_thumb.jpg, 80×107).
+// Computed client-side from the id so it's correct regardless of the cached
+// payload; NO_PHOTO is MFL's own "no photo" placeholder (from the page's onerror).
+const plPhoto = (id) => 'https://www46.myfantasyleague.com/player_photos_2014/' + id + '_thumb.jpg';
 const NO_PHOTO = 'https://www46.myfantasyleague.com/player_photos_2010/no_photo_available.jpg';
 
 // The league's data season (getLeagueYear on the server) — NOT the calendar year.
@@ -277,7 +280,7 @@ async function loadLedgerIndex() {
   (d.players || []).forEach((p) => {
     ROSTER.push({
       id: p.id, name: p.name, pos: p.pos, college: p.nflTeam || 'FA', nflTeam: p.nflTeam || '',
-      photo: p.photo, awardsCount: p.awards || 0,
+      photo: plPhoto(p.id), awardsCount: p.awards || 0,
       roll: {
         total: p.copies, rostered: p.held, redshirting: 0, fa: p.fa,
         graduated: 0, declared: 0, txns: 0, avg: null, high: null,
@@ -299,7 +302,7 @@ async function loadPlayerLedger(pid) {
 
   PLAYER_AUG[pid] = {
     college: d.nflTeam || 'FA', nflTeam: d.nflTeam || '', entered: d.entered,
-    awards: d.awards || [], draft: d.draft || [], profileUrl: d.profileUrl, photo: d.photo,
+    awards: d.awards || [], draft: d.draft || [], profileUrl: d.profileUrl, photo: plPhoto(pid),
   };
   // Merge bio + recomputed roll onto the in-place ROSTER row so the hero updates.
   const row = ROSTER.find((r) => r.id === pid);
