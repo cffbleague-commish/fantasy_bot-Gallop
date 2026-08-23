@@ -1,0 +1,3383 @@
+<style>
+/* ============================================================
+   CFFB.css — College Fantasy Football League stylesheet
+   Drop-in stylesheet for MyFantasyLeague custom CSS.
+
+   Built on: CFFB Design System (dark mode, championship gold)
+   Inspiration: ESPN GameDay, CFP broadcast graphics, 247sports.
+
+   Sections
+   --------
+   01  Foundations  — tokens, fonts, reset
+   02  Typography   — display + body helpers
+   03  Page chrome  — top bar, sidebar, page shell, ticker
+   04  Surfaces     — cards, KPI tiles, panels
+   05  Tables       — MFL legacy tables + custom data tables
+   06  Buttons + forms
+   07  Player atoms — name plate, position chip, team chip
+   08  NEW · Redshirt chips (traditional + medical bandage)
+   09  NEW · Eligibility dots (class + years used)
+   10  NEW · Award badges (Heisman, Davey O'Brien, Doak Walker,
+            Biletnikoff, Conference All-American)
+   11  Misc · stars, conference badges, grade pills, value delta
+   12  Utilities
+   ============================================================ */
+
+
+/* ============================================================
+   01 · FOUNDATIONS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Star tiers */
+  --star-5: #C9A227;
+  --star-4: #3B82C4;
+  --star-3: #7BA4C9;
+  --star-2: #6A6A6A;
+  --star-1: #4A4A4A;
+
+  /* Grades */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: #C9A227;
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* Deltas */
+  --delta-pos:  #2D7A4E;
+  --delta-neg:  #B84545;
+  --delta-flat: #5A5A5A;
+
+  /* Live */
+  --live: #2D7A4E;
+
+  /* Conferences */
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
+  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
+
+  /* Eligibility / Redshirt */
+  --rs-trad:    #C9A227;   /* gold shield */
+  --rs-medical: #D17575;   /* dusty red bandage */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Type scale */
+  --ds-hero: 64px; --ds-1: 48px; --ds-2: 32px; --ds-3: 24px; --ds-4: 18px;
+  --tx-lg: 16px; --tx-md: 14px; --tx-sm: 13px; --tx-xs: 12px; --tx-2xs: 11px;
+
+  /* Weights */
+  --w-400: 400; --w-500: 500; --w-600: 600; --w-700: 700;
+
+  /* Spacing — 8px base */
+  --s-half: 4px;
+  --s-1:  8px; --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 40px; --s-6: 48px; --s-7: 64px; --s-8: 80px;
+
+  /* Radii */
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+
+  /* Layout */
+  --container-max: 1280px;
+  --topbar-h: 64px;
+  --ticker-h: 44px;
+}
+
+/* Reset (light, MFL-friendly) */
+*, *::before, *::after { box-sizing: border-box; }
+
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num *, td.cffb-num, th.cffb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+
+/* ============================================================
+   02 · TYPOGRAPHY
+   ============================================================ */
+
+.cffb-display-hero,
+.cffb-display-1,
+.cffb-display-2,
+.cffb-display-3,
+.cffb-display-4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cffb-display-hero { font-weight: 700; font-size: var(--ds-hero); line-height: 1; }
+.cffb-display-1    { font-weight: 700; font-size: var(--ds-1); line-height: 1.05; }
+.cffb-display-2    { font-weight: 700; font-size: var(--ds-2); line-height: 1.1; }
+.cffb-display-3    { font-weight: 600; font-size: var(--ds-3); line-height: 1.15; }
+.cffb-display-4    { font-weight: 600; font-size: var(--ds-4); line-height: 1.2; }
+
+.cffb-h1 { font: 700 28px/1.2 var(--font-body); letter-spacing: -0.01em; margin: 0; }
+.cffb-h2 { font: 600 20px/1.25 var(--font-body); margin: 0; }
+.cffb-h3 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+.cffb-body    { font-size: var(--tx-md); color: var(--fg-primary); }
+.cffb-body-sm { font-size: var(--tx-sm); color: var(--fg-secondary); }
+
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Gold-gradient text — RESERVE for the page's hero value only. */
+.cffb-gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+
+/* ============================================================
+   03 · PAGE CHROME
+   ============================================================ */
+
+.cffb-shell {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar — sticky, 64px, holds wordmark + nav + manager chip */
+.cffb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 var(--s-3);
+  gap: var(--s-3);
+}
+.cffb-topbar__brand {
+  display: flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; font-size: var(--ds-4);
+  letter-spacing: 0.02em;
+  color: var(--fg-primary);
+  border-right: 1px solid var(--border);
+  padding-right: var(--s-3);
+  height: 100%;
+}
+.cffb-topbar__brand-mark {
+  width: 28px; height: 28px;
+  background: var(--gold-gradient);
+  -webkit-mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+          mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+}
+.cffb-topbar__nav {
+  display: flex; align-items: center; gap: var(--s-half);
+  height: 100%;
+}
+.cffb-topbar__nav a {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-sm); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 0 var(--s-2); height: 100%;
+  display: inline-flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cffb-topbar__nav a:hover { color: var(--fg-primary); text-decoration: none; }
+.cffb-topbar__nav a.is-active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--gold);
+}
+.cffb-topbar__spacer { flex: 1; }
+.cffb-topbar__manager {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--tx-sm); font-weight: 600;
+}
+.cffb-topbar__manager-cap {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* Ticker — sticky under topbar, 44px, scrolls left */
+.cffb-ticker {
+  position: sticky; top: var(--topbar-h); z-index: 49;
+  height: var(--ticker-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cffb-ticker__label {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 0 var(--s-2);
+  background: var(--bg-surface-elev);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--tx-sm); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  z-index: 2;
+}
+.cffb-ticker__track {
+  display: inline-flex; align-items: center; gap: var(--s-4);
+  white-space: nowrap;
+  padding-left: 140px;
+  animation: cffb-ticker-scroll 60s linear infinite;
+}
+.cffb-ticker__item {
+  display: inline-flex; align-items: baseline; gap: var(--s-1);
+  font-size: var(--tx-sm); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-ticker__item strong {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-primary); font-size: var(--tx-md);
+  text-transform: uppercase;
+}
+.cffb-ticker__item em { font-style: normal; color: var(--gold); font-weight: 600; }
+.cffb-ticker__sep { color: var(--border-strong); }
+@keyframes cffb-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Page shell */
+.cffb-page {
+  flex: 1;
+  max-width: var(--container-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-7);
+}
+.cffb-page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.cffb-page__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 40px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.005em;
+}
+
+/* Footer */
+.cffb-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-3);
+  font-size: var(--tx-xs);
+  color: var(--fg-tertiary);
+  text-align: center;
+}
+
+
+/* ============================================================
+   04 · SURFACES — cards, KPI tiles, panels
+   ============================================================ */
+
+.cffb-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3);
+}
+.cffb-card--featured { box-shadow: var(--inset-metallic); }
+.cffb-card--featured::before {
+  content: ""; display: block; height: 3px;
+  background: var(--gold-gradient);
+  margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) var(--s-2);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+.cffb-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.cffb-card__title {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.cffb-card__action {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* KPI tile */
+.cffb-kpi {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3) 18px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-kpi__label { /* alias for .cffb-label */
+  font-family: var(--font-body);
+  font-weight: 600; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-kpi__value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--ds-1); line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cffb-kpi__sub {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: var(--delta-pos); }
+.cffb-kpi__sub--neg { color: var(--delta-neg); }
+.cffb-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+/* Live indicator */
+.cffb-live {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--tx-2xs); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--live);
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: var(--shadow-glow-live);
+  animation: cffb-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+
+/* ============================================================
+   05 · TABLES (MFL legacy + custom)
+   ============================================================ */
+
+.cffb-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.cffb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tx-sm);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 12px var(--s-2);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cffb-table tbody td {
+  padding: 12px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.cffb-table tbody tr:last-child td { border-bottom: none; }
+.cffb-table tbody tr {
+  position: relative;
+  transition: background var(--dur-fast);
+}
+.cffb-table tbody tr:hover { background: var(--bg-surface-hover); }
+.cffb-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table tbody tr.is-active td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table__num { text-align: right; }
+.cffb-table__rank {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-secondary);
+  width: 40px; text-align: center;
+}
+
+
+/* ============================================================
+   06 · BUTTONS + FORMS
+   ============================================================ */
+
+.cffb-btn {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-xs); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+.cffb-btn:hover { filter: brightness(1.08); }
+.cffb-btn:active { filter: brightness(0.9); }
+.cffb-btn--primary {
+  background: var(--gold-gradient);
+  color: #0A0A0A;
+  border-color: transparent;
+}
+.cffb-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cffb-btn--sm { padding: 6px 10px; font-size: 10px; }
+
+.cffb-input {
+  font-family: var(--font-body); font-size: var(--tx-md);
+  padding: 10px 12px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  width: 100%;
+}
+.cffb-input::placeholder { color: var(--fg-tertiary); }
+.cffb-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+
+/* ============================================================
+   07 · PLAYER ATOMS — name plate, position chip, team chip
+   ============================================================ */
+
+.cffb-player {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-player__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 18px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.cffb-player__meta {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cffb-pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  min-width: 28px; padding: 3px 6px;
+  border-radius: var(--r-1);
+  color: #0A0A0A;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cffb-pos--qb { background: #C9A227; }
+.cffb-pos--rb { background: #3B82C4; color: #F5F5F5; }
+.cffb-pos--wr { background: #7BA4C9; }
+.cffb-pos--te { background: #8B6F1F; color: #F5F5F5; }
+.cffb-pos--ol { background: #6A6A6A; color: #F5F5F5; }
+.cffb-pos--def, .cffb-pos--lb, .cffb-pos--db { background: #B84545; color: #F5F5F5; }
+.cffb-pos--k  { background: #5C7A6A; color: #F5F5F5; }
+
+/* Team logo — canonical "ripped pill" PNGs in assets/teams/<slug>.png.
+   Conference badge on left, torn-paper edge, team art on right (250×60).
+   Sizes match the design system: sm 30px, md 48px, lg 60px tall. */
+.cffb-team {
+  display: inline-block;
+  height: 48px; width: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+
+/* Team chip — circular fallback for teams without ripped art yet */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cffb-team-chip--sm { width: 24px; height: 24px; font-size: 9px; }
+.cffb-team-chip--lg { width: 48px; height: 48px; font-size: 14px; }
+
+
+/* ============================================================
+   08 · REDSHIRT CHIPS — Traditional + Medical (NEW)
+   ------------------------------------------------------------
+   Sits inline next to a player's name. Shield silhouette,
+   gold for traditional, dusty-red bandage for medical.
+
+   Markup:
+     <span class="cffb-rs cffb-rs--trad" title="Traditional Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield…</svg>
+       <span class="cffb-rs__txt">RS</span>
+     </span>
+     <span class="cffb-rs cffb-rs--med" title="Medical Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield+bandage…</svg>
+       <span class="cffb-rs__txt">MRS</span>
+     </span>
+
+   Sizes: --xs (12px), --sm (14px default), --md (18px)
+   ------------------------------------------------------------ */
+
+.cffb-rs {
+  display: inline-flex; align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.cffb-rs__icon {
+  display: block;
+  width: 14px; height: auto;
+  flex-shrink: 0;
+}
+.cffb-rs__txt {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Sizes */
+.cffb-rs--xs .cffb-rs__icon { width: 10px; }
+.cffb-rs--xs .cffb-rs__txt  { font-size: 8.5px; }
+.cffb-rs--sm .cffb-rs__icon { width: 14px; }
+.cffb-rs--sm .cffb-rs__txt  { font-size: 10px; }
+.cffb-rs--md .cffb-rs__icon { width: 18px; }
+.cffb-rs--md .cffb-rs__txt  { font-size: 12px; }
+
+/* Traditional */
+.cffb-rs--trad           { color: var(--rs-trad); }
+.cffb-rs--trad .cffb-rs__icon { stroke: var(--rs-trad); fill: rgba(201,162,39,0.08); }
+
+/* Medical */
+.cffb-rs--med            { color: var(--rs-medical); }
+.cffb-rs--med .cffb-rs__icon { stroke: var(--rs-medical); fill: rgba(209,117,117,0.08); }
+
+/* Icon-only variant (no text), used in tight rows/tables */
+.cffb-rs--solo .cffb-rs__txt { display: none; }
+.cffb-rs--solo { gap: 0; }
+
+
+/* ============================================================
+   09 · ELIGIBILITY DOTS — class + years used (NEW)
+   ------------------------------------------------------------
+   Class label (FR / SO / JR / SR / GR) + 5 dots showing years
+   used / remaining. Redshirt years marked with a ring (◎) instead
+   of a fill — communicates "burned a year but no eligibility used".
+
+   Markup:
+     <span class="cffb-elig">
+       <span class="cffb-elig__class">JR</span>
+       <span class="cffb-elig__dots" aria-label="2 of 5 eligibility used">
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot is-rs"></span>   ← redshirt
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot"></span>
+         <span class="cffb-elig__dot"></span>
+       </span>
+       <span class="cffb-elig__remain">2 left</span>
+     </span>
+   ------------------------------------------------------------ */
+
+.cffb-elig {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cffb-elig__class {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 26px; padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  color: var(--fg-primary);
+  text-align: center;
+  background: var(--bg-surface-elev);
+}
+.cffb-elig__class--fr { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--so { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--jr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--sr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--gr { border-color: var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+
+.cffb-elig__dots {
+  display: inline-flex; gap: 3px; align-items: center;
+}
+.cffb-elig__dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.cffb-elig__dot.is-used {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.cffb-elig__dot.is-rs {
+  /* Redshirt: filled ring with hollow center — "year burned, no game time" */
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-trad) 2.5px 100%);
+  border-color: var(--rs-trad);
+}
+.cffb-elig__dot.is-rs-med {
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-medical) 2.5px 100%);
+  border-color: var(--rs-medical);
+}
+.cffb-elig__remain {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Compact variant — no remaining label, no class chip */
+.cffb-elig--compact { gap: var(--s-half); }
+.cffb-elig--compact .cffb-elig__class { display: none; }
+.cffb-elig--compact .cffb-elig__remain { display: none; }
+
+
+/* ============================================================
+   10 · AWARD BADGES — Heisman, Davey O'Brien, Doak Walker,
+        Biletnikoff, Conference All-American (NEW)
+   ------------------------------------------------------------
+   Stacked horizontal badges with a stroke-icon glyph, award
+   name, and year. The Heisman is the hero — metallic gold
+   gradient fill; the four position awards share a uniform
+   gold-outline treatment. Conference All-American picks up the
+   player's conference accent color.
+
+   Markup:
+     <div class="cffb-awards">
+       <span class="cffb-award cffb-award--heisman">
+         <svg class="cffb-award__glyph" viewBox="0 0 24 24">…</svg>
+         <span class="cffb-award__name">Heisman</span>
+         <span class="cffb-award__year">2024</span>
+       </span>
+       <span class="cffb-award cffb-award--obrien">…</span>
+       …
+     </div>
+   ------------------------------------------------------------ */
+
+.cffb-awards {
+  display: flex; flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.cffb-award {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-elev);
+  font-family: var(--font-body);
+  font-size: var(--tx-xs); font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  transition: filter var(--dur-fast);
+  cursor: default;
+}
+.cffb-award:hover { filter: brightness(1.08); }
+
+.cffb-award__glyph {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75;
+  color: var(--gold);
+}
+.cffb-award__name {
+  letter-spacing: 0.04em;
+}
+.cffb-award__year {
+  color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* Heisman — hero treatment, metallic gold fill */
+.cffb-award--heisman {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+  font-weight: 700;
+}
+.cffb-award--heisman .cffb-award__glyph { color: #0A0A0A; stroke-width: 2; }
+.cffb-award--heisman .cffb-award__year  { color: rgba(10,10,10,0.65); }
+
+/* Position awards — gold outline */
+.cffb-award--obrien,
+.cffb-award--walker,
+.cffb-award--biletnikoff {
+  border-color: rgba(201,162,39,0.45);
+  background: rgba(201,162,39,0.06);
+}
+
+/* Conference All-American — picks up conference color */
+.cffb-award--allamerican {
+  border-color: rgba(154,154,154,0.35);
+}
+.cffb-award--allamerican.is-sec   { border-color: rgba(201,162,39,0.45); color: var(--fg-primary); }
+.cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
+.cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
+.cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
+.cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+
+/* Size variants */
+.cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
+.cffb-awards--sm .cffb-award__glyph { width: 13px; height: 13px; }
+.cffb-awards--sm .cffb-award__year { font-size: 10px; }
+
+
+/* ============================================================
+   11 · MISC — stars, conference badges, grade pills, value delta
+   ============================================================ */
+
+/* Stars */
+.cffb-stars { display: inline-flex; align-items: center; gap: 2px; }
+.cffb-star { font-size: 14px; line-height: 1; color: var(--star-5); }
+.cffb-star--off { color: var(--border); }
+.cffb-stars--t5 .cffb-star { color: var(--star-5); }
+.cffb-stars--t4 .cffb-star { color: var(--star-4); }
+.cffb-stars--t3 .cffb-star { color: var(--star-3); }
+.cffb-stars--t2 .cffb-star { color: var(--star-2); }
+
+/* Conference badges */
+.cffb-conf {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: var(--r-1);
+  border: 1px solid transparent; color: var(--fg-primary);
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
+
+/* Grade pill */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: var(--r-2);
+  padding: 4px 10px 5px; color: var(--fg-primary);
+  font-size: 20px;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: var(--gold-gradient); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
+.cffb-grade--bp { background: var(--grade-b); color: var(--fg-primary); }
+.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
+.cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
+
+/* Value delta */
+.cffb-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-body); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tx-sm);
+}
+.cffb-delta--pos  { color: var(--delta-pos); }
+.cffb-delta--neg  { color: var(--delta-neg); }
+.cffb-delta--flat { color: var(--delta-flat); }
+.cffb-delta__arrow { font-size: 0.85em; line-height: 1; }
+
+
+/* ============================================================
+   12 · UTILITIES
+   ============================================================ */
+
+.cffb-row     { display: flex; gap: var(--s-2); align-items: center; }
+.cffb-row--sb { justify-content: space-between; }
+.cffb-row--end{ justify-content: flex-end; }
+.cffb-stack   { display: flex; flex-direction: column; gap: var(--s-1); }
+.cffb-stack--2 { gap: var(--s-2); }
+.cffb-stack--3 { gap: var(--s-3); }
+
+.cffb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+.cffb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.cffb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.cffb-divider { height: 1px; background: var(--border); margin: var(--s-2) 0; }
+.cffb-spacer  { flex: 1; }
+
+.cffb-muted     { color: var(--fg-secondary); }
+.cffb-tertiary  { color: var(--fg-tertiary); }
+.cffb-gold      { color: var(--gold); }
+.cffb-mono      { font-family: var(--font-mono); }
+
+.cffb-mt-1 { margin-top: var(--s-1); }
+.cffb-mt-2 { margin-top: var(--s-2); }
+.cffb-mt-3 { margin-top: var(--s-3); }
+.cffb-mb-2 { margin-bottom: var(--s-2); }
+
+/* ============================================================
+   CFFB · Player Ledger — layout styles.
+   Tokens + atoms (cffb-rs / cffb-elig / cffb-award / cffb-pos /
+   cffb-team / cffb-conf / cffb-stars) come from cffb.css.
+   This file owns the ledger panel chrome only. Namespace: pl-.
+   ============================================================ */
+
+
+/* Redshirt shield: cffb.css sets height:auto, which resolves to the SVG's
+   default 150px replaced-element height here. Pin explicit heights (viewBox
+   20×22 → height = width × 1.1) so the chip sizes correctly inline. */
+.cffb-rs__icon { height: 15px; }
+.cffb-rs--xs .cffb-rs__icon { height: 11px; }
+.cffb-rs--sm .cffb-rs__icon { height: 15px; }
+.cffb-rs--md .cffb-rs__icon { height: 20px; }
+
+/* ---------- STAGE / FRAME / TOGGLE (responsive desktop ↔ mobile) ---------- */
+.pl-stage { width: 100%; }
+.pl-frame { container-type: inline-size; container-name: pl; background: var(--bg-canvas); }
+.pl-stage--desktop .pl-frame { width: 100%; min-height: 100vh; }
+
+.pl-stage--mobile {
+  display: flex; justify-content: center;
+  padding: 28px 16px 96px;
+  min-height: 100vh; box-sizing: border-box;
+  background-image: radial-gradient(circle at 50% 0%, #1b1b1b 0%, #0C0C0C 72%);
+}
+.pl-stage--mobile .pl-frame {
+  width: 402px; height: 824px; flex-shrink: 0;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  border-radius: 28px; border: 8px solid #1A1A1A;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+.pl-stage--mobile .pl-frame::-webkit-scrollbar { width: 0; }
+
+.pl-viewtoggle {
+  position: fixed; left: 16px; bottom: 16px; z-index: 40;
+  display: flex; gap: 2px; padding: 3px;
+  background: rgba(20,20,20,0.92); border: 1px solid var(--border);
+  border-radius: 8px; backdrop-filter: blur(8px);
+}
+.pl-viewtoggle__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--fg-secondary);
+  font: 600 11px/1 var(--font-body); letter-spacing: 0.04em; cursor: pointer;
+}
+.pl-viewtoggle__btn svg { width: 15px; height: 15px; }
+.pl-viewtoggle__btn.is-on { background: var(--bg-surface-elev); color: var(--fg-primary); }
+
+/* ---------- ROOT / PANEL ---------- */
+.pl-root {
+  max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px;
+  color: var(--fg-primary); font-family: var(--font-body);
+}
+.pl-context {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+  font: 600 11px/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.pl-context__crumb { color: var(--fg-tertiary); }
+.pl-context__sep { color: var(--fg-tertiary); }
+.pl-context__here { color: var(--gold); }
+
+.pl-panel {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.pl-panel__head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+  padding: 24px 24px 20px; border-bottom: 1px solid var(--border);
+  background: radial-gradient(120% 130% at 100% 0%, rgba(201,162,39,0.06), transparent 55%);
+}
+.pl-panel__h1 { font: 700 30px/1 var(--font-display); text-transform: uppercase; letter-spacing: -0.005em; margin: 0; }
+.pl-panel__desc { color: var(--fg-secondary); font-size: 13px; margin: 8px 0 0; max-width: 46ch; }
+
+/* ---------- SEARCH ---------- */
+.pl-search { position: relative; width: 320px; flex-shrink: 0; }
+.pl-search__field {
+  display: flex; align-items: center; gap: 8px;
+  height: 42px; padding: 0 10px 0 12px;
+  background: var(--bg-surface-elev); border: 1px solid var(--border-strong);
+  border-radius: 8px; transition: border-color var(--dur-fast);
+}
+.pl-search__field.is-open, .pl-search__field:focus-within { border-color: var(--gold); }
+.pl-search__ic { color: var(--fg-secondary); font-size: 18px; line-height: 1; }
+.pl-search__field input {
+  flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
+  color: var(--fg-primary); font: 500 14px/1 var(--font-body);
+}
+.pl-search__field input::placeholder { color: var(--fg-tertiary); }
+.pl-search__clear {
+  border: 0; background: transparent; color: var(--fg-secondary);
+  font-size: 18px; cursor: pointer; padding: 0 4px;
+}
+.pl-search__menu {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30;
+  background: var(--bg-surface-elev); border: 1px solid var(--border-strong);
+  border-radius: 8px; box-shadow: var(--shadow-md); overflow: hidden; padding: 4px;
+}
+.pl-opt {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 9px 10px; border: 0; border-radius: 6px;
+  background: transparent; cursor: pointer; text-align: left;
+}
+.pl-opt.is-hi { background: var(--bg-surface-hover); }
+.pl-opt.is-cur { box-shadow: inset 2px 0 0 var(--gold); }
+.pl-opt__shot {
+  width: 34px; height: 34px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent, #5A5A5A);
+  font: 700 12px/1 var(--font-display); color: var(--fg-primary);
+}
+.pl-opt__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pl-opt__name { font: 600 14px/1 var(--font-body); color: var(--fg-primary); }
+.pl-opt__meta { display: flex; align-items: center; gap: 8px; }
+.pl-opt__sub { font-size: 11px; color: var(--fg-secondary); }
+.pl-opt__roll { display: flex; gap: 14px; flex-shrink: 0; }
+.pl-opt__roll-n { display: flex; flex-direction: column; align-items: center; }
+.pl-opt__roll-n b { font: 700 15px/1 var(--font-display); color: var(--fg-primary); font-variant-numeric: tabular-nums; }
+.pl-opt__roll-n span { font: 600 9px/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary); margin-top: 3px; }
+.pl-opt-empty { padding: 16px; text-align: center; color: var(--fg-tertiary); font-size: 13px; }
+
+/* ---------- PORTRAIT ---------- */
+.pl-portrait {
+  position: relative; flex-shrink: 0; overflow: hidden;
+  background: var(--bg-surface-elev); border: 1px solid var(--border); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.pl-portrait--lg { width: 132px; height: 156px; }
+.pl-portrait--sm { width: 52px; height: 52px; border-radius: 7px; }
+.pl-portrait__bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.pl-portrait__sil { width: 46px; height: 46px; color: #3A3A3A; }
+.pl-portrait--sm .pl-portrait__sil { width: 26px; height: 26px; }
+.pl-portrait__initials {
+  position: absolute; bottom: 8px; right: 10px;
+  font: 700 26px/1 var(--font-display); color: rgba(245,245,245,0.92);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+.pl-portrait--sm .pl-portrait__initials { font-size: 15px; bottom: 4px; right: 6px; }
+/* MFL headshot overlay — sits above the initials/silhouette placeholder; hidden
+   by its own onError handler when MFL has no photo, so the placeholder shows. */
+.pl-portrait__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; background: var(--bg-surface-elev); }
+
+/* ---------- HERO PROFILE ---------- */
+.pl-hero {
+  display: grid; grid-template-columns: auto 1fr 280px; gap: 28px;
+  padding: 24px; position: relative; overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+.pl-hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(70% 120% at 0% 0%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 52%);
+}
+.pl-hero > * { position: relative; z-index: 1; }
+.pl-hero__id { min-width: 0; display: flex; flex-direction: column; gap: 9px; align-self: center; }
+.pl-hero__tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pl-hero__college { font-size: 12px; color: var(--fg-secondary); }
+.pl-hero__offered { font: 600 10px/1 var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-tertiary); padding: 4px 8px; border: 1px solid var(--border); border-radius: 2px; }
+.pl-hero__namerow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pl-hero__name { font-family: var(--font-display); font-weight: 700; font-size: 46px; line-height: 1.04; text-transform: uppercase; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.pl-hero__meta { color: var(--fg-secondary); font-size: 13px; }
+.pl-hero__stars { display: flex; align-items: center; gap: 12px; }
+.pl-hero__composite { font-size: 12px; color: var(--fg-secondary); font-variant-numeric: tabular-nums; }
+
+.pl-hero__rail {
+  display: flex; flex-direction: column; gap: 16px; justify-content: center;
+  padding-left: 24px; border-left: 1px solid var(--border);
+}
+.pl-hero__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+
+/* ---------- STATS ---------- */
+.pl-stat { display: flex; flex-direction: column; gap: 3px; }
+.pl-stat__label { font: 600 10px/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary); }
+.pl-stat__val { font: 600 18px/1 var(--font-display); color: var(--fg-primary); font-variant-numeric: tabular-nums; }
+.pl-stat__val.is-hero { font-size: 30px; color: var(--gold-light); }
+
+/* ---------- COPIES METER ---------- */
+.pl-meter { display: flex; flex-direction: column; gap: 8px; }
+.pl-meter__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pl-meter__title { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-secondary); }
+.pl-meter__count { font-size: 11px; color: var(--fg-tertiary); }
+.pl-meter__count b { color: var(--fg-primary); font-variant-numeric: tabular-nums; }
+.pl-meter__bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-surface); border: 1px solid var(--border); }
+.pl-meter__seg { display: block; height: 100%; }
+.pl-meter__seg.is-rostered { background: #2D7A4E; }
+.pl-meter__seg.is-redshirting { background: var(--gold); }
+.pl-meter__seg.is-graduated { background: #8B6F1F; }
+.pl-meter__seg.is-declared { background: #B8902F; }
+.pl-meter__seg.is-fa { background: #3A3A3A; }
+.pl-meter__legend { display: flex; gap: 14px; }
+.pl-meter__legend span { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--fg-tertiary); }
+.pl-meter__legend i { width: 8px; height: 8px; border-radius: 2px; }
+.pl-meter__legend i.is-rostered { background: #2D7A4E; }
+.pl-meter__legend i.is-redshirting { background: var(--gold); }
+.pl-meter__legend i.is-graduated { background: #8B6F1F; }
+.pl-meter__legend i.is-declared { background: #B8902F; }
+.pl-meter__legend i.is-fa { background: #3A3A3A; }
+
+/* ---------- ELIGIBILITY STRIP (hero) ---------- */
+.pl-elig { padding: 18px 24px 22px; border-bottom: 1px solid var(--border); }
+.pl-elig__head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.pl-elig__title { font: 600 11px/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-secondary); }
+.pl-eligstrip { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.pl-eligyr {
+  position: relative; padding: 0 8px; text-align: center;
+}
+.pl-eligyr__season { font: 700 12px/1 var(--font-display); color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+.pl-eligyr__rail { position: relative; height: 22px; display: flex; align-items: center; justify-content: center; }
+.pl-eligyr__rail::before {
+  content: ""; position: absolute; top: 50%; left: -50%; right: 50%; height: 2px;
+  background: var(--border); transform: translateY(-50%);
+}
+.pl-eligyr:first-child .pl-eligyr__rail::before { display: none; }
+.pl-eligyr__dot {
+  position: relative; z-index: 1; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--bg-surface-elev); border: 2px solid var(--border-strong);
+}
+.pl-eligyr__dot.is-used { background: var(--gold); border-color: var(--gold); }
+.pl-eligyr__dot.is-rs { background: radial-gradient(circle, transparent 0 3px, var(--gold) 3px 100%); border-color: var(--gold); }
+.pl-eligyr__dot.is-rs-med { background: radial-gradient(circle, transparent 0 3px, var(--rs-medical) 3px 100%); border-color: var(--rs-medical); }
+.pl-eligyr__dot.is-current { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 24%, transparent); }
+.pl-eligyr__dot.is-pre { background: var(--bg-surface-elev); border-style: dashed; }
+.pl-eligyr__lbl { font: 600 12px/1.2 var(--font-body); color: var(--fg-primary); margin-top: 8px; }
+.pl-eligyr__sub { font-size: 11px; color: var(--fg-tertiary); margin-top: 3px; }
+.pl-eligyr--current .pl-eligyr__lbl { color: var(--gold-light); }
+
+/* ---------- COMPACT PROFILE ---------- */
+.pl-compact {
+  display: flex; align-items: center; gap: 16px; padding: 18px 24px;
+  border-bottom: 1px solid var(--border); position: relative; overflow: hidden;
+}
+.pl-compact::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+}
+.pl-compact__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.pl-compact__namerow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pl-compact__name { font: 700 22px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.005em; }
+.pl-compact__college { font-size: 12px; color: var(--fg-secondary); }
+.pl-compact__sub { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pl-compact__roll { display: flex; gap: 22px; flex-shrink: 0; padding-left: 20px; border-left: 1px solid var(--border); }
+
+/* ---------- OWNER / STATUS / MONEY / TAGS ---------- */
+.pl-owner { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+.pl-owner--stacked { flex-direction: column; align-items: flex-start; gap: 7px; }
+.pl-owner__id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pl-owner__team { font: 600 13px/1.1 var(--font-body); color: var(--fg-primary); white-space: nowrap; }
+.pl-owner__handle { font: 500 11px/1 var(--font-mono); color: var(--fg-secondary); }
+.pl-owner--fa .pl-owner__fa {
+  font: 600 12px/1 var(--font-body); letter-spacing: 0.04em; color: var(--fg-tertiary);
+  padding: 5px 10px; border: 1px dashed var(--border-strong); border-radius: 4px;
+}
+.pl-tlitem__retired { font: 600 12px/1 var(--font-body); color: var(--fg-tertiary); letter-spacing: 0.02em; }
+
+.pl-status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.pl-status__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pl-status__label { font: 600 11px/1 var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-secondary); }
+.pl-status--sm .pl-status__label { font-size: 10px; }
+.pl-status--rostered .pl-status__label { color: #5FB07E; }
+.pl-status--redshirting .pl-status__label { color: var(--gold); }
+.pl-status--graduated .pl-status__label { color: #C9A227; }
+.pl-status--graduated .pl-status__dot { box-shadow: 0 0 0 2px rgba(139,111,31,0.35); }
+.pl-status--declared .pl-status__label { color: #D8B25A; }
+.pl-status--declared .pl-status__dot { box-shadow: 0 0 0 2px rgba(184,144,47,0.35); }
+
+.pl-money { font: 700 16px/1 var(--font-display); color: var(--fg-primary); }
+.pl-money--hero { font-size: 22px; color: var(--gold-light); }
+
+.pl-tag {
+  font: 700 9.5px/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 3px; white-space: nowrap;
+}
+.pl-tag--won { color: #0A0A0A; background: var(--gold); }
+.pl-tag--rs { color: var(--gold); background: rgba(201,162,39,0.12); border: 1px solid rgba(201,162,39,0.4); }
+.pl-tag--rs-med { color: var(--rs-medical); background: rgba(209,117,117,0.1); border: 1px solid rgba(209,117,117,0.4); }
+.pl-tag--award { color: #0A0A0A; background: var(--gold-gradient); }
+.pl-tag--graduate { color: var(--gold-light); background: rgba(139,111,31,0.18); border: 1px solid rgba(139,111,31,0.55); }
+.pl-tag--drop { color: #D88787; background: rgba(184,69,69,0.12); border: 1px solid rgba(184,69,69,0.4); }
+
+/* Honors star — copy earned a player award while held */
+.pl-honors {
+  display: inline-flex; align-items: center; gap: 1px; margin-left: 6px;
+  font: 700 11px/1 var(--font-body); color: var(--gold-light); vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  filter: drop-shadow(0 0 5px rgba(201,162,39,0.35));
+}
+
+/* ---------- LEDGER SECTION ---------- */
+.pl-ledger { padding: 20px 24px 24px; }
+.pl-ledger__head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.pl-ledger__title { font: 600 13px/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-primary); }
+.pl-ledger__hint { font-size: 11px; color: var(--fg-tertiary); }
+
+/* ---------- CONFERENCE GROUPING ---------- */
+.pl-conf { display: inline-flex; align-items: center; gap: 8px; }
+.pl-conf__logo { object-fit: contain; flex-shrink: 0; }
+.pl-conf__name { font: 700 14px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--fg-primary); }
+
+.pl-rows, .pl-cards-wrap { display: flex; flex-direction: column; gap: 20px; }
+.pl-confgroup { display: flex; flex-direction: column; gap: 8px; }
+.pl-confgroup__head {
+  display: flex; align-items: center; gap: 12px; position: relative;
+  padding: 4px 0 8px 12px; border-bottom: 1px solid var(--border);
+}
+.pl-confgroup__edge {
+  position: absolute; left: 0; top: 4px; bottom: 9px; width: 3px; border-radius: 2px;
+  background: var(--accent);
+}
+.pl-confgroup__count {
+  font: 600 10px/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-tertiary);
+}
+.pl-confroll { display: inline-flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.pl-confroll__chip {
+  font: 600 10px/1 var(--font-body); letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: 2px; border: 1px solid var(--border-strong); color: var(--fg-secondary);
+  white-space: nowrap;
+}
+.pl-confroll__chip.is-active { color: #5FB07E; border-color: rgba(45,122,78,0.4); }
+.pl-confroll__chip.is-retired { color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.pl-confroll__chip.is-fa { color: var(--fg-tertiary); }
+.pl-confgroup__body { display: flex; flex-direction: column; gap: 8px; }
+.pl-confgroup .pl-cards { margin-top: 4px; }
+
+.pl-lanegroup { margin-top: 14px; }
+.pl-lanegroup:first-of-type { margin-top: 2px; }
+.pl-lanegroup__head { display: flex; align-items: center; gap: 12px; padding: 6px 0 4px 4px; }
+.pl-lanegroup__head .pl-confroll { margin-left: auto; }
+
+/* ---------- ROWS LAYOUT ---------- */
+.pl-rows { display: flex; flex-direction: column; gap: 8px; }
+.pl-row { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-surface); }
+.pl-row.is-open { border-color: var(--border-strong); }
+.pl-row__head {
+  display: grid; grid-template-columns: 78px 104px minmax(0,1fr) auto 116px 18px;
+  align-items: center; gap: 16px; width: 100%;
+  padding: 14px 16px; border: 0; background: transparent; cursor: pointer; text-align: left;
+  position: relative;
+}
+.pl-row__head::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--accent); transform: scaleY(0); transform-origin: center;
+  transition: transform var(--dur-fast);
+}
+.pl-row__head:hover { background: var(--bg-surface-hover); }
+.pl-row__head:hover::before, .pl-row.is-open .pl-row__head::before { transform: scaleY(1); }
+.pl-row__n { font: 700 14px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-primary); }
+.pl-row__acq { display: flex; align-items: baseline; gap: 8px; }
+.pl-row__since { font-size: 11px; color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+.pl-row__dash { color: var(--fg-tertiary); font-size: 12px; }
+.pl-row__moves { font-size: 11px; color: var(--fg-secondary); text-align: right; font-variant-numeric: tabular-nums; }
+.pl-row__chev { color: var(--fg-tertiary); font-size: 12px; text-align: center; }
+
+/* ---------- PER-COPY ELIGIBILITY (inline) ---------- */
+.pl-celig { display: inline-flex; align-items: center; gap: 7px; vertical-align: middle; }
+.pl-celig .cffb-elig__class { font-size: 11px; padding: 1px 5px; }
+.pl-row__elig { justify-self: start; }
+.pl-card__elig { display: inline-flex; }
+.pl-lane__elig { display: inline-flex; }
+.pl-detail__elig { display: inline-flex; }
+
+/* ---------- CARDS LAYOUT ---------- */
+.pl-cards-wrap { display: flex; flex-direction: column; gap: 12px; }
+.pl-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: 10px; }
+.pl-card {
+  display: flex; flex-direction: column; gap: 14px; text-align: left;
+  padding: 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg-surface); cursor: pointer; position: relative;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.pl-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px;
+  background: var(--accent); opacity: 0; transition: opacity var(--dur-fast);
+}
+.pl-card:hover { background: var(--bg-surface-hover); }
+.pl-card.is-active { border-color: var(--accent); }
+.pl-card.is-active::before { opacity: 1; }
+.pl-card--fa { background: repeating-linear-gradient(135deg, var(--bg-surface) 0 7px, #121212 7px 14px); }
+.pl-card--graduated { background: repeating-linear-gradient(135deg, var(--bg-surface) 0 7px, #19150c 7px 14px); }
+.pl-card--declared { background: repeating-linear-gradient(135deg, var(--bg-surface) 0 7px, #1c1709 7px 14px); }
+.pl-card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pl-card__n { font: 700 13px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-secondary); }
+.pl-card__owner { min-height: 48px; display: flex; align-items: center; }
+.pl-card__foot { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pl-card__since { font-size: 11px; color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+.pl-card__dash { color: var(--fg-tertiary); font-size: 12px; }
+.pl-card__moves { margin-left: auto; font-size: 10px; color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+
+/* ---------- TIMELINE / SWIMLANE LAYOUT ---------- */
+.pl-timeline { --lane-label: 220px; display: flex; flex-direction: column; gap: 0; }
+.pl-axis { display: grid; align-items: end; margin-bottom: 6px; }
+.pl-axis__years { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.pl-axis__yr { text-align: center; font: 700 11px/1 var(--font-display); color: var(--fg-tertiary); font-variant-numeric: tabular-nums; }
+.pl-axis__yr.is-now { color: var(--gold); }
+.pl-lanes { display: flex; flex-direction: column; }
+.pl-lane {
+  display: grid; grid-template-columns: var(--lane-label) 1fr; align-items: center; gap: 0;
+  border-top: 1px solid var(--border); position: relative;
+}
+.pl-lane:last-child { border-bottom: 1px solid var(--border); }
+.pl-lane.is-active { background: var(--bg-surface-hover); }
+.pl-lane__head {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 14px 16px 14px 8px; border: 0; background: transparent; cursor: pointer; text-align: left;
+}
+.pl-lane__head:hover { color: var(--fg-primary); }
+.pl-lane__n { font: 700 13px/1 var(--font-display); text-transform: uppercase; color: var(--fg-primary); flex-shrink: 0; }
+.pl-lane__owner { margin-left: auto; }
+.pl-lane__track { position: relative; height: 56px; }
+.pl-lane__grid { position: absolute; inset: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.pl-lane__col { border-left: 1px dashed var(--border); }
+.pl-lane__col:first-child { border-left: 0; }
+.pl-lane__bar {
+  position: absolute; top: 50%; transform: translateY(-50%); height: 12px;
+  border-radius: 3px; opacity: 0.82; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+.pl-lane__bar.is-held { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16), 0 0 12px rgba(0,0,0,0.3); opacity: 1; }
+.pl-node {
+  position: absolute; top: 50%; transform: translate(-50%, -50%); z-index: 2;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-canvas); border: 2px solid var(--c);
+}
+.pl-node__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.pl-node--won .pl-node__dot { width: 8px; height: 8px; }
+.pl-node--drop { background: var(--bg-canvas); }
+.pl-node--drop .pl-node__dot { width: 8px; height: 2px; border-radius: 1px; }
+.pl-node--award { width: 20px; height: 20px; border-color: var(--gold-light); background: var(--bg-canvas); box-shadow: 0 0 8px rgba(201,162,39,0.4); }
+.pl-node__star { font: 10px/1 var(--font-body); color: var(--gold-light); }
+.pl-node--graduate { border-color: #8B6F1F; background: var(--bg-canvas); }
+.pl-node__cap { width: 9px; height: 9px; background: #8B6F1F; transform: rotate(45deg); border-radius: 1px; }
+
+/* ---------- DETAIL PANEL (cards + timeline) ---------- */
+.pl-detail { border: 1px solid var(--accent); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.pl-detail__head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg-surface-elev);
+}
+.pl-detail__copy { font: 700 14px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; }
+.pl-detail__owner { margin-left: auto; }
+.pl-detail__close { border: 0; background: transparent; color: var(--fg-secondary); font-size: 20px; cursor: pointer; line-height: 1; }
+
+/* ---------- TRANSACTION TIMELINE (vertical) ---------- */
+.pl-tl { padding: 16px 18px 18px; background: var(--bg-surface-elev); border-top: 1px solid var(--border); }
+.pl-detail .pl-tl { border-top: 0; }
+.pl-tl__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.pl-tl__title { font: 600 11px/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-secondary); }
+.pl-tl__sub { font-size: 11px; color: var(--fg-tertiary); }
+.pl-tl__list { list-style: none; margin: 0; padding: 0; }
+.pl-tlitem { display: grid; grid-template-columns: 18px 1fr; gap: 12px; }
+.pl-tlitem__rail { position: relative; display: flex; justify-content: center; }
+.pl-tlitem__rail::before {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--border);
+}
+.pl-tlitem:first-child .pl-tlitem__rail::before { top: 9px; }
+.pl-tlitem.is-last .pl-tlitem__rail::before { bottom: calc(100% - 9px); }
+.pl-tlitem__dot {
+  position: relative; z-index: 1; margin-top: 3px;
+  width: 11px; height: 11px; border-radius: 50%; border: 2px solid; background: var(--bg-surface-elev);
+}
+.pl-tlitem__body { padding-bottom: 16px; }
+.pl-tlitem:last-child .pl-tlitem__body { padding-bottom: 0; }
+.pl-tlitem__main { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pl-tlitem__season { font: 700 14px/1 var(--font-display); color: var(--fg-secondary); font-variant-numeric: tabular-nums; min-width: 34px; }
+.pl-tlitem__owner { flex: 1; min-width: 140px; }
+.pl-tlitem__detail { display: flex; align-items: center; gap: 8px; }
+.pl-tlitem__note { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--fg-secondary); max-width: 72ch; }
+
+/* ============================================================ DENSITY ============ */
+.pl--compact .pl-tlitem__body { padding-bottom: 11px; }
+.pl--compact .pl-row__head { padding: 11px 16px; }
+.pl--compact .pl-ledger, .pl--compact .pl-tl { padding-top: 14px; }
+.pl--compact .pl-tlitem__note { display: none; }
+
+/* ============================================================ CONTAINER QUERIES === */
+/* Tighten when the frame (not the window) gets narrow — works for mobile device too. */
+@container pl (max-width: 880px) {
+  .pl-hero { grid-template-columns: auto 1fr; }
+  .pl-hero__rail { grid-column: 1 / -1; padding-left: 0; border-left: 0; border-top: 1px solid var(--border); padding-top: 16px; }
+  .pl-hero__stats { grid-template-columns: repeat(4, 1fr); }
+}
+@container pl (max-width: 640px) {
+  .pl-root { padding: 20px 14px 72px; }
+  .pl-panel__head { flex-direction: column; align-items: stretch; gap: 16px; }
+  .pl-search { width: 100%; }
+  .pl-hero { grid-template-columns: auto 1fr; gap: 14px 16px; padding: 18px; align-items: center; }
+  .pl-portrait--lg { width: 78px; height: 98px; }
+  .pl-hero__id { align-self: center; gap: 7px; }
+  .pl-hero__name { font-size: 30px; line-height: 1.02; }
+  .pl-hero__stats { grid-template-columns: repeat(4, 1fr); }
+  .pl-eligstrip { grid-auto-flow: row; grid-auto-columns: auto; gap: 0; }
+  .pl-eligyr {
+    display: grid; grid-template-columns: 44px 22px 1fr; align-items: center;
+    text-align: left; gap: 12px; padding: 7px 0; column-gap: 12px;
+  }
+  .pl-eligyr__rail { height: 100%; }
+  .pl-eligyr__rail::before { left: 50%; right: auto; top: -50%; bottom: 50%; width: 2px; height: auto; transform: none; }
+  .pl-eligyr__lbl { grid-row: 1; grid-column: 3; margin: 0; }
+  .pl-eligyr__sub { grid-row: 2; grid-column: 3; margin: 0; }
+  .pl-eligyr__season { grid-row: 1 / span 2; grid-column: 1; align-self: center; }
+  .pl-eligyr__rail { grid-row: 1 / span 2; grid-column: 2; }
+  .pl-compact { flex-wrap: wrap; }
+  .pl-compact__roll { padding-left: 0; border-left: 0; width: 100%; padding-top: 12px; border-top: 1px solid var(--border); }
+  /* rows → stacked cells */
+  .pl-row__head {
+    grid-template-columns: auto 1fr auto; grid-auto-rows: auto; gap: 8px 10px; padding: 12px 14px;
+  }
+  .pl-row__n { grid-column: 1; }
+  .pl-row__head > .pl-status { grid-column: 2; justify-self: start; }
+  .pl-row__chev { grid-column: 3; grid-row: 1; justify-self: end; }
+  .pl-row__owner { grid-column: 1 / -1; }
+  .pl-row__elig { grid-column: 1 / -1; }
+  .pl-row__acq { grid-column: 1 / -1; }
+  .pl-cards { grid-template-columns: 1fr 1fr; }
+  /* timeline → label stacks above its track */
+  .pl-timeline { --lane-label: 1fr; }
+  .pl-axis { display: none; }
+  .pl-lane { grid-template-columns: 1fr; }
+  .pl-lane__head { padding: 12px 12px 6px; }
+  .pl-lane__owner { margin-left: auto; }
+  .pl-lane__track { margin: 0 12px 14px; }
+}
+@container pl (max-width: 440px) {
+  .pl-hero__stats { grid-template-columns: 1fr 1fr; }
+  .pl-cards { grid-template-columns: 1fr; }
+}
+
+/* ---------- LIVE ADDITIONS (MFL feed: bio meta, devy draft, load/error) ---------- */
+.pl-hero__year {
+  font: 600 10px/1 var(--font-body); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--fg-tertiary); padding: 4px 8px; border: 1px solid var(--border); border-radius: 2px;
+}
+.pl-hero__mfl {
+  font: 600 11px/1 var(--font-body); color: var(--gold-light); text-decoration: none;
+  padding: 4px 8px; border: 1px solid color-mix(in oklab, var(--gold) 40%, transparent); border-radius: 3px;
+  transition: background var(--ease-out, 0.15s);
+}
+.pl-hero__mfl:hover { background: color-mix(in oklab, var(--gold) 12%, transparent); }
+
+.pl-hero__draft { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.pl-hero__draftlbl { font: 600 10px/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-tertiary); }
+.pl-draftline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pl-draftline__pick {
+  font: 700 12px/1 var(--font-display); color: var(--gold-light);
+  padding: 3px 7px; border-radius: 3px; background: color-mix(in oklab, var(--gold) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent); font-variant-numeric: tabular-nums;
+}
+.pl-draftline__yr { font-size: 11px; color: var(--fg-secondary); }
+
+.pl-note {
+  padding: 40px 24px; text-align: center; color: var(--fg-secondary);
+  font: 500 13px/1.5 var(--font-body);
+}
+.pl-note--err { color: #C9524A; }
+
+</style>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <symbol id="cffb-icon-rs-trad" viewBox="0 0 20 22">
+        <path d="M2 4 L10 1 L18 4 L18 11 C18 16 10 20 10 20 C10 20 2 16 2 11 Z" fill="rgba(201,162,39,0.08)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        <text x="10" y="13.4" text-anchor="middle" font-family="Saira Condensed, Oswald, system-ui, sans-serif" font-weight="700" font-size="8" letter-spacing="0.3" fill="currentColor">RS</text>
+      </symbol>
+      <symbol id="cffb-icon-rs-med" viewBox="0 0 20 22">
+        <path d="M2 4 L10 1 L18 4 L18 11 C18 16 10 20 10 20 C10 20 2 16 2 11 Z" fill="rgba(209,117,117,0.08)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        <g transform="translate(10 10.5) rotate(-30)" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+          <rect x="-6" y="-2" width="12" height="4" rx="1.4" ry="1.4" fill="rgba(209,117,117,0.2)" stroke-width="1.1"/>
+          <rect x="-6" y="-2" width="3.2" height="4" rx="1.2" ry="1.2" fill="rgba(209,117,117,0.55)" stroke-width="1.1"/>
+          <rect x="2.8" y="-2" width="3.2" height="4" rx="1.2" ry="1.2" fill="rgba(209,117,117,0.55)" stroke-width="1.1"/>
+          <circle cx="-1.4" cy="-0.5" r="0.55" fill="currentColor" stroke="none"/>
+          <circle cx="1.4" cy="-0.5" r="0.55" fill="currentColor" stroke="none"/>
+          <circle cx="-1.4" cy="0.6" r="0.55" fill="currentColor" stroke="none"/>
+          <circle cx="1.4" cy="0.6" r="0.55" fill="currentColor" stroke="none"/>
+        </g>
+      </symbol>
+      <symbol id="cffb-icon-award-heisman" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 3 H17 V8 C17 11 15 13 12 13 C9 13 7 11 7 8 Z"/>
+        <path d="M7 5 C4 5 4 9 7 9"/>
+        <path d="M17 5 C20 5 20 9 17 9"/>
+        <path d="M12 13 V17"/>
+        <path d="M8 17 H16"/>
+        <path d="M7 20 H17"/>
+        <path d="M12 6.5 L12.6 7.7 L13.9 7.9 L13 8.8 L13.2 10.1 L12 9.5 L10.8 10.1 L11 8.8 L10.1 7.9 L11.4 7.7 Z" fill="currentColor" stroke="none"/>
+      </symbol>
+      <symbol id="cffb-icon-award-obrien" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 18 Q9 4 18 8" stroke-dasharray="0.5 2.5" stroke-width="1.4"/>
+        <g transform="translate(17.5 9) rotate(35)">
+          <ellipse cx="0" cy="0" rx="5" ry="2.6"/>
+          <path d="M-1.8 0 H1.8" stroke-width="1.4"/>
+          <path d="M-1 -0.8 V0.8 M0 -0.8 V0.8 M1 -0.8 V0.8" stroke-width="1.2"/>
+        </g>
+        <path d="M2 17 L4 19 L2 21" stroke-width="1.4"/>
+      </symbol>
+      <symbol id="cffb-icon-award-walker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="14" cy="4.5" r="2"/>
+        <path d="M13 7 L10 13"/>
+        <path d="M13 8 L18 8"/>
+        <path d="M11.5 9 L8 11"/>
+        <g transform="translate(7 11.5) rotate(-20)">
+          <ellipse cx="0" cy="0" rx="2.8" ry="1.5"/>
+          <path d="M-1 0 H1" stroke-width="1.2"/>
+        </g>
+        <path d="M10 13 L13 18"/>
+        <path d="M10 13 L5 19"/>
+        <path d="M2 21 H7 M9 21 H13" stroke-width="1.3"/>
+      </symbol>
+      <symbol id="cffb-icon-award-biletnikoff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 4 L8 9" stroke-dasharray="0.5 2.5" stroke-width="1.3"/>
+        <g transform="translate(11 11) rotate(-40)">
+          <ellipse cx="0" cy="0" rx="4.2" ry="2.2"/>
+          <path d="M-1.5 0 H1.5" stroke-width="1.3"/>
+          <path d="M-0.6 -0.6 V0.6 M0.5 -0.6 V0.6" stroke-width="1.1"/>
+        </g>
+        <path d="M7 14 L10 13 L11 15 L9 17 Z"/>
+        <path d="M9 13.4 L8 11.5 M10 13 L10 11"/>
+        <path d="M17 14 L14 13 L13 15 L15 17 Z"/>
+        <path d="M15 13.4 L16 11.5 M14 13 L14 11"/>
+        <path d="M7 14 L5 17 M17 14 L19 17"/>
+      </symbol>
+      <symbol id="cffb-icon-award-allamerican" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 5 Q3 12 6 19"/>
+        <path d="M5.2 7 Q3.5 7.5 3 9"/>
+        <path d="M4.5 10 Q2.8 10.5 2.3 12"/>
+        <path d="M4.5 14 Q2.8 14 2.3 15.5"/>
+        <path d="M5.2 17 Q3.5 17.5 3 19"/>
+        <path d="M18 5 Q21 12 18 19"/>
+        <path d="M18.8 7 Q20.5 7.5 21 9"/>
+        <path d="M19.5 10 Q21.2 10.5 21.7 12"/>
+        <path d="M19.5 14 Q21.2 14 21.7 15.5"/>
+        <path d="M18.8 17 Q20.5 17.5 21 19"/>
+        <path d="M12 7 L13.4 10 L16.6 10.3 L14.2 12.4 L14.9 15.6 L12 14 L9.1 15.6 L9.8 12.4 L7.4 10.3 L10.6 10 Z" fill="currentColor" stroke="none"/>
+        <path d="M9 20 L12 18 L15 20"/>
+      </symbol>
+    </defs>
+  </svg>
+<div id="cffb-pl-root"></div>
+<script>
+(function () {
+  if (window.__cffbPlayerLedgerBooted) return;
+  window.__cffbPlayerLedgerBooted = true;
+  function __cffbApp() {
+/* ---- pl-data-live.jsx ---- */
+// CFFB · Player Ledger — LIVE data loader
+// ---------------------------------------------------------------------------
+// Replaces the demo's pl-data.jsx (hardcoded RAW_COPIES / PLAYER_AUG) AND the
+// ../Auction Board/data.jsx dependency (TEAMS / CONFERENCES / POS_COLORS / …)
+// at build time. Fetches JSON from the shared Apps Script Web App:
+//
+//   {EXEC}?feed=ledger                → index (search list + branding)
+//   {EXEC}?feed=ledger&player={MFLID} → one player's copies + event ledger
+//
+// The per-copy transaction reconstruction (auction / redshirt / drop + award
+// injection + eligibility clock) is done by the SAME deriveElig()/makeCopy()
+// the demo used — the server hands back the compact event tuples those expect,
+// so the rendered shape is byte-for-byte the demo's.
+//
+// The build script substitutes the real /exec URL for https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec.
+const CFFB_LEDGER_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+const ledgerUrl = params => CFFB_LEDGER_URL + (CFFB_LEDGER_URL.indexOf('?') < 0 ? '?' : '&') + params;
+
+// ---------------------------------------------------------------------------
+// Design-system constants (were in ../Auction Board/data.jsx). Static — safe to
+// inline; keeps the fragment self-contained with zero extra requests.
+// ---------------------------------------------------------------------------
+const POS_COLORS = {
+  QB: '#C9A227',
+  RB: '#3B82C4',
+  WR: '#7BA4C9',
+  TE: '#E8C547',
+  OL: '#8A8A8A',
+  DL: '#8B6F1F',
+  LB: '#B84545',
+  DB: '#6E86A8',
+  ATH: '#9A9A9A'
+};
+const CONF_ACCENT = {
+  sec: '#C9A227',
+  b1g: '#4A6FA5',
+  acc: '#8B4A5C',
+  big12: '#B84545',
+  aac: '#6B5C8B',
+  pac: '#5C7A6A'
+};
+const CONF_ORDER = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
+const STATUS_META = {
+  rostered: {
+    label: 'Rostered',
+    color: '#2D7A4E'
+  },
+  redshirting: {
+    label: 'Redshirting',
+    color: '#C9A227'
+  },
+  declared: {
+    label: 'Declared',
+    color: '#B8902F'
+  },
+  graduated: {
+    label: 'Graduated',
+    color: '#8B6F1F'
+  },
+  fa: {
+    label: 'Free Agent',
+    color: '#5A5A5A'
+  }
+};
+const TXN_META = {
+  won: {
+    color: '#C9A227'
+  },
+  rs: {
+    color: '#C9A227'
+  },
+  'rs-med': {
+    color: '#D17575'
+  },
+  award: {
+    color: '#E8C547'
+  },
+  drop: {
+    color: '#B84545'
+  },
+  graduate: {
+    color: '#8B6F1F'
+  }
+};
+
+// MFL "no photo" fallback (confirmed from the live player page's onerror handler).
+const NO_PHOTO = 'https://www46.myfantasyleague.com/player_photos_2010/no_photo_available.jpg';
+
+// The league's data season (getLeagueYear on the server) — NOT the calendar year.
+// Drives the eligibility clock + "redshirting now" detection; the index feed's
+// `season` overwrites this on load so the math matches the ledger's event years.
+let CURRENT_SEASON = new Date().getFullYear();
+const CLASS_SEQ = ['FR', 'SO', 'JR', 'SR', 'GR'];
+
+// ---------------------------------------------------------------------------
+// Stable containers the components read by identifier. Populated in place (never
+// reassigned) so React re-renders pick up the live data.
+// ---------------------------------------------------------------------------
+const TEAMS = {}; // franchise id -> { name, abbr, owner, conf, bg, fg, pill }
+const CONFERENCES = []; // [{ id, name, logo }]
+const CONF_NAME = {};
+const CONF_LOGO = {};
+const LEDGER = {}; // pid -> { confs, copies, roll }
+const ROSTER = []; // index rows (search list)
+const PLAYER_AUG = {}; // pid -> bio augmentation (college, awards, draft, …)
+
+// ===========================================================================
+// deriveElig + makeCopy — ported verbatim from pl-data.jsx (they depend only on
+// TEAMS, CURRENT_SEASON, CLASS_SEQ). See pl-data.jsx for the full commentary.
+// ===========================================================================
+const deriveElig = (ledger, entered, realRS) => {
+  const real = new Set(realRS || []);
+  const copyRS = {};
+  ledger.forEach(e => {
+    if (e.type === 'redshirt') copyRS[e.season] = e.rsType === 'med' ? 'rs-med' : 'rs';
+  });
+  const first = entered != null ? entered : CURRENT_SEASON;
+  const dots = [];
+  let usedPast = 0,
+    rsCount = 0;
+  for (let y = first; y <= CURRENT_SEASON; y++) {
+    let state;
+    if (copyRS[y]) state = copyRS[y];else if (real.has(y)) state = 'rs';else state = 'used';
+    dots.push(state);
+    if (state === 'used' && y < CURRENT_SEASON) usedPast += 1;
+    if (state !== 'used') rsCount += 1;
+  }
+  const allowed = 4 + (rsCount > 0 ? 1 : 0);
+  const remaining = allowed - usedPast;
+  const playSoFar = dots.filter(d => d === 'used').length;
+  const cls = CLASS_SEQ[Math.min(Math.max(playSoFar - 1, 0), 4)];
+  const futureOpen = Math.max(0, remaining - 1);
+  const dotsOut = dots.concat(Array.from({
+    length: futureOpen
+  }, () => 'open')).slice(0, 6);
+  const remain = remaining <= 0 ? 'No eligibility' : remaining === 1 ? 'Final year' : remaining + ' left';
+  const rsYears = [...Object.keys(copyRS).map(Number), ...(realRS || [])].sort((a, b) => a - b);
+  const hasRS = rsCount > 0;
+  const rsType = Object.values(copyRS).some(v => v === 'rs-med') ? 'med' : 'trad';
+  const rsYear = rsYears.length ? rsYears[rsYears.length - 1] : null;
+  return {
+    cls,
+    dots: dotsOut,
+    remain,
+    remaining,
+    hasRS,
+    rsType,
+    rsYear
+  };
+};
+const makeCopy = (pid, conf, n, events, awards, entered, realRS) => {
+  let holder = null;
+  let acquired = null;
+  let redshirtingNow = false;
+  const ledger = events.map(ev => {
+    const [type, season] = ev;
+    if (type === 'auction') {
+      const [,, team, price, note] = ev;
+      holder = team;
+      acquired = {
+        team,
+        price,
+        season
+      };
+      return {
+        type,
+        season,
+        team,
+        owner: (TEAMS[team] || {}).owner || '@—',
+        price,
+        note: note || null,
+        label: 'WON',
+        tag: 'won'
+      };
+    }
+    if (type === 'redshirt') {
+      const [,, team, rsType, note] = ev;
+      if (season === CURRENT_SEASON && holder === team) redshirtingNow = true;
+      return {
+        type,
+        season,
+        team,
+        owner: (TEAMS[team] || {}).owner || '@—',
+        rsType,
+        note: note || null,
+        label: rsType === 'med' ? 'MEDICAL RS' : 'REDSHIRT',
+        tag: rsType === 'med' ? 'rs-med' : 'rs'
+      };
+    }
+    const [,, team, note] = ev;
+    holder = null;
+    acquired = null;
+    redshirtingNow = false;
+    return {
+      type,
+      season,
+      team,
+      owner: (TEAMS[team] || {}).owner || '@—',
+      note: note || null,
+      label: 'RELEASED',
+      tag: 'drop'
+    };
+  });
+  const intervals = [];
+  {
+    let o = null,
+      s = null;
+    events.forEach(ev => {
+      const [type, season] = ev;
+      if (type === 'auction') {
+        if (o != null) intervals.push({
+          team: o,
+          start: s,
+          end: season - 1
+        });
+        o = ev[2];
+        s = season;
+      } else if (type === 'drop') {
+        intervals.push({
+          team: o,
+          start: s,
+          end: season - 1
+        });
+        o = null;
+        s = null;
+      }
+    });
+    if (o != null) intervals.push({
+      team: o,
+      start: s,
+      end: CURRENT_SEASON
+    });
+  }
+  (awards || []).forEach(a => {
+    const iv = intervals.find(v => a.year >= v.start && a.year <= v.end);
+    if (!iv) return;
+    const tm = TEAMS[iv.team] || {};
+    ledger.push({
+      type: 'award',
+      season: a.year,
+      team: iv.team,
+      owner: tm.owner || '@—',
+      award: a,
+      label: 'HONOR',
+      tag: 'award',
+      note: `${a.name} ${a.year} — earned while rostered by ${tm.name || iv.team} (${tm.owner || '@—'}).`
+    });
+  });
+  const ORDER = {
+    auction: 0,
+    redshirt: 1,
+    award: 2,
+    drop: 3
+  };
+  ledger.sort((x, y) => x.season - y.season || ORDER[x.type] - ORDER[y.type]);
+  const elig = deriveElig(ledger, entered, realRS);
+  const honors = ledger.filter(e => e.type === 'award').length;
+  const DECLARE_AT = 2;
+  const base = holder == null ? 'fa' : redshirtingNow ? 'redshirting' : 'rostered';
+  const status = elig.remaining <= 0 ? 'graduated' : honors >= DECLARE_AT ? 'declared' : base;
+  const terminal = status === 'graduated' || status === 'declared';
+  return {
+    id: `${pid}-${conf}-${n}`,
+    n,
+    conf,
+    owner: holder,
+    status,
+    acquired,
+    graduated: terminal,
+    declared: status === 'declared',
+    honors,
+    elig,
+    seasonsHeld: acquired ? CURRENT_SEASON - acquired.season + 1 : 0,
+    ledger
+  };
+};
+
+// Assemble one player's LEDGER entry from the server's copies[] (mirrors the
+// per-player roll-up in pl-data.jsx lines 399-423).
+const buildLedgerEntry = (pid, serverCopies, entered) => {
+  const byConf = {};
+  serverCopies.forEach(c => {
+    (byConf[c.conf] = byConf[c.conf] || []).push(c);
+  });
+  const confs = CONF_ORDER.filter(c => byConf[c]).concat(Object.keys(byConf).filter(c => CONF_ORDER.indexOf(c) < 0)).map(conf => ({
+    conf,
+    copies: byConf[conf].map(c => makeCopy(pid, conf, c.n, c.events || [], c.awards, entered, []))
+  }));
+  const copies = confs.flatMap(c => c.copies);
+  let rostered = 0,
+    redshirting = 0,
+    fa = 0,
+    graduated = 0,
+    declared = 0,
+    txns = 0;
+  const heldPrices = [];
+  copies.forEach(c => {
+    txns += c.ledger.length;
+    if (c.status === 'graduated') graduated += 1;else if (c.status === 'declared') declared += 1;else if (c.status === 'fa') fa += 1;else if (c.status === 'redshirting') redshirting += 1;else rostered += 1;
+    if (c.acquired && c.status !== 'fa') heldPrices.push(c.acquired.price);
+  });
+  const avg = heldPrices.length ? Math.round(heldPrices.reduce((a, b) => a + b, 0) / heldPrices.length) : null;
+  const high = heldPrices.length ? Math.max(...heldPrices) : null;
+  return {
+    confs,
+    copies,
+    roll: {
+      total: copies.length,
+      confs: confs.length,
+      rostered,
+      redshirting,
+      fa,
+      graduated,
+      declared,
+      txns,
+      avg,
+      high
+    }
+  };
+};
+
+// ===========================================================================
+// Per-browser cache (stale-while-revalidate) — same shape as st-data-live.jsx,
+// separate keys so it never collides with the Standings/Power Rankings payload.
+// ===========================================================================
+const PL_FRESH_MS = 6 * 60 * 60 * 1000;
+const PL_MAX_MS = 7 * 24 * 60 * 60 * 1000;
+function plCacheRead(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const rec = JSON.parse(raw);
+    if (!rec || typeof rec.ts !== 'number' || rec.payload == null) return null;
+    const age = Date.now() - rec.ts;
+    if (age < 0 || age > PL_MAX_MS) return null;
+    return {
+      payload: rec.payload,
+      age
+    };
+  } catch (e) {
+    return null;
+  }
+}
+function plCacheWrite(key, payload) {
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      ts: Date.now(),
+      payload
+    }));
+  } catch (e) {/* quota / private mode — live fetch still works */}
+}
+async function plFetch(url) {
+  const res = await fetch(url, {
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const d = await res.json();
+  if (d && d.error) throw new Error(d.error);
+  return d;
+}
+// SWR: serve cache instantly (refresh in background when stale); else fetch live.
+async function plLoad(key, url) {
+  const cached = plCacheRead(key);
+  if (cached) {
+    if (cached.age > PL_FRESH_MS) plFetch(url).then(d => plCacheWrite(key, d)).catch(() => {});
+    return cached.payload;
+  }
+  const d = await plFetch(url);
+  plCacheWrite(key, d);
+  return d;
+}
+
+// ===========================================================================
+// Public loaders (called from pl-app.jsx)
+// ===========================================================================
+const PL_INDEX_KEY = 'cffb_ledger_index_v1';
+const PL_PLAYER_KEY = id => 'cffb_ledger_p_' + id;
+
+// Load the index → populate TEAMS/CONFERENCES/ROSTER. Returns the ROSTER array.
+async function loadLedgerIndex() {
+  const d = await plLoad(PL_INDEX_KEY, ledgerUrl('feed=ledger'));
+  if (d.season) CURRENT_SEASON = Number(d.season);
+  Object.keys(d.franchises || {}).forEach(fid => {
+    TEAMS[fid] = d.franchises[fid];
+  });
+  CONFERENCES.length = 0;
+  (d.conferences || []).forEach(c => {
+    CONFERENCES.push(c);
+    CONF_NAME[c.id] = c.name;
+    CONF_LOGO[c.id] = c.logo;
+  });
+  ROSTER.length = 0;
+  (d.players || []).forEach(p => {
+    ROSTER.push({
+      id: p.id,
+      name: p.name,
+      pos: p.pos,
+      college: p.nflTeam || 'FA',
+      nflTeam: p.nflTeam || '',
+      photo: p.photo,
+      awardsCount: p.awards || 0,
+      roll: {
+        total: p.copies,
+        rostered: p.held,
+        redshirting: 0,
+        fa: p.fa,
+        graduated: 0,
+        declared: 0,
+        txns: 0,
+        avg: null,
+        high: null
+      }
+    });
+  });
+  return ROSTER;
+}
+
+// Load one player's full ledger → populate LEDGER[pid] and enrich the ROSTER row
+// with bio/awards/draft. Returns LEDGER[pid].
+async function loadPlayerLedger(pid) {
+  if (LEDGER[pid]) return LEDGER[pid];
+  const d = await plLoad(PL_PLAYER_KEY(pid), ledgerUrl('feed=ledger&player=' + encodeURIComponent(pid)));
+  const entry = buildLedgerEntry(pid, d.copies || [], d.entered);
+  LEDGER[pid] = entry;
+  PLAYER_AUG[pid] = {
+    college: d.nflTeam || 'FA',
+    nflTeam: d.nflTeam || '',
+    entered: d.entered,
+    awards: d.awards || [],
+    draft: d.draft || [],
+    profileUrl: d.profileUrl,
+    photo: d.photo
+  };
+  // Merge bio + recomputed roll onto the in-place ROSTER row so the hero updates.
+  const row = ROSTER.find(r => r.id === pid);
+  if (row) {
+    Object.assign(row, PLAYER_AUG[pid], {
+      roll: entry.roll,
+      name: d.name,
+      pos: d.pos
+    });
+  }
+  return entry;
+}
+
+// ===========================================================================
+// Tweaks shims — the MFL build omits tweaks-panel.jsx (authoring scaffolding),
+// so provide no-op stand-ins that keep the fixed default config. pl-app.jsx uses
+// these identifiers; when the real panel is bundled (demo), it wins by shadowing.
+// ===========================================================================
+const useTweaks = defaults => [defaults, () => {}];
+const TweaksPanel = () => null;
+const TweakSection = () => null;
+const TweakRadio = () => null;
+const TweakToggle = () => null;
+Object.assign(window, {
+  CURRENT_SEASON,
+  LEDGER,
+  ROSTER,
+  PLAYER_AUG,
+  STATUS_META,
+  TXN_META,
+  TEAMS,
+  CONFERENCES,
+  CONF_NAME,
+  CONF_LOGO,
+  CONF_ORDER,
+  POS_COLORS,
+  CONF_ACCENT,
+  NO_PHOTO,
+  deriveElig,
+  makeCopy,
+  loadLedgerIndex,
+  loadPlayerLedger,
+  useTweaks,
+  TweaksPanel,
+  TweakSection,
+  TweakRadio,
+  TweakToggle
+});
+
+/* ---- pl-components.jsx ---- */
+// CFFB · Player Ledger — React atoms.
+// Thin wrappers over the cffb.css vocabulary (redshirt chips, eligibility dots,
+// award badges, position + team chips) so the ledger app can compose them.
+
+// ---- Position chip --------------------------------------------------------
+const KNOWN_POS = {
+  qb: 1,
+  rb: 1,
+  wr: 1,
+  te: 1,
+  ol: 1,
+  lb: 1,
+  db: 1,
+  k: 1
+};
+const PosChip = ({
+  pos
+}) => {
+  const lc = String(pos).toLowerCase();
+  const known = KNOWN_POS[lc];
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-pos' + (known ? ' cffb-pos--' + lc : ''),
+    style: known ? null : {
+      background: POS_COLORS[pos] || '#5A5A5A',
+      color: '#0A0A0A'
+    }
+  }, pos);
+};
+
+// ---- Recruiting stars -----------------------------------------------------
+const Stars = ({
+  n
+}) => /*#__PURE__*/React.createElement("span", {
+  className: 'cffb-stars cffb-stars--t' + n
+}, [1, 2, 3, 4, 5].map(i => /*#__PURE__*/React.createElement("span", {
+  key: i,
+  className: 'cffb-star' + (i <= n ? '' : ' cffb-star--off')
+}, "\u2605")));
+
+// ---- Redshirt shield chip (cffb-rs) ---------------------------------------
+// rsType: 'trad' | 'med'. solo = icon only (tight rows).
+const RedshirtChip = ({
+  rsType = 'trad',
+  size = 'sm',
+  solo = false,
+  title
+}) => {
+  const med = rsType === 'med';
+  const cls = ['cffb-rs', med ? 'cffb-rs--med' : 'cffb-rs--trad', 'cffb-rs--' + size, solo ? 'cffb-rs--solo' : ''].filter(Boolean).join(' ');
+  return /*#__PURE__*/React.createElement("span", {
+    className: cls,
+    title: title || (med ? 'Medical Redshirt' : 'Traditional Redshirt')
+  }, /*#__PURE__*/React.createElement("svg", {
+    className: "cffb-rs__icon"
+  }, /*#__PURE__*/React.createElement("use", {
+    href: med ? '#cffb-icon-rs-med' : '#cffb-icon-rs-trad'
+  })), !solo && /*#__PURE__*/React.createElement("span", {
+    className: "cffb-rs__txt"
+  }, med ? 'MRS' : 'RS'));
+};
+
+// ---- Compact per-copy eligibility: class chip + dots + RS shield ----------
+// Each COPY carries its own eligibility clock, so this renders inline on copies.
+const CopyEligInline = ({
+  elig,
+  showClass = true
+}) => {
+  if (!elig) return null;
+  const title = `${elig.cls} · ${elig.remain}` + (elig.hasRS ? ` · ${elig.rsType === 'med' ? 'medical ' : ''}redshirt ${elig.rsYear || ''}`.trim() : '');
+  return /*#__PURE__*/React.createElement("span", {
+    className: "pl-celig",
+    title: title
+  }, showClass && /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-elig__class cffb-elig__class--' + String(elig.cls).toLowerCase()
+  }, elig.cls), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-elig__dots"
+  }, elig.dots.map((d, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: 'cffb-elig__dot ' + ELIG_DOT_CLASS[d]
+  }))), elig.hasRS && /*#__PURE__*/React.createElement(RedshirtChip, {
+    rsType: elig.rsType === 'med' ? 'med' : 'trad',
+    size: "xs",
+    solo: true,
+    title: `${elig.rsType === 'med' ? 'Medical ' : 'Traditional '}Redshirt ${elig.rsYear || ''}`.trim()
+  }));
+};
+
+// ---- Eligibility dots (cffb-elig) -----------------------------------------
+const ELIG_DOT_CLASS = {
+  used: 'is-used',
+  rs: 'is-rs',
+  'rs-med': 'is-rs-med',
+  open: ''
+};
+const EligDots = ({
+  elig,
+  compact = false
+}) => {
+  if (!elig) return null;
+  const clsLc = String(elig.cls).toLowerCase();
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-elig' + (compact ? ' cffb-elig--compact' : '')
+  }, /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-elig__class cffb-elig__class--' + clsLc
+  }, elig.cls), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-elig__dots",
+    "aria-label": elig.remain + ' eligibility'
+  }, elig.dots.map((d, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: 'cffb-elig__dot ' + ELIG_DOT_CLASS[d]
+  }))), elig.remain && /*#__PURE__*/React.createElement("span", {
+    className: "cffb-elig__remain"
+  }, elig.remain));
+};
+
+// ---- Award badges (cffb-award) --------------------------------------------
+const AWARD_GLYPH = {
+  heisman: '#cffb-icon-award-heisman',
+  obrien: '#cffb-icon-award-obrien',
+  walker: '#cffb-icon-award-walker',
+  biletnikoff: '#cffb-icon-award-biletnikoff',
+  allamerican: '#cffb-icon-award-allamerican'
+};
+const Awards = ({
+  awards,
+  size
+}) => {
+  if (!awards || !awards.length) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: 'cffb-awards' + (size === 'sm' ? ' cffb-awards--sm' : '')
+  }, awards.map((a, i) => {
+    const cls = ['cffb-award', 'cffb-award--' + a.kind, a.kind === 'allamerican' && a.conf ? 'is-' + a.conf : ''].filter(Boolean).join(' ');
+    return /*#__PURE__*/React.createElement("span", {
+      key: i,
+      className: cls
+    }, /*#__PURE__*/React.createElement("svg", {
+      className: "cffb-award__glyph"
+    }, /*#__PURE__*/React.createElement("use", {
+      href: AWARD_GLYPH[a.kind]
+    })), /*#__PURE__*/React.createElement("span", {
+      className: "cffb-award__name"
+    }, a.name), a.year && /*#__PURE__*/React.createElement("span", {
+      className: "cffb-award__year"
+    }, a.year));
+  }));
+};
+
+// ---- Conference badge (logo + name) ---------------------------------------
+const ConfBadge = ({
+  id,
+  size = 22,
+  showName = true
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "pl-conf"
+}, CONF_LOGO[id] && /*#__PURE__*/React.createElement("img", {
+  className: "pl-conf__logo",
+  src: CONF_LOGO[id],
+  alt: CONF_NAME[id] || id,
+  style: {
+    width: size,
+    height: size
+  }
+}), showName && /*#__PURE__*/React.createElement("span", {
+  className: "pl-conf__name"
+}, CONF_NAME[id] || id));
+
+// ---- Team ownership mark ---------------------------------------------------
+// Ripped-paper banner PNG when available, else the circular abbr fallback.
+const plAbbr = id => {
+  const t = TEAMS[id] || {};
+  const a = t.abbr || id || '??';
+  return a.length > 4 ? a.slice(0, 4) : a;
+};
+const TeamMark = ({
+  id,
+  size = 'sm'
+}) => {
+  const t = TEAMS[id] || {
+    bg: '#2A2A2A',
+    fg: '#9A9A9A'
+  };
+  if (t.pill) {
+    return /*#__PURE__*/React.createElement("img", {
+      className: 'cffb-team cffb-team--' + size,
+      src: t.pill,
+      alt: t.name || id
+    });
+  }
+  const chipSize = size === 'lg' ? '' : size === 'md' ? '' : ' cffb-team-chip--sm';
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-team-chip' + chipSize,
+    style: {
+      background: t.bg,
+      color: t.fg
+    },
+    title: t.name || id
+  }, plAbbr(id));
+};
+
+// Owner = team mark + manager handle. The unit that says "who holds this copy".
+const TeamOwner = ({
+  id,
+  showOwner = true,
+  mark = 'sm',
+  stacked = false,
+  emptyLabel = 'Free agent'
+}) => {
+  if (!id) {
+    return /*#__PURE__*/React.createElement("span", {
+      className: "pl-owner pl-owner--fa"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "pl-owner__fa"
+    }, emptyLabel));
+  }
+  const t = TEAMS[id] || {};
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'pl-owner' + (stacked ? ' pl-owner--stacked' : '')
+  }, /*#__PURE__*/React.createElement(TeamMark, {
+    id: id,
+    size: mark
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-owner__id"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-owner__team"
+  }, t.name || id), showOwner && t.owner && /*#__PURE__*/React.createElement("span", {
+    className: "pl-owner__handle"
+  }, t.owner)));
+};
+
+// ---- Status chip (Rostered / Redshirting / Free Agent) --------------------
+const StatusChip = ({
+  status,
+  size = 'md'
+}) => {
+  const m = STATUS_META[status] || STATUS_META.fa;
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'pl-status pl-status--' + status + ' pl-status--' + size
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-status__dot",
+    style: {
+      background: m.color
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-status__label"
+  }, m.label));
+};
+
+// ---- Money ----------------------------------------------------------------
+const Money = ({
+  n,
+  hero = false
+}) => /*#__PURE__*/React.createElement("span", {
+  className: 'pl-money cffb-num' + (hero ? ' pl-money--hero' : '')
+}, "$", n);
+Object.assign(window, {
+  PosChip,
+  Stars,
+  RedshirtChip,
+  EligDots,
+  CopyEligInline,
+  Awards,
+  ConfBadge,
+  TeamMark,
+  TeamOwner,
+  StatusChip,
+  Money
+});
+
+/* ---- pl-app.jsx ---- */
+// CFFB · Player Ledger — main component.
+// Search a player → profile (eligibility + redshirt + awards) → every copy's
+// owner and the full multi-year transaction ledger. Layout / accent / profile
+// prominence / density are Tweakable. Responsive desktop ↔ mobile.
+
+const {
+  useState,
+  useMemo,
+  useRef,
+  useEffect
+} = React;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "layout": "rows",
+  "profile": "hero",
+  "accent": "conf",
+  "showOwners": true,
+  "density": "spacious"
+} /*EDITMODE-END*/;
+const accentFor = (confId, accent) => accent === 'gold' ? '#C9A227' : CONF_ACCENT[confId] || '#C9A227';
+const plInitials = name => {
+  const p = String(name).trim().split(/\s+/);
+  return ((p[0]?.[0] || '') + (p.length > 1 ? p[p.length - 1][0] : p[0]?.[1] || '')).toUpperCase();
+};
+const CLASS_LONG = {
+  FR: 'Freshman',
+  SO: 'Sophomore',
+  JR: 'Junior',
+  SR: 'Senior',
+  GR: 'Graduate'
+};
+
+// ============================================================ SEARCH
+const SearchBar = ({
+  value,
+  onPick
+}) => {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const wrap = useRef(null);
+  useEffect(() => {
+    const onDoc = e => {
+      if (wrap.current && !wrap.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+  const results = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const list = s ? ROSTER.filter(p => p.name.toLowerCase().includes(s)) : ROSTER;
+    return list.slice(0, 8);
+  }, [q]);
+  const pick = p => {
+    onPick(p.id);
+    setQ('');
+    setOpen(false);
+  };
+  const onKey = e => {
+    if (!open) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHi(h => Math.min(results.length - 1, h + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHi(h => Math.max(0, h - 1));
+    } else if (e.key === 'Enter' && results[hi]) {
+      pick(results[hi]);
+    } else if (e.key === 'Escape') setOpen(false);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "pl-search",
+    ref: wrap
+  }, /*#__PURE__*/React.createElement("div", {
+    className: 'pl-search__field' + (open ? ' is-open' : '')
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-search__ic"
+  }, "\u2315"), /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => {
+      setQ(e.target.value);
+      setOpen(true);
+      setHi(0);
+    },
+    onFocus: () => setOpen(true),
+    onKeyDown: onKey,
+    placeholder: "Search a player to trace ownership\u2026"
+  }), q && /*#__PURE__*/React.createElement("button", {
+    className: "pl-search__clear",
+    onClick: () => setQ('')
+  }, "\xD7")), open && /*#__PURE__*/React.createElement("div", {
+    className: "pl-search__menu",
+    role: "listbox"
+  }, results.length ? results.map((p, i) => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    role: "option",
+    "aria-selected": i === hi,
+    className: 'pl-opt' + (i === hi ? ' is-hi' : '') + (p.id === value ? ' is-cur' : ''),
+    onMouseEnter: () => setHi(i),
+    onClick: () => pick(p)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__shot",
+    style: {
+      '--accent': POS_COLORS[p.pos] || '#5A5A5A'
+    }
+  }, plInitials(p.name)), /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__id"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__name"
+  }, p.name), /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__meta"
+  }, /*#__PURE__*/React.createElement(PosChip, {
+    pos: p.pos
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__sub"
+  }, p.college, " \xB7 ", p.pos, p.posRank))), /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__roll"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__roll-n"
+  }, /*#__PURE__*/React.createElement("b", null, p.roll.rostered + p.roll.redshirting), /*#__PURE__*/React.createElement("span", null, "held")), /*#__PURE__*/React.createElement("span", {
+    className: "pl-opt__roll-n"
+  }, /*#__PURE__*/React.createElement("b", null, p.roll.total), /*#__PURE__*/React.createElement("span", null, "copies"))))) : /*#__PURE__*/React.createElement("div", {
+    className: "pl-opt-empty"
+  }, "No players match \u201C", q, "\u201D.")));
+};
+
+// ============================================================ PROFILE bits
+// The initials/silhouette placeholder always renders; the MFL headshot (when a
+// photo URL is present) lays over it and, on error, falls back to MFL's
+// "no photo" asset, then hides itself so the placeholder shows through.
+const Portrait = ({
+  p,
+  size = 'lg'
+}) => /*#__PURE__*/React.createElement("div", {
+  className: 'pl-portrait pl-portrait--' + size
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-portrait__bar",
+  style: {
+    background: POS_COLORS[p.pos] || '#5A5A5A'
+  }
+}), /*#__PURE__*/React.createElement("svg", {
+  className: "pl-portrait__sil",
+  viewBox: "0 0 56 56",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "1.5"
+}, /*#__PURE__*/React.createElement("circle", {
+  cx: "28",
+  cy: "20",
+  r: "9"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-portrait__initials"
+}, plInitials(p.name)), p.photo && /*#__PURE__*/React.createElement("img", {
+  className: "pl-portrait__photo",
+  loading: "lazy",
+  src: p.photo,
+  alt: p.name,
+  onError: e => {
+    const img = e.currentTarget;
+    const noPhoto = typeof NO_PHOTO !== 'undefined' ? NO_PHOTO : '';
+    if (noPhoto && !img.dataset.fb) {
+      img.dataset.fb = '1';
+      img.src = noPhoto;
+    } else {
+      img.style.display = 'none';
+    }
+  }
+}));
+const CopiesMeter = ({
+  roll
+}) => {
+  const seg = n => roll.total ? n / roll.total * 100 : 0;
+  const grad = roll.graduated || 0;
+  const decl = roll.declared || 0;
+  const out = grad + decl;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "pl-meter"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-meter__head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__title"
+  }, "Copies In Play"), /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__count"
+  }, out > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, roll.rostered + roll.redshirting), " active \xB7 ", out, " retired \xB7 ", roll.fa, " free") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, roll.rostered), " rostered \xB7 ", roll.redshirting, " RS \xB7 ", roll.fa, " free"))), /*#__PURE__*/React.createElement("div", {
+    className: "pl-meter__bar"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__seg is-rostered",
+    style: {
+      width: seg(roll.rostered) + '%'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__seg is-redshirting",
+    style: {
+      width: seg(roll.redshirting) + '%'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__seg is-declared",
+    style: {
+      width: seg(decl) + '%'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__seg is-graduated",
+    style: {
+      width: seg(grad) + '%'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-meter__seg is-fa",
+    style: {
+      width: seg(roll.fa) + '%'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "pl-meter__legend"
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+    className: "is-rostered"
+  }), "Rostered"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+    className: "is-redshirting"
+  }), "Redshirting"), decl > 0 && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+    className: "is-declared"
+  }), "Declared"), grad > 0 && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+    className: "is-graduated"
+  }), "Graduated"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+    className: "is-fa"
+  }), "Free agent")));
+};
+const Stat = ({
+  label,
+  children,
+  hero
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-stat"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "pl-stat__label"
+}, label), /*#__PURE__*/React.createElement("div", {
+  className: 'pl-stat__val' + (hero ? ' is-hero' : '')
+}, children));
+
+// One devy-draft selection line (year · conference · round/pick · drafting team).
+const DraftLine = ({
+  d
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "pl-draftline"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-draftline__pick cffb-num"
+}, "R", d.round, "\xB7P", d.pick), /*#__PURE__*/React.createElement("span", {
+  className: "pl-draftline__yr"
+}, d.year, " ", CONF_NAME[d.conf] || d.conf, " devy draft"), /*#__PURE__*/React.createElement(TeamOwner, {
+  id: d.fid,
+  showOwner: false,
+  mark: "sm"
+}));
+
+// --- Hero profile (player-level: bio + awards + devy draft. Eligibility is per-copy.) ---
+// Bio fields (ht/wt/home) exist only in the demo's mock data; live rows carry
+// nflTeam / rookie class / awards / draft / an MFL profile deep link instead —
+// every extra is rendered conditionally so both data shapes look right.
+const ProfileHero = ({
+  p,
+  roll,
+  accentColor
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero",
+  style: {
+    '--accent': accentColor
+  }
+}, /*#__PURE__*/React.createElement(Portrait, {
+  p: p,
+  size: "lg"
+}), /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero__id"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero__tags"
+}, /*#__PURE__*/React.createElement(PosChip, {
+  pos: p.pos
+}), (p.nflTeam || p.college) && /*#__PURE__*/React.createElement("span", {
+  className: "pl-hero__college"
+}, p.nflTeam || p.college), p.entered && /*#__PURE__*/React.createElement("span", {
+  className: "pl-hero__year"
+}, "Rookie class ", p.entered)), /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero__namerow"
+}, /*#__PURE__*/React.createElement("h2", {
+  className: "pl-hero__name"
+}, p.name), p.profileUrl && /*#__PURE__*/React.createElement("a", {
+  className: "pl-hero__mfl",
+  href: p.profileUrl,
+  target: "_blank",
+  rel: "noopener noreferrer"
+}, "MFL profile \u2197")), (p.ht || p.home) && /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero__meta"
+}, p.ht, " ", p.wt, " ", p.home ? '· ' + p.home : ''), p.awards && p.awards.length > 0 && /*#__PURE__*/React.createElement(Awards, {
+  awards: p.awards,
+  size: "sm"
+}), p.draft && p.draft.length > 0 && /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero__draft"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-hero__draftlbl"
+}, "Devy Draft"), p.draft.map((d, i) => /*#__PURE__*/React.createElement(DraftLine, {
+  key: i,
+  d: d
+})))), /*#__PURE__*/React.createElement("div", {
+  className: "pl-hero__rail"
+}, /*#__PURE__*/React.createElement(CopiesMeter, {
+  roll: roll
+})));
+
+// --- Compact profile ---
+const ProfileCompact = ({
+  p,
+  roll,
+  accentColor
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-compact",
+  style: {
+    '--accent': accentColor
+  }
+}, /*#__PURE__*/React.createElement(Portrait, {
+  p: p,
+  size: "sm"
+}), /*#__PURE__*/React.createElement("div", {
+  className: "pl-compact__id"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "pl-compact__namerow"
+}, /*#__PURE__*/React.createElement(PosChip, {
+  pos: p.pos
+}), /*#__PURE__*/React.createElement("span", {
+  className: "pl-compact__name"
+}, p.name), /*#__PURE__*/React.createElement("span", {
+  className: "pl-compact__college"
+}, p.college))), /*#__PURE__*/React.createElement("div", {
+  className: "pl-compact__roll"
+}, /*#__PURE__*/React.createElement(Stat, {
+  label: "Rostered",
+  hero: true
+}, roll.rostered), /*#__PURE__*/React.createElement(Stat, {
+  label: "Moves"
+}, roll.txns)));
+
+// ============================================================ TRANSACTION TIMELINE
+const TXN_LABEL = {
+  won: 'WON',
+  rs: 'REDSHIRT',
+  'rs-med': 'MEDICAL RS',
+  award: 'HONOR',
+  graduate: 'GRADUATED',
+  drop: 'RELEASED'
+};
+// Small gold marker shown on a copy that earned a player award while held.
+const HonorsStar = ({
+  n
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "pl-honors",
+  title: `${n} player ${n === 1 ? 'award' : 'awards'} earned while held`
+}, "\u2605", n > 1 ? n : '');
+const TransactionTimeline = ({
+  copy,
+  accentColor,
+  showOwners
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-tl"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "pl-tl__head"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-tl__title"
+}, "Transaction Ledger"), /*#__PURE__*/React.createElement("span", {
+  className: "pl-tl__sub"
+}, copy.ledger.length, " events \xB7 earliest first")), /*#__PURE__*/React.createElement("ol", {
+  className: "pl-tl__list",
+  style: {
+    '--rail': accentColor
+  }
+}, copy.ledger.map((e, i) => {
+  const last = i === copy.ledger.length - 1;
+  return /*#__PURE__*/React.createElement("li", {
+    key: i,
+    className: 'pl-tlitem pl-tlitem--' + e.tag + (last ? ' is-last' : '')
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-tlitem__rail"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-tlitem__dot",
+    style: {
+      background: TXN_META[e.tag].color,
+      borderColor: TXN_META[e.tag].color
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "pl-tlitem__body"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-tlitem__main"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-tlitem__season cffb-num"
+  }, e.season), /*#__PURE__*/React.createElement("span", {
+    className: "pl-tlitem__owner"
+  }, e.type === 'graduate' && !e.team ? /*#__PURE__*/React.createElement("span", {
+    className: "pl-tlitem__retired"
+  }, "Class of ", e.season, " \xB7 unrostered") : /*#__PURE__*/React.createElement(TeamOwner, {
+    id: e.team,
+    showOwner: showOwners,
+    mark: "sm"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "pl-tlitem__detail"
+  }, e.type === 'auction' && /*#__PURE__*/React.createElement(Money, {
+    n: e.price
+  }), e.type === 'redshirt' && /*#__PURE__*/React.createElement(RedshirtChip, {
+    rsType: e.rsType,
+    size: "sm"
+  }), e.type === 'award' && /*#__PURE__*/React.createElement(Awards, {
+    awards: [e.award],
+    size: "sm"
+  })), e.type !== 'award' && /*#__PURE__*/React.createElement("span", {
+    className: 'pl-tag pl-tag--' + e.tag
+  }, TXN_LABEL[e.tag])), e.note && /*#__PURE__*/React.createElement("div", {
+    className: "pl-tlitem__note"
+  }, e.note)));
+})));
+
+// ============================================================ ROWS LAYOUT
+const CopyRow = ({
+  copy,
+  accentColor,
+  open,
+  onToggle,
+  showOwners
+}) => /*#__PURE__*/React.createElement("div", {
+  className: 'pl-row' + (open ? ' is-open' : ''),
+  style: {
+    '--accent': accentColor
+  }
+}, /*#__PURE__*/React.createElement("button", {
+  className: "pl-row__head",
+  onClick: onToggle,
+  "aria-expanded": open
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__n"
+}, "Copy ", copy.n, copy.honors > 0 && /*#__PURE__*/React.createElement(HonorsStar, {
+  n: copy.honors
+})), /*#__PURE__*/React.createElement(StatusChip, {
+  status: copy.status
+}), /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__owner"
+}, /*#__PURE__*/React.createElement(TeamOwner, {
+  id: copy.owner,
+  showOwner: showOwners,
+  mark: "sm",
+  emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__elig"
+}, /*#__PURE__*/React.createElement(CopyEligInline, {
+  elig: copy.elig
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__acq"
+}, copy.acquired ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Money, {
+  n: copy.acquired.price
+}), /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__since"
+}, "since ", copy.acquired.season)) : /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__dash"
+}, "on the wire")), /*#__PURE__*/React.createElement("span", {
+  className: "pl-row__chev"
+}, open ? '▾' : '▸')), open && /*#__PURE__*/React.createElement(TransactionTimeline, {
+  copy: copy,
+  accentColor: accentColor,
+  showOwners: showOwners
+}));
+
+// Per-conference status summary chips.
+const ConfRollChips = ({
+  copies
+}) => {
+  const c = {
+    active: 0,
+    retired: 0,
+    fa: 0
+  };
+  copies.forEach(cp => {
+    if (cp.status === 'graduated' || cp.status === 'declared') c.retired += 1;else if (cp.status === 'fa') c.fa += 1;else c.active += 1;
+  });
+  return /*#__PURE__*/React.createElement("span", {
+    className: "pl-confroll"
+  }, c.active > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "pl-confroll__chip is-active"
+  }, c.active, " active"), c.retired > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "pl-confroll__chip is-retired"
+  }, c.retired, " retired"), c.fa > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "pl-confroll__chip is-fa"
+  }, c.fa, " free"));
+};
+const RowsLayout = ({
+  confs,
+  expanded,
+  setExpanded,
+  accent,
+  showOwners
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-rows"
+}, confs.map(({
+  conf,
+  copies
+}) => {
+  const ac = accentFor(conf, accent);
+  return /*#__PURE__*/React.createElement("section", {
+    className: "pl-confgroup",
+    key: conf,
+    style: {
+      '--accent': ac
+    }
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "pl-confgroup__head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-confgroup__edge"
+  }), /*#__PURE__*/React.createElement(ConfBadge, {
+    id: conf,
+    size: 22
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-confgroup__count"
+  }, copies.length, " copies reserved"), /*#__PURE__*/React.createElement(ConfRollChips, {
+    copies: copies
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "pl-confgroup__body"
+  }, copies.map(c => /*#__PURE__*/React.createElement(CopyRow, {
+    key: c.id,
+    copy: c,
+    accentColor: ac,
+    showOwners: showOwners,
+    open: expanded === c.id,
+    onToggle: () => setExpanded(expanded === c.id ? null : c.id)
+  }))));
+}));
+
+// ============================================================ SHARED DETAIL
+const CopyDetail = ({
+  copy,
+  accentColor,
+  showOwners,
+  onClose
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-detail",
+  style: {
+    '--accent': accentColor
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  className: "pl-detail__head"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-detail__copy"
+}, "Copy ", copy.n), /*#__PURE__*/React.createElement(StatusChip, {
+  status: copy.status
+}), /*#__PURE__*/React.createElement("span", {
+  className: "pl-detail__elig"
+}, /*#__PURE__*/React.createElement(EligDots, {
+  elig: copy.elig
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-detail__owner"
+}, /*#__PURE__*/React.createElement(TeamOwner, {
+  id: copy.owner,
+  showOwner: showOwners,
+  mark: "sm",
+  emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+})), /*#__PURE__*/React.createElement("button", {
+  className: "pl-detail__close",
+  onClick: onClose
+}, "\xD7")), /*#__PURE__*/React.createElement(TransactionTimeline, {
+  copy: copy,
+  accentColor: accentColor,
+  showOwners: showOwners
+}));
+
+// ============================================================ CARDS LAYOUT
+const CopyCard = ({
+  copy,
+  accentColor,
+  active,
+  onClick,
+  showOwners
+}) => /*#__PURE__*/React.createElement("button", {
+  className: 'pl-card pl-card--' + copy.status + (active ? ' is-active' : ''),
+  style: {
+    '--accent': accentColor
+  },
+  onClick: onClick
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__top"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__n"
+}, "Copy ", copy.n, copy.honors > 0 && /*#__PURE__*/React.createElement(HonorsStar, {
+  n: copy.honors
+})), /*#__PURE__*/React.createElement(StatusChip, {
+  status: copy.status,
+  size: "sm"
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__owner"
+}, /*#__PURE__*/React.createElement(TeamOwner, {
+  id: copy.owner,
+  showOwner: showOwners,
+  mark: "md",
+  stacked: true,
+  emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__elig"
+}, /*#__PURE__*/React.createElement(CopyEligInline, {
+  elig: copy.elig
+})), /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__foot"
+}, copy.acquired ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Money, {
+  n: copy.acquired.price
+}), /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__since"
+}, "since ", copy.acquired.season)) : /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__dash"
+}, "on the wire"), /*#__PURE__*/React.createElement("span", {
+  className: "pl-card__moves"
+}, copy.ledger.length, " ", copy.ledger.length === 1 ? 'move' : 'moves')));
+const CardsLayout = ({
+  confs,
+  expanded,
+  setExpanded,
+  accent,
+  showOwners
+}) => {
+  const selEntry = useMemo(() => {
+    for (const g of confs) for (const c of g.copies) if (c.id === expanded) return {
+      c,
+      conf: g.conf
+    };
+    return null;
+  }, [confs, expanded]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "pl-cards-wrap"
+  }, confs.map(({
+    conf,
+    copies
+  }) => {
+    const ac = accentFor(conf, accent);
+    return /*#__PURE__*/React.createElement("section", {
+      className: "pl-confgroup",
+      key: conf,
+      style: {
+        '--accent': ac
+      }
+    }, /*#__PURE__*/React.createElement("header", {
+      className: "pl-confgroup__head"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "pl-confgroup__edge"
+    }), /*#__PURE__*/React.createElement(ConfBadge, {
+      id: conf,
+      size: 22
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "pl-confgroup__count"
+    }, copies.length, " copies reserved"), /*#__PURE__*/React.createElement(ConfRollChips, {
+      copies: copies
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "pl-cards"
+    }, copies.map(c => /*#__PURE__*/React.createElement(CopyCard, {
+      key: c.id,
+      copy: c,
+      accentColor: ac,
+      showOwners: showOwners,
+      active: expanded === c.id,
+      onClick: () => setExpanded(expanded === c.id ? null : c.id)
+    }))));
+  }), selEntry && /*#__PURE__*/React.createElement(CopyDetail, {
+    copy: selEntry.c,
+    accentColor: accentFor(selEntry.conf, accent),
+    showOwners: showOwners,
+    onClose: () => setExpanded(null)
+  }));
+};
+
+// ============================================================ TIMELINE (SWIMLANE) LAYOUT
+// Each copy is a horizontal lane across the season axis. Ownership renders as a
+// team-colored bar; transactions render as nodes. Click a lane to expand its ledger.
+const buildAxis = copies => {
+  let min = CURRENT_SEASON,
+    max = CURRENT_SEASON;
+  copies.forEach(c => c.ledger.forEach(e => {
+    min = Math.min(min, e.season);
+    max = Math.max(max, e.season);
+  }));
+  const years = [];
+  for (let y = min; y <= max; y++) years.push(y);
+  return years;
+};
+// Ownership segments per copy: [{team, startIdx, endFrac(left edge of end)}].
+const ownershipSegments = (copy, years) => {
+  const N = years.length,
+    idxOf = y => years.indexOf(y);
+  const segs = [];
+  let owner = null,
+    startIdx = null;
+  copy.ledger.forEach(e => {
+    if (e.type === 'auction') {
+      if (owner != null) segs.push({
+        team: owner,
+        startIdx,
+        endIdx: idxOf(e.season),
+        held: false
+      });
+      owner = e.team;
+      startIdx = idxOf(e.season);
+    } else if (e.type === 'drop') {
+      segs.push({
+        team: owner,
+        startIdx,
+        endIdx: idxOf(e.season),
+        held: false
+      });
+      owner = null;
+      startIdx = null;
+    } else if (e.type === 'graduate') {
+      if (owner != null) segs.push({
+        team: owner,
+        startIdx,
+        endIdx: idxOf(e.season),
+        held: false
+      });
+      owner = null;
+      startIdx = null;
+    }
+  });
+  if (owner != null) segs.push({
+    team: owner,
+    startIdx,
+    endIdx: N - 1,
+    held: true
+  });
+  return segs.map(s => {
+    const left = s.startIdx / N * 100;
+    const right = s.held ? 100 : s.endIdx / N * 100;
+    return {
+      ...s,
+      left,
+      width: Math.max(right - left, 100 / N / 2)
+    };
+  });
+};
+const Swimlane = ({
+  copy,
+  years,
+  accentColor,
+  active,
+  onClick,
+  showOwners
+}) => {
+  const N = years.length;
+  const segs = ownershipSegments(copy, years);
+  // group events by season index for collision spreading
+  const byIdx = {};
+  copy.ledger.forEach(e => {
+    const k = years.indexOf(e.season);
+    (byIdx[k] = byIdx[k] || []).push(e);
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: 'pl-lane' + (active ? ' is-active' : ''),
+    style: {
+      '--accent': accentColor
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "pl-lane__head",
+    onClick: onClick
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-lane__n"
+  }, "Copy ", copy.n, copy.honors > 0 && /*#__PURE__*/React.createElement(HonorsStar, {
+    n: copy.honors
+  })), /*#__PURE__*/React.createElement(StatusChip, {
+    status: copy.status,
+    size: "sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "pl-lane__elig"
+  }, /*#__PURE__*/React.createElement(CopyEligInline, {
+    elig: copy.elig,
+    showClass: false
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "pl-lane__owner"
+  }, /*#__PURE__*/React.createElement(TeamOwner, {
+    id: copy.owner,
+    showOwner: showOwners,
+    mark: "sm",
+    emptyLabel: copy.graduated ? 'Retired' : 'Free agent'
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "pl-lane__track"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-lane__grid"
+  }, years.map(y => /*#__PURE__*/React.createElement("span", {
+    key: y,
+    className: "pl-lane__col"
+  }))), segs.map((s, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: 'pl-lane__bar' + (s.held ? ' is-held' : ''),
+    style: {
+      left: s.left + '%',
+      width: s.width + '%',
+      background: (TEAMS[s.team] || {}).bg || '#3A3A3A'
+    },
+    title: (TEAMS[s.team] || {}).name
+  })), copy.ledger.map((e, i) => {
+    const k = years.indexOf(e.season);
+    const group = byIdx[k];
+    const j = group.indexOf(e);
+    const frac = (k + (j + 1) / (group.length + 1)) / N * 100;
+    return /*#__PURE__*/React.createElement("span", {
+      key: i,
+      className: 'pl-node pl-node--' + e.tag,
+      style: {
+        left: frac + '%',
+        '--c': TXN_META[e.tag].color
+      },
+      title: `${e.season} · ${TXN_LABEL[e.tag]}${e.price ? ' $' + e.price : ''}${e.award ? ' · ' + e.award.name : ''}`
+    }, e.tag === 'award' ? /*#__PURE__*/React.createElement("span", {
+      className: "pl-node__star"
+    }, "\u2605") : e.tag === 'graduate' ? /*#__PURE__*/React.createElement("span", {
+      className: "pl-node__cap"
+    }) : /*#__PURE__*/React.createElement("span", {
+      className: "pl-node__dot"
+    }));
+  })));
+};
+const TimelineLayout = ({
+  confs,
+  expanded,
+  setExpanded,
+  accent,
+  showOwners
+}) => {
+  const allCopies = useMemo(() => confs.flatMap(g => g.copies), [confs]);
+  const years = useMemo(() => buildAxis(allCopies), [allCopies]);
+  const selEntry = useMemo(() => {
+    for (const g of confs) for (const c of g.copies) if (c.id === expanded) return {
+      c,
+      conf: g.conf
+    };
+    return null;
+  }, [confs, expanded]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "pl-timeline"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-axis",
+    style: {
+      gridTemplateColumns: `var(--lane-label) 1fr`
+    }
+  }, /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
+    className: "pl-axis__years"
+  }, years.map(y => /*#__PURE__*/React.createElement("span", {
+    key: y,
+    className: 'pl-axis__yr cffb-num' + (y === CURRENT_SEASON ? ' is-now' : '')
+  }, y)))), confs.map(({
+    conf,
+    copies
+  }) => {
+    const ac = accentFor(conf, accent);
+    return /*#__PURE__*/React.createElement("section", {
+      className: "pl-lanegroup",
+      key: conf,
+      style: {
+        '--accent': ac
+      }
+    }, /*#__PURE__*/React.createElement("header", {
+      className: "pl-lanegroup__head"
+    }, /*#__PURE__*/React.createElement(ConfBadge, {
+      id: conf,
+      size: 20
+    }), /*#__PURE__*/React.createElement(ConfRollChips, {
+      copies: copies
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "pl-lanes"
+    }, copies.map(c => /*#__PURE__*/React.createElement(Swimlane, {
+      key: c.id,
+      copy: c,
+      years: years,
+      accentColor: ac,
+      showOwners: showOwners,
+      active: expanded === c.id,
+      onClick: () => setExpanded(expanded === c.id ? null : c.id)
+    }))));
+  }), selEntry && /*#__PURE__*/React.createElement(CopyDetail, {
+    copy: selEntry.c,
+    accentColor: accentFor(selEntry.conf, accent),
+    showOwners: showOwners,
+    onClose: () => setExpanded(null)
+  }));
+};
+
+// ============================================================ VIEW TOGGLE
+const ViewToggle = ({
+  view,
+  setView
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "pl-viewtoggle",
+  role: "group",
+  "aria-label": "Preview size"
+}, /*#__PURE__*/React.createElement("button", {
+  className: 'pl-viewtoggle__btn' + (view === 'desktop' ? ' is-on' : ''),
+  onClick: () => setView('desktop')
+}, /*#__PURE__*/React.createElement("svg", {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "2"
+}, /*#__PURE__*/React.createElement("rect", {
+  x: "2",
+  y: "4",
+  width: "20",
+  height: "13",
+  rx: "1.5"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M8 21h8M12 17v4"
+})), "Desktop"), /*#__PURE__*/React.createElement("button", {
+  className: 'pl-viewtoggle__btn' + (view === 'mobile' ? ' is-on' : ''),
+  onClick: () => setView('mobile')
+}, /*#__PURE__*/React.createElement("svg", {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "2"
+}, /*#__PURE__*/React.createElement("rect", {
+  x: "6",
+  y: "2",
+  width: "12",
+  height: "20",
+  rx: "2.5"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M11 18h2"
+})), "Mobile"));
+
+// ============================================================ APP
+const firstHeld = entry => {
+  const copies = entry && entry.copies || [];
+  return (copies.find(c => c.status !== 'fa') || copies[0] || {}).id || null;
+};
+
+// Live build ships pl-data-live.jsx (async loaders); the demo ships the mock
+// pl-data.jsx (synchronous LEDGER/ROSTER). Detect which and drive both.
+const HAS_LIVE = typeof loadLedgerIndex === 'function';
+const App = () => {
+  const [t] = useTweaks(TWEAK_DEFAULTS);
+  const [ready, setReady] = useState(!HAS_LIVE);
+  const [err, setErr] = useState(null);
+  const [pid, setPid] = useState(() => HAS_LIVE ? null : ROSTER[0] && ROSTER[0].id || null);
+  const [entry, setEntry] = useState(null); // LEDGER[pid] once available
+  const [loadingP, setLoadingP] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const [view, setView] = useState(() => {
+    try {
+      return localStorage.getItem('pl-view') || 'desktop';
+    } catch (e) {
+      return 'desktop';
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('pl-view', view);
+    } catch (e) {}
+  }, [view]);
+
+  // Load the search index once (live only; mock is ready immediately).
+  useEffect(() => {
+    if (!HAS_LIVE) return;
+    let alive = true;
+    loadLedgerIndex().then(roster => {
+      if (!alive) return;
+      setReady(true);
+      if (roster.length) setPid(roster[0].id);
+    }).catch(e => {
+      if (alive) setErr(String(e && e.message || e));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Load the selected player's ledger.
+  useEffect(() => {
+    if (!pid) return;
+    let alive = true;
+    if (HAS_LIVE) {
+      setLoadingP(true);
+      setEntry(null);
+      loadPlayerLedger(pid).then(en => {
+        if (!alive) return;
+        setEntry(en);
+        setExpanded(firstHeld(en));
+        setLoadingP(false);
+      }).catch(e => {
+        if (!alive) return;
+        setErr(String(e && e.message || e));
+        setLoadingP(false);
+      });
+    } else {
+      const en = LEDGER[pid];
+      setEntry(en);
+      setExpanded(firstHeld(en));
+    }
+    return () => {
+      alive = false;
+    };
+  }, [pid]);
+  const shell = children => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: 'pl-stage pl-stage--' + view
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-frame"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: 'pl-root pl--' + t.density + ' pl--layout-' + t.layout
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-context"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-context__crumb"
+  }, "League"), /*#__PURE__*/React.createElement("span", {
+    className: "pl-context__sep"
+  }, "/"), /*#__PURE__*/React.createElement("span", {
+    className: "pl-context__here"
+  }, "Player Ledger")), /*#__PURE__*/React.createElement("div", {
+    className: "pl-panel"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "pl-panel__head"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-panel__title"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "pl-panel__h1"
+  }, "Player Ledger"), /*#__PURE__*/React.createElement("p", {
+    className: "pl-panel__desc"
+  }, "Trace every copy of a player \u2014 who owns it now, and how it changed hands.")), ready && /*#__PURE__*/React.createElement(SearchBar, {
+    value: pid,
+    onPick: setPid
+  })), children)))), /*#__PURE__*/React.createElement(ViewToggle, {
+    view: view,
+    setView: setView
+  }));
+  if (err) return shell(/*#__PURE__*/React.createElement("div", {
+    className: "pl-note pl-note--err"
+  }, "Couldn\u2019t load the Player Ledger. ", err));
+  if (!ready) return shell(/*#__PURE__*/React.createElement("div", {
+    className: "pl-note"
+  }, "Loading players\u2026"));
+  const p = ROSTER.find(r => r.id === pid);
+  if (!p) return shell(/*#__PURE__*/React.createElement("div", {
+    className: "pl-note"
+  }, "No players available yet."));
+  const roll = entry && entry.roll || p.roll;
+  const detailReady = entry && !loadingP;
+  const accentColor = accentFor(p.conf, t.accent);
+  const Layout = t.layout === 'cards' ? CardsLayout : t.layout === 'timeline' ? TimelineLayout : RowsLayout;
+  return shell(/*#__PURE__*/React.createElement(React.Fragment, null, t.profile === 'hero' ? /*#__PURE__*/React.createElement(ProfileHero, {
+    p: p,
+    roll: roll,
+    accentColor: accentColor
+  }) : /*#__PURE__*/React.createElement(ProfileCompact, {
+    p: p,
+    roll: roll,
+    accentColor: accentColor
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "pl-ledger"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pl-ledger__head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pl-ledger__title"
+  }, "Copies & Ownership"), /*#__PURE__*/React.createElement("span", {
+    className: "pl-ledger__hint"
+  }, "Select a copy to open its transaction ledger")), detailReady ? /*#__PURE__*/React.createElement(Layout, {
+    confs: entry.confs,
+    expanded: expanded,
+    setExpanded: setExpanded,
+    accent: t.accent,
+    showOwners: t.showOwners
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "pl-note"
+  }, "Loading ledger\u2026"))));
+};
+ReactDOM.createRoot(document.getElementById('cffb-pl-root')).render(/*#__PURE__*/React.createElement(App, null));
+  }
+  var RV = "18.3.1";
+  function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }
+  if (ready()) { __cffbApp(); return; }
+  window.__cffbReactPromise = window.__cffbReactPromise || new Promise(function (resolve) {
+    function load(src, cb) { var s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous"; s.onload = cb; s.onerror = cb; document.head.appendChild(s); }
+    load("https://unpkg.com/react@" + RV + "/umd/react.production.min.js", function () {
+      load("https://unpkg.com/react-dom@" + RV + "/umd/react-dom.production.min.js", resolve);
+    });
+  });
+  window.__cffbReactPromise.then(__cffbApp);
+})();
+</script>

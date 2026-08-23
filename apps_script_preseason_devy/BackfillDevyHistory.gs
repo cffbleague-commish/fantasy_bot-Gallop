@@ -1046,14 +1046,14 @@ function menuSetupRookieLedgerImport() {
 function menuApplyIsRookieFormulas() {
   const ui = SpreadsheetApp.getUi();
 
-  const ledgerResult = getRookieLedgerNameSet();
+  const ledgerResult = getRookieLedgerIndex();
   if (!ledgerResult.ok) {
     ui.alert("RookieLedger Problem", ledgerResult.message + "\n\nMake sure the native 'RookieLedger' tab exists with a 'Name' column (MFL 'LastName, FirstName').", ui.ButtonSet.OK);
     return;
   }
 
-  const draftResult = applyIsRookieFlagsToSheet(getDevyDraftHistorySheet(), ledgerResult.names);
-  const retentionResult = applyIsRookieFlagsToSheet(getDevyRetentionHistorySheet(), ledgerResult.names);
+  const draftResult = applyIsRookieFlagsToSheet(getDevyDraftHistorySheet(), ledgerResult.index);
+  const retentionResult = applyIsRookieFlagsToSheet(getDevyRetentionHistorySheet(), ledgerResult.index);
 
   ui.alert(
     "IsRookie Flags Refreshed",
@@ -1067,17 +1067,18 @@ function menuApplyIsRookieFormulas() {
 
 /**
  * Recompute the IsRookie column on a history sheet as VALUES (not formulas), by
- * matching PlayerName against the RookieLedger name Set with normalizeDevyName().
+ * matching PlayerName + PlayerPosition against the RookieLedger via isInRookieLedger().
  * Blank PlayerName rows stay blank.
  *
  * @param {Sheet} sheet - DevyDraftHistory or DevyRetentionHistory
- * @param {Set} rookieNames - normalized names from getRookieLedgerNameSet()
+ * @param {Map<string,Set<string>>} rookieIndex - name->positions from getRookieLedgerIndex()
  * @returns {Object} { rows, trueCount }
  */
-function applyIsRookieFlagsToSheet(sheet, rookieNames) {
+function applyIsRookieFlagsToSheet(sheet, rookieIndex) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const nameCol = headers.indexOf("PlayerName");
+  const posCol = headers.indexOf("PlayerPosition");
   const isRookieCol = headers.indexOf("IsRookie");
   if (nameCol === -1 || isRookieCol === -1 || data.length < 2) {
     return { rows: Math.max(0, data.length - 1), trueCount: 0 };
@@ -1091,7 +1092,8 @@ function applyIsRookieFlagsToSheet(sheet, rookieNames) {
       values.push([""]);
       continue;
     }
-    const isRookie = rookieNames.has(normalizeDevyName(rawName));
+    const pos = posCol !== -1 ? data[i][posCol] : "";
+    const isRookie = isInRookieLedger(rookieIndex, rawName, pos);
     if (isRookie) trueCount++;
     values.push([isRookie]);
   }

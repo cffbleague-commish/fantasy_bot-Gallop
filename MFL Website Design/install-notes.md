@@ -141,6 +141,47 @@ Returns a structured report of all ownership drift on the current page:
 - Re-scans the page each time it's called, so it picks up AJAX updates
 - Use on the roster page for the most useful drift data
 
+## Home page message widgets
+
+Each widget below is a **self-contained fragment** — paste the entire generated
+`.html` file into its own MFL home page message (Advanced Editor **OFF**). They
+share one React runtime (loaded once) and coexist on the same page.
+
+| Widget | Generated file | Build command | Data source |
+|--------|----------------|---------------|-------------|
+| Standings | `home-message-standings.html` | `npm run build:standings` | Apps Script `/exec` |
+| Power Rankings | `home-message-power-rankings.html` | `npm run build:power-rankings` | Apps Script `/exec` |
+| Contract Board | `home-message.html` | `npm run build:contract-board` | `players.txt` |
+| Playoff Bracket | `home-message-bracket.html` | hand-authored | sample / stub |
+| **Player Ledger** | `home-message-player-ledger.html` | `npm run build:player-ledger` | Apps Script `/exec?feed=ledger` |
+
+### Player Ledger
+
+Search a player → see MFL photo + bio, every copy's current owner, the full
+multi-year transaction ledger (auction / redshirt / drop), awards, and devy
+draft info. Player universe + photos come from MFL (`RookieLedger`); ownership
+is reconstructed from `PlayerCopies` + `TransactionLog`; awards from the `Awards`
+tab; draft from `DevyDraftHistory`.
+
+- Photos: `https://www46.myfantasyleague.com/fflnetdynamic{year}/{playerId}_thumb.jpg`
+  with an automatic fallback to MFL's "no photo" asset, then an initials portrait.
+- The feed rides the **same Apps Script web-app deployment** as Standings / Power
+  Rankings — `doGet` routes to the ledger builders when called with `?feed=ledger`.
+  It uses its own `localStorage` cache keys (`cffb_ledger_index_v1`,
+  `cffb_ledger_p_{id}`), so it never collides with the standings/PR cache.
+
+**After editing `PowerRankingsWebApp.gs` or `PlayerLedgerWebApp.gs` you MUST
+redeploy the web app** (Apps Script editor → Manage deployments → edit → new
+version) — deployments are frozen at deploy time.
+
+**Devy draft data** lives in a separate spreadsheet. Set a `DEVY_SHEET_ID` script
+property (Apps Script → Project Settings → Script properties) to the devy sheet's
+id so the draft block populates; without it the ledger still renders, just with no
+draft rows. The web app's "execute as" account must have read access to that sheet.
+
+To smoke-test the feed before redeploying, run `testBuildLedgerIndex()` and
+`testBuildPlayerLedger()` from the Apps Script editor and check the Logs.
+
 ## Troubleshooting
 
 - **Raw strings still showing:** Check browser console for `[CFFB]` warnings. Common causes:

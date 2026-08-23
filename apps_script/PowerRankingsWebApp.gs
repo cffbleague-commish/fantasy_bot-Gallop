@@ -19,6 +19,12 @@
 
 function doGet(e) {
   try {
+    // Route the Player Ledger feed through the same deployment (only one doGet
+    // is allowed per Apps Script project). See PlayerLedgerWebApp.gs.
+    if (e && e.parameter && e.parameter.feed === "ledger") {
+      return serveLedgerFeed(e);
+    }
+
     const cache = CacheService.getScriptCache();
     const cached = cache.get(PR_CACHE_KEY);
     if (cached && !(e && e.parameter && e.parameter.nocache)) {

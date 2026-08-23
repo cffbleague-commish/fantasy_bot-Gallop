@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFFB Player Ledger — Preview</title>
+  <style>
+    /* Simulate MFL's dark BackinBlack theme */
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0A0A0A;
+      color: #ccc;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+    }
+    .preview-note {
+      max-width: 960px;
+      margin: 0 auto 16px;
+      padding: 8px 12px;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-note">
+    Local preview — simulates MFL's dark theme and fetches LIVE league data from the web app.
+    (If your browser blocks <code>file://</code> fetches, serve this folder over http, e.g.
+    <code>python -m http.server</code>, then open <code>/preview-player-ledger.html</code>.)
+  </div>
+  <!-- Injects home-message-player-ledger.html, then loads its CDN scripts in order
+       and runs the compiled bundle (no Babel needed). -->
+  <script>
+    (async function () {
+      try {
+        const html = await (await fetch('home-message-player-ledger.html', { cache: 'no-store' })).text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+        // 1. Move non-script nodes (<style>, sprite <svg>, root <div>) into the page, in order.
+        Array.from(doc.body.childNodes).forEach((n) => {
+          if (n.nodeName.toLowerCase() !== 'script') document.body.appendChild(document.importNode(n, true));
+        });
+
+        // 2. Load external CDN scripts (react, react-dom) sequentially, in order.
+        const scripts = Array.from(doc.querySelectorAll('script'));
+        const loadExternal = (src, crossorigin) => new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          if (crossorigin) s.crossOrigin = crossorigin;
+          s.onload = resolve;
+          s.onerror = () => reject(new Error('failed to load ' + src));
+          document.body.appendChild(s);
+        });
+        for (const s of scripts.filter((x) => x.src)) {
+          await loadExternal(s.src, s.getAttribute('crossorigin'));
+        }
+
+        // 3. Execute the compiled inline bundle (plain JS — no Babel needed).
+        const inline = scripts.find((x) => !x.src);
+        if (inline) {
+          const s = document.createElement('script');
+          s.textContent = inline.textContent;
+          document.body.appendChild(s);
+        }
+      } catch (err) {
+        document.body.innerHTML += '<p style="color:#ff6b6b">Preview failed: ' + err.message + '</p>';
+      }
+    })();
+  </script>
+</body>
+</html>

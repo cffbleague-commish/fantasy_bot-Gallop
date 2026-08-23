@@ -51,6 +51,7 @@ function onOpen() {
     .addSeparator()
     .addSubMenu(ui.createMenu('⚙️ Utilities')
       .addItem('Reconcile Pool from History...', 'menuReconcileDevyPool')
+      .addItem('Trace Player (debug)...', 'menuTraceDevyPlayer')
       .addItem('Reset Draft for Conference...', 'menuResetDraft')
       .addItem('Clear All Available Players', 'menuClearUndrafted')
       .addItem('View Conferences', 'menuViewConferences'))
@@ -1352,13 +1353,35 @@ function normalizeDevyName(name) {
 }
 
 /**
- * Read the native RookieLedger tab and return a Set of normalized player names
- * (from the "Name" column, MFL "Last, First"). Single source of truth for "who is
- * in the RookieLedger" — used by both the graduation sweep and the IsRookie flags.
- *
- * @returns {Object} { ok, names?: Set, message?: string }
+ * Normalize a position for cross-sheet matching. Uppercases/trims and canonicalizes
+ * the few KTC-vs-MFL variants (PK->K, DEF/D->DST). Devy players are overwhelmingly
+ * QB/RB/WR/TE, which already align between sources.
  */
-function getRookieLedgerNameSet() {
+function normalizeDevyPosition(pos) {
+  const p = String(pos || "").toUpperCase().trim();
+  if (p === "PK") return "K";
+  if (p === "DEF" || p === "D") return "DST";
+  return p;
+}
+
+/**
+ * Order-agnostic name key for joining across sheets whose PlayerIDs don't line up
+ * (KTC-based pool vs backfilled/manually-logged history). Normalizes, splits to
+ * tokens, sorts, and rejoins so "Smith, Jeremiah" and "Jeremiah Smith" match.
+ */
+function devyNameKey(name) {
+  return normalizeDevyName(name).split(" ").filter(Boolean).sort().join(" ");
+}
+
+/**
+ * Read the native RookieLedger tab and return an index of normalized name ->
+ * Set of normalized positions (from the "Name" and "Position" columns). Single
+ * source of truth for "who is in the RookieLedger" — used by both the graduation
+ * sweep and the IsRookie flags. Position lets us disambiguate same-name players.
+ *
+ * @returns {Object} { ok, index?: Map<string, Set<string>>, message?: string }
+ */
+function getRookieLedgerIndex() {
   const ledger = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("RookieLedger");
   if (!ledger) {
     return { ok: false, message: "RookieLedger tab not found." };
@@ -1370,13 +1393,33 @@ function getRookieLedgerNameSet() {
   if (lc["Name"] === undefined) {
     return { ok: false, message: "RookieLedger is missing a 'Name' column." };
   }
+  const posIdx = lc["Position"];
 
-  const names = new Set();
+  const index = new Map();
   for (let i = 1; i < ledgerData.length; i++) {
     const n = normalizeDevyName(ledgerData[i][lc["Name"]]);
-    if (n) names.add(n);
+    if (!n) continue;
+    if (!index.has(n)) index.set(n, new Set());
+    const pos = posIdx !== undefined ? normalizeDevyPosition(ledgerData[i][posIdx]) : "";
+    if (pos) index.get(n).add(pos);
   }
-  return { ok: true, names };
+  return { ok: true, index };
+}
+
+/**
+ * Does a player (name + position) appear in the RookieLedger index? Requires a name
+ * match; also requires a position match when both sides have a position on record,
+ * so same-name players at different positions don't collide. Falls back to name-only
+ * when either side lacks position info.
+ */
+function isInRookieLedger(index, name, position) {
+  const n = normalizeDevyName(name);
+  if (!n) return false;
+  const positions = index.get(n);
+  if (!positions) return false;
+  const normPos = normalizeDevyPosition(position);
+  if (positions.size === 0 || !normPos) return true;
+  return positions.has(normPos);
 }
 
 /**
@@ -1389,11 +1432,11 @@ function getRookieLedgerNameSet() {
  * @returns {Object} Result with counts
  */
 function sweepGraduatedDevyPlayers() {
-  const ledgerResult = getRookieLedgerNameSet();
+  const ledgerResult = getRookieLedgerIndex();
   if (!ledgerResult.ok) {
     return { success: false, message: ledgerResult.message };
   }
-  const gradNames = ledgerResult.names;
+  const rookieIndex = ledgerResult.index;
 
   const poolSheet = getDevyPlayerPoolSheet();
   const data = poolSheet.getDataRange().getValues();
@@ -1408,11 +1451,11 @@ function sweepGraduatedDevyPlayers() {
   const statusValues = [];
   for (let i = 1; i < data.length; i++) {
     let status = data[i][pc["Status"]];
-    const norm = normalizeDevyName(data[i][pc["PlayerName"]]);
-    if (status !== "EnteredNFL" && norm && gradNames.has(norm)) {
+    if (status !== "EnteredNFL" &&
+        isInRookieLedger(rookieIndex, data[i][pc["PlayerName"]], data[i][pc["Position"]])) {
       status = "EnteredNFL";
       copiesMarked++;
-      gradedPlayers.add(norm);
+      gradedPlayers.add(normalizeDevyName(data[i][pc["PlayerName"]]));
     }
     statusValues.push([status]);
   }
@@ -1421,10 +1464,10 @@ function sweepGraduatedDevyPlayers() {
     poolSheet.getRange(2, pc["Status"] + 1, statusValues.length, 1).setValues(statusValues);
   }
 
-  // Same RookieLedger set also refreshes the IsRookie audit flags on the history
-  // sheets, so one sweep keeps the pool status and the history flags in sync.
-  const draftFlags = applyIsRookieFlagsToSheet(getDevyDraftHistorySheet(), gradNames);
-  const retentionFlags = applyIsRookieFlagsToSheet(getDevyRetentionHistorySheet(), gradNames);
+  // The same RookieLedger index also refreshes the IsRookie audit flags on the
+  // history sheets, so one sweep keeps pool status and history flags in sync.
+  const draftFlags = applyIsRookieFlagsToSheet(getDevyDraftHistorySheet(), rookieIndex);
+  const retentionFlags = applyIsRookieFlagsToSheet(getDevyRetentionHistorySheet(), rookieIndex);
 
   return {
     success: true,
@@ -1468,23 +1511,29 @@ function reconcileDevyPoolFromLedger() {
   const pc = {};
   data[0].forEach((h, i) => pc[h] = i);
   const cols = ["Status", "Drafted", "DraftedBy", "DraftYear", "RetainedBy", "RetentionYear"];
-  for (const c of cols.concat(["PlayerID"])) {
+  for (const c of cols.concat(["Conference", "PlayerName"])) {
     if (pc[c] === undefined) {
       return { success: false, message: `DevyPlayerPool is missing the '${c}' column. Rebuild the pool first.` };
     }
   }
 
-  // Build the event timeline per PlayerID (which is conference-specific).
+  // Build the event timeline keyed by "CONFERENCE|nameKey". PlayerIDs differ between
+  // the KTC-based pool and backfilled/manually-logged history, so we join on
+  // conference + order-agnostic normalized name instead of PlayerID.
   const events = {};
-  const addEvent = (pid, ev) => { (events[pid] = events[pid] || []).push(ev); };
+  const keyFor = (conf, name) => {
+    const nk = devyNameKey(name);
+    return nk ? `${String(conf).toUpperCase()}|${nk}` : null;
+  };
+  const addEvent = (key, ev) => { if (key) (events[key] = events[key] || []).push(ev); };
 
   const histData = getDevyDraftHistorySheet().getDataRange().getValues();
   const hc = {};
   histData[0].forEach((h, i) => hc[h] = i);
   for (let i = 1; i < histData.length; i++) {
-    const pid = histData[i][hc["PlayerID"]];
-    if (!pid) continue;
-    addEvent(pid, {
+    const name = histData[i][hc["PlayerName"]] ||
+      `${histData[i][hc["PlayerLastName"]]}, ${histData[i][hc["PlayerFirstName"]]}`;
+    addEvent(keyFor(histData[i][hc["Conference"]], name), {
       year: Number(histData[i][hc["Year"]]),
       phase: 1, // draft happens after the retention window within a year
       type: "DRAFT",
@@ -1496,9 +1545,9 @@ function reconcileDevyPoolFromLedger() {
   const rc = {};
   retData[0].forEach((h, i) => rc[h] = i);
   for (let i = 1; i < retData.length; i++) {
-    const pid = retData[i][rc["PlayerID"]];
-    if (!pid) continue;
-    addEvent(pid, {
+    const name = retData[i][rc["PlayerName"]] ||
+      `${retData[i][rc["PlayerLastName"]]}, ${retData[i][rc["PlayerFirstName"]]}`;
+    addEvent(keyFor(retData[i][rc["Conference"]], name), {
       year: Number(retData[i][rc["Year"]]),
       phase: 0, // retention decision precedes that year's draft
       type: String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase(),
@@ -1519,7 +1568,8 @@ function reconcileDevyPoolFromLedger() {
       continue;
     }
 
-    const evs = (events[row[pc["PlayerID"]]] || []).slice()
+    const poolName = row[pc["PlayerName"]] || `${row[pc["LastName"]]}, ${row[pc["FirstName"]]}`;
+    const evs = (events[keyFor(row[pc["Conference"]], poolName)] || []).slice()
       .sort((a, b) => (a.year - b.year) || (a.phase - b.phase));
 
     let status = "Available", drafted = "No", draftedBy = "", draftYear = "", retainedBy = "", retentionYear = "";
@@ -1573,6 +1623,89 @@ function menuReconcileDevyPool() {
   if (confirm !== ui.Button.YES) return;
   const r = reconcileDevyPoolFromLedger();
   ui.alert("Reconcile Pool", r.message, ui.ButtonSet.OK);
+}
+
+/**
+ * Diagnostic: trace a player by name across DevyPlayerPool, DevyDraftHistory, and
+ * DevyRetentionHistory. Name-matched (order-agnostic) so it surfaces PlayerID
+ * mismatches between the pool and the ledger — the usual cause of a reconcile that
+ * doesn't line up. Read-only.
+ *
+ * @param {string} searchTerm - Player name (any order, e.g. "Jeremiah Smith")
+ * @returns {string} A human-readable trace
+ */
+function traceDevyPlayer(searchTerm) {
+  const tokens = normalizeDevyName(searchTerm).split(" ").filter(Boolean);
+  if (tokens.length === 0) return "Enter a player name.";
+  const matches = (nm) => {
+    const norm = normalizeDevyName(nm);
+    return tokens.every(t => norm.indexOf(t) !== -1);
+  };
+
+  const lines = [];
+
+  // Pool copies
+  const pool = getDevyPlayerPoolSheet().getDataRange().getValues();
+  const pc = {}; pool[0].forEach((h, i) => pc[h] = i);
+  lines.push("=== DevyPlayerPool ===");
+  let poolHits = 0;
+  for (let i = 1; i < pool.length; i++) {
+    const r = pool[i];
+    const nm = r[pc["PlayerName"]] || `${r[pc["LastName"]]}, ${r[pc["FirstName"]]}`;
+    if (!matches(nm)) continue;
+    poolHits++;
+    lines.push(`${r[pc["Conference"]]} | id=${r[pc["PlayerID"]]} | Status=${r[pc["Status"]]} | Drafted=${r[pc["Drafted"]]} | DraftedBy=${r[pc["DraftedBy"]]} | RetainedBy=${r[pc["RetainedBy"]]} | RetYr=${r[pc["RetentionYear"]]}`);
+  }
+  if (!poolHits) lines.push("(no pool copies matched)");
+
+  // Draft history
+  const hist = getDevyDraftHistorySheet().getDataRange().getValues();
+  const hc = {}; hist[0].forEach((h, i) => hc[h] = i);
+  lines.push("", "=== DevyDraftHistory ===");
+  let histHits = 0;
+  for (let i = 1; i < hist.length; i++) {
+    const r = hist[i];
+    const nm = r[hc["PlayerName"]] || `${r[hc["PlayerLastName"]]}, ${r[hc["PlayerFirstName"]]}`;
+    if (!matches(nm)) continue;
+    histHits++;
+    lines.push(`${r[hc["Year"]]} ${r[hc["Conference"]]} R${r[hc["Round"]]}.${r[hc["Pick"]]} | id=${r[hc["PlayerID"]]} | Fran=${r[hc["FranchiseID"]]}`);
+  }
+  if (!histHits) lines.push("(no draft-history rows matched)");
+
+  // Retention history
+  const ret = getDevyRetentionHistorySheet().getDataRange().getValues();
+  const rcc = {}; ret[0].forEach((h, i) => rcc[h] = i);
+  lines.push("", "=== DevyRetentionHistory ===");
+  let retHits = 0;
+  for (let i = 1; i < ret.length; i++) {
+    const r = ret[i];
+    const nm = r[rcc["PlayerName"]] || `${r[rcc["PlayerLastName"]]}, ${r[rcc["PlayerFirstName"]]}`;
+    if (!matches(nm)) continue;
+    retHits++;
+    lines.push(`${r[rcc["Year"]]} ${r[rcc["Conference"]]} | id=${r[rcc["PlayerID"]]} | Fran=${r[rcc["FranchiseID"]]} | ${String(r[rcc["Decision"]] || "RETAIN")}`);
+  }
+  if (!retHits) lines.push("(no retention-history rows matched)");
+
+  lines.push("", "TIP: the pool 'id' must exactly equal the DevyDraftHistory 'id' for reconcile to mark that copy Drafted.");
+  return lines.join("\n");
+}
+
+/**
+ * Menu: trace a player across the pool + history sheets
+ */
+function menuTraceDevyPlayer() {
+  const ui = SpreadsheetApp.getUi();
+  const resp = ui.prompt(
+    "Trace Devy Player",
+    "Enter a player name to trace across DevyPlayerPool + history (any name order):",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+  const term = resp.getResponseText().trim();
+  if (!term) return;
+  const trace = traceDevyPlayer(term);
+  Logger.log(trace);
+  ui.alert("Player Trace", trace, ui.ButtonSet.OK);
 }
 
 /**
