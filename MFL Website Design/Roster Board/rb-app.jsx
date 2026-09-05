@@ -21,14 +21,20 @@ const TeamChip = ({ id, size }) => {
 
 const PosChip = ({ pos }) => <span className={'cffb-pos cffb-pos--' + pos.toLowerCase()}>{pos}</span>;
 
-const Elig = ({ elig }) => (
-  <span className="cffb-elig" title={elig.remainLabel + ' of eligibility'}>
-    <span className="cffb-elig__class">{elig.cls}</span>
-    <span className="cffb-elig__dots" aria-label={elig.remainLabel}>
-      {elig.dots.map((d, i) => <span key={i} className={'cffb-elig__dot' + (d === 'used' ? ' is-used' : d === 'rs' ? ' is-rs' : d === 'rs-med' ? ' is-rs-med' : '')} />)}
+const Elig = ({ elig }) => {
+  // Color-code the class chip via cffb.css (--fr/--so/--jr/--sr/--gr). elig.cls
+  // may carry an "R-" redshirt prefix ("R-JR") — strip it for the modifier but
+  // keep it in the visible label.
+  const base = String(elig.cls).replace(/^R-/, '').toLowerCase();
+  return (
+    <span className="cffb-elig" title={elig.remainLabel + ' of eligibility'}>
+      <span className={'cffb-elig__class cffb-elig__class--' + base}>{elig.cls}</span>
+      <span className="cffb-elig__dots" aria-label={elig.remainLabel}>
+        {elig.dots.map((d, i) => <span key={i} className={'cffb-elig__dot' + (d === 'used' ? ' is-used' : d === 'rs' ? ' is-rs' : d === 'rs-med' ? ' is-rs-med' : '')} />)}
+      </span>
     </span>
-  </span>
-);
+  );
+};
 
 const RSChip = ({ rs, ir }) => {
   if (!rs) return <span className="rb-none">—</span>;
@@ -84,13 +90,23 @@ const OtherCopy = ({ other, onGo }) => {
   );
 };
 
+const PlayerPhoto = ({ p }) => {
+  // MFL headshot on top of the initials placeholder; on load error (no photo on
+  // file) the img is removed and the colored-bar + initials show through.
+  const [err, setErr] = useState(false);
+  return (
+    <span className="rb-photo" title={p.name}>
+      <span className="rb-photo__bar" style={{ background: POS_COLORS[p.pos] }} />
+      <span className="rb-photo__init">{p.initials}</span>
+      {p.photo && !err && <img src={p.photo} alt="" loading="lazy" onError={() => setErr(true)} />}
+    </span>
+  );
+};
+
 const Row = ({ p, onGo, ir }) => (
   <div className={'rb-cols rb-row' + ((p.elig.redshirtingNow || (p.injury && p.injury[0] === 'O')) ? ' is-dim' : '')}>
     <span className="rb-player">
-      <span className="rb-photo" title="Drop a player photo in MFL player profile to fill this slot">
-        <span className="rb-photo__bar" style={{ background: POS_COLORS[p.pos] }} />
-        <span className="rb-photo__init">{p.initials}</span>
-      </span>
+      <PlayerPhoto p={p} />
       <span className="rb-pname">
         <span className="rb-pname__name">
           {(p.playerId && typeof MFL_PLAYER_LINK === 'function')
@@ -134,7 +150,7 @@ const ConfTabs = ({ team, setTeam }) => {
         return (
           <div key={c} className="rb-conftab">
             <button role="tab" aria-selected={isActive} aria-expanded={open === c} className={'rb-tab' + (isActive ? ' is-active' : '')} style={isActive ? { boxShadow: 'inset 0 -2px 0 ' + CONF_ACCENT[c] } : null} onClick={toggle(c)}>
-              <img className="rb-conflogo" src={CONF_META[c].logo} alt="" />
+              {CONF_META[c].logo && <img className="rb-conflogo" src={CONF_META[c].logo} alt="" />}
               <span className="rb-tab__abbr">{CONF_META[c].label}</span>
               {isActive && <span className="rb-tab__cur">{TEAMS[team].abbr}</span>}
               <span className="rb-caret">▾</span>

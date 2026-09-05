@@ -22,8 +22,9 @@
 // ── Static maps (from the design) ────────────────────────────────────────────
 const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A' };
 const CONF_ORDER  = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
-// No hosted conference-logo assets on MFL — text labels only (ConfTabs tolerates
-// a missing `logo`).
+// Conference logos are inlined as base64 data URIs at build time (so the widget
+// stays self-contained on MFL); ConfTabs falls back to the text label when a
+// logo is absent (e.g. the standalone demo, where __CONF_LOGOS__ isn't injected).
 const CONF_META = {
   sec:   { label: 'SEC' },
   b1g:   { label: 'B1G' },
@@ -32,6 +33,10 @@ const CONF_META = {
   pac:   { label: 'PAC' },
   aac:   { label: 'AAC' },
 };
+// The build assigns window.__CFFB_CONF_LOGOS once (a single copy of the base64
+// blob); referenced here exactly once so it is never duplicated into the bundle.
+const CONF_LOGOS = (typeof window !== 'undefined' && window.__CFFB_CONF_LOGOS) || {};
+Object.keys(CONF_LOGOS).forEach((c) => { if (CONF_META[c]) CONF_META[c].logo = CONF_LOGOS[c]; });
 // MFL franchise division code -> conference id.
 const DIV_TO_CONF = { '00': 'acc', '01': 'b1g', '02': 'big12', '03': 'pac', '04': 'sec', '05': 'aac' };
 const POS_COLORS = { QB: '#C9A227', RB: '#3B82C4', WR: '#7BA4C9', TE: '#E8C547', DB: '#6E86A8', K: '#5C7A6A' };
@@ -57,6 +62,9 @@ let ROSTER_MEMBERS = {};  // teamAbbr -> [ { pid, status, enc } ]
 let MEMBERSHIP = {};      // pid -> [teamAbbr, ...]
 
 const MFL_PLAYER_LINK = (pid) => `${MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
+// MFL player headshot (confirmed live path, same as the Player Ledger):
+// /player_photos_2014/{id}_thumb.jpg. Missing photos error out → initials show.
+const PLAYER_PHOTO = (pid) => `https://www46.myfantasyleague.com/player_photos_2014/${pid}_thumb.jpg`;
 
 // ── Encoded contract-string parser (mirrors mfl-player-parser.js) ─────────────
 // A single copy string: OWNER_CLASS[_MODS]. Returns { owner, cls, redshirt, awards }.
@@ -158,6 +166,7 @@ const enrichRow = (teamAbbr) => (m) => {
   return {
     pid: m.pid,
     playerId: p.playerId,
+    photo: p.playerId ? PLAYER_PHOTO(p.playerId) : null,
     name: displayName(p.name),
     pos: normPos(p.pos),
     pts: p.pts || 0,

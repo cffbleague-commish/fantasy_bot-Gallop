@@ -17,6 +17,7 @@ const path  = require('path');
 // (~2.9 MB) @babel/standalone at page load. Same `react` preset the browser
 // would have applied at runtime, so the output is behavior-identical.
 const Babel = require('@babel/standalone');
+const { PNG } = require('pngjs');
 
 const DIR       = __dirname;
 const SRC_DIR   = path.join(DIR, 'Roster Board');
@@ -46,6 +47,56 @@ if (!cffbCss) {
   console.warn('      The widget will render UNSTYLED (missing cffb-* base component styles).');
 }
 const jsxSources = JSX_FILES.map((name) => ({ name, code: read(path.join(SRC_DIR, name)) }));
+
+// Conference logos live in the sibling design system. Inline them as base64
+// data URIs (keyed by the conference id rb-data-live uses) so the tab strip is
+// self-contained on MFL. Note the file for `pac` is pac12.png.
+const CONF_LOGO_DIR = path.join(DIR, '..', 'apps_script_recruiting', 'CFFB Design System', 'assets', 'conferences');
+const CONF_LOGO_FILES = { sec: 'sec.png', b1g: 'b1g.png', acc: 'acc.png', big12: 'big12.png', pac: 'pac12.png', aac: 'aac.png' };
+
+// The source logos are print-resolution (pac12 is 1200×1514 / 229 KB) but the
+// tab strip renders them at ~26 px. Downscale to a small retina-friendly cap
+// before inlining so the message stays light. Box-filter over the decoded RGBA.
+const LOGO_MAX = 72;
+function downscalePng(buf) {
+  const src = PNG.sync.read(buf);
+  const scale = Math.min(1, LOGO_MAX / Math.max(src.width, src.height));
+  if (scale >= 1) return PNG.sync.write(src);
+  const dw = Math.max(1, Math.round(src.width * scale));
+  const dh = Math.max(1, Math.round(src.height * scale));
+  const dst = new PNG({ width: dw, height: dh });
+  const sx = src.width / dw, sy = src.height / dh;
+  for (let y = 0; y < dh; y++) {
+    for (let x = 0; x < dw; x++) {
+      const x0 = Math.floor(x * sx), x1 = Math.min(src.width, Math.ceil((x + 1) * sx));
+      const y0 = Math.floor(y * sy), y1 = Math.min(src.height, Math.ceil((y + 1) * sy));
+      let r = 0, g = 0, b = 0, a = 0, n = 0;
+      for (let yy = y0; yy < y1; yy++) {
+        for (let xx = x0; xx < x1; xx++) {
+          const i = (src.width * yy + xx) << 2;
+          const al = src.data[i + 3];
+          r += src.data[i] * al; g += src.data[i + 1] * al; b += src.data[i + 2] * al; a += al; n++;
+        }
+      }
+      const di = (dw * y + x) << 2;
+      dst.data[di]     = a ? Math.round(r / a) : 0;   // alpha-weighted (avoids dark fringing)
+      dst.data[di + 1] = a ? Math.round(g / a) : 0;
+      dst.data[di + 2] = a ? Math.round(b / a) : 0;
+      dst.data[di + 3] = Math.round(a / n);
+    }
+  }
+  return PNG.sync.write(dst);
+}
+
+const confLogos = {};
+Object.keys(CONF_LOGO_FILES).forEach((conf) => {
+  const p = path.join(CONF_LOGO_DIR, CONF_LOGO_FILES[conf]);
+  if (!fs.existsSync(p)) { console.warn('warn: conference logo not found: ' + p); return; }
+  let png;
+  try { png = downscalePng(fs.readFileSync(p)); }
+  catch (e) { console.warn('warn: could not downscale ' + conf + ' (' + e.message + ') — inlining full size'); png = fs.readFileSync(p); }
+  confLogos[conf] = 'data:image/png;base64,' + png.toString('base64');
+});
 
 // ---------------------------------------------------------------------------
 // Transform JSX — wrap the render call with a Boot component that waits for the
@@ -94,6 +145,7 @@ const bootScript = [
   '(function () {',
   '  if (window.__cffbRosterBoardBooted) return;',
   '  window.__cffbRosterBoardBooted = true;',
+  '  window.__CFFB_CONF_LOGOS = ' + JSON.stringify(confLogos) + ';',
   '  function __cffbApp() {',
   compiledApp,
   '  }',
