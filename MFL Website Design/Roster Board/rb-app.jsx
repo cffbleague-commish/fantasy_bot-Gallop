@@ -114,6 +114,11 @@ const Row = ({ p, onGo, ir }) => (
             : p.name}
           <span className="rb-mob-status"><Status p={p} /></span>
         </span>
+        {(p.team || p.bye) && (
+          <span className="rb-pname__sub">
+            {[p.team, p.bye ? 'Bye ' + p.bye : ''].filter(Boolean).join(' · ')}
+          </span>
+        )}
       </span>
     </span>
     <span><PosChip pos={p.pos} /></span>

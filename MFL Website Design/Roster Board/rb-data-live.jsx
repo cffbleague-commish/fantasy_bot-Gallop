@@ -60,6 +60,7 @@ let MFL_CTX = { origin: '', year: '2026', league: '12011' };
 let PLAYERS_BY_ID = {};   // pid -> { name, pos, pts, injury, initials, playerId }
 let ROSTER_MEMBERS = {};  // teamAbbr -> [ { pid, status, enc } ]
 let MEMBERSHIP = {};      // pid -> [teamAbbr, ...]
+let BYE_BY_TEAM = {};     // NFL team abbr -> bye week (fallback when a player lacks bye_week)
 
 const MFL_PLAYER_LINK = (pid) => `${MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
 // MFL player headshot (confirmed live path, same as the Player Ledger):
@@ -180,6 +181,8 @@ const enrichRow = (teamAbbr) => (m) => {
     pid: m.pid,
     playerId: p.playerId,
     photo: p.playerId ? PLAYER_PHOTO(p.playerId) : null,
+    team: p.team || '',
+    bye: p.bye || BYE_BY_TEAM[(p.team || '').toUpperCase()] || null,
     name: displayName(p.name),
     pos: normPos(p.pos),
     pts: p.pts || 0,
@@ -307,8 +310,32 @@ async function fetchInjuries() {
   return d;
 }
 
+// NFL team bye weeks (fallback when the players export omits bye_week per player).
+async function fetchByeWeeks() {
+  const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=nflByeWeeks&JSON=1`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for nflByeWeeks');
+  return res.json();
+}
+// Robustly map NFL team -> bye week from whatever shape the export uses (find the
+// first array under the root; read an id/team field and a bye_week/week/bye field).
+function parseByeWeeks(d) {
+  const map = {};
+  const root = d && (d.nflByeWeeks || d.byeWeeks || d);
+  if (!root || typeof root !== 'object') return map;
+  let arr = null;
+  for (const k in root) { if (Array.isArray(root[k])) { arr = root[k]; break; } }
+  asArray(arr).forEach((it) => {
+    if (!it || typeof it !== 'object') return;
+    const team = String(it.id || it.team || '').toUpperCase();
+    const wk = it.bye_week || it.week || it.bye;
+    if (team && wk) map[team] = String(wk);
+  });
+  return map;
+}
+
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v2';
+const RB_CACHE_KEY = 'cffb_roster_board_v3';
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -326,17 +353,25 @@ function rbWriteCache(payload) {
 
 // ── Assemble the live payload from the export feeds ───────────────────────────
 async function rbFetchPayload(fidToAbbr) {
-  const [rostersD, playersD, scoresD, injuriesD] = await Promise.all([
+  const [rostersD, playersD, scoresD, injuriesD, byeD] = await Promise.all([
     fetchJSON('rosters'),
     fetchJSON('players', '&DETAILS=1'),
     fetchJSON('playerScores', '&W=YTD&YEAR=' + MFL_CTX.year).catch(() => null),
     fetchInjuries().catch((e) => { console.warn('[CFFB Roster Board] injuries fetch failed:', e && e.message); return null; }),
+    fetchByeWeeks().catch(() => null),
   ]);
 
-  // Player identity: id -> name/pos.
+  // NFL team -> bye week (fallback for players whose export row omits bye_week).
+  const byeMap = parseByeWeeks(byeD);
+
+  // Player identity: id -> name/pos/team/bye.
   const playersById = {};
   asArray(playersD && playersD.players && playersD.players.player).forEach((p) => {
-    playersById[p.id] = { name: p.name || p.id, pos: p.position || 'WR', pts: 0, injury: null, playerId: p.id };
+    const team = (p.team || '').toUpperCase();
+    playersById[p.id] = {
+      name: p.name || p.id, pos: p.position || 'WR', pts: 0, injury: null, playerId: p.id,
+      team, bye: p.bye_week || p.bye || byeMap[team] || null,
+    };
   });
 
   // Season points.
@@ -356,6 +391,7 @@ async function rbFetchPayload(fidToAbbr) {
     if (code && playersById[inj.id]) { playersById[inj.id].injury = [code, inj.details || inj.status || '']; injMatched++; }
   });
   console.log('[CFFB Roster Board] injuries feed: ' + injList.length + ' entries, ' + injMatched + ' matched to known players');
+  console.log('[CFFB Roster Board] bye weeks: ' + Object.keys(byeMap).length + ' NFL teams mapped');
   if (!injList.length) {
     console.log('[CFFB Roster Board] injuries raw shape:', injuriesD ? Object.keys(injuriesD) : injuriesD,
       injuriesD && injuriesD.injuries ? Object.keys(injuriesD.injuries) : '(no .injuries)');
@@ -381,12 +417,13 @@ async function rbFetchPayload(fidToAbbr) {
       + 'eligibility/redshirt/awards will be blank. Confirm where the league stores the "Copy N Info" string.');
   }
 
-  return { season: SEASON, thruWeek: THRU_WEEK, playersById, rosterMembers, membership };
+  return { season: SEASON, thruWeek: THRU_WEEK, playersById, rosterMembers, membership, byeMap };
 }
 
 function applyPayload(pd, fidToAbbr) {
   PLAYERS_BY_ID = pd.playersById || {};
   MEMBERSHIP = pd.membership || {};
+  BYE_BY_TEAM = pd.byeMap || {};
   THRU_WEEK = pd.thruWeek || THRU_WEEK;
   // Resolve each copy's encoded string against its franchise abbr now that
   // membership is known (a raw field may contain both copies).

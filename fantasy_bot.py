@@ -8892,12 +8892,15 @@ def get_pending_retention_by_team(year, conference: str = None):
         return {}
 
 
-@devy.command(name="retention_start", description="[Commish] Start the retention process - DMs all team owners")
+@devy.command(name="retention_start", description="[Commish] Start the retention process - DMs team owners")
 @app_commands.describe(
     year="The retention year (e.g., 2026)",
-    conference="Optional: Specific conference to start retention for"
+    conference="Optional: Specific conference to start retention for",
+    franchise="Test: only this one franchise ID (e.g., 005)",
+    dm_to_me="Test: send the DM(s) to YOU instead of the team owners"
 )
-async def devy_retention_start(interaction: discord.Interaction, year: int, conference: str = None):
+async def devy_retention_start(interaction: discord.Interaction, year: int, conference: str = None,
+                               franchise: str = None, dm_to_me: bool = False):
     await interaction.response.defer()
 
     # Check commissioner role
@@ -8915,9 +8918,23 @@ async def devy_retention_start(interaction: discord.Interaction, year: int, conf
     # Read the PENDING worklist seeded in the sheet (via Open Retention Window).
     teams_with_players = get_pending_retention_by_team(year, target_conference)
 
+    # Test scoping: limit to a single franchise if provided.
+    if franchise:
+        fid_filter = str(franchise).zfill(3)
+        teams_with_players = {k: v for k, v in teams_with_players.items() if k == fid_filter}
+
+    # Safety: dm_to_me without a franchise would DM every team's view to you. Cap it.
+    dm_note = ""
+    if dm_to_me and not franchise and len(teams_with_players) > 5:
+        capped = dict(list(teams_with_players.items())[:5])
+        dm_note = f" (test mode: capped to 5 of {len(teams_with_players)} teams — pass `franchise:` to target one)"
+        teams_with_players = capped
+
     if not teams_with_players:
         await interaction.followup.send(
-            f"No **PENDING** retention decisions for {year}{f' in {target_conference}' if target_conference else ''}.\n"
+            f"No **PENDING** retention decisions for {year}"
+            f"{f' in {target_conference}' if target_conference else ''}"
+            f"{f' for franchise {str(franchise).zfill(3)}' if franchise else ''}.\n"
             f"In the sheet, run **🔒 Player Retention → Open Retention Window** (after Reconcile) to seed the worklist, then try again."
         )
         return
@@ -8943,24 +8960,30 @@ async def devy_retention_start(interaction: discord.Interaction, year: int, conf
     status_lines = []
 
     for fid, players in teams_with_players.items():
-        discord_id = owner_map.get(fid)
         team_name = team_names.get(fid, f"Team {fid}")
         conf = team_conferences.get(fid, "?")
 
-        if not discord_id:
-            status_lines.append(f"⚠️ {team_name} ({conf}): No Discord ID configured")
-            skipped_count += 1
-            continue
-
         try:
-            user = await bot.fetch_user(int(discord_id))
+            if dm_to_me:
+                # Test mode: send the real view (still bound to franchise `fid`, so
+                # clicking Retain/Release writes decisions for THAT team) to yourself.
+                user = interaction.user
+            else:
+                discord_id = owner_map.get(fid)
+                if not discord_id:
+                    status_lines.append(f"⚠️ {team_name} ({conf}): No Discord ID configured")
+                    skipped_count += 1
+                    continue
+                user = await bot.fetch_user(int(discord_id))
+
             if user:
-                # Create retention view
+                # Create retention view (bound to franchise fid + year)
                 view = create_retention_view(players, fid, conf, year, team_name)
                 embed = view.get_embed()
+                content = f"🧪 TEST — {team_name} ({conf}) retention view" if dm_to_me else None
 
-                await user.send(embed=embed, view=view)
-                status_lines.append(f"✅ {team_name} ({conf}): DM sent ({len(players)} players)")
+                await user.send(content=content, embed=embed, view=view)
+                status_lines.append(f"✅ {team_name} ({conf}): DM sent ({len(players)} players){' [to you]' if dm_to_me else ''}")
                 sent_count += 1
             else:
                 status_lines.append(f"❌ {team_name} ({conf}): User not found")
@@ -8973,9 +8996,13 @@ async def devy_retention_start(interaction: discord.Interaction, year: int, conf
             failed_count += 1
 
     # Send summary to commissioner
+    title = "🧪 Devy Retention TEST" if dm_to_me else "🏈 Devy Retention Process Started"
     embed = discord.Embed(
-        title=f"🏈 Devy Retention Process Started",
-        description=f"**Year:** {year}\n**Conference:** {target_conference or 'All'}\n\n**Summary:**\n✅ Sent: {sent_count}\n❌ Failed: {failed_count}\n⚠️ Skipped: {skipped_count}",
+        title=title,
+        description=f"**Year:** {year}\n**Conference:** {target_conference or 'All'}\n"
+                    f"{f'**Franchise:** {str(franchise).zfill(3)}' + chr(10) if franchise else ''}"
+                    f"{'**DMs routed to you (test)**' + dm_note + chr(10) if dm_to_me else ''}"
+                    f"\n**Summary:**\n✅ Sent: {sent_count}\n❌ Failed: {failed_count}\n⚠️ Skipped: {skipped_count}",
         color=discord.Color.green() if failed_count == 0 else discord.Color.orange()
     )
 
