@@ -69,6 +69,15 @@
 .rb-pname__sub{font:500 10.5px/1.3 var(--font-body);color:var(--fg-tertiary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Medical redshirt eligibility dot */
 .cffb-elig__dot.is-rs-med{background:radial-gradient(circle,transparent 0 2.5px,var(--rs-medical,#D17575) 2.5px 100%)}
+/* Distinct per-class eligibility colors (override cffb.css's gold-only scheme):
+   FR green → SO blue → JR purple → SR gold → GR red. Loaded after cffb.css so
+   it wins at equal specificity. The R- redshirt prefix is stripped before the
+   modifier is applied, so a redshirt junior still colors as JR. */
+.cffb-elig__class--fr{border-color:#3E7D57;color:#6FBF8E;background:rgba(74,153,104,.08)}
+.cffb-elig__class--so{border-color:#41608C;color:#85A9D6;background:rgba(74,111,165,.10)}
+.cffb-elig__class--jr{border-color:#6E5794;color:#B79AD9;background:rgba(139,111,176,.10)}
+.cffb-elig__class--sr{border-color:#C9A227;color:#E8C547;background:rgba(201,162,39,.10)}
+.cffb-elig__class--gr{border-color:#9E4141;color:#D88787;background:rgba(184,69,69,.12)}
 /* Status (injury / redshirt-now) tags */
 .rb-status{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:2px;border:1px solid var(--border);color:var(--fg-secondary);cursor:help}
 .rb-status .d{width:6px;height:6px;border-radius:50%;flex:none}
