@@ -151,6 +151,19 @@ const initialsOf = (name) => {
 };
 const displayName = (name) => (name.indexOf(',') >= 0 ? name.split(',').map((s) => s.trim()).reverse().join(' ') : name);
 
+// Normalize an MFL injury status string to the board's P / Q / O codes.
+function injuryCode(status) {
+  const s = String(status || '').toUpperCase().trim();
+  if (!s) return null;
+  if (s === 'P' || s.indexOf('PROB') >= 0) return 'P';                       // probable
+  if (s === 'Q' || s.indexOf('QUES') >= 0 || s.indexOf('GTD') >= 0
+    || s.indexOf('GAME') >= 0 || s.indexOf('DAY') >= 0) return 'Q';          // questionable / day-to-day
+  if (s === 'O' || s.indexOf('OUT') >= 0 || s === 'D' || s.indexOf('DOUBT') >= 0
+    || s === 'IR' || s.indexOf('RESERVE') >= 0 || s.indexOf('PUP') >= 0
+    || s.indexOf('SUSP') >= 0 || s.indexOf('NFI') >= 0) return 'O';          // out / doubtful / IR / PUP / suspended
+  return 'Q'; // unrecognized but present → surface it as questionable rather than hide
+}
+
 const otherCopyOf = (pid, teamAbbr) => {
   const on = MEMBERSHIP[pid] || [];
   for (const t of on) if (t !== teamAbbr) return t;
@@ -291,10 +304,13 @@ async function rbFetchPayload(fidToAbbr) {
     if (playersById[s.id]) playersById[s.id].pts = parseFloat(s.score) || 0;
   });
 
-  // Injuries (may be NFL-scoped and rarely match college players — best effort).
-  const INJ_MAP = { PROBABLE: 'P', QUESTIONABLE: 'Q', DOUBTFUL: 'O', OUT: 'O', IR: 'O' };
+  // Injuries: MFL's TYPE=injuries report (these are real NFL players, so it
+  // matches by id). Normalize the status to P / Q / O — MFL sends full words
+  // ("Questionable"), short codes ("Q"), or variants ("IR", "PUP", "Doubtful"),
+  // so map broadly and treat any other non-empty designation as questionable
+  // rather than dropping it.
   asArray(injuriesD && injuriesD.injuries && injuriesD.injuries.injury).forEach((inj) => {
-    const code = INJ_MAP[(inj.status || '').toUpperCase()];
+    const code = injuryCode(inj.status);
     if (code && playersById[inj.id]) playersById[inj.id].injury = [code, inj.details || inj.status || ''];
   });
 
