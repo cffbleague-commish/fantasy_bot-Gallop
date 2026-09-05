@@ -13,7 +13,9 @@ const GLYPHS = {
 
 const TeamChip = ({ id, size }) => {
   const t = TEAMS[id];
-  if (t.pill) return <img className={'cffb-team cffb-team--' + (size || 'sm')} src={t.pill} alt={t.name} />;
+  if (!t) return null;
+  const [imgErr, setImgErr] = useState(false);
+  if (t.pill && !imgErr) return <img className={'cffb-team cffb-team--' + (size || 'sm')} src={t.pill} alt={t.name} onError={() => setImgErr(true)} />;
   return <span className={'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : '')} style={{ background: t.bg, color: t.fg }}>{t.abbr}</span>;
 };
 
@@ -49,10 +51,12 @@ const Awards = ({ awards }) => {
   return (
     <span className="cffb-awards cffb-awards--sm">
       {awards.map((a, i) => (
-        <span key={i} className={'cffb-award cffb-award--' + a.kind + (a.conf ? ' is-' + a.conf : '')} title={a.name + ' ' + a.year}>
+        <span key={i} className={'cffb-award cffb-award--' + a.kind + (a.conf ? ' is-' + a.conf : '')} title={a.name + (a.count > 1 ? ' ×' + a.count : '') + (a.year ? ' ' + a.year : '')}>
           <svg className="cffb-award__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: GLYPHS[a.kind] }} />
           <span className="cffb-award__name">{a.name}</span>
-          <span className="cffb-award__year">{String(a.year).slice(2)}</span>
+          {a.count > 1
+            ? <span className="cffb-award__year">×{a.count}</span>
+            : (a.year ? <span className="cffb-award__year">{String(a.year).slice(2)}</span> : null)}
         </span>
       ))}
     </span>
@@ -68,11 +72,13 @@ const Status = ({ p }) => {
 };
 
 const OtherCopy = ({ other, onGo }) => {
-  if (other === 'GRAD') return <img className="cffb-team cffb-team--sm" src="../assets/teams/graduate.svg" alt="Graduated" title="Copy 2 graduated — out of eligibility" />;
-  if (!other) return <img className="cffb-team cffb-team--sm" src="../assets/teams/free-agent.svg" alt="Free agent" title="Copy 2 unowned — free agent" />;
+  const badge = (txt, title) => <span className="rb-copy-badge" title={title}>{txt}</span>;
+  if (other === 'GRAD') return badge('GRAD', 'Copy 2 graduated — out of eligibility');
+  if (!other) return badge('FA', 'Copy 2 unowned — free agent');
   const t = TEAMS[other];
+  if (!t) return badge('—', 'Other copy');
   return (
-    <a className="rb-copy" onClick={() => onGo(other)} title={'View ' + t.name + ' (' + t.owner + ') roster'}>
+    <a className="rb-copy" onClick={() => onGo(other)} title={'View ' + t.name + (t.owner ? ' (' + t.owner + ')' : '') + ' roster'}>
       <TeamChip id={other} size="sm" />
     </a>
   );
@@ -86,7 +92,12 @@ const Row = ({ p, onGo, ir }) => (
         <span className="rb-photo__init">{p.initials}</span>
       </span>
       <span className="rb-pname">
-        <span className="rb-pname__name">{p.name}<span className="rb-mob-status"><Status p={p} /></span></span>
+        <span className="rb-pname__name">
+          {(p.playerId && typeof MFL_PLAYER_LINK === 'function')
+            ? <a className="rb-plink" href={MFL_PLAYER_LINK(p.playerId)} target="_blank" rel="noopener noreferrer">{p.name}</a>
+            : p.name}
+          <span className="rb-mob-status"><Status p={p} /></span>
+        </span>
       </span>
     </span>
     <span><PosChip pos={p.pos} /></span>

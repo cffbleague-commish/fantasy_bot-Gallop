@@ -154,6 +154,7 @@ share one React runtime (loaded once) and coexist on the same page.
 | Contract Board | `home-message.html` | `npm run build:contract-board` | `players.txt` |
 | Playoff Bracket | `home-message-bracket.html` | hand-authored | sample / stub |
 | **Player Ledger** | `home-message-player-ledger.html` | `npm run build:player-ledger` | Apps Script `/exec?feed=ledger` |
+| **Roster Board** | `home-message-roster-board.html` | `npm run build:roster-board` | MFL export API (live, client-side) |
 
 ### Player Ledger
 
@@ -181,6 +182,42 @@ draft rows. The web app's "execute as" account must have read access to that she
 
 To smoke-test the feed before redeploying, run `testBuildLedgerIndex()` and
 `testBuildPlayerLedger()` from the Apps Script editor and check the Logs.
+
+### Roster Board
+
+A position-grouped roster table (eligibility clocks, redshirt chips, award
+badges, injury status, season points, and the "other copy" owner) with a
+conference tab-strip + team dropdown to browse every franchise. It **defaults to
+the signed-in franchise's roster**.
+
+- **Live, client-side, no deploy.** The widget runs *on* an MFL page, so it calls
+  the MFL export API **same-origin** (no CORS) and reads the page globals MFL
+  already defines: `franchiseDatabase` (all franchises + logos + conference),
+  `franchise_id` (the signed-in franchise → default team), and `league_id`.
+  There is **no Apps Script feed to redeploy** — rebuilding is only needed to
+  change the widget's code.
+- **Data:** rosters/status, positions, season points (`W=YTD`), and injuries come
+  from `export?TYPE=rosters|players|playerScores|injuries`. Eligibility, redshirt,
+  and awards come from the league's encoded per-copy contract string
+  (`OWNER_CLASS[_MODS]`, e.g. `BC_FR_r25` — the same format as `players.txt` and
+  the roster page's "Copy N Info" tooltip). The string is located
+  **field-agnostically** (any export field whose value matches the pattern), so it
+  keeps working regardless of which MFL field the league stores it in. If no
+  encoded string is found, the board still renders (ownership + points) and logs a
+  `[CFFB Roster Board]` console warning; eligibility/redshirt/award columns are
+  then blank.
+- **Interactive:** player names link out to the MFL player profile
+  (`/{year}/player?L={league}&P={id}`); the "other copy" pill switches the board
+  to that franchise's tab; the last-viewed team is remembered in `localStorage`.
+- **Responsive:** the module adapts to the width of the MFL column via CSS
+  container queries (not the window), so it collapses to stacked cards on mobile.
+- Uses its own `localStorage` cache key (`cffb_roster_board_v1`), so it never
+  collides with the standings/PR or ledger caches.
+- **Dependencies:** shares the one React runtime loaded by the other CFFB widgets
+  and inlines the CFFB design-system styles (`cffb.css`) at build time, so it is
+  fully self-contained. Awards in the encoded data are counts of **National** and
+  **All-Conference** honors (shown as `×N`), rendered with the design's trophy
+  glyphs.
 
 ## Troubleshooting
 

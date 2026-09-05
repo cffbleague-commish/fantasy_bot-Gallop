@@ -1,0 +1,1995 @@
+<style>
+/* ============================================================
+   CFFB.css — College Fantasy Football League stylesheet
+   Drop-in stylesheet for MyFantasyLeague custom CSS.
+
+   Built on: CFFB Design System (dark mode, championship gold)
+   Inspiration: ESPN GameDay, CFP broadcast graphics, 247sports.
+
+   Sections
+   --------
+   01  Foundations  — tokens, fonts, reset
+   02  Typography   — display + body helpers
+   03  Page chrome  — top bar, sidebar, page shell, ticker
+   04  Surfaces     — cards, KPI tiles, panels
+   05  Tables       — MFL legacy tables + custom data tables
+   06  Buttons + forms
+   07  Player atoms — name plate, position chip, team chip
+   08  NEW · Redshirt chips (traditional + medical bandage)
+   09  NEW · Eligibility dots (class + years used)
+   10  NEW · Award badges (Heisman, Davey O'Brien, Doak Walker,
+            Biletnikoff, Conference All-American)
+   11  Misc · stars, conference badges, grade pills, value delta
+   12  Utilities
+   ============================================================ */
+
+
+/* ============================================================
+   01 · FOUNDATIONS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Star tiers */
+  --star-5: #C9A227;
+  --star-4: #3B82C4;
+  --star-3: #7BA4C9;
+  --star-2: #6A6A6A;
+  --star-1: #4A4A4A;
+
+  /* Grades */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: #C9A227;
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* Deltas */
+  --delta-pos:  #2D7A4E;
+  --delta-neg:  #B84545;
+  --delta-flat: #5A5A5A;
+
+  /* Live */
+  --live: #2D7A4E;
+
+  /* Conferences */
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
+  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
+
+  /* Eligibility / Redshirt */
+  --rs-trad:    #C9A227;   /* gold shield */
+  --rs-medical: #D17575;   /* dusty red bandage */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Type scale */
+  --ds-hero: 64px; --ds-1: 48px; --ds-2: 32px; --ds-3: 24px; --ds-4: 18px;
+  --tx-lg: 16px; --tx-md: 14px; --tx-sm: 13px; --tx-xs: 12px; --tx-2xs: 11px;
+
+  /* Weights */
+  --w-400: 400; --w-500: 500; --w-600: 600; --w-700: 700;
+
+  /* Spacing — 8px base */
+  --s-half: 4px;
+  --s-1:  8px; --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 40px; --s-6: 48px; --s-7: 64px; --s-8: 80px;
+
+  /* Radii */
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+
+  /* Layout */
+  --container-max: 1280px;
+  --topbar-h: 64px;
+  --ticker-h: 44px;
+}
+
+/* Reset (light, MFL-friendly) */
+
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num *, td.cffb-num, th.cffb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+
+/* ============================================================
+   02 · TYPOGRAPHY
+   ============================================================ */
+
+.cffb-display-hero,
+.cffb-display-1,
+.cffb-display-2,
+.cffb-display-3,
+.cffb-display-4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cffb-display-hero { font-weight: 700; font-size: var(--ds-hero); line-height: 1; }
+.cffb-display-1    { font-weight: 700; font-size: var(--ds-1); line-height: 1.05; }
+.cffb-display-2    { font-weight: 700; font-size: var(--ds-2); line-height: 1.1; }
+.cffb-display-3    { font-weight: 600; font-size: var(--ds-3); line-height: 1.15; }
+.cffb-display-4    { font-weight: 600; font-size: var(--ds-4); line-height: 1.2; }
+
+.cffb-h1 { font: 700 28px/1.2 var(--font-body); letter-spacing: -0.01em; margin: 0; }
+.cffb-h2 { font: 600 20px/1.25 var(--font-body); margin: 0; }
+.cffb-h3 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+.cffb-body    { font-size: var(--tx-md); color: var(--fg-primary); }
+.cffb-body-sm { font-size: var(--tx-sm); color: var(--fg-secondary); }
+
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Gold-gradient text — RESERVE for the page's hero value only. */
+.cffb-gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+
+/* ============================================================
+   03 · PAGE CHROME
+   ============================================================ */
+
+.cffb-shell {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar — sticky, 64px, holds wordmark + nav + manager chip */
+.cffb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 var(--s-3);
+  gap: var(--s-3);
+}
+.cffb-topbar__brand {
+  display: flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; font-size: var(--ds-4);
+  letter-spacing: 0.02em;
+  color: var(--fg-primary);
+  border-right: 1px solid var(--border);
+  padding-right: var(--s-3);
+  height: 100%;
+}
+.cffb-topbar__brand-mark {
+  width: 28px; height: 28px;
+  background: var(--gold-gradient);
+  -webkit-mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+          mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+}
+.cffb-topbar__nav {
+  display: flex; align-items: center; gap: var(--s-half);
+  height: 100%;
+}
+.cffb-topbar__nav a {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-sm); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 0 var(--s-2); height: 100%;
+  display: inline-flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cffb-topbar__nav a:hover { color: var(--fg-primary); text-decoration: none; }
+.cffb-topbar__nav a.is-active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--gold);
+}
+.cffb-topbar__spacer { flex: 1; }
+.cffb-topbar__manager {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--tx-sm); font-weight: 600;
+}
+.cffb-topbar__manager-cap {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* Ticker — sticky under topbar, 44px, scrolls left */
+.cffb-ticker {
+  position: sticky; top: var(--topbar-h); z-index: 49;
+  height: var(--ticker-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cffb-ticker__label {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 0 var(--s-2);
+  background: var(--bg-surface-elev);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--tx-sm); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  z-index: 2;
+}
+.cffb-ticker__track {
+  display: inline-flex; align-items: center; gap: var(--s-4);
+  white-space: nowrap;
+  padding-left: 140px;
+  animation: cffb-ticker-scroll 60s linear infinite;
+}
+.cffb-ticker__item {
+  display: inline-flex; align-items: baseline; gap: var(--s-1);
+  font-size: var(--tx-sm); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-ticker__item strong {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-primary); font-size: var(--tx-md);
+  text-transform: uppercase;
+}
+.cffb-ticker__item em { font-style: normal; color: var(--gold); font-weight: 600; }
+.cffb-ticker__sep { color: var(--border-strong); }
+@keyframes cffb-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Page shell */
+.cffb-page {
+  flex: 1;
+  max-width: var(--container-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-7);
+}
+.cffb-page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.cffb-page__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 40px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.005em;
+}
+
+/* Footer */
+.cffb-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-3);
+  font-size: var(--tx-xs);
+  color: var(--fg-tertiary);
+  text-align: center;
+}
+
+
+/* ============================================================
+   04 · SURFACES — cards, KPI tiles, panels
+   ============================================================ */
+
+.cffb-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3);
+}
+.cffb-card--featured { box-shadow: var(--inset-metallic); }
+.cffb-card--featured::before {
+  content: ""; display: block; height: 3px;
+  background: var(--gold-gradient);
+  margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) var(--s-2);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+.cffb-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.cffb-card__title {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.cffb-card__action {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* KPI tile */
+.cffb-kpi {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3) 18px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-kpi__label { /* alias for .cffb-label */
+  font-family: var(--font-body);
+  font-weight: 600; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-kpi__value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--ds-1); line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cffb-kpi__sub {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: var(--delta-pos); }
+.cffb-kpi__sub--neg { color: var(--delta-neg); }
+.cffb-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+/* Live indicator */
+.cffb-live {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--tx-2xs); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--live);
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: var(--shadow-glow-live);
+  animation: cffb-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+
+/* ============================================================
+   05 · TABLES (MFL legacy + custom)
+   ============================================================ */
+
+.cffb-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.cffb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tx-sm);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 12px var(--s-2);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cffb-table tbody td {
+  padding: 12px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.cffb-table tbody tr:last-child td { border-bottom: none; }
+.cffb-table tbody tr {
+  position: relative;
+  transition: background var(--dur-fast);
+}
+.cffb-table tbody tr:hover { background: var(--bg-surface-hover); }
+.cffb-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table tbody tr.is-active td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table__num { text-align: right; }
+.cffb-table__rank {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-secondary);
+  width: 40px; text-align: center;
+}
+
+
+/* ============================================================
+   06 · BUTTONS + FORMS
+   ============================================================ */
+
+.cffb-btn {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-xs); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+.cffb-btn:hover { filter: brightness(1.08); }
+.cffb-btn:active { filter: brightness(0.9); }
+.cffb-btn--primary {
+  background: var(--gold-gradient);
+  color: #0A0A0A;
+  border-color: transparent;
+}
+.cffb-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cffb-btn--sm { padding: 6px 10px; font-size: 10px; }
+
+.cffb-input {
+  font-family: var(--font-body); font-size: var(--tx-md);
+  padding: 10px 12px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  width: 100%;
+}
+.cffb-input::placeholder { color: var(--fg-tertiary); }
+.cffb-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+
+/* ============================================================
+   07 · PLAYER ATOMS — name plate, position chip, team chip
+   ============================================================ */
+
+.cffb-player {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-player__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 18px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.cffb-player__meta {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cffb-pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  min-width: 28px; padding: 3px 6px;
+  border-radius: var(--r-1);
+  color: #0A0A0A;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cffb-pos--qb { background: #C9A227; }
+.cffb-pos--rb { background: #3B82C4; color: #F5F5F5; }
+.cffb-pos--wr { background: #7BA4C9; }
+.cffb-pos--te { background: #8B6F1F; color: #F5F5F5; }
+.cffb-pos--ol { background: #6A6A6A; color: #F5F5F5; }
+.cffb-pos--def, .cffb-pos--lb, .cffb-pos--db { background: #B84545; color: #F5F5F5; }
+.cffb-pos--k  { background: #5C7A6A; color: #F5F5F5; }
+
+/* Team logo — canonical "ripped pill" PNGs in assets/teams/<slug>.png.
+   Conference badge on left, torn-paper edge, team art on right (250×60).
+   Sizes match the design system: sm 30px, md 48px, lg 60px tall. */
+.cffb-team {
+  display: inline-block;
+  height: 48px; width: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+
+/* Team chip — circular fallback for teams without ripped art yet */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cffb-team-chip--sm { width: 24px; height: 24px; font-size: 9px; }
+.cffb-team-chip--lg { width: 48px; height: 48px; font-size: 14px; }
+
+
+/* ============================================================
+   08 · REDSHIRT CHIPS — Traditional + Medical (NEW)
+   ------------------------------------------------------------
+   Sits inline next to a player's name. Shield silhouette,
+   gold for traditional, dusty-red bandage for medical.
+
+   Markup:
+     <span class="cffb-rs cffb-rs--trad" title="Traditional Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield…</svg>
+       <span class="cffb-rs__txt">RS</span>
+     </span>
+     <span class="cffb-rs cffb-rs--med" title="Medical Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield+bandage…</svg>
+       <span class="cffb-rs__txt">MRS</span>
+     </span>
+
+   Sizes: --xs (12px), --sm (14px default), --md (18px)
+   ------------------------------------------------------------ */
+
+.cffb-rs {
+  display: inline-flex; align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.cffb-rs__icon {
+  display: block;
+  width: 14px; height: auto;
+  flex-shrink: 0;
+}
+.cffb-rs__txt {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Sizes */
+.cffb-rs--xs .cffb-rs__icon { width: 10px; }
+.cffb-rs--xs .cffb-rs__txt  { font-size: 8.5px; }
+.cffb-rs--sm .cffb-rs__icon { width: 14px; }
+.cffb-rs--sm .cffb-rs__txt  { font-size: 10px; }
+.cffb-rs--md .cffb-rs__icon { width: 18px; }
+.cffb-rs--md .cffb-rs__txt  { font-size: 12px; }
+
+/* Traditional */
+.cffb-rs--trad           { color: var(--rs-trad); }
+.cffb-rs--trad .cffb-rs__icon { stroke: var(--rs-trad); fill: rgba(201,162,39,0.08); }
+
+/* Medical */
+.cffb-rs--med            { color: var(--rs-medical); }
+.cffb-rs--med .cffb-rs__icon { stroke: var(--rs-medical); fill: rgba(209,117,117,0.08); }
+
+/* Icon-only variant (no text), used in tight rows/tables */
+.cffb-rs--solo .cffb-rs__txt { display: none; }
+.cffb-rs--solo { gap: 0; }
+
+
+/* ============================================================
+   09 · ELIGIBILITY DOTS — class + years used (NEW)
+   ------------------------------------------------------------
+   Class label (FR / SO / JR / SR / GR) + 5 dots showing years
+   used / remaining. Redshirt years marked with a ring (◎) instead
+   of a fill — communicates "burned a year but no eligibility used".
+
+   Markup:
+     <span class="cffb-elig">
+       <span class="cffb-elig__class">JR</span>
+       <span class="cffb-elig__dots" aria-label="2 of 5 eligibility used">
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot is-rs"></span>   ← redshirt
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot"></span>
+         <span class="cffb-elig__dot"></span>
+       </span>
+       <span class="cffb-elig__remain">2 left</span>
+     </span>
+   ------------------------------------------------------------ */
+
+.cffb-elig {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cffb-elig__class {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 26px; padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  color: var(--fg-primary);
+  text-align: center;
+  background: var(--bg-surface-elev);
+}
+.cffb-elig__class--fr { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--so { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--jr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--sr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--gr { border-color: var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+
+.cffb-elig__dots {
+  display: inline-flex; gap: 3px; align-items: center;
+}
+.cffb-elig__dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.cffb-elig__dot.is-used {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.cffb-elig__dot.is-rs {
+  /* Redshirt: filled ring with hollow center — "year burned, no game time" */
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-trad) 2.5px 100%);
+  border-color: var(--rs-trad);
+}
+.cffb-elig__dot.is-rs-med {
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-medical) 2.5px 100%);
+  border-color: var(--rs-medical);
+}
+.cffb-elig__remain {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Compact variant — no remaining label, no class chip */
+.cffb-elig--compact { gap: var(--s-half); }
+.cffb-elig--compact .cffb-elig__class { display: none; }
+.cffb-elig--compact .cffb-elig__remain { display: none; }
+
+
+/* ============================================================
+   10 · AWARD BADGES — Heisman, Davey O'Brien, Doak Walker,
+        Biletnikoff, Conference All-American (NEW)
+   ------------------------------------------------------------
+   Stacked horizontal badges with a stroke-icon glyph, award
+   name, and year. The Heisman is the hero — metallic gold
+   gradient fill; the four position awards share a uniform
+   gold-outline treatment. Conference All-American picks up the
+   player's conference accent color.
+
+   Markup:
+     <div class="cffb-awards">
+       <span class="cffb-award cffb-award--heisman">
+         <svg class="cffb-award__glyph" viewBox="0 0 24 24">…</svg>
+         <span class="cffb-award__name">Heisman</span>
+         <span class="cffb-award__year">2024</span>
+       </span>
+       <span class="cffb-award cffb-award--obrien">…</span>
+       …
+     </div>
+   ------------------------------------------------------------ */
+
+.cffb-awards {
+  display: flex; flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.cffb-award {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-elev);
+  font-family: var(--font-body);
+  font-size: var(--tx-xs); font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  transition: filter var(--dur-fast);
+  cursor: default;
+}
+.cffb-award:hover { filter: brightness(1.08); }
+
+.cffb-award__glyph {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75;
+  color: var(--gold);
+}
+.cffb-award__name {
+  letter-spacing: 0.04em;
+}
+.cffb-award__year {
+  color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* Heisman — hero treatment, metallic gold fill */
+.cffb-award--heisman {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+  font-weight: 700;
+}
+.cffb-award--heisman .cffb-award__glyph { color: #0A0A0A; stroke-width: 2; }
+.cffb-award--heisman .cffb-award__year  { color: rgba(10,10,10,0.65); }
+
+/* Position awards — gold outline */
+.cffb-award--obrien,
+.cffb-award--walker,
+.cffb-award--biletnikoff {
+  border-color: rgba(201,162,39,0.45);
+  background: rgba(201,162,39,0.06);
+}
+
+/* Conference All-American — picks up conference color */
+.cffb-award--allamerican {
+  border-color: rgba(154,154,154,0.35);
+}
+.cffb-award--allamerican.is-sec   { border-color: rgba(201,162,39,0.45); color: var(--fg-primary); }
+.cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
+.cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
+.cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
+.cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+
+/* Size variants */
+.cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
+.cffb-awards--sm .cffb-award__glyph { width: 13px; height: 13px; }
+.cffb-awards--sm .cffb-award__year { font-size: 10px; }
+
+
+/* ============================================================
+   11 · MISC — stars, conference badges, grade pills, value delta
+   ============================================================ */
+
+/* Stars */
+.cffb-stars { display: inline-flex; align-items: center; gap: 2px; }
+.cffb-star { font-size: 14px; line-height: 1; color: var(--star-5); }
+.cffb-star--off { color: var(--border); }
+.cffb-stars--t5 .cffb-star { color: var(--star-5); }
+.cffb-stars--t4 .cffb-star { color: var(--star-4); }
+.cffb-stars--t3 .cffb-star { color: var(--star-3); }
+.cffb-stars--t2 .cffb-star { color: var(--star-2); }
+
+/* Conference badges */
+.cffb-conf {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: var(--r-1);
+  border: 1px solid transparent; color: var(--fg-primary);
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
+
+/* Grade pill */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: var(--r-2);
+  padding: 4px 10px 5px; color: var(--fg-primary);
+  font-size: 20px;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: var(--gold-gradient); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
+.cffb-grade--bp { background: var(--grade-b); color: var(--fg-primary); }
+.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
+.cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
+
+/* Value delta */
+.cffb-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-body); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tx-sm);
+}
+.cffb-delta--pos  { color: var(--delta-pos); }
+.cffb-delta--neg  { color: var(--delta-neg); }
+.cffb-delta--flat { color: var(--delta-flat); }
+.cffb-delta__arrow { font-size: 0.85em; line-height: 1; }
+
+
+/* ============================================================
+   12 · UTILITIES
+   ============================================================ */
+
+.cffb-row     { display: flex; gap: var(--s-2); align-items: center; }
+.cffb-row--sb { justify-content: space-between; }
+.cffb-row--end{ justify-content: flex-end; }
+.cffb-stack   { display: flex; flex-direction: column; gap: var(--s-1); }
+.cffb-stack--2 { gap: var(--s-2); }
+.cffb-stack--3 { gap: var(--s-3); }
+
+.cffb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+.cffb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.cffb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.cffb-divider { height: 1px; background: var(--border); margin: var(--s-2) 0; }
+.cffb-spacer  { flex: 1; }
+
+.cffb-muted     { color: var(--fg-secondary); }
+.cffb-tertiary  { color: var(--fg-tertiary); }
+.cffb-gold      { color: var(--gold); }
+.cffb-mono      { font-family: var(--font-mono); }
+
+.cffb-mt-1 { margin-top: var(--s-1); }
+.cffb-mt-2 { margin-top: var(--s-2); }
+.cffb-mt-3 { margin-top: var(--s-3); }
+.cffb-mb-2 { margin-bottom: var(--s-2); }
+
+/* CFFB · Roster Board — module styles (extends cffb.css) */
+/* Responsive by CONTAINER width — the module adapts to the space MFL gives it,
+   not the browser window, so it works in any page column or phone. */
+#cffb-rb-root{container-type:inline-size}
+.rb-wrap{max-width:1240px;margin:0 auto;padding:24px 24px 64px}
+.rb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.rb-head__title{font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1;text-transform:uppercase;letter-spacing:.01em;color:var(--fg-primary)}
+.rb-head__eyebrow{font:700 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.rb-head__meta{display:flex;align-items:center;gap:8px;font:600 11px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary)}
+.rb-head__meta .dot{width:5px;height:5px;border-radius:50%;background:var(--gold)}
+/* Conference tab strip + team dropdown */
+.rb-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:6px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;margin-bottom:16px}
+.rb-conftab{position:relative}
+.rb-conflogo{width:26px;height:26px;object-fit:contain;flex:none}
+.rb-caret{font-size:10px;color:var(--fg-tertiary);margin-left:2px}
+.rb-tab__cur{font:700 10px/1 var(--font-body);letter-spacing:.08em;color:var(--gold);background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.35);border-radius:2px;padding:3px 5px}
+.rb-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:150px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--bg-surface-elev);border:1px solid var(--border);border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.6)}
+.rb-menu--right{left:auto;right:0}
+.rb-menu__item{display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 9px;border-radius:3px;border:none;background:transparent;color:var(--fg-secondary);text-align:left;transition:background 120ms cubic-bezier(.2,.8,.2,1),color 120ms}
+.rb-menu__item:hover{background:var(--bg-surface-hover);color:var(--fg-primary)}
+.rb-menu__item.is-active{background:rgba(201,162,39,.08);color:var(--fg-primary);box-shadow:inset 2px 0 0 var(--gold)}
+.rb-menu__abbr{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+.rb-tab{display:flex;align-items:center;gap:8px;flex:none;cursor:pointer;padding:8px 12px 8px 8px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--fg-secondary);font:600 12px/1 var(--font-body);transition:background 140ms cubic-bezier(.2,.8,.2,1),color 140ms}
+.rb-tab:hover{background:var(--bg-surface-hover);color:var(--fg-primary)}
+.rb-tab.is-active{background:var(--bg-surface-elev);border-color:rgba(201,162,39,.5);color:var(--fg-primary)}
+.rb-tab__abbr{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+.rb-tab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
+/* Team summary card */
+.rb-team{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;border-top:3px solid var(--gold);margin-bottom:16px}
+.rb-team__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;text-transform:uppercase;color:var(--fg-primary)}
+.rb-team__owner{font:500 12px/1.4 var(--font-body);color:var(--fg-secondary)}
+.rb-team__kpis{display:flex;gap:24px;margin-left:auto;flex-wrap:wrap}
+.rb-kpi{display:flex;flex-direction:column;gap:5px;min-width:64px}
+.rb-kpi__label{font:700 9px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--fg-tertiary)}
+.rb-kpi__val{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;color:var(--fg-primary);font-variant-numeric:tabular-nums}
+.rb-kpi__val.is-gold{background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Roster table */
+.rb-table{background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow-x:auto}
+.rb-table>*{min-width:1100px}
+.rb-cols{display:grid;grid-template-columns:minmax(210px,1.5fr) 56px 150px 96px minmax(150px,1.2fr) 118px 76px 132px;gap:12px;align-items:center;padding:0 16px}
+.rb-thead{border-bottom:1px solid var(--border);background:var(--bg-surface-elev)}
+.rb-thead span{font:700 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);padding:11px 0;display:block}
+.rb-thead .t-r,.rb-row .t-r{text-align:right}
+.rb-group{display:flex;align-items:center;gap:10px;padding:9px 16px;background:#101010;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.rb-group:first-of-type{border-top:none}
+.rb-group__pos{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-primary)}
+.rb-group__bar{width:8px;height:16px;border-radius:1px}
+.rb-group__n{font:600 10px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.1em}
+.rb-group__pts{margin-left:auto;font:600 11px/1 var(--font-body);color:var(--fg-secondary);font-variant-numeric:tabular-nums}
+.rb-group--squad{border-top:1px dashed var(--border-strong,#3A3A3A);background:#0D0D0D;padding-top:12px;padding-bottom:12px}
+.rb-group--squad .rb-group__pos{color:var(--gold)}
+.rb-group--ir .rb-group__pos{color:#D88787}
+.rb-group__note{margin-left:auto;font:500 10.5px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.04em}
+.rb-inel{font:700 8px/1 var(--font-body);letter-spacing:.12em;color:#D88787;border:1px solid rgba(184,69,69,.5);border-radius:2px;padding:2px 4px;cursor:help}
+.rb-row{position:relative;padding-top:9px;padding-bottom:9px;border-bottom:1px solid rgba(42,42,42,.55);transition:background 140ms cubic-bezier(.2,.8,.2,1)}
+.rb-row:last-child{border-bottom:none}
+.rb-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transition:transform 140ms cubic-bezier(.2,.8,.2,1)}
+.rb-row:hover{background:var(--bg-surface-hover)}
+.rb-row:hover::before{transform:scaleY(1)}
+.rb-row.is-dim>*:not(.rb-cell-status){opacity:.55}
+/* Player cell */
+.rb-player{display:flex;align-items:center;gap:12px;min-width:0}
+.rb-photo{position:relative;width:40px;height:40px;flex:none;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;display:flex;align-items:center;justify-content:center}
+.rb-photo__bar{position:absolute;top:0;left:0;right:0;height:3px}
+.rb-photo__init{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.04em;color:#5A5A5A}
+.rb-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rb-pname{min-width:0}
+.rb-pname__name{display:flex;align-items:center;gap:7px;font-family:var(--font-display);font-weight:700;font-size:16px;line-height:1.1;text-transform:uppercase;color:var(--fg-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-pname__sub{font:500 10.5px/1.3 var(--font-body);color:var(--fg-tertiary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Medical redshirt eligibility dot */
+.cffb-elig__dot.is-rs-med{background:radial-gradient(circle,transparent 0 2.5px,var(--rs-medical,#D17575) 2.5px 100%)}
+/* Status (injury / redshirt-now) tags */
+.rb-status{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:2px;border:1px solid var(--border);color:var(--fg-secondary);cursor:help}
+.rb-status .d{width:6px;height:6px;border-radius:50%;flex:none}
+.rb-status--ok{border-color:rgba(45,122,78,.4);color:#4A9968}
+.rb-status--q{border-color:rgba(201,162,39,.45);color:var(--gold)}
+.rb-status--o{border-color:rgba(184,69,69,.55);color:#D88787}
+.rb-status--rs{border-color:rgba(201,162,39,.35);color:var(--gold);background:rgba(201,162,39,.06)}
+.rb-none{color:var(--fg-tertiary)}
+.rb-mob-status{display:none}
+/* Points */
+.rb-pts{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--fg-primary);font-variant-numeric:tabular-nums}
+.rb-pts.is-zero{color:var(--fg-tertiary)}
+/* Other copy cell — logo pill only */
+.rb-copy{display:inline-flex;align-items:center;cursor:pointer;border-radius:15px;transition:filter 140ms cubic-bezier(.2,.8,.2,1)}
+.rb-copy:hover{filter:brightness(1.15)}
+.rb-foot{display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;font:500 10.5px/1.5 var(--font-body);color:var(--fg-tertiary);border-top:1px solid var(--border)}
+@container (max-width:720px){
+.rb-wrap{padding:16px 12px 48px}
+.rb-head__title{font-size:28px}
+.rb-team__kpis{margin-left:0;width:100%;justify-content:space-between;gap:12px}
+.rb-table>*{min-width:0}
+.rb-thead.rb-cols{display:none}
+.rb-cols{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.rb-row{padding:10px 12px}
+.rb-player{width:100%;padding-right:70px;gap:10px}
+.rb-photo{width:32px;height:32px}
+.rb-photo__init{font-size:11px}
+.rb-pname__name{font-size:15px}
+.rb-pts{position:absolute;top:11px;right:12px;font-size:15px}
+.rb-pts::after{content:" pts";font:600 9px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.08em}
+.rb-group__note{display:none}
+/* Condensed award badges: glyph + year only */
+.cffb-award__name{display:none}
+.cffb-awards--sm .cffb-award{padding:3px 6px;gap:4px}
+.rb-status{padding:3px 6px;font-size:9px}
+.cffb-elig__class{font-size:10px}
+/* Other-copy pill drops off on small screens */
+.rb-cell-copy{display:none}
+/* Status tag moves up beside the player name */
+.rb-cell-status{display:none}
+.rb-mob-status{display:inline-flex;margin-left:2px}
+/* Condensed conference tabs: logo + caret only (active keeps team abbr chip) */
+.rb-tabs{gap:4px;padding:4px}
+.rb-tab{padding:7px 8px;gap:5px}
+.rb-tab .rb-tab__abbr{display:none}
+.rb-conflogo{width:24px;height:24px}
+.rb-team__name{font-size:22px}
+}
+
+.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}
+.cffb-boot--err{color:#D88787}
+.rb-plink{color:inherit;text-decoration:none}
+.rb-plink:hover{color:var(--gold,#C9A227);text-decoration:underline;text-underline-offset:3px}
+.rb-copy-badge{display:inline-flex;align-items:center;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.08em;color:var(--fg-tertiary,#6A6A66);border:1px solid var(--border,#262629);border-radius:2px;padding:3px 5px}
+</style>
+<div id="cffb-rb-root"></div>
+<script>
+(function () {
+  if (window.__cffbRosterBoardBooted) return;
+  window.__cffbRosterBoardBooted = true;
+  function __cffbApp() {
+/* ---- rb-data-live.jsx ---- */
+// CFFB · Roster Board — LIVE data layer
+// ---------------------------------------------------------------------------
+// Replaces the sample rb-data.jsx at build time (build-roster-board.js swaps it
+// in). It reads the MFL page globals and the MFL export API — the widget runs
+// ON an MFL page, so every export call is SAME-ORIGIN (no CORS):
+//   window.franchiseDatabase  fid_XXXX -> Franchise(id,name,division,icon,logo,abbrev)
+//   window.franchise_id       the signed-in franchise ('0000' = commissioner)
+//   window.league_id          the league id (e.g. '12011')
+// Eligibility / redshirt / awards come from the league's encoded per-copy
+// "contract" strings — the same format as players.txt and the roster page's
+// player-link title ("BC_FR_r25"): OWNER_CLASS[_MODS], MODS = r|m + 2-digit year
+// (traditional / medical redshirt), N|A + count (national / all-conference
+// award), E (early declare). We locate that string field-agnostically (scan
+// every string value of the export player object for the pattern) so it keeps
+// working regardless of which MFL field the league stores it in.
+//
+// It exposes the SAME identifiers rb-app.jsx consumes: SEASON, THRU_WEEK,
+// MY_TEAM, TEAMS, TEAM_ORDER, CONF_ACCENT, CONF_ORDER, CONF_META, POS_COLORS,
+// buildRoster, plus MFL_PLAYER_LINK (used by the app for player-profile links)
+// and window.__loadRosterBoard (awaited by the boot wrapper before mount).
+
+// ── Static maps (from the design) ────────────────────────────────────────────
+const CONF_ACCENT = {
+  sec: '#C9A227',
+  b1g: '#4A6FA5',
+  acc: '#8B4A5C',
+  big12: '#B84545',
+  aac: '#6B5C8B',
+  pac: '#5C7A6A'
+};
+const CONF_ORDER = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
+// No hosted conference-logo assets on MFL — text labels only (ConfTabs tolerates
+// a missing `logo`).
+const CONF_META = {
+  sec: {
+    label: 'SEC'
+  },
+  b1g: {
+    label: 'B1G'
+  },
+  acc: {
+    label: 'ACC'
+  },
+  big12: {
+    label: 'BIG 12'
+  },
+  pac: {
+    label: 'PAC'
+  },
+  aac: {
+    label: 'AAC'
+  }
+};
+// MFL franchise division code -> conference id.
+const DIV_TO_CONF = {
+  '00': 'acc',
+  '01': 'b1g',
+  '02': 'big12',
+  '03': 'pac',
+  '04': 'sec',
+  '05': 'aac'
+};
+const POS_COLORS = {
+  QB: '#C9A227',
+  RB: '#3B82C4',
+  WR: '#7BA4C9',
+  TE: '#E8C547',
+  DB: '#6E86A8',
+  K: '#5C7A6A'
+};
+const POS_ORDER = ['QB', 'RB', 'WR', 'TE', 'DB', 'K'];
+const CLASS_SEQ = ['FR', 'SO', 'JR', 'SR', 'GR'];
+// Normalize MFL positions into the six the board groups by.
+const POS_MAP = {
+  QB: 'QB',
+  RB: 'RB',
+  FB: 'RB',
+  WR: 'WR',
+  TE: 'TE',
+  PK: 'K',
+  K: 'K',
+  DB: 'DB',
+  CB: 'DB',
+  S: 'DB',
+  SS: 'DB',
+  FS: 'DB',
+  DE: 'DB',
+  DL: 'DB',
+  DT: 'DB',
+  LB: 'DB',
+  ILB: 'DB',
+  OLB: 'DB'
+};
+const normPos = pos => POS_MAP[(pos || '').toUpperCase()] || 'WR';
+
+// ── Live state (populated during load; rb-app reads these at render) ──────────
+let SEASON = 2026;
+let THRU_WEEK = 1;
+let MY_TEAM = null;
+let TEAMS = {};
+let TEAM_ORDER = [];
+let MFL_CTX = {
+  origin: '',
+  year: '2026',
+  league: '12011'
+};
+// Per-player identity + per-team membership, built once from the export feeds.
+let PLAYERS_BY_ID = {}; // pid -> { name, pos, pts, injury, initials, playerId }
+let ROSTER_MEMBERS = {}; // teamAbbr -> [ { pid, status, enc } ]
+let MEMBERSHIP = {}; // pid -> [teamAbbr, ...]
+
+const MFL_PLAYER_LINK = pid => `${MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
+
+// ── Encoded contract-string parser (mirrors mfl-player-parser.js) ─────────────
+// A single copy string: OWNER_CLASS[_MODS]. Returns { owner, cls, redshirt, awards }.
+const ENC_RE = /^(?:FA|[A-Z]{2,4})_(?:FR|SO|JR|SR|GR)(?:_[A-Za-z0-9]+)*$/;
+function parseEncoded(str) {
+  if (!str || !ENC_RE.test(str)) return null;
+  const parts = str.split('_');
+  const out = {
+    owner: parts[0],
+    cls: parts[1],
+    redshirt: null,
+    awards: []
+  };
+  for (let i = 2; i < parts.length; i++) {
+    const seg = parts[i];
+    let j = 0;
+    while (j < seg.length) {
+      const ch = seg[j];
+      if (ch === 'E') {
+        j++;
+      } else if (ch === 'r' || ch === 'm') {
+        const yy = seg.slice(j + 1, j + 3);
+        if (/^\d{2}$/.test(yy)) out.redshirt = {
+          type: ch === 'm' ? 'med' : 'trad',
+          year: 2000 + parseInt(yy, 10)
+        };
+        j += 3;
+      } else if (ch === 'N' || ch === 'A') {
+        const m = seg.slice(j + 1).match(/^(\d+)/);
+        const count = m ? parseInt(m[1], 10) : 1;
+        out.awards.push({
+          type: ch === 'N' ? 'national' : 'allconf',
+          count
+        });
+        j += m ? 1 + m[1].length : 1;
+      } else {
+        j++;
+      } // tolerate unknown modifier characters
+    }
+  }
+  return out;
+}
+
+// Award objects in the shape the Awards component wants (kind -> GLYPHS key).
+const encAwardToDisplay = a => ({
+  kind: a.type === 'national' ? 'heisman' : 'allamerican',
+  name: a.type === 'national' ? 'National' : 'All-Conf',
+  count: a.count || 1,
+  year: '',
+  conf: null
+});
+
+// Find the encoded contract string on an arbitrary export player object by
+// scanning its string values for the pattern (field-name agnostic).
+function encodedFrom(obj) {
+  if (!obj) return null;
+  for (const k in obj) {
+    const v = obj[k];
+    if (typeof v === 'string') {
+      // A field may carry both copies ("BC_FR_r25;VT_FR_r25") — split on delimiters.
+      const cands = v.split(/[;,]/).map(s => s.trim());
+      for (const c of cands) if (ENC_RE.test(c)) return v; // keep raw to resolve owner later
+    }
+  }
+  return null;
+}
+// From a raw field value pick the copy whose owner matches this franchise abbr,
+// else the first valid copy.
+function pickCopy(raw, abbr) {
+  if (!raw) return null;
+  const cands = raw.split(/[;,]/).map(s => s.trim()).filter(c => ENC_RE.test(c));
+  const owned = cands.find(c => c.split('_')[0] === abbr);
+  return parseEncoded(owned || cands[0]);
+}
+
+// ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
+function deriveElig(cls, rs) {
+  const idx = Math.max(0, CLASS_SEQ.indexOf(cls)); // FR=0 … GR=4
+  const played = idx + 1; // seasons enrolled incl. this one
+  const rsYear = rs ? rs.year : null;
+  const rsKind = rs ? rs.type === 'med' ? 'rs-med' : 'rs' : null;
+  const hasRS = rsYear != null;
+  const dots = [];
+  for (let i = 0; i < played; i++) dots.push('used');
+  if (hasRS) dots.splice(Math.min(dots.length, 1), 0, rsKind);
+  const allowed = 4 + (hasRS ? 1 : 0);
+  const usedBefore = Math.max(played - 1, 0);
+  const remaining = allowed - usedBefore;
+  while (dots.length < Math.min(allowed + (hasRS ? 1 : 0), 6)) dots.push('open');
+  const remainLabel = remaining <= 0 ? 'No eligibility' : remaining === 1 ? 'Final year' : remaining + ' left';
+  return {
+    cls: (hasRS ? 'R-' : '') + cls,
+    dots,
+    remaining,
+    remainLabel,
+    redshirtingNow: rsYear === SEASON
+  };
+}
+const initialsOf = name => {
+  // MFL names are "Last, First" — show First-Last initials.
+  const clean = name.indexOf(',') >= 0 ? name.split(',').reverse().join(' ') : name;
+  return clean.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+};
+const displayName = name => name.indexOf(',') >= 0 ? name.split(',').map(s => s.trim()).reverse().join(' ') : name;
+const otherCopyOf = (pid, teamAbbr) => {
+  const on = MEMBERSHIP[pid] || [];
+  for (const t of on) if (t !== teamAbbr) return t;
+  return null;
+};
+
+// ── buildRoster(teamAbbr): same return shape as the sample data layer ─────────
+const enrichRow = teamAbbr => m => {
+  const p = PLAYERS_BY_ID[m.pid] || {
+    name: m.pid,
+    pos: 'WR',
+    pts: 0,
+    injury: null
+  };
+  const enc = m.enc;
+  const rs = enc ? enc.redshirt : null;
+  const cls = enc ? enc.cls : 'FR';
+  return {
+    pid: m.pid,
+    playerId: p.playerId,
+    name: displayName(p.name),
+    pos: normPos(p.pos),
+    pts: p.pts || 0,
+    injury: p.injury || null,
+    initials: initialsOf(p.name),
+    awards: enc ? enc.awards.map(encAwardToDisplay) : [],
+    rs: rs ? {
+      type: rs.type,
+      year: rs.year
+    } : null,
+    elig: deriveElig(cls, rs),
+    other: otherCopyOf(m.pid, teamAbbr)
+  };
+};
+function buildRoster(teamAbbr) {
+  const members = ROSTER_MEMBERS[teamAbbr] || [];
+  const e = enrichRow(teamAbbr);
+  const active = [],
+    taxi = [],
+    ir = [];
+  members.forEach(m => {
+    const row = e(m);
+    if (m.status === 'TAXI_SQUAD') taxi.push(row);else if (m.status === 'INJURED_RESERVE') ir.push(row);else active.push(row);
+  });
+  const groups = POS_ORDER.map(pos => {
+    const players = active.filter(r => r.pos === pos).sort((a, b) => b.pts - a.pts);
+    return {
+      pos,
+      players,
+      pts: players.reduce((s, r) => s + r.pts, 0)
+    };
+  }).filter(g => g.players.length);
+  const all = active.concat(taxi, ir);
+  const totalPts = all.reduce((s, r) => s + r.pts, 0);
+  const rsCount = all.filter(r => r.rs && r.rs.year === SEASON).length;
+  const outCount = all.filter(r => r.injury && r.injury[0] === 'O').length;
+  return {
+    groups,
+    taxi,
+    ir,
+    totalPts,
+    rsCount,
+    outCount,
+    count: all.length
+  };
+}
+
+// ── MFL context + franchise directory ────────────────────────────────────────
+function resolveCtx() {
+  const origin = location.origin;
+  const yr = (String(location.pathname).match(/\/(20\d{2})\//) || [])[1] || (String(location.href).match(/\/(20\d{2})\//) || [])[1] || String(SEASON);
+  const league = String(window.league_id || (String(location.href).match(/[?&]L=(\d+)/) || [])[1] || '12011');
+  MFL_CTX = {
+    origin,
+    year: yr,
+    league
+  };
+  SEASON = parseInt(yr, 10) || SEASON;
+}
+function buildTeams() {
+  const db = window.franchiseDatabase || {};
+  const fidToAbbr = {};
+  const teams = {};
+  Object.keys(db).forEach(key => {
+    const f = db[key];
+    if (!f || !f.id || f.id === '0000') return; // skip commissioner pseudo-franchise
+    const abbr = (f.abbrev || f.id).toUpperCase();
+    const conf = DIV_TO_CONF[f.division] || 'acc';
+    fidToAbbr[f.id] = abbr;
+    teams[abbr] = {
+      name: f.name || abbr,
+      abbr,
+      owner: '',
+      conf,
+      bg: '#1B1B1E',
+      fg: '#E8E7E4',
+      rec: '',
+      pill: f.logo || f.icon || '',
+      // franchise logo (external image; loads on MFL pages)
+      fid: f.id
+    };
+  });
+  const order = Object.keys(teams).sort((a, b) => {
+    const ca = CONF_ORDER.indexOf(teams[a].conf),
+      cb = CONF_ORDER.indexOf(teams[b].conf);
+    return ca !== cb ? ca - cb : teams[a].name.localeCompare(teams[b].name);
+  });
+  TEAMS = teams;
+  TEAM_ORDER = order;
+  // Signed-in franchise → default team.
+  const myFid = String(window.franchise_id || '');
+  MY_TEAM = fidToAbbr[myFid] || TEAM_ORDER[0] || null;
+  return fidToAbbr;
+}
+
+// ── Fetch helpers ────────────────────────────────────────────────────────────
+async function fetchJSON(type, extra) {
+  const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=${type}&L=${MFL_CTX.league}&JSON=1${extra || ''}`;
+  const res = await fetch(url, {
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + type);
+  return res.json();
+}
+const asArray = x => Array.isArray(x) ? x : x != null ? [x] : [];
+
+// ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
+const RB_CACHE_KEY = 'cffb_roster_board_v1';
+const RB_FRESH_MS = 30 * 60 * 1000; // serve without refetch
+const RB_MAX_MS = 24 * 60 * 60 * 1000; // hard cap
+function rbReadCache() {
+  try {
+    const rec = JSON.parse(localStorage.getItem(RB_CACHE_KEY) || 'null');
+    if (!rec || typeof rec.ts !== 'number' || !rec.payload) return null;
+    const age = Date.now() - rec.ts;
+    if (age < 0 || age > RB_MAX_MS) return null;
+    return {
+      payload: rec.payload,
+      age
+    };
+  } catch (e) {
+    return null;
+  }
+}
+function rbWriteCache(payload) {
+  try {
+    localStorage.setItem(RB_CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      payload
+    }));
+  } catch (e) {/* ignore */}
+}
+
+// ── Assemble the live payload from the export feeds ───────────────────────────
+async function rbFetchPayload(fidToAbbr) {
+  const [rostersD, playersD, scoresD, injuriesD] = await Promise.all([fetchJSON('rosters'), fetchJSON('players', '&DETAILS=1'), fetchJSON('playerScores', '&W=YTD&YEAR=' + MFL_CTX.year).catch(() => null), fetchJSON('injuries').catch(() => null)]);
+
+  // Player identity: id -> name/pos.
+  const playersById = {};
+  asArray(playersD && playersD.players && playersD.players.player).forEach(p => {
+    playersById[p.id] = {
+      name: p.name || p.id,
+      pos: p.position || 'WR',
+      pts: 0,
+      injury: null,
+      playerId: p.id
+    };
+  });
+
+  // Season points.
+  asArray(scoresD && scoresD.playerScores && scoresD.playerScores.playerScore).forEach(s => {
+    if (playersById[s.id]) playersById[s.id].pts = parseFloat(s.score) || 0;
+  });
+
+  // Injuries (may be NFL-scoped and rarely match college players — best effort).
+  const INJ_MAP = {
+    PROBABLE: 'P',
+    QUESTIONABLE: 'Q',
+    DOUBTFUL: 'O',
+    OUT: 'O',
+    IR: 'O'
+  };
+  asArray(injuriesD && injuriesD.injuries && injuriesD.injuries.injury).forEach(inj => {
+    const code = INJ_MAP[(inj.status || '').toUpperCase()];
+    if (code && playersById[inj.id]) playersById[inj.id].injury = [code, inj.details || inj.status || ''];
+  });
+
+  // Membership + encoded contract per copy.
+  const rosterMembers = {}; // abbr -> [{pid,status,rawEnc}]
+  const membership = {}; // pid -> [abbr]
+  let encFound = 0,
+    encMissing = 0;
+  asArray(rostersD && rostersD.rosters && rostersD.rosters.franchise).forEach(fr => {
+    const abbr = fidToAbbr[fr.id];
+    if (!abbr) return;
+    rosterMembers[abbr] = rosterMembers[abbr] || [];
+    asArray(fr.player).forEach(pl => {
+      const raw = encodedFrom(pl);
+      if (raw) encFound++;else encMissing++;
+      rosterMembers[abbr].push({
+        pid: pl.id,
+        status: pl.status || 'ROSTER',
+        rawEnc: raw
+      });
+      (membership[pl.id] = membership[pl.id] || []).push(abbr);
+    });
+  });
+  if (!encFound && encMissing) {
+    console.warn('[CFFB Roster Board] no encoded contract strings found in the rosters export — ' + 'eligibility/redshirt/awards will be blank. Confirm where the league stores the "Copy N Info" string.');
+  }
+  return {
+    season: SEASON,
+    thruWeek: THRU_WEEK,
+    playersById,
+    rosterMembers,
+    membership
+  };
+}
+function applyPayload(pd, fidToAbbr) {
+  PLAYERS_BY_ID = pd.playersById || {};
+  MEMBERSHIP = pd.membership || {};
+  THRU_WEEK = pd.thruWeek || THRU_WEEK;
+  // Resolve each copy's encoded string against its franchise abbr now that
+  // membership is known (a raw field may contain both copies).
+  ROSTER_MEMBERS = {};
+  Object.keys(pd.rosterMembers || {}).forEach(abbr => {
+    ROSTER_MEMBERS[abbr] = pd.rosterMembers[abbr].map(m => ({
+      pid: m.pid,
+      status: m.status,
+      enc: pickCopy(m.rawEnc, abbr)
+    }));
+  });
+}
+
+// ── Public loader (awaited by the boot wrapper before mount) ──────────────────
+async function loadRosterBoard() {
+  resolveCtx();
+  const fidToAbbr = buildTeams();
+  THRU_WEEK = parseInt(window.currentWeek, 10) || THRU_WEEK;
+  const cached = rbReadCache();
+  if (cached && cached.payload.season === SEASON) {
+    applyPayload(cached.payload, fidToAbbr);
+    if (cached.age > RB_FRESH_MS) {
+      rbFetchPayload(fidToAbbr).then(pd => {
+        applyPayload(pd, fidToAbbr);
+        rbWriteCache(pd);
+      }).catch(() => {});
+    }
+    return;
+  }
+  const pd = await rbFetchPayload(fidToAbbr);
+  applyPayload(pd, fidToAbbr);
+  rbWriteCache(pd);
+}
+
+// The build concatenates this file and rb-app.jsx into one function scope, so
+// rb-app reads SEASON / TEAMS / buildRoster / MFL_PLAYER_LINK etc. lexically.
+// Only the loader needs to be reachable by name from the boot wrapper.
+window.__loadRosterBoard = loadRosterBoard;
+
+/* ---- rb-app.jsx ---- */
+// CFFB · Roster Board — app
+const {
+  useState,
+  useEffect
+} = React;
+const SHIELD = '<path d="M2 4 L10 1 L18 4 L18 11 C18 16 10 20 10 20 C10 20 2 16 2 11 Z"/>';
+const SHIELD_MED = SHIELD + '<g transform="translate(10 10.5) rotate(-30)"><rect x="-6" y="-2" width="12" height="4" rx="1.4" fill="rgba(209,117,117,0.18)"/><rect x="-6" y="-2" width="3.2" height="4" rx="1.2" fill="rgba(209,117,117,0.5)" stroke="currentColor" stroke-width="1.1"/><rect x="2.8" y="-2" width="3.2" height="4" rx="1.2" fill="rgba(209,117,117,0.5)" stroke="currentColor" stroke-width="1.1"/><circle cx="-1.5" cy="-0.5" r="0.5" fill="currentColor" stroke="none"/><circle cx="1.5" cy="-0.5" r="0.5" fill="currentColor" stroke="none"/><circle cx="-1.5" cy="0.5" r="0.5" fill="currentColor" stroke="none"/><circle cx="1.5" cy="0.5" r="0.5" fill="currentColor" stroke="none"/></g>';
+const GLYPHS = {
+  heisman: '<path d="M7 3 H17 V8 C17 11 15 13 12 13 C9 13 7 11 7 8 Z"/><path d="M7 5 C4 5 4 9 7 9"/><path d="M17 5 C20 5 20 9 17 9"/><path d="M12 13 V17"/><path d="M8 17 H16"/><path d="M7 20 H17"/><path d="M12 6.5 L12.6 7.7 L13.9 7.9 L13 8.8 L13.2 10.1 L12 9.5 L10.8 10.1 L11 8.8 L10.1 7.9 L11.4 7.7 Z" fill="currentColor" stroke="none"/>',
+  obrien: '<path d="M3 18 Q9 4 18 8" stroke-dasharray="0.5 2.5" stroke-width="1.4"/><g transform="translate(17.5 9) rotate(35)"><ellipse rx="5" ry="2.6"/><path d="M-1.8 0 H1.8" stroke-width="1.4"/><path d="M-1 -0.8 V0.8 M0 -0.8 V0.8 M1 -0.8 V0.8" stroke-width="1.2"/></g><path d="M2 17 L4 19 L2 21" stroke-width="1.4"/>',
+  walker: '<circle cx="14" cy="4.5" r="2"/><path d="M13 7 L10 13"/><path d="M13 8 L18 8"/><path d="M11.5 9 L8 11"/><g transform="translate(7 11.5) rotate(-20)"><ellipse rx="2.8" ry="1.5"/><path d="M-1 0 H1" stroke-width="1.2"/></g><path d="M10 13 L13 18"/><path d="M10 13 L5 19"/><path d="M2 21 H7 M9 21 H13" stroke-width="1.3"/>',
+  biletnikoff: '<path d="M3 4 L8 9" stroke-dasharray="0.5 2.5" stroke-width="1.3"/><g transform="translate(11 11) rotate(-40)"><ellipse rx="4.2" ry="2.2"/><path d="M-1.5 0 H1.5" stroke-width="1.3"/><path d="M-0.6 -0.6 V0.6 M0.5 -0.6 V0.6" stroke-width="1.1"/></g><path d="M7 14 L10 13 L11 15 L9 17 Z"/><path d="M9 13.4 L8 11.5 M10 13 L10 11"/><path d="M17 14 L14 13 L13 15 L15 17 Z"/><path d="M15 13.4 L16 11.5 M14 13 L14 11"/><path d="M7 14 L5 17 M17 14 L19 17"/>',
+  allamerican: '<path d="M6 5 Q3 12 6 19"/><path d="M5.2 7 Q3.5 7.5 3 9"/><path d="M4.5 10 Q2.8 10.5 2.3 12"/><path d="M4.5 14 Q2.8 14 2.3 15.5"/><path d="M5.2 17 Q3.5 17.5 3 19"/><path d="M18 5 Q21 12 18 19"/><path d="M18.8 7 Q20.5 7.5 21 9"/><path d="M19.5 10 Q21.2 10.5 21.7 12"/><path d="M19.5 14 Q21.2 14 21.7 15.5"/><path d="M18.8 17 Q20.5 17.5 21 19"/><path d="M12 7 L13.4 10 L16.6 10.3 L14.2 12.4 L14.9 15.6 L12 14 L9.1 15.6 L9.8 12.4 L7.4 10.3 L10.6 10 Z" fill="currentColor" stroke="none"/><path d="M9 20 L12 18 L15 20"/>'
+};
+const TeamChip = ({
+  id,
+  size
+}) => {
+  const t = TEAMS[id];
+  if (!t) return null;
+  const [imgErr, setImgErr] = useState(false);
+  if (t.pill && !imgErr) return /*#__PURE__*/React.createElement("img", {
+    className: 'cffb-team cffb-team--' + (size || 'sm'),
+    src: t.pill,
+    alt: t.name,
+    onError: () => setImgErr(true)
+  });
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : ''),
+    style: {
+      background: t.bg,
+      color: t.fg
+    }
+  }, t.abbr);
+};
+const PosChip = ({
+  pos
+}) => /*#__PURE__*/React.createElement("span", {
+  className: 'cffb-pos cffb-pos--' + pos.toLowerCase()
+}, pos);
+const Elig = ({
+  elig
+}) => /*#__PURE__*/React.createElement("span", {
+  className: "cffb-elig",
+  title: elig.remainLabel + ' of eligibility'
+}, /*#__PURE__*/React.createElement("span", {
+  className: "cffb-elig__class"
+}, elig.cls), /*#__PURE__*/React.createElement("span", {
+  className: "cffb-elig__dots",
+  "aria-label": elig.remainLabel
+}, elig.dots.map((d, i) => /*#__PURE__*/React.createElement("span", {
+  key: i,
+  className: 'cffb-elig__dot' + (d === 'used' ? ' is-used' : d === 'rs' ? ' is-rs' : d === 'rs-med' ? ' is-rs-med' : '')
+}))));
+const RSChip = ({
+  rs,
+  ir
+}) => {
+  if (!rs) return /*#__PURE__*/React.createElement("span", {
+    className: "rb-none"
+  }, "\u2014");
+  const med = rs.type === 'med';
+  const active = rs.year === SEASON;
+  const warn = ir && med && !active; // on IR with a medical redshirt already used
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      flexDirection: 'column',
+      gap: 3,
+      alignItems: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: 'cffb-rs ' + (med ? 'cffb-rs--med' : 'cffb-rs--trad'),
+    title: (med ? 'Medical' : 'Traditional') + ' redshirt · ' + rs.year + (active ? ' (this season)' : '')
+  }, /*#__PURE__*/React.createElement("svg", {
+    className: "cffb-rs__icon",
+    viewBox: "0 0 20 22",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.6",
+    strokeLinejoin: "round",
+    strokeLinecap: "round",
+    dangerouslySetInnerHTML: {
+      __html: med ? SHIELD_MED : SHIELD
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-rs__txt"
+  }, med ? 'MRS' : 'RS', " \u2019", String(rs.year).slice(2))), warn && /*#__PURE__*/React.createElement("span", {
+    className: "rb-inel",
+    title: 'Medical redshirt already used (' + rs.year + ') — this copy is not eligible for another medical redshirt'
+  }, "\u26A0 NO MRS LEFT"));
+};
+const Awards = ({
+  awards
+}) => {
+  if (!awards.length) return /*#__PURE__*/React.createElement("span", {
+    className: "rb-none"
+  }, "\u2014");
+  return /*#__PURE__*/React.createElement("span", {
+    className: "cffb-awards cffb-awards--sm"
+  }, awards.map((a, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: 'cffb-award cffb-award--' + a.kind + (a.conf ? ' is-' + a.conf : ''),
+    title: a.name + (a.count > 1 ? ' ×' + a.count : '') + (a.year ? ' ' + a.year : '')
+  }, /*#__PURE__*/React.createElement("svg", {
+    className: "cffb-award__glyph",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.75",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    dangerouslySetInnerHTML: {
+      __html: GLYPHS[a.kind]
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-award__name"
+  }, a.name), a.count > 1 ? /*#__PURE__*/React.createElement("span", {
+    className: "cffb-award__year"
+  }, "\xD7", a.count) : a.year ? /*#__PURE__*/React.createElement("span", {
+    className: "cffb-award__year"
+  }, String(a.year).slice(2)) : null)));
+};
+const INJ = {
+  P: ['rb-status--ok', '#4A9968', 'PROB'],
+  Q: ['rb-status--q', '#C9A227', 'QUES'],
+  O: ['rb-status--o', '#B84545', 'OUT']
+};
+const Status = ({
+  p
+}) => {
+  if (p.elig.redshirtingNow) return /*#__PURE__*/React.createElement("span", {
+    className: "rb-status rb-status--rs",
+    title: "Redshirting this season \u2014 cannot score"
+  }, "\u25CF REDSHIRT");
+  if (!p.injury) return /*#__PURE__*/React.createElement("span", {
+    className: "rb-status rb-status--ok",
+    title: "No injury designation"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "d",
+    style: {
+      background: '#2D7A4E'
+    }
+  }), "ACTIVE");
+  const [cls, dot, label] = INJ[p.injury[0]];
+  return /*#__PURE__*/React.createElement("span", {
+    className: 'rb-status ' + cls,
+    title: p.injury[1]
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "d",
+    style: {
+      background: dot
+    }
+  }), label);
+};
+const OtherCopy = ({
+  other,
+  onGo
+}) => {
+  const badge = (txt, title) => /*#__PURE__*/React.createElement("span", {
+    className: "rb-copy-badge",
+    title: title
+  }, txt);
+  if (other === 'GRAD') return badge('GRAD', 'Copy 2 graduated — out of eligibility');
+  if (!other) return badge('FA', 'Copy 2 unowned — free agent');
+  const t = TEAMS[other];
+  if (!t) return badge('—', 'Other copy');
+  return /*#__PURE__*/React.createElement("a", {
+    className: "rb-copy",
+    onClick: () => onGo(other),
+    title: 'View ' + t.name + (t.owner ? ' (' + t.owner + ')' : '') + ' roster'
+  }, /*#__PURE__*/React.createElement(TeamChip, {
+    id: other,
+    size: "sm"
+  }));
+};
+const Row = ({
+  p,
+  onGo,
+  ir
+}) => /*#__PURE__*/React.createElement("div", {
+  className: 'rb-cols rb-row' + (p.elig.redshirtingNow || p.injury && p.injury[0] === 'O' ? ' is-dim' : '')
+}, /*#__PURE__*/React.createElement("span", {
+  className: "rb-player"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "rb-photo",
+  title: "Drop a player photo in MFL player profile to fill this slot"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "rb-photo__bar",
+  style: {
+    background: POS_COLORS[p.pos]
+  }
+}), /*#__PURE__*/React.createElement("span", {
+  className: "rb-photo__init"
+}, p.initials)), /*#__PURE__*/React.createElement("span", {
+  className: "rb-pname"
+}, /*#__PURE__*/React.createElement("span", {
+  className: "rb-pname__name"
+}, p.playerId && typeof MFL_PLAYER_LINK === 'function' ? /*#__PURE__*/React.createElement("a", {
+  className: "rb-plink",
+  href: MFL_PLAYER_LINK(p.playerId),
+  target: "_blank",
+  rel: "noopener noreferrer"
+}, p.name) : p.name, /*#__PURE__*/React.createElement("span", {
+  className: "rb-mob-status"
+}, /*#__PURE__*/React.createElement(Status, {
+  p: p
+}))))), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(PosChip, {
+  pos: p.pos
+})), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(Elig, {
+  elig: p.elig
+})), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(RSChip, {
+  rs: p.rs,
+  ir: ir
+})), /*#__PURE__*/React.createElement("span", {
+  className: "rb-cell-awards"
+}, /*#__PURE__*/React.createElement(Awards, {
+  awards: p.awards
+})), /*#__PURE__*/React.createElement("span", {
+  className: "rb-cell-status"
+}, /*#__PURE__*/React.createElement(Status, {
+  p: p
+})), /*#__PURE__*/React.createElement("span", {
+  className: 'rb-pts t-r' + (p.pts ? '' : ' is-zero')
+}, p.pts.toFixed(2)), /*#__PURE__*/React.createElement("span", {
+  className: "rb-cell-copy"
+}, /*#__PURE__*/React.createElement(OtherCopy, {
+  other: p.other,
+  onGo: onGo
+})));
+const ConfTabs = ({
+  team,
+  setTeam
+}) => {
+  const [open, setOpen] = useState(null);
+  const [alignRight, setAlignRight] = useState(false);
+  useEffect(() => {
+    const close = e => {
+      if (!e.target.closest('.rb-conftab')) setOpen(null);
+    };
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, []);
+  // Align the menu to whichever tab edge keeps it on-screen (tabs can wrap rows).
+  const toggle = c => e => {
+    const btn = e.currentTarget;
+    const strip = btn.closest('.rb-tabs');
+    setAlignRight(btn.getBoundingClientRect().left + 160 > strip.getBoundingClientRect().right);
+    setOpen(open === c ? null : c);
+  };
+  const activeConf = TEAMS[team].conf;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rb-tabs",
+    role: "tablist"
+  }, CONF_ORDER.map(c => {
+    const teams = TEAM_ORDER.filter(id => TEAMS[id].conf === c);
+    const isActive = c === activeConf;
+    return /*#__PURE__*/React.createElement("div", {
+      key: c,
+      className: "rb-conftab"
+    }, /*#__PURE__*/React.createElement("button", {
+      role: "tab",
+      "aria-selected": isActive,
+      "aria-expanded": open === c,
+      className: 'rb-tab' + (isActive ? ' is-active' : ''),
+      style: isActive ? {
+        boxShadow: 'inset 0 -2px 0 ' + CONF_ACCENT[c]
+      } : null,
+      onClick: toggle(c)
+    }, /*#__PURE__*/React.createElement("img", {
+      className: "rb-conflogo",
+      src: CONF_META[c].logo,
+      alt: ""
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "rb-tab__abbr"
+    }, CONF_META[c].label), isActive && /*#__PURE__*/React.createElement("span", {
+      className: "rb-tab__cur"
+    }, TEAMS[team].abbr), /*#__PURE__*/React.createElement("span", {
+      className: "rb-caret"
+    }, "\u25BE")), open === c && /*#__PURE__*/React.createElement("div", {
+      className: 'rb-menu' + (alignRight ? ' rb-menu--right' : ''),
+      role: "listbox"
+    }, teams.map(id => /*#__PURE__*/React.createElement("button", {
+      key: id,
+      role: "option",
+      "aria-selected": id === team,
+      className: 'rb-menu__item' + (id === team ? ' is-active' : ''),
+      onClick: () => {
+        setTeam(id);
+        setOpen(null);
+      }
+    }, /*#__PURE__*/React.createElement(TeamChip, {
+      id: id,
+      size: "sm"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "rb-menu__abbr"
+    }, TEAMS[id].abbr), id === MY_TEAM && /*#__PURE__*/React.createElement("span", {
+      className: "rb-tab__you"
+    }, "YOU")))));
+  }));
+};
+const App = () => {
+  const [team, setTeam] = useState(() => {
+    const saved = localStorage.getItem('cffb-roster-team');
+    return TEAMS[saved] ? saved : MY_TEAM;
+  });
+  useEffect(() => {
+    localStorage.setItem('cffb-roster-team', team);
+  }, [team]);
+  const t = TEAMS[team];
+  const r = buildRoster(team);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rb-wrap"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "rb-head__eyebrow"
+  }, "CFFB \xB7 League Rosters"), /*#__PURE__*/React.createElement("div", {
+    className: "rb-head__title"
+  }, "Roster Board")), /*#__PURE__*/React.createElement("div", {
+    className: "rb-head__meta"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "dot"
+  }), "Thru Week ", THRU_WEEK, " \xB7 ", SEASON)), /*#__PURE__*/React.createElement(ConfTabs, {
+    team: team,
+    setTeam: setTeam
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "rb-team",
+    style: {
+      borderTopColor: CONF_ACCENT[t.conf]
+    }
+  }, /*#__PURE__*/React.createElement(TeamChip, {
+    id: team,
+    size: "lg"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "rb-team__name"
+  }, t.name, team === MY_TEAM && /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 10,
+      verticalAlign: 3,
+      font: '700 9px/1 var(--font-body)',
+      letterSpacing: '.16em',
+      color: '#0A0A0A',
+      background: 'var(--gold)',
+      borderRadius: 2,
+      padding: '3px 5px'
+    }
+  }, "YOUR TEAM")), /*#__PURE__*/React.createElement("div", {
+    className: "rb-team__owner"
+  }, t.owner, " \xB7 ", t.rec)), /*#__PURE__*/React.createElement("div", {
+    className: "rb-team__kpis"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-kpi"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__label"
+  }, "Points"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__val is-gold cffb-num"
+  }, r.totalPts.toFixed(2))), /*#__PURE__*/React.createElement("div", {
+    className: "rb-kpi"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__label"
+  }, "Roster"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__val cffb-num"
+  }, r.count)), /*#__PURE__*/React.createElement("div", {
+    className: "rb-kpi"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__label"
+  }, "Redshirting"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__val cffb-num"
+  }, r.rsCount)), /*#__PURE__*/React.createElement("div", {
+    className: "rb-kpi"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__label"
+  }, "Out"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-kpi__val cffb-num",
+    style: r.outCount ? {
+      color: '#D88787'
+    } : null
+  }, r.outCount)))), /*#__PURE__*/React.createElement("div", {
+    className: "rb-table"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-cols rb-thead"
+  }, /*#__PURE__*/React.createElement("span", null, "Player"), /*#__PURE__*/React.createElement("span", null, "Pos"), /*#__PURE__*/React.createElement("span", null, "Eligibility"), /*#__PURE__*/React.createElement("span", null, "Redshirt"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-cell-awards"
+  }, "Awards"), /*#__PURE__*/React.createElement("span", null, "Status"), /*#__PURE__*/React.createElement("span", {
+    className: "t-r"
+  }, "Pts ", SEASON), /*#__PURE__*/React.createElement("span", {
+    className: "rb-cell-copy"
+  }, "Other Copy")), r.groups.map(g => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: g.pos
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-group"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__bar",
+    style: {
+      background: POS_COLORS[g.pos]
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__pos"
+  }, g.pos), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__n"
+  }, g.players.length)), g.players.map(p => /*#__PURE__*/React.createElement(Row, {
+    key: p.pid,
+    p: p,
+    onGo: setTeam
+  })))), r.taxi.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "rb-group rb-group--squad"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__bar",
+    style: {
+      background: 'var(--gold)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__pos"
+  }, "Taxi Squad"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__n"
+  }, r.taxi.length), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__note"
+  }, "Copies redshirting the ", SEASON, " season \u2014 moving off taxi forfeits the year's redshirt")), r.taxi.map(p => /*#__PURE__*/React.createElement(Row, {
+    key: 'tx-' + p.pid,
+    p: p,
+    onGo: setTeam
+  }))), r.ir.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "rb-group rb-group--squad rb-group--ir"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__bar",
+    style: {
+      background: '#B84545'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__pos"
+  }, "Injured Reserve"), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__n"
+  }, r.ir.length), /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__note"
+  }, "Medical redshirts are applied here \u2014 moving off IR forfeits the year's redshirt")), r.ir.map(p => /*#__PURE__*/React.createElement(Row, {
+    key: 'ir-' + p.pid,
+    p: p,
+    onGo: setTeam,
+    ir: true
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "rb-foot"
+  }, /*#__PURE__*/React.createElement("span", null, "\u25CE ring = redshirt year (burned, no eligibility used)"), /*#__PURE__*/React.createElement("span", null, "\u25CF filled = play season used"), /*#__PURE__*/React.createElement("span", null, "\u26A0 NO MRS LEFT \u2014 an IR player with a prior medical redshirt cannot take another"), /*#__PURE__*/React.createElement("span", null, "Other Copy \u2014 every player exists as two copies; click a team to jump to its roster"))));
+};
+const CFFBRosterBoot = () => {
+  const [ready, setReady] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+  React.useEffect(() => {
+    window.__loadRosterBoard().then(() => setReady(true)).catch(e => setErr(e && e.message ? e.message : String(e)));
+  }, []);
+  if (err) return /*#__PURE__*/React.createElement("div", {
+    className: "cffb-boot cffb-boot--err"
+  }, "Couldn't load rosters: ", err);
+  if (!ready) return /*#__PURE__*/React.createElement("div", {
+    className: "cffb-boot"
+  }, "Loading rosters\u2026");
+  return /*#__PURE__*/React.createElement(App, null);
+};
+ReactDOM.createRoot(document.getElementById('cffb-rb-root')).render(/*#__PURE__*/React.createElement(CFFBRosterBoot, null));
+  }
+  var RV = "18.3.1";
+  function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }
+  if (ready()) { __cffbApp(); return; }
+  window.__cffbReactPromise = window.__cffbReactPromise || new Promise(function (resolve) {
+    function load(src, cb) { var s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous"; s.onload = cb; s.onerror = cb; document.head.appendChild(s); }
+    load("https://unpkg.com/react@" + RV + "/umd/react.production.min.js", function () {
+      load("https://unpkg.com/react-dom@" + RV + "/umd/react-dom.production.min.js", resolve);
+    });
+  });
+  window.__cffbReactPromise.then(__cffbApp);
+})();
+</script>
