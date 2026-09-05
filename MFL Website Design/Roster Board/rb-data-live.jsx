@@ -267,8 +267,19 @@ async function fetchJSON(type, extra) {
 }
 const asArray = (x) => (Array.isArray(x) ? x : x != null ? [x] : []);
 
+// Injuries are a GLOBAL NFL feed — no league id, and MFL wants the week. Build
+// its URL separately so a stray &L= or missing &W= can't make MFL error out
+// (which the caller's .catch() would silently turn into "no injuries").
+async function fetchInjuries() {
+  const wk = parseInt(window.currentWeek, 10);
+  const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=injuries${wk ? '&W=' + wk : ''}&JSON=1`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for injuries');
+  return res.json();
+}
+
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v1';
+const RB_CACHE_KEY = 'cffb_roster_board_v2';
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -290,7 +301,7 @@ async function rbFetchPayload(fidToAbbr) {
     fetchJSON('rosters'),
     fetchJSON('players', '&DETAILS=1'),
     fetchJSON('playerScores', '&W=YTD&YEAR=' + MFL_CTX.year).catch(() => null),
-    fetchJSON('injuries').catch(() => null),
+    fetchInjuries().catch((e) => { console.warn('[CFFB Roster Board] injuries fetch failed:', e && e.message); return null; }),
   ]);
 
   // Player identity: id -> name/pos.
@@ -309,10 +320,13 @@ async function rbFetchPayload(fidToAbbr) {
   // ("Questionable"), short codes ("Q"), or variants ("IR", "PUP", "Doubtful"),
   // so map broadly and treat any other non-empty designation as questionable
   // rather than dropping it.
-  asArray(injuriesD && injuriesD.injuries && injuriesD.injuries.injury).forEach((inj) => {
+  const injList = asArray(injuriesD && injuriesD.injuries && injuriesD.injuries.injury);
+  let injMatched = 0;
+  injList.forEach((inj) => {
     const code = injuryCode(inj.status);
-    if (code && playersById[inj.id]) playersById[inj.id].injury = [code, inj.details || inj.status || ''];
+    if (code && playersById[inj.id]) { playersById[inj.id].injury = [code, inj.details || inj.status || '']; injMatched++; }
   });
+  console.log('[CFFB Roster Board] injuries feed: ' + injList.length + ' entries, ' + injMatched + ' matched to known players');
 
   // Membership + encoded contract per copy.
   const rosterMembers = {};   // abbr -> [{pid,status,rawEnc}]
