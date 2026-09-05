@@ -183,9 +183,12 @@ const scopedRosterCss = rosterCss.replace(/#root\b/g, '#' + ROOT_ID);
 const extraCss = [
   '.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}',
   '.cffb-boot--err{color:#D88787}',
-  '.rb-plink{color:inherit;text-decoration:none}',
-  '.rb-plink:hover{color:var(--gold,#C9A227);text-decoration:underline;text-underline-offset:3px}',
+  // Player name: force white over MFL\'s global gold link color; soft-red on hover.
+  '#' + ROOT_ID + ' .rb-plink{color:var(--fg-primary,#F5F5F5) !important;text-decoration:none}',
+  '#' + ROOT_ID + ' .rb-plink:hover{color:#D88787 !important;text-decoration:underline;text-underline-offset:3px}',
   '.rb-copy-badge{display:inline-flex;align-items:center;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.08em;color:var(--fg-tertiary,#6A6A66);border:1px solid var(--border,#262629);border-radius:2px;padding:3px 5px}',
+  // Other-copy franchise logo: constrain so wide "pill" logos fit the narrow column.
+  '#' + ROOT_ID + ' .rb-copy .cffb-team{height:20px;width:auto;max-width:110px;object-fit:contain}',
 ].join('\n');
 
 // ---------------------------------------------------------------------------

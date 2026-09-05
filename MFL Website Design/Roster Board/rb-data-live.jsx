@@ -269,6 +269,12 @@ async function fetchJSON(type, extra) {
   return res.json();
 }
 const asArray = (x) => (Array.isArray(x) ? x : x != null ? [x] : []);
+// MFL injuries payload -> array, tolerant of shape ({injuries:{injury:[]}},
+// {injuries:[]}, or a bare array).
+function injuryListOf(d) {
+  const root = d && (d.injuries || d.nflInjuries || d);
+  return asArray(root && (root.injury || (Array.isArray(root) ? root : null)));
+}
 
 // Best-effort current NFL week from the browser clock (MFL's injuries export is
 // week-specific and the page exposes no reliable week global). Week 1 ~ the
@@ -296,14 +302,13 @@ async function fetchInjuriesForWeek(wk) {
 }
 async function fetchInjuries() {
   let d = await fetchInjuriesForWeek(0);
-  let list = asArray(d && d.injuries && d.injuries.injury);
-  if (!list.length) {
+  if (!injuryListOf(d).length) {
     const wk = guessNflWeek();
     if (wk) {
       console.log('[CFFB Roster Board] injuries default week empty — retrying week ' + wk);
       try {
         const d2 = await fetchInjuriesForWeek(wk);
-        if (asArray(d2 && d2.injuries && d2.injuries.injury).length) d = d2;
+        if (injuryListOf(d2).length) d = d2;
       } catch (e) { /* keep the default response */ }
     }
   }
@@ -317,25 +322,30 @@ async function fetchByeWeeks() {
   if (!res.ok) throw new Error('HTTP ' + res.status + ' for nflByeWeeks');
   return res.json();
 }
-// Robustly map NFL team -> bye week from whatever shape the export uses (find the
-// first array under the root; read an id/team field and a bye_week/week/bye field).
+// Map NFL team -> bye week from whatever shape MFL uses. Handles both
+// team-keyed rows ({id/team, bye_week/week}) and week-keyed rows that nest a
+// team array ({week, team:[{id},...]}).
 function parseByeWeeks(d) {
   const map = {};
   const root = d && (d.nflByeWeeks || d.byeWeeks || d);
   if (!root || typeof root !== 'object') return map;
-  let arr = null;
-  for (const k in root) { if (Array.isArray(root[k])) { arr = root[k]; break; } }
-  asArray(arr).forEach((it) => {
-    if (!it || typeof it !== 'object') return;
-    const team = String(it.id || it.team || '').toUpperCase();
-    const wk = it.bye_week || it.week || it.bye;
-    if (team && wk) map[team] = String(wk);
-  });
+  const visit = (arr, inheritedWk) => {
+    asArray(arr).forEach((it) => {
+      if (it == null) return;
+      if (typeof it === 'string') { if (inheritedWk) map[it.toUpperCase()] = String(inheritedWk); return; }
+      if (typeof it !== 'object') return;
+      const wk = it.bye_week || it.week || it.bye || it.bye_wk || inheritedWk;
+      if (Array.isArray(it.team)) { visit(it.team, wk); return; }   // week-keyed → recurse into its teams
+      const team = String(it.id || it.team_id || (typeof it.team === 'string' ? it.team : '')).toUpperCase();
+      if (team && wk) map[team] = String(wk);
+    });
+  };
+  for (const k in root) if (Array.isArray(root[k])) visit(root[k]);
   return map;
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v3';
+const RB_CACHE_KEY = 'cffb_roster_board_v4';
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -366,11 +376,13 @@ async function rbFetchPayload(fidToAbbr) {
 
   // Player identity: id -> name/pos/team/bye.
   const playersById = {};
-  asArray(playersD && playersD.players && playersD.players.player).forEach((p) => {
+  const playerList = asArray(playersD && playersD.players && playersD.players.player);
+  if (playerList.length) console.log('[CFFB Roster Board] sample player fields:', Object.keys(playerList[0]));
+  playerList.forEach((p) => {
     const team = (p.team || '').toUpperCase();
     playersById[p.id] = {
       name: p.name || p.id, pos: p.position || 'WR', pts: 0, injury: null, playerId: p.id,
-      team, bye: p.bye_week || p.bye || byeMap[team] || null,
+      team, bye: p.bye_week || p.bye || p.byeweek || p.bye_wk || byeMap[team] || null,
     };
   });
 
@@ -384,7 +396,7 @@ async function rbFetchPayload(fidToAbbr) {
   // ("Questionable"), short codes ("Q"), or variants ("IR", "PUP", "Doubtful"),
   // so map broadly and treat any other non-empty designation as questionable
   // rather than dropping it.
-  const injList = asArray(injuriesD && injuriesD.injuries && injuriesD.injuries.injury);
+  const injList = injuryListOf(injuriesD);
   let injMatched = 0;
   injList.forEach((inj) => {
     const code = injuryCode(inj.status);
@@ -392,6 +404,10 @@ async function rbFetchPayload(fidToAbbr) {
   });
   console.log('[CFFB Roster Board] injuries feed: ' + injList.length + ' entries, ' + injMatched + ' matched to known players');
   console.log('[CFFB Roster Board] bye weeks: ' + Object.keys(byeMap).length + ' NFL teams mapped');
+  if (!Object.keys(byeMap).length) {
+    console.log('[CFFB Roster Board] byeWeeks raw shape:', byeD ? Object.keys(byeD) : byeD,
+      byeD && byeD.nflByeWeeks ? Object.keys(byeD.nflByeWeeks) : '(no .nflByeWeeks)');
+  }
   if (!injList.length) {
     console.log('[CFFB Roster Board] injuries raw shape:', injuriesD ? Object.keys(injuriesD) : injuriesD,
       injuriesD && injuriesD.injuries ? Object.keys(injuriesD.injuries) : '(no .injuries)');
