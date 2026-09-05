@@ -43,6 +43,9 @@ const TXN_META = {
   award:    { color: '#E8C547' },
   drop:     { color: '#B84545' },
   graduate: { color: '#8B6F1F' },
+  retain:   { color: '#2D7A4E' },
+  release:  { color: '#B84545' },
+  declare:  { color: '#B8902F' },
 };
 
 // MFL player headshot (confirmed live: /player_photos_2014/{id}_thumb.jpg, 80×107).
@@ -109,7 +112,8 @@ const deriveElig = (ledger, entered, realRS) => {
   return { cls, dots: dotsOut, remain, remaining, hasRS, rsType, rsYear };
 };
 
-const makeCopy = (pid, conf, n, events, awards, entered, realRS) => {
+const makeCopy = (pid, conf, n, events, awards, entered, realRS, opts) => {
+  opts = opts || {};
   let holder = null;
   let acquired = null;
   let redshirtingNow = false;
@@ -156,18 +160,42 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS) => {
       award: a, label: 'HONOR', tag: 'award',
       note: `${a.name} ${a.year} — earned while rostered by ${tm.name || iv.team} (${tm.owner || '@—'}).` });
   });
+  // Retention decisions (RetentionHistory) — retain / release / auto-retain.
+  const RET_TAG = { RETAIN: 'retain', AUTO_RETAIN: 'retain', RELEASE: 'release' };
+  (opts.retentions || []).forEach((r) => {
+    const tag = RET_TAG[String(r.decision || '').toUpperCase()] || 'retain';
+    const tm = TEAMS[r.fid] || {};
+    const pathTxt = r.path ? r.path.toLowerCase().replace('_', '-') + ' path' : '';
+    ledger.push({ type: tag, season: r.year, team: r.fid, owner: tm.owner || '@—',
+      cost: r.cost || 0, path: r.path || null,
+      label: tag === 'retain' ? 'RETAINED' : 'RELEASED', tag,
+      note: tag === 'retain'
+        ? `Retained${pathTxt ? ' (' + pathTxt + ')' : ''}${r.cost ? ' for $' + r.cost : ''}.`
+        : 'Released — not retained.' });
+  });
+
+  // Early declaration for the NFL draft (real DeclaredEarly flag, not a guess).
+  if (opts.declaredEarly) {
+    const tm = TEAMS[holder] || {};
+    ledger.push({ type: 'declare', season: opts.declarationYear || CURRENT_SEASON,
+      team: holder, owner: tm.owner || '@—', label: 'DECLARED', tag: 'declare',
+      note: 'Declared early for the NFL draft.' });
+  }
+
   // Transaction events arrive from the server already in timestamp order, so a
   // STABLE sort by season alone preserves that order within a season (e.g. a
-  // same-year drop-then-reacquire stays in the right order). Awards were pushed
-  // last, so the stable sort slots each into its season after that year's moves.
+  // same-year drop-then-reacquire stays in the right order). Injected award /
+  // retention / declare events were pushed last, so the stable sort slots each
+  // into its season after that year's transactions.
   ledger.sort((x, y) => x.season - y.season);
 
   const elig = deriveElig(ledger, entered, realRS);
   const honors = ledger.filter((e) => e.type === 'award').length;
-  const DECLARE_AT = 2;
   const base = holder == null ? 'fa' : (redshirtingNow ? 'redshirting' : 'rostered');
+  // 'Declared' now comes from the real DeclaredEarly flag; eligibility exhaustion
+  // still graduates a copy.
   const status = elig.remaining <= 0 ? 'graduated'
-    : (honors >= DECLARE_AT ? 'declared' : base);
+    : (opts.declaredEarly ? 'declared' : base);
   const terminal = status === 'graduated' || status === 'declared';
   return {
     id: `${pid}-${conf}-${n}`, n, conf, owner: holder, status, acquired,
@@ -188,7 +216,9 @@ const buildLedgerEntry = (pid, serverCopies, entered) => {
     .concat(Object.keys(byConf).filter((c) => CONF_ORDER.indexOf(c) < 0))
     .map((conf) => ({
       conf,
-      copies: byConf[conf].map((c) => makeCopy(pid, conf, c.n, c.events || [], c.awards, entered, [])),
+      copies: byConf[conf].map((c) => makeCopy(pid, conf, c.n, c.events || [], c.awards, entered, [], {
+        declaredEarly: c.declaredEarly, declarationYear: c.declarationYear, retentions: c.retentions,
+      })),
     }));
   const copies = confs.flatMap((c) => c.copies);
 

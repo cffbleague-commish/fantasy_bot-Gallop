@@ -39,6 +39,7 @@ function onOpen() {
     .addItem('📊 View Draft Status', 'menuViewDraftStatus')
     .addSeparator()
     .addSubMenu(ui.createMenu('🔒 Player Retention')
+      .addItem('Open Retention Window (seed decisions)...', 'menuOpenRetentionWindow')
       .addItem('View Retained Players...', 'menuViewRetainedPlayers')
       .addItem('Finalize Retention (auto-retain)...', 'menuFinalizeDevyRetention')
       .addItem('Sweep NFL Graduates (RookieLedger)...', 'menuSweepGraduatedDevyPlayers')
@@ -149,7 +150,7 @@ function getCommissionerGuideHtml() {
     <li><b>Sweep NFL graduates.</b> <span class="menu">🔒 Player Retention → Sweep NFL Graduates (RookieLedger)</span>. Any owned devy whose name is in the <code>RookieLedger</code> (they were drafted into the NFL) is marked <code>EnteredNFL</code> and leaves the devy cycle. Run this at the auction / season start, first.</li>
     <li><b>Refresh the player pool.</b> <span class="menu">🏈 Devy Draft → 📥 Import / 🔄 Refresh Players from KeepTradeCut</span>. Pulls current devy rankings and creates one copy of each player <em>per conference</em> (each conference drafts from its own pool).</li>
     <li><b>Reconcile the pool from history.</b> <span class="menu">🏈 Devy Draft → ⚙️ Utilities → Reconcile Pool from History</span>. Replays <code>DevyDraftHistory</code> + <code>DevyRetentionHistory</code> to rebuild each copy's <code>Status</code>/owner (last event wins). After this, the pool is a faithful projection of the ledger — the retention decision list and everything downstream read from it.</li>
-    <li><b>Open the retention window.</b> In Discord, run <code>/devy retention_start &lt;year&gt;</code> to DM every owner their still-devy players. Owners choose retain / release per player; both decisions are logged to <code>DevyRetentionHistory</code>, and released players return to the pool. A team may retain at most <b>2</b> players (the 1st spends their Round 2 pick, the 2nd spends Round 1).</li>
+    <li><b>Open the retention window (seed decisions).</b> <span class="menu">🔒 Player Retention → Open Retention Window</span> writes one <code>PENDING</code> row into <code>DevyRetentionHistory</code> for every owned player — this is the worklist you can see in the sheet. Then in Discord run <code>/devy retention_start &lt;year&gt;</code>: the bot reads those <code>PENDING</code> rows and DMs each owner. Owners choose retain / release per player; each decision <b>updates that same row</b> to <code>RETAIN</code> / <code>RELEASE</code> (no guessing what the bot sees). Released players return to the pool. A team may retain at most <b>2</b> players (1st spends Round 2, 2nd Round 1).</li>
     <li><b>Finalize retention.</b> After the deadline, run <code>/devy retention_finalize &lt;year&gt;</code> (or <span class="menu">🔒 Player Retention → Finalize Retention</span>). Every owned player with <em>no</em> decision is <b>auto-retained</b> up to the 2-pick cap (cost still applies); any beyond the cap is auto-released.</li>
     <li><b>Generate the draft order.</b> <span class="menu">🏈 Devy Draft → 📋 Draft Order → Generate from Standings</span> (reads the <code>ConferenceStandings</code> sheet). Rule: <b>draft year = standings year + 1</b>. Worst team picks first, <b>2 rounds</b>, same order each round (no snake).</li>
     <li><b>Slot retentions into the draft.</b> Run <code>/devy retention_apply &lt;year&gt;</code> (or <span class="menu">📋 Draft Order → Apply Retentions to Draft</span>). Each retained player is written into their team's consumed slot (Round 2, then Round 1) in <code>DevyDraftHistory</code>, and the live draft will skip those slots automatically.</li>
@@ -1301,6 +1302,10 @@ function appendDevyRetentionRecord(info) {
   const sheet = getDevyRetentionHistorySheet();
   const decision = (info.decision || "RETAIN").toUpperCase();
 
+  const data = sheet.getDataRange().getValues();
+  const colMap = {};
+  data[0].forEach((h, i) => colMap[h] = i);
+
   const teamInfo = getTeamInfoByFranchiseId(info.franchiseId);
   const teamName = teamInfo ? teamInfo.teamName : "";
   const playerNameMFL = `${info.lastName}, ${info.firstName}`;
@@ -1315,6 +1320,12 @@ function appendDevyRetentionRecord(info) {
     consecutiveYear = counts.playerPriorRetentions + 1;
     // 1st retention of the year -> Round 2, 2nd -> Round 1
     pickUsed = counts.teamRetentionsThisYear === 0 ? "Round 2" : "Round 1";
+    baseRebate = 20;
+    rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
+  } else if (decision === "PENDING") {
+    // Preview the rebate on the seeded worklist row (PickUsed decided at retain time).
+    const counts = getDevyRetentionCounts(info.playerId, info.franchiseId, info.retentionYear);
+    consecutiveYear = counts.playerPriorRetentions + 1;
     baseRebate = 20;
     rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
   }
@@ -1339,8 +1350,18 @@ function appendDevyRetentionRecord(info) {
     decision
   ];
 
-  const lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow + 1, 1, 1, DEVY_RETENTION_HISTORY_HEADERS.length).setValues([row]);
+  // Upsert: one row per (PlayerID, Year). Update the existing worklist row (e.g. a
+  // PENDING row seeded by the retention window) in place; otherwise append.
+  let targetRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colMap["PlayerID"]] === info.playerId &&
+        Number(data[i][colMap["Year"]]) === Number(info.retentionYear)) {
+      targetRow = i + 1; // 1-based sheet row
+      break;
+    }
+  }
+  if (targetRow === -1) targetRow = sheet.getLastRow() + 1;
+  sheet.getRange(targetRow, 1, 1, DEVY_RETENTION_HISTORY_HEADERS.length).setValues([row]);
 
   return decision === "RETAIN" ? consecutiveYear : 0;
 }
@@ -1592,13 +1613,18 @@ function reconcileDevyPoolFromLedger() {
   const rc = {};
   retData[0].forEach((h, i) => rc[h] = i);
   for (let i = 1; i < retData.length; i++) {
+    const decision = String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase();
+    if (decision === "PENDING") continue; // not a decision yet - ignore for status
     const fn = retData[i][rc["PlayerFirstName"]];
     const ln = retData[i][rc["PlayerLastName"]];
     const name = retData[i][rc["PlayerName"]] || `${ln}, ${fn}`;
     const conf = retData[i][rc["Conference"]];
+    // Within a year: RELEASE precedes a possible re-draft (phase 0); a RETAIN must beat
+    // its own same-year draft-slot entry, so it sorts AFTER draft (phase 2 > draft's 1).
+    const phase = decision === "RELEASE" ? 0 : 2;
     indexRow(retData[i][rc["PlayerID"]], conf, name,
       { conference: conf, playerId: retData[i][rc["PlayerID"]], playerName: name, firstName: fn, lastName: ln, position: retData[i][rc["PlayerPosition"]] },
-      { uid: "R" + i, year: Number(retData[i][rc["Year"]]), phase: 0, type: String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase(), franchise: String(retData[i][rc["FranchiseID"]]).padStart(3, "0") });
+      { uid: "R" + i, year: Number(retData[i][rc["Year"]]), phase: phase, type: decision, franchise: String(retData[i][rc["FranchiseID"]]).padStart(3, "0") });
   }
 
   // Last-event-wins status from a chronologically sorted event list.
@@ -2422,6 +2448,9 @@ function handleDevyDraftRequest(action, params) {
 
       case "applyRetentionsToDraft":
         return applyRetentionsToDraft(params.draftYear, params.conferences || null);
+
+      case "openRetentionWindow":
+        return openRetentionWindow(params.year, params.conference || null);
 
       case "finalizeRetention":
         return finalizeDevyRetention(params.year, params.conference || null);
@@ -3256,6 +3285,128 @@ function menuApplyRetentionsToDraft() {
 }
 
 /**
+ * Open the retention window for a year by seeding PENDING decision rows into
+ * DevyRetentionHistory — one per owned player (Drafted/Retained, not EnteredNFL)
+ * that doesn't already have a row for the year. This materializes the decision
+ * worklist in the sheet so the bot (and the commissioner) read the same thing.
+ * Run AFTER reconcile. Idempotent — re-running only adds newly-eligible players.
+ *
+ * @param {number} year - The retention/decision (league) year
+ * @param {string|null} conference - Limit to one conference, or null for all
+ * @returns {Object} Result with a seeded count
+ */
+function openRetentionWindow(year, conference) {
+  year = Number(year);
+  const confUpper = conference ? String(conference).toUpperCase() : null;
+
+  // Snapshot the ledger once: prior RETAIN count per PlayerID (for the rebate
+  // preview) and which PlayerIDs already have a row for this year.
+  const retSheet = getDevyRetentionHistorySheet();
+  const retData = retSheet.getDataRange().getValues();
+  const rc = {};
+  retData[0].forEach((h, i) => rc[h] = i);
+
+  const priorRetainByPlayer = {};
+  const rowedThisYear = new Set();
+  for (let i = 1; i < retData.length; i++) {
+    const pid = retData[i][rc["PlayerID"]];
+    if (Number(retData[i][rc["Year"]]) === year) rowedThisYear.add(pid);
+    const dec = String(retData[i][rc["Decision"]] || "RETAIN").toUpperCase();
+    if (dec === "RETAIN") priorRetainByPlayer[pid] = (priorRetainByPlayer[pid] || 0) + 1;
+  }
+
+  const poolSheet = getDevyPlayerPoolSheet();
+  const poolData = poolSheet.getDataRange().getValues();
+  const pc = {};
+  poolData[0].forEach((h, i) => pc[h] = i);
+
+  const teamNameCache = {};
+  const newRows = [];
+  for (let i = 1; i < poolData.length; i++) {
+    const row = poolData[i];
+    const status = row[pc["Status"]];
+    if (status !== "Drafted" && status !== "Retained") continue;
+    const conf = row[pc["Conference"]];
+    if (confUpper && String(conf).toUpperCase() !== confUpper) continue;
+    const playerId = row[pc["PlayerID"]];
+    if (rowedThisYear.has(playerId)) continue; // already seeded/decided for this year
+
+    const owner = String(
+      (status === "Retained" ? row[pc["RetainedBy"]] : row[pc["DraftedBy"]]) || ""
+    ).padStart(3, "0");
+    if (!owner || owner === "000") continue;
+
+    if (teamNameCache[owner] === undefined) {
+      const ti = getTeamInfoByFranchiseId(owner);
+      teamNameCache[owner] = ti ? ti.teamName : "";
+    }
+
+    const consecutiveYear = (priorRetainByPlayer[playerId] || 0) + 1;
+    const rebateRemaining = Math.max(0, 20 - 5 * (consecutiveYear - 1));
+
+    // Order must match DEVY_RETENTION_HISTORY_HEADERS
+    newRows.push([
+      year,
+      conf,
+      owner,
+      teamNameCache[owner],
+      playerId,
+      row[pc["PlayerName"]] || `${row[pc["LastName"]]}, ${row[pc["FirstName"]]}`,
+      row[pc["FirstName"]],
+      row[pc["LastName"]],
+      row[pc["Position"]],
+      consecutiveYear,     // preview
+      "",                  // PickUsed - assigned when the retain decision lands
+      20,                  // BaseRebate
+      rebateRemaining,     // preview
+      "",                  // IsRookie
+      new Date().toISOString(),
+      "PENDING"            // Decision
+    ]);
+  }
+
+  if (newRows.length > 0) {
+    const lastRow = retSheet.getLastRow();
+    retSheet.getRange(lastRow + 1, 1, newRows.length, DEVY_RETENTION_HISTORY_HEADERS.length).setValues(newRows);
+  }
+
+  return {
+    success: true,
+    message: `Opened retention window for ${year}: seeded ${newRows.length} PENDING decision(s).`,
+    seeded: newRows.length
+  };
+}
+
+/**
+ * Menu: open the retention window (seed PENDING decisions) for a year
+ */
+function menuOpenRetentionWindow() {
+  const ui = SpreadsheetApp.getUi();
+  const yearResponse = ui.prompt(
+    "Open Retention Window",
+    "Enter the retention year to open.\n\nSeeds a PENDING row in DevyRetentionHistory for every owned player. Run Reconcile first:",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (yearResponse.getSelectedButton() !== ui.Button.OK) return;
+  const year = parseInt(yearResponse.getResponseText().trim());
+  if (isNaN(year)) {
+    ui.alert("Invalid Input", "Please enter a valid year.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const confResponse = ui.prompt(
+    "Open Retention Window",
+    "Enter a conference code to limit to (or leave blank for all):",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (confResponse.getSelectedButton() !== ui.Button.OK) return;
+  const conference = confResponse.getResponseText().toUpperCase().trim() || null;
+
+  const result = openRetentionWindow(year, conference);
+  ui.alert("Open Retention Window", result.message, ui.ButtonSet.OK);
+}
+
+/**
  * Finalize the retention window for a year: every owned player (Drafted or
  * Retained) with no recorded decision is auto-retained up to the 2-per-team cap;
  * any beyond the cap is auto-released. Idempotent — players who already have a
@@ -3281,8 +3432,9 @@ function finalizeDevyRetention(year, conference) {
   for (let i = 1; i < retData.length; i++) {
     const row = retData[i];
     if (Number(row[rc["Year"]]) !== year) continue;
-    decided.add(row[rc["PlayerID"]]);
     const dec = String(row[rc["Decision"]] || "RETAIN").toUpperCase();
+    // PENDING rows are NOT decided - they're exactly what finalize resolves.
+    if (dec === "RETAIN" || dec === "RELEASE") decided.add(row[rc["PlayerID"]]);
     if (dec === "RETAIN") {
       const fid = String(row[rc["FranchiseID"]]).padStart(3, "0");
       existingRetainsByTeam[fid] = (existingRetainsByTeam[fid] || 0) + 1;

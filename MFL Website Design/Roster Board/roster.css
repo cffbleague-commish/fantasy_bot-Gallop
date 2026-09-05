@@ -1,0 +1,119 @@
+/* CFFB · Roster Board — module styles (extends cffb.css) */
+/* Responsive by CONTAINER width — the module adapts to the space MFL gives it,
+   not the browser window, so it works in any page column or phone. */
+#root{container-type:inline-size}
+.rb-wrap{max-width:1240px;margin:0 auto;padding:24px 24px 64px}
+.rb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.rb-head__title{font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1;text-transform:uppercase;letter-spacing:.01em;color:var(--fg-primary)}
+.rb-head__eyebrow{font:700 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.rb-head__meta{display:flex;align-items:center;gap:8px;font:600 11px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary)}
+.rb-head__meta .dot{width:5px;height:5px;border-radius:50%;background:var(--gold)}
+/* Conference tab strip + team dropdown */
+.rb-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:6px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;margin-bottom:16px}
+.rb-conftab{position:relative}
+.rb-conflogo{width:26px;height:26px;object-fit:contain;flex:none}
+.rb-caret{font-size:10px;color:var(--fg-tertiary);margin-left:2px}
+.rb-tab__cur{font:700 10px/1 var(--font-body);letter-spacing:.08em;color:var(--gold);background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.35);border-radius:2px;padding:3px 5px}
+.rb-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:150px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--bg-surface-elev);border:1px solid var(--border);border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.6)}
+.rb-menu--right{left:auto;right:0}
+.rb-menu__item{display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 9px;border-radius:3px;border:none;background:transparent;color:var(--fg-secondary);text-align:left;transition:background 120ms cubic-bezier(.2,.8,.2,1),color 120ms}
+.rb-menu__item:hover{background:var(--bg-surface-hover);color:var(--fg-primary)}
+.rb-menu__item.is-active{background:rgba(201,162,39,.08);color:var(--fg-primary);box-shadow:inset 2px 0 0 var(--gold)}
+.rb-menu__abbr{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+.rb-tab{display:flex;align-items:center;gap:8px;flex:none;cursor:pointer;padding:8px 12px 8px 8px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--fg-secondary);font:600 12px/1 var(--font-body);transition:background 140ms cubic-bezier(.2,.8,.2,1),color 140ms}
+.rb-tab:hover{background:var(--bg-surface-hover);color:var(--fg-primary)}
+.rb-tab.is-active{background:var(--bg-surface-elev);border-color:rgba(201,162,39,.5);color:var(--fg-primary)}
+.rb-tab__abbr{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+.rb-tab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
+/* Team summary card */
+.rb-team{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;border-top:3px solid var(--gold);margin-bottom:16px}
+.rb-team__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;text-transform:uppercase;color:var(--fg-primary)}
+.rb-team__owner{font:500 12px/1.4 var(--font-body);color:var(--fg-secondary)}
+.rb-team__kpis{display:flex;gap:24px;margin-left:auto;flex-wrap:wrap}
+.rb-kpi{display:flex;flex-direction:column;gap:5px;min-width:64px}
+.rb-kpi__label{font:700 9px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--fg-tertiary)}
+.rb-kpi__val{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;color:var(--fg-primary);font-variant-numeric:tabular-nums}
+.rb-kpi__val.is-gold{background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Roster table */
+.rb-table{background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow-x:auto}
+.rb-table>*{min-width:1100px}
+.rb-cols{display:grid;grid-template-columns:minmax(210px,1.5fr) 56px 150px 96px minmax(150px,1.2fr) 118px 76px 132px;gap:12px;align-items:center;padding:0 16px}
+.rb-thead{border-bottom:1px solid var(--border);background:var(--bg-surface-elev)}
+.rb-thead span{font:700 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);padding:11px 0;display:block}
+.rb-thead .t-r,.rb-row .t-r{text-align:right}
+.rb-group{display:flex;align-items:center;gap:10px;padding:9px 16px;background:#101010;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.rb-group:first-of-type{border-top:none}
+.rb-group__pos{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-primary)}
+.rb-group__bar{width:8px;height:16px;border-radius:1px}
+.rb-group__n{font:600 10px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.1em}
+.rb-group__pts{margin-left:auto;font:600 11px/1 var(--font-body);color:var(--fg-secondary);font-variant-numeric:tabular-nums}
+.rb-group--squad{border-top:1px dashed var(--border-strong,#3A3A3A);background:#0D0D0D;padding-top:12px;padding-bottom:12px}
+.rb-group--squad .rb-group__pos{color:var(--gold)}
+.rb-group--ir .rb-group__pos{color:#D88787}
+.rb-group__note{margin-left:auto;font:500 10.5px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.04em}
+.rb-inel{font:700 8px/1 var(--font-body);letter-spacing:.12em;color:#D88787;border:1px solid rgba(184,69,69,.5);border-radius:2px;padding:2px 4px;cursor:help}
+.rb-row{position:relative;padding-top:9px;padding-bottom:9px;border-bottom:1px solid rgba(42,42,42,.55);transition:background 140ms cubic-bezier(.2,.8,.2,1)}
+.rb-row:last-child{border-bottom:none}
+.rb-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transition:transform 140ms cubic-bezier(.2,.8,.2,1)}
+.rb-row:hover{background:var(--bg-surface-hover)}
+.rb-row:hover::before{transform:scaleY(1)}
+.rb-row.is-dim>*:not(.rb-cell-status){opacity:.55}
+/* Player cell */
+.rb-player{display:flex;align-items:center;gap:12px;min-width:0}
+.rb-photo{position:relative;width:40px;height:40px;flex:none;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;display:flex;align-items:center;justify-content:center}
+.rb-photo__bar{position:absolute;top:0;left:0;right:0;height:3px}
+.rb-photo__init{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.04em;color:#5A5A5A}
+.rb-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rb-pname{min-width:0}
+.rb-pname__name{display:flex;align-items:center;gap:7px;font-family:var(--font-display);font-weight:700;font-size:16px;line-height:1.1;text-transform:uppercase;color:var(--fg-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-pname__sub{font:500 10.5px/1.3 var(--font-body);color:var(--fg-tertiary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Medical redshirt eligibility dot */
+.cffb-elig__dot.is-rs-med{background:radial-gradient(circle,transparent 0 2.5px,var(--rs-medical,#D17575) 2.5px 100%)}
+/* Status (injury / redshirt-now) tags */
+.rb-status{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:2px;border:1px solid var(--border);color:var(--fg-secondary);cursor:help}
+.rb-status .d{width:6px;height:6px;border-radius:50%;flex:none}
+.rb-status--ok{border-color:rgba(45,122,78,.4);color:#4A9968}
+.rb-status--q{border-color:rgba(201,162,39,.45);color:var(--gold)}
+.rb-status--o{border-color:rgba(184,69,69,.55);color:#D88787}
+.rb-status--rs{border-color:rgba(201,162,39,.35);color:var(--gold);background:rgba(201,162,39,.06)}
+.rb-none{color:var(--fg-tertiary)}
+.rb-mob-status{display:none}
+/* Points */
+.rb-pts{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--fg-primary);font-variant-numeric:tabular-nums}
+.rb-pts.is-zero{color:var(--fg-tertiary)}
+/* Other copy cell — logo pill only */
+.rb-copy{display:inline-flex;align-items:center;cursor:pointer;border-radius:15px;transition:filter 140ms cubic-bezier(.2,.8,.2,1)}
+.rb-copy:hover{filter:brightness(1.15)}
+.rb-foot{display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;font:500 10.5px/1.5 var(--font-body);color:var(--fg-tertiary);border-top:1px solid var(--border)}
+@container (max-width:720px){
+.rb-wrap{padding:16px 12px 48px}
+.rb-head__title{font-size:28px}
+.rb-team__kpis{margin-left:0;width:100%;justify-content:space-between;gap:12px}
+.rb-table>*{min-width:0}
+.rb-thead.rb-cols{display:none}
+.rb-cols{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.rb-row{padding:10px 12px}
+.rb-player{width:100%;padding-right:70px;gap:10px}
+.rb-photo{width:32px;height:32px}
+.rb-photo__init{font-size:11px}
+.rb-pname__name{font-size:15px}
+.rb-pts{position:absolute;top:11px;right:12px;font-size:15px}
+.rb-pts::after{content:" pts";font:600 9px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.08em}
+.rb-group__note{display:none}
+/* Condensed award badges: glyph + year only */
+.cffb-award__name{display:none}
+.cffb-awards--sm .cffb-award{padding:3px 6px;gap:4px}
+.rb-status{padding:3px 6px;font-size:9px}
+.cffb-elig__class{font-size:10px}
+/* Other-copy pill drops off on small screens */
+.rb-cell-copy{display:none}
+/* Status tag moves up beside the player name */
+.rb-cell-status{display:none}
+.rb-mob-status{display:inline-flex;margin-left:2px}
+/* Condensed conference tabs: logo + caret only (active keeps team abbr chip) */
+.rb-tabs{gap:4px;padding:4px}
+.rb-tab{padding:7px 8px;gap:5px}
+.rb-tab .rb-tab__abbr{display:none}
+.rb-conflogo{width:24px;height:24px}
+.rb-team__name{font-size:22px}
+}

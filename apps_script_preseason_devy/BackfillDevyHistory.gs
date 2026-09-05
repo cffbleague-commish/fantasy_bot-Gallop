@@ -210,79 +210,63 @@ function importHistoricalPicks(dryRun = false) {
     // Parse player name into first/last
     const { firstName, lastName } = parsePlayerName(playerName);
 
-    // Calculate the original draft year
-    // If player was retained, the draft happened (yearsRetained) years ago
-    const numRetentions = Math.max(yearsRetained, wasRecruited ? 1 : 0);
-    const originalDraftYear = numRetentions > 0 ? year - numRetentions : year;
-
-    // Generate a player ID for historical records using original draft year
-    const playerId = generateHistoricalPlayerId(conference, firstName, lastName, originalDraftYear);
+    // Each CSV row is a single LEAGUE-YEAR event. The retention count comes from
+    // "Years Retained" only (the Recruited column's meaning is unconfirmed, so it no
+    // longer bumps the count). Use the CSV Year directly - no back-calculation.
+    const numRetentions = yearsRetained;
+    const playerId = generateHistoricalPlayerId(conference, firstName, lastName, year);
 
     // PlayerName in MFL format: "LastName, FirstName"
     const playerNameMFL = `${lastName}, ${firstName}`;
 
-    // Create history row - use ORIGINAL draft year, not the CSV year
-    // Headers: Year, Conference, Round, Pick, OverallPick, FranchiseID, TeamName,
-    //          PlayerID, PlayerName, PlayerFirstName, PlayerLastName, PlayerPosition, IsRookie, Timestamp
-    historyRows.push([
-      originalDraftYear,  // Use original draft year when player was first drafted
-      conference,
-      round,
-      pick,
-      overallPick,
-      franchiseId,  // May be empty - user can update manually
-      teamName,     // Always populated with original school name
-      playerId,
-      playerNameMFL,  // MFL format for matching with RookieLedger
-      firstName,
-      lastName,
-      position,
-      "",             // IsRookie - populated by IMPORTRANGE formula
-      `${originalDraftYear}-01-01T00:00:00Z`  // Use original draft year as historical timestamp
-    ]);
+    if (numRetentions >= 1) {
+      // A retention exercised in league year `year` (the player's Nth retention).
+      // Record a RETAIN decision at the CSV Year ONLY - the original draft is its own
+      // Years-Retained=0 CSV row, so we don't fabricate a draft row here. PickUsed
+      // comes from the CSV pick's round.
+      const rebateRemaining = Math.max(0, 20 - 5 * (numRetentions - 1));
 
-    // Create retention rows if player was retained
-    // For historical data, "Years Retained" indicates how many times the player
-    // was retained BEFORE the current year shown in the CSV.
-    //
-    // Example: Year=2025, YearsRetained=2 means:
-    //   - Original draft year: 2023 (2025 - 2)
-    //   - 1st retention: 2024 (ConsecutiveYear=1)
-    //   - 2nd retention: 2025 (ConsecutiveYear=2)
-    //
-    // Note: The draft pick row above already uses the ORIGINAL draft year.
-    if (numRetentions > 0) {
-      const baseRebate = 20;
-      // originalDraftYear already calculated above
-
-      for (let retYear = 1; retYear <= numRetentions; retYear++) {
-        // Retention year is original draft year + retention number
-        const retentionYear = originalDraftYear + retYear;
-        const rebateRemaining = Math.max(0, baseRebate - (5 * (retYear - 1)));
-        const pickUsed = "Round 2";  // Assume Round 2 for historical (single retention)
-
-        // Headers: Year, Conference, FranchiseID, TeamName, PlayerID, PlayerName,
-        //          PlayerFirstName, PlayerLastName, PlayerPosition, ConsecutiveYear,
-        //          PickUsed, BaseRebate, RebateRemaining, IsRookie, Timestamp, Decision
-        retentionRows.push([
-          retentionYear,
-          conference,
-          franchiseId,
-          teamName,
-          playerId,
-          playerNameMFL,
-          firstName,
-          lastName,
-          position,
-          retYear,           // ConsecutiveYear
-          pickUsed,
-          baseRebate,
-          rebateRemaining,
-          "",                // IsRookie - populated by formula
-          `${retentionYear}-01-01T00:00:00Z`,
-          "RETAIN"           // Decision (all historical rows are retentions)
-        ]);
-      }
+      // Headers: Year, Conference, FranchiseID, TeamName, PlayerID, PlayerName,
+      //          PlayerFirstName, PlayerLastName, PlayerPosition, ConsecutiveYear,
+      //          PickUsed, BaseRebate, RebateRemaining, IsRookie, Timestamp, Decision
+      retentionRows.push([
+        year,
+        conference,
+        franchiseId,
+        teamName,
+        playerId,
+        playerNameMFL,
+        firstName,
+        lastName,
+        position,
+        numRetentions,       // ConsecutiveYear = Years Retained
+        `Round ${round}`,    // PickUsed from the CSV pick
+        20,                  // BaseRebate
+        rebateRemaining,
+        "",                  // IsRookie - populated by formula
+        `${year}-01-01T00:00:00Z`,
+        "RETAIN"
+      ]);
+    } else {
+      // Original draft (Years Retained = 0): one draft-history row at the CSV Year.
+      // Headers: Year, Conference, Round, Pick, OverallPick, FranchiseID, TeamName,
+      //          PlayerID, PlayerName, PlayerFirstName, PlayerLastName, PlayerPosition, IsRookie, Timestamp
+      historyRows.push([
+        year,
+        conference,
+        round,
+        pick,
+        overallPick,
+        franchiseId,  // May be empty - user can update manually
+        teamName,     // Always populated with original school name
+        playerId,
+        playerNameMFL,  // MFL format for matching with RookieLedger
+        firstName,
+        lastName,
+        position,
+        "",             // IsRookie - populated by IMPORTRANGE formula
+        `${year}-01-01T00:00:00Z`
+      ]);
     }
   }
 
@@ -305,18 +289,20 @@ function importHistoricalPicks(dryRun = false) {
   }
 
   // Actually import the data
-  if (historyRows.length === 0) {
+  if (historyRows.length === 0 && retentionRows.length === 0) {
     return {
       success: false,
       message: "No valid rows to import"
     };
   }
 
-  // Import draft history
-  const historySheet = getDevyDraftHistorySheet();
-  const lastHistoryRow = historySheet.getLastRow();
-  const numHistoryCols = historyRows[0].length;  // 14 columns with PlayerName and IsRookie
-  historySheet.getRange(lastHistoryRow + 1, 1, historyRows.length, numHistoryCols).setValues(historyRows);
+  // Import draft history (original-draft rows)
+  if (historyRows.length > 0) {
+    const historySheet = getDevyDraftHistorySheet();
+    const lastHistoryRow = historySheet.getLastRow();
+    const numHistoryCols = historyRows[0].length;  // 14 columns with PlayerName and IsRookie
+    historySheet.getRange(lastHistoryRow + 1, 1, historyRows.length, numHistoryCols).setValues(historyRows);
+  }
 
   // Import retention history (if any)
   let retentionsImported = 0;
@@ -786,7 +772,7 @@ function menuClearYearFromHistory() {
 
   const yearResponse = ui.prompt(
     "Clear Year",
-    "Enter the year to clear from DevyDraftHistory:\n\n(This cannot be undone!)",
+    "Enter the year to clear from BOTH DevyDraftHistory and DevyRetentionHistory:\n\n(This cannot be undone!)",
     ui.ButtonSet.OK_CANCEL
   );
 
@@ -800,30 +786,14 @@ function menuClearYearFromHistory() {
 
   const confirm = ui.alert(
     "Confirm Delete",
-    `Are you sure you want to delete ALL picks from ${year}?\n\nThis cannot be undone!`,
+    `Are you sure you want to delete ALL ${year} rows from DevyDraftHistory AND DevyRetentionHistory?\n\nThis cannot be undone!`,
     ui.ButtonSet.YES_NO
   );
 
   if (confirm !== ui.Button.YES) return;
 
-  const historySheet = getDevyDraftHistorySheet();
-  const data = historySheet.getDataRange().getValues();
-  const headers = data[0];
-  const yearCol = headers.indexOf("Year");
-
-  let deleted = 0;
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (Number(data[i][yearCol]) === year) {
-      historySheet.deleteRow(i + 1);
-      deleted++;
-    }
-  }
-
-  ui.alert(
-    "Clear Complete",
-    `Deleted ${deleted} picks from ${year}.`,
-    ui.ButtonSet.OK
-  );
+  const result = clearYearFromHistory(year);
+  ui.alert("Clear Complete", result.message, ui.ButtonSet.OK);
 }
 
 // ============================================================================
@@ -899,23 +869,29 @@ function getHistoryStats() {
  * Clear a year from history programmatically
  */
 function clearYearFromHistory(year) {
-  const historySheet = getDevyDraftHistorySheet();
-  const data = historySheet.getDataRange().getValues();
-  const headers = data[0];
-  const yearCol = headers.indexOf("Year");
-
-  let deleted = 0;
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (Number(data[i][yearCol]) === Number(year)) {
-      historySheet.deleteRow(i + 1);
-      deleted++;
+  const deletedBySheet = (sheet) => {
+    const data = sheet.getDataRange().getValues();
+    const yearCol = data[0].indexOf("Year");
+    if (yearCol === -1) return 0;
+    let n = 0;
+    for (let i = data.length - 1; i >= 1; i--) {
+      if (Number(data[i][yearCol]) === Number(year)) {
+        sheet.deleteRow(i + 1);
+        n++;
+      }
     }
-  }
+    return n;
+  };
+
+  // Clear BOTH histories for the year so a corrected re-import doesn't duplicate.
+  const draftDeleted = deletedBySheet(getDevyDraftHistorySheet());
+  const retentionDeleted = deletedBySheet(getDevyRetentionHistorySheet());
 
   return {
     success: true,
-    message: `Deleted ${deleted} picks from ${year}`,
-    deleted
+    message: `Deleted ${draftDeleted} draft row(s) and ${retentionDeleted} retention row(s) from ${year}`,
+    deleted: draftDeleted,
+    retentionDeleted
   };
 }
 

@@ -164,6 +164,7 @@ function buildPlayerLedger(playerId) {
   const copyRows = (plReadCopiesGrouped()[id] || []);
   const txnsByCopy = plReadTransactionsGrouped(id);     // copyId -> [events sorted]
   const awardsByCopy = plReadAwardsGrouped(id);         // copyId -> [award objs]
+  const retsByCopy = plReadRetentionsGrouped(id);       // copyId -> [retention objs]
 
   // Name comes from PlayerCopies (RookieLedger name is often blank); position
   // falls back to the Awards tab if RookieLedger has none.
@@ -173,7 +174,11 @@ function buildPlayerLedger(playerId) {
   // Assemble each copy: compact events (auction/redshirt/drop) + its own awards.
   const copies = copyRows.map(function (c) {
     const events = (txnsByCopy[c.copyId] || []).map(function (ev) { return ev.tuple; });
-    return { conf: c.conf, n: c.n, events: events, awards: awardsByCopy[c.copyId] || [] };
+    return {
+      conf: c.conf, n: c.n, events: events, awards: awardsByCopy[c.copyId] || [],
+      declaredEarly: !!c.declaredEarly, declarationYear: c.declarationYear || null,
+      retentions: retsByCopy[c.copyId] || []
+    };
   }).sort(function (a, b) {
     const ci = PL_CONF_ORDER.indexOf(a.conf) - PL_CONF_ORDER.indexOf(b.conf);
     return ci !== 0 ? ci : (a.n - b.n);
@@ -213,16 +218,21 @@ function plSheet(name) {
 }
 
 // Header-tolerant column ids (the live sheet's spellings vary from the writer's).
-const PL_H_PLAYERID = ["MFL_Player_ID", "MFL Player ID", "MFLPlayerID", "PlayerID", "Player ID", "MFL_ID"];
+const PL_H_PLAYERID = ["MFL_Player_ID", "MFL Player ID", "MFLPlayerID", "PlayerID", "PlayerId", "Player ID", "MFL_ID"];
 const PL_H_NAME     = ["PlayerName", "Player Name", "Name", "Player"];
 const PL_H_POS      = ["Position", "Pos"];
 const PL_H_TEAM     = ["NFLTeam", "NFL Team", "Team", "NFL_Team"];
 const PL_H_YEAR     = ["RookieLeagueYear", "Rookie League Year", "RookieYear", "Year", "LeagueYear"];
-const PL_H_COPYID   = ["PlayerCopyID", "Player Copy ID", "CopyID", "Copy ID"];
+const PL_H_COPYID   = ["PlayerCopyID", "Player Copy ID", "CopyId", "CopyID", "Copy ID"];
 const PL_H_CONF     = ["Conference", "Conf"];
-const PL_H_CURFID   = ["CurrentFranchiseID", "Current Franchise ID", "FranchiseID", "Franchise ID"];
+const PL_H_CURFID   = ["CurrentFranchiseID", "Current Franchise ID", "FranchiseID", "FranchiseId", "Franchise ID"];
 const PL_H_NATL     = ["NationalAwards", "National Awards"];
 const PL_H_ALLCONF  = ["AllConferenceAwards", "All Conference Awards", "AllConfAwards"];
+const PL_H_DECLARED = ["DeclaredEarly", "Declared Early", "Declared"];
+const PL_H_DECLYEAR = ["DeclarationYear", "Declaration Year", "DeclareYear"];
+const PL_H_RETDEC   = ["Decision", "RetentionDecision", "Retention Decision"];
+const PL_H_RETPATH  = ["RetentionPath", "Retention Path", "Path"];
+const PL_H_RETCOST  = ["RetentionCost", "Retention Cost", "Cost"];
 
 function plReadRookieLedger() {
   const sheet = plSheet(getConfig().sheets.rookieLedger);
@@ -270,7 +280,9 @@ function plReadCopiesGrouped() {
       currentFid: normalizeId(cellStr(row, idx, PL_H_CURFID)) || "",
       name: cellStr(row, idx, PL_H_NAME).trim(),
       nationalAwards: Number(cellStr(row, idx, PL_H_NATL)) || 0,
-      allConfAwards: Number(cellStr(row, idx, PL_H_ALLCONF)) || 0
+      allConfAwards: Number(cellStr(row, idx, PL_H_ALLCONF)) || 0,
+      declaredEarly: asBool(cellStr(row, idx, PL_H_DECLARED)),
+      declarationYear: Number(cellStr(row, idx, PL_H_DECLYEAR)) || null
     });
   });
   return out;
@@ -371,6 +383,37 @@ function plReadAwardsGrouped(playerId) {
     if (!award) return;
     if (!out[copyId]) out[copyId] = [];
     out[copyId].push(award);
+  });
+  return out;
+}
+
+// copyId -> [ { year, decision, path, cost, fid } ] from RetentionHistory
+// (the append-only source of truth for retain/release/auto-retain decisions).
+function plReadRetentionsGrouped(playerId) {
+  const sheet = plSheet(getConfig().sheets.retentionHistory);
+  const out = {};
+  if (!sheet) return out;
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return out;
+  const idx = headerIndexMap(data[0].map(String));
+  const rows = [];
+  data.slice(1).forEach(function (row) {
+    if (cellStr(row, idx, PL_H_PLAYERID).trim() !== playerId) return;
+    const copyId = cellStr(row, idx, PL_H_COPYID).trim();
+    if (!copyId) return;
+    rows.push({
+      copyId: copyId,
+      year: Number(cellStr(row, idx, PL_H_YEAR)) || 0,
+      decision: cellStr(row, idx, PL_H_RETDEC).trim().toUpperCase(),
+      path: cellStr(row, idx, PL_H_RETPATH).trim(),
+      cost: Number(cellStr(row, idx, PL_H_RETCOST)) || 0,
+      fid: normalizeId(cellStr(row, idx, PL_H_CURFID))
+    });
+  });
+  rows.sort(function (a, b) { return a.year - b.year; });
+  rows.forEach(function (r) {
+    if (!out[r.copyId]) out[r.copyId] = [];
+    out[r.copyId].push({ year: r.year, decision: r.decision, path: r.path, cost: r.cost, fid: r.fid });
   });
   return out;
 }

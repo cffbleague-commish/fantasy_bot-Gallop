@@ -206,7 +206,7 @@ const ProfileCompact = ({ p, roll, accentColor }) => (
 );
 
 // ============================================================ TRANSACTION TIMELINE
-const TXN_LABEL = { won: 'WON', rs: 'REDSHIRT', 'rs-med': 'MEDICAL RS', award: 'HONOR', graduate: 'GRADUATED', drop: 'RELEASED' };
+const TXN_LABEL = { won: 'WON', rs: 'REDSHIRT', 'rs-med': 'MEDICAL RS', award: 'HONOR', graduate: 'GRADUATED', drop: 'RELEASED', retain: 'RETAINED', release: 'NOT RETAINED', declare: 'DECLARED' };
 // Small gold marker shown on a copy that earned a player award while held.
 const HonorsStar = ({ n }) => (
   <span className="pl-honors" title={`${n} player ${n === 1 ? 'award' : 'awards'} earned while held`}>★{n > 1 ? n : ''}</span>
@@ -235,6 +235,7 @@ const TransactionTimeline = ({ copy, accentColor, showOwners }) => (
                 </span>
                 <span className="pl-tlitem__detail">
                   {e.type === 'auction' && <Money n={e.price} />}
+                  {e.type === 'retain' && e.cost > 0 && <Money n={e.cost} />}
                   {e.type === 'redshirt' && <RedshirtChip rsType={e.rsType} size="sm" />}
                   {e.type === 'award' && <Awards awards={[e.award]} size="sm" />}
                 </span>

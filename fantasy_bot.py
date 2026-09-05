@@ -7070,9 +7070,10 @@ def log_devy_retention(player_id: str, conference: str, franchise_id: str,
         print(f"Could not resolve team name for franchise {normalized_id}: {e}")
 
     player_name_mfl = f"{last_name}, {first_name}"
+    timestamp = datetime.utcnow().isoformat()
 
     # Order must match DEVY_RETENTION_HISTORY_HEADERS in DevyDraft.gs
-    devy_retention_history_ws.append_row([
+    full_row = [
         retention_year,        # Year
         conference,
         normalized_id,         # FranchiseID
@@ -7087,9 +7088,43 @@ def log_devy_retention(player_id: str, conference: str, franchise_id: str,
         base_rebate,           # BaseRebate
         rebate_remaining,      # RebateRemaining
         "",                    # IsRookie - populated by IMPORTRANGE formula
-        datetime.utcnow().isoformat(),  # Timestamp
+        timestamp,             # Timestamp
         decision,              # Decision (RETAIN / RELEASE)
-    ])
+    ]
+
+    # Upsert: one row per (PlayerID, Year). If the retention window seeded a PENDING
+    # row for this player/year, update it in place (keeps the worklist tidy in the
+    # sheet); otherwise append.
+    try:
+        records = devy_retention_history_ws.get_all_records(expected_headers=[])
+    except Exception as e:
+        print(f"Could not read DevyRetentionHistory for upsert: {e}")
+        records = []
+
+    target_row = None
+    for idx, r in enumerate(records, start=2):
+        if r.get("PlayerID") == player_id and str(r.get("Year")) == str(retention_year):
+            target_row = idx
+            break
+
+    if target_row is None:
+        devy_retention_history_ws.append_row(full_row)
+        return
+
+    # Update the decision-related cells on the existing row (leave identity cells).
+    header = devy_retention_history_ws.row_values(1)
+    updates = {
+        "TeamName": team_name,
+        "ConsecutiveYear": consecutive_year,
+        "PickUsed": pick_used,
+        "BaseRebate": base_rebate,
+        "RebateRemaining": rebate_remaining,
+        "Timestamp": timestamp,
+        "Decision": decision,
+    }
+    for name, val in updates.items():
+        if name in header:
+            devy_retention_history_ws.update_cell(target_row, header.index(name) + 1, val)
 
 
 def retain_devy_player(player_id: str, franchise_id: str, retention_year: int):
@@ -7711,8 +7746,11 @@ def finalize_devy_retention(year, conference=None):
         for r in devy_retention_history_ws.get_all_records(expected_headers=[]):
             if str(r.get("Year")) != str(year):
                 continue
-            decided.add(r.get("PlayerID"))
-            if str(r.get("Decision") or "RETAIN").upper() == "RETAIN":
+            dec = str(r.get("Decision") or "RETAIN").upper()
+            # PENDING rows are NOT decided - finalize is exactly what resolves them.
+            if dec in ("RETAIN", "RELEASE"):
+                decided.add(r.get("PlayerID"))
+            if dec == "RETAIN":
                 fid = str(r.get("FranchiseID")).zfill(3)
                 existing_retains_by_team[fid] = existing_retains_by_team.get(fid, 0) + 1
     except Exception as e:
@@ -8818,6 +8856,42 @@ def get_teams_with_drafted_devy_players(conference: str = None):
         return {}
 
 
+def get_pending_retention_by_team(year, conference: str = None):
+    """Read PENDING retention rows for a year from DevyRetentionHistory, grouped by
+    franchise. This is the worklist seeded by the sheet's 'Open Retention Window' menu
+    (after Reconcile) — the bot DMs exactly what the sheet shows, no on-the-fly guess."""
+    if devy_retention_history_ws is None:
+        return {}
+    conf_upper = conference.upper() if conference else None
+    teams = {}
+    try:
+        for r in devy_retention_history_ws.get_all_records(expected_headers=[]):
+            if str(r.get("Year")) != str(year):
+                continue
+            if str(r.get("Decision") or "").upper() != "PENDING":
+                continue
+            row_conf = r.get("Conference", "")
+            if conf_upper and str(row_conf).upper() != conf_upper:
+                continue
+            fid = str(r.get("FranchiseID", "")).zfill(3)
+            if not fid or fid == "000":
+                continue
+            teams.setdefault(fid, []).append({
+                "playerId": r.get("PlayerID"),
+                "conference": row_conf,
+                "firstName": r.get("PlayerFirstName"),
+                "lastName": r.get("PlayerLastName"),
+                "position": r.get("PlayerPosition"),
+                "year": r.get("Year"),
+                "status": "PENDING",
+                "draftYear": "",
+            })
+        return teams
+    except Exception as e:
+        print(f"Error reading pending retention worklist: {e}")
+        return {}
+
+
 @devy.command(name="retention_start", description="[Commish] Start the retention process - DMs all team owners")
 @app_commands.describe(
     year="The retention year (e.g., 2026)",
@@ -8838,11 +8912,14 @@ async def devy_retention_start(interaction: discord.Interaction, year: int, conf
 
     target_conference = conference.upper() if conference else None
 
-    # Get all teams with drafted players
-    teams_with_players = get_teams_with_drafted_devy_players(target_conference)
+    # Read the PENDING worklist seeded in the sheet (via Open Retention Window).
+    teams_with_players = get_pending_retention_by_team(year, target_conference)
 
     if not teams_with_players:
-        await interaction.followup.send(f"No teams have drafted devy players{f' in {target_conference}' if target_conference else ''}.")
+        await interaction.followup.send(
+            f"No **PENDING** retention decisions for {year}{f' in {target_conference}' if target_conference else ''}.\n"
+            f"In the sheet, run **🔒 Player Retention → Open Retention Window** (after Reconcile) to seed the worklist, then try again."
+        )
         return
 
     # Get team info and owner Discord IDs
