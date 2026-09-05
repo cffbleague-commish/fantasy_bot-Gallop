@@ -267,15 +267,44 @@ async function fetchJSON(type, extra) {
 }
 const asArray = (x) => (Array.isArray(x) ? x : x != null ? [x] : []);
 
-// Injuries are a GLOBAL NFL feed — no league id, and MFL wants the week. Build
-// its URL separately so a stray &L= or missing &W= can't make MFL error out
-// (which the caller's .catch() would silently turn into "no injuries").
-async function fetchInjuries() {
-  const wk = parseInt(window.currentWeek, 10);
+// Best-effort current NFL week from the browser clock (MFL's injuries export is
+// week-specific and the page exposes no reliable week global). Week 1 ~ the
+// first Tuesday of September of the page's season.
+function guessNflWeek() {
+  try {
+    const now = new Date();
+    const y = SEASON;
+    const sep1 = new Date(y, 8, 1);
+    const firstTue = new Date(y, 8, 1 + ((2 - sep1.getDay() + 7) % 7));
+    const wk = Math.floor((now - firstTue) / (7 * 864e5)) + 1;
+    return Math.min(Math.max(wk, 1), 18);
+  } catch (e) { return 0; }
+}
+
+// Injuries are a GLOBAL NFL feed — no league id, week-specific. Build its URL
+// separately (a stray &L= can make MFL error, which the caller's .catch() would
+// silently turn into "no injuries"). Try MFL's current-week default first; if
+// that comes back empty, retry with a browser-computed week.
+async function fetchInjuriesForWeek(wk) {
   const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=injuries${wk ? '&W=' + wk : ''}&JSON=1`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status + ' for injuries');
   return res.json();
+}
+async function fetchInjuries() {
+  let d = await fetchInjuriesForWeek(0);
+  let list = asArray(d && d.injuries && d.injuries.injury);
+  if (!list.length) {
+    const wk = guessNflWeek();
+    if (wk) {
+      console.log('[CFFB Roster Board] injuries default week empty — retrying week ' + wk);
+      try {
+        const d2 = await fetchInjuriesForWeek(wk);
+        if (asArray(d2 && d2.injuries && d2.injuries.injury).length) d = d2;
+      } catch (e) { /* keep the default response */ }
+    }
+  }
+  return d;
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
@@ -327,6 +356,10 @@ async function rbFetchPayload(fidToAbbr) {
     if (code && playersById[inj.id]) { playersById[inj.id].injury = [code, inj.details || inj.status || '']; injMatched++; }
   });
   console.log('[CFFB Roster Board] injuries feed: ' + injList.length + ' entries, ' + injMatched + ' matched to known players');
+  if (!injList.length) {
+    console.log('[CFFB Roster Board] injuries raw shape:', injuriesD ? Object.keys(injuriesD) : injuriesD,
+      injuriesD && injuriesD.injuries ? Object.keys(injuriesD.injuries) : '(no .injuries)');
+  }
 
   // Membership + encoded contract per copy.
   const rosterMembers = {};   // abbr -> [{pid,status,rawEnc}]
