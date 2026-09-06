@@ -1047,6 +1047,41 @@
 .rb-copy-badge{display:inline-flex;align-items:center;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.08em;color:var(--fg-tertiary,#6A6A66);border:1px solid var(--border,#262629);border-radius:2px;padding:3px 5px}
 #cffb-rb-root .rb-copy .cffb-team{height:20px;width:auto;max-width:110px;object-fit:contain}
 .rb-flag{display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#E8C547;cursor:help;flex:none}
+#cffb-rb-root .rb-manage-btn{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+#cffb-rb-root .rb-manage-btn:hover{filter:brightness(1.07)}
+.rb-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;background:rgba(0,0,0,.66);overflow-y:auto}
+.rb-modal__box{width:100%;max-width:560px;background:var(--bg-surface,#141414);border:1px solid var(--border,#2A2A2A);border-top:3px solid var(--gold,#C9A227);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.rb-modal__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 8px}
+.rb-modal__eyebrow{font:700 9px/1 var(--font-body,sans-serif);letter-spacing:.2em;text-transform:uppercase;color:var(--gold,#C9A227);margin-bottom:7px}
+.rb-modal__title{font-family:var(--font-display,sans-serif);font-weight:700;font-size:22px;line-height:1;text-transform:uppercase;color:var(--fg-primary,#F5F5F5)}
+#cffb-rb-root .rb-modal__x{cursor:pointer;background:transparent;border:none;color:var(--fg-secondary,#9A9A9A);font-size:18px;line-height:1;padding:4px 6px;border-radius:4px}
+#cffb-rb-root .rb-modal__x:hover{color:var(--fg-primary,#F5F5F5);background:var(--bg-surface-hover,#1F1F1F)}
+.rb-modal__note{padding:0 20px 12px;font:500 11px/1.5 var(--font-body,sans-serif);color:var(--fg-tertiary,#6A6A66)}
+.rb-mng__load{padding:24px 20px;text-align:center;font:500 12px/1.4 var(--font-body,sans-serif);color:var(--fg-secondary,#9A9A9A)}
+.rb-mng__load--err{color:#D88787}
+.rb-mng__result{margin:0 20px 12px;padding:10px 12px;border-radius:6px;font:600 12px/1.4 var(--font-body,sans-serif)}
+.rb-mng__result.is-ok{color:#8FCBA4;background:rgba(45,122,78,.12);border:1px solid rgba(45,122,78,.4)}
+.rb-mng__result.is-err{color:#E4A6A6;background:rgba(184,69,69,.12);border:1px solid rgba(184,69,69,.45)}
+.rb-mng__confirm{margin:0 20px 12px;padding:12px;border-radius:6px;background:var(--bg-surface-elev,#1C1C1C);border:1px solid var(--gold,#C9A227);display:flex;flex-direction:column;gap:10px}
+.rb-mng__confirm-txt{font:600 13px/1.4 var(--font-body,sans-serif);color:var(--fg-primary,#F5F5F5);display:flex;flex-direction:column;gap:4px}
+.rb-mng__warn{font:500 11px/1.4 var(--font-body,sans-serif);color:var(--gold-light,#E8C547)}
+.rb-mng__confirm-btns{display:flex;gap:8px}
+.rb-mng__body{padding:0 20px 20px}
+.rb-mng__sec{margin-top:14px}
+.rb-mng__sechead{display:flex;align-items:center;gap:8px;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary,#6A6A66);padding-bottom:8px;border-bottom:1px solid var(--border,#2A2A2A);margin-bottom:6px}
+.rb-mng__sechead span{color:var(--fg-secondary,#9A9A9A)}
+.rb-mng__row{display:flex;align-items:center;gap:12px;padding:7px 0}
+.rb-mng__id{min-width:0;flex:1}
+.rb-mng__name{font-family:var(--font-display,sans-serif);font-weight:700;font-size:14px;line-height:1.1;text-transform:uppercase;color:var(--fg-primary,#F5F5F5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-mng__sub{font:500 10.5px/1.3 var(--font-body,sans-serif);color:var(--fg-tertiary,#6A6A66);margin-top:2px}
+.rb-mng__acts{display:flex;gap:6px;flex:none;align-items:center}
+.rb-mng__none{font:600 10px/1 var(--font-body,sans-serif);color:var(--fg-tertiary,#5A5A5A);letter-spacing:.08em}
+#cffb-rb-root .rb-mbtn{cursor:pointer;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-primary,#F5F5F5);background:var(--bg-surface-elev,#1C1C1C);border:1px solid var(--border-strong,#3A3A3A);border-radius:4px;padding:8px 11px;white-space:nowrap;transition:filter 120ms}
+#cffb-rb-root .rb-mbtn:hover{filter:brightness(1.15)}
+#cffb-rb-root .rb-mbtn:disabled{opacity:.5;cursor:default}
+#cffb-rb-root .rb-mbtn--taxi{border-color:rgba(201,162,39,.55);color:var(--gold-light,#E8C547)}
+#cffb-rb-root .rb-mbtn--ir{border-color:rgba(184,69,69,.55);color:#D88787}
+#cffb-rb-root .rb-mbtn--go{background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));color:#0A0A0A;border-color:transparent}
 </style>
 <div id="cffb-rb-root"></div>
 <script>
@@ -1162,10 +1197,13 @@ const normPos = pos => POS_MAP[(pos || '').toUpperCase()] || 'WR';
 let SEASON = 2026;
 let THRU_WEEK = 1;
 let MY_TEAM = null;
+let MY_FID = ''; // signed-in franchise id ('' or '0000' = commissioner → no writes)
+let FID_TO_ABBR = {}; // retained so reloads after a roster move can rebuild
 let TEAMS = {};
 let TEAM_ORDER = [];
 let MFL_CTX = {
   origin: '',
+  host: '',
   year: '2026',
   league: '12011'
 };
@@ -1175,7 +1213,11 @@ let ROSTER_MEMBERS = {}; // teamAbbr -> [ { pid, status, enc } ]
 let MEMBERSHIP = {}; // pid -> [teamAbbr, ...]
 let BYE_BY_TEAM = {}; // NFL team abbr -> bye week (fallback when a player lacks bye_week)
 
-const MFL_PLAYER_LINK = pid => `${MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
+// MFL's export *API* answers on any host, but league *pages* (/player, etc.) are
+// bound to the league's numbered server (e.g. www46). Building the link from a
+// custom domain or the generic balancer yields a 403 "Forbidden" page, so target
+// the resolved numbered host (MFL_CTX.host), falling back to origin.
+const MFL_PLAYER_LINK = pid => `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
 // MFL player headshot (confirmed live path, same as the Player Ledger):
 // /player_photos_2014/{id}_thumb.jpg. Missing photos error out → initials show.
 const PLAYER_PHOTO = pid => `https://www46.myfantasyleague.com/player_photos_2014/${pid}_thumb.jpg`;
@@ -1383,16 +1425,38 @@ function buildRoster(teamAbbr) {
 }
 
 // ── MFL context + franchise directory ────────────────────────────────────────
+// MFL league pages must be requested on the league's numbered server. Prefer
+// location.origin when it already is one (https://wwwNN.myfantasyleague.com);
+// otherwise sniff the numbered host from any MFL asset the page has loaded
+// (its own script/link/img/anchor URLs); finally fall back to origin.
+const MFL_HOST_RE = /^https?:\/\/www\d+\.myfantasyleague\.com/i;
+function resolveMflHost(origin) {
+  try {
+    const om = String(origin).match(MFL_HOST_RE);
+    if (om) return om[0];
+    if (typeof document !== 'undefined' && document.querySelectorAll) {
+      const nodes = document.querySelectorAll('script[src],link[href],img[src],a[href]');
+      for (let i = 0; i < nodes.length; i++) {
+        const m = String(nodes[i].src || nodes[i].href || '').match(MFL_HOST_RE);
+        if (m) return m[0];
+      }
+    }
+  } catch (e) {/* ignore */}
+  return origin;
+}
 function resolveCtx() {
   const origin = location.origin;
+  const host = resolveMflHost(origin);
   const yr = (String(location.pathname).match(/\/(20\d{2})\//) || [])[1] || (String(location.href).match(/\/(20\d{2})\//) || [])[1] || String(SEASON);
   const league = String(window.league_id || (String(location.href).match(/[?&]L=(\d+)/) || [])[1] || '12011');
   MFL_CTX = {
     origin,
+    host,
     year: yr,
     league
   };
   SEASON = parseInt(yr, 10) || SEASON;
+  if (host !== origin) console.log('[CFFB Roster Board] player links use MFL host ' + host + ' (page origin ' + origin + ')');
 }
 function buildTeams() {
   const db = window.franchiseDatabase || {};
@@ -1426,6 +1490,8 @@ function buildTeams() {
   TEAM_ORDER = order;
   // Signed-in franchise → default team.
   const myFid = String(window.franchise_id || '');
+  MY_FID = myFid;
+  FID_TO_ABBR = fidToAbbr;
   MY_TEAM = fidToAbbr[myFid] || TEAM_ORDER[0] || null;
   console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team ' + MY_TEAM + (fidToAbbr[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
   return fidToAbbr;
@@ -1678,6 +1744,114 @@ async function loadRosterBoard() {
   const pd = await rbFetchPayload(fidToAbbr);
   applyPayload(pd, fidToAbbr);
   rbWriteCache(pd);
+}
+
+// ── Roster actions (Taxi / IR) via MFL form-replay ────────────────────────────
+// These drive MFL's OWN action forms rather than a hand-built API call, so:
+//  • auth is the signed-in session cookie (same-origin, no APIKEY/token needed —
+//    the captured forms carry no CSRF field),
+//  • eligibility + locks are whatever MFL renders: a player is movable *iff* the
+//    page emits a checkbox for them (ineligible players show "Cannot be demoted"
+//    / "Can not be deactivated" and get no checkbox),
+//  • we read the EXACT field name (demote/promote/deactivate/activate + fid) out
+//    of the live HTML — never guessed — and POST a single-player delta, so one
+//    action moves exactly one player and nothing else.
+// Only the signed-in owner's own roster is actionable; MFL rejects anything else.
+const RB_ACTION_PAGE = {
+  taxi: 'O=98',
+  ir: 'O=18'
+}; // options page that renders each form
+const RB_ACTION_SUFFIX = {
+  taxi: 'taxi_squad',
+  ir: 'ir'
+}; // form action path suffix
+
+// Pull the target form out of a fetched options page and read its hidden fields
+// + per-player checkboxes. Scoped to the form so unrelated page inputs are ignored.
+function rbParseMoveForm(html, suffix) {
+  const open = new RegExp('<form[^>]*action="([^"]+\\/' + suffix + ')"[^>]*>', 'i').exec(html);
+  if (!open) return null;
+  const end = html.indexOf('</form>', open.index);
+  const inner = html.slice(open.index, end < 0 ? html.length : end);
+  const hidden = {};
+  let m;
+  const hidRe = /<input[^>]*type="hidden"[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/gi;
+  while (m = hidRe.exec(inner)) hidden[m[1]] = m[2];
+  const moves = {}; // pid -> { name, dir }  (dir 'out' = leaves active roster, 'in' = returns to it)
+  const cbRe = /<input[^>]*type="checkbox"[^>]*name="(demote|promote|deactivate|activate)(\d{3,4})"[^>]*value="(\d+)"[^>]*>/gi;
+  while (m = cbRe.exec(inner)) {
+    const prefix = m[1],
+      fid = m[2],
+      pid = m[3];
+    moves[pid] = {
+      name: prefix + fid,
+      dir: prefix === 'demote' || prefix === 'deactivate' ? 'out' : 'in'
+    };
+  }
+  return {
+    actionUrl: open[1],
+    hidden,
+    moves
+  };
+}
+async function rbFetchForm(kind) {
+  const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/options?L=${MFL_CTX.league}&${RB_ACTION_PAGE[kind]}`;
+  const res = await fetch(url, {
+    credentials: 'include',
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return rbParseMoveForm(await res.text(), RB_ACTION_SUFFIX[kind]);
+}
+
+// Load taxi + IR eligibility for the signed-in franchise. Returns, per kind, the
+// action URL, hidden fields, and a { pid -> {name,dir} } map of legal moves.
+async function rbLoadActions() {
+  const out = {
+    taxi: null,
+    ir: null
+  };
+  await Promise.all(['taxi', 'ir'].map(async k => {
+    try {
+      out[k] = await rbFetchForm(k);
+    } catch (e) {
+      console.warn('[CFFB Roster Board] ' + k + ' form load failed:', e && e.message);
+    }
+  }));
+  return out;
+}
+
+// POST a single-player delta the way MFL's form would, then report raw result.
+async function rbSubmitMove(actionUrl, hidden, fieldName, pid) {
+  const fields = Object.assign({}, hidden);
+  fields[fieldName] = pid;
+  const body = Object.keys(fields).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(fields[k])).join('&');
+  const res = await fetch(actionUrl, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body
+  });
+  return {
+    ok: res.ok,
+    status: res.status
+  };
+}
+
+// Re-fetch rosters after a write so the board reflects MFL's new truth (the POST
+// response HTML is not trusted — the export feed is the source of truth).
+async function rbReloadRosters() {
+  const pd = await rbFetchPayload(FID_TO_ABBR);
+  applyPayload(pd, FID_TO_ABBR);
+  rbWriteCache(pd);
+}
+
+// Current bucket of a pid on a team ('ROSTER' | 'TAXI_SQUAD' | 'INJURED_RESERVE').
+function rbStatusOf(teamAbbr, pid) {
+  const m = (ROSTER_MEMBERS[teamAbbr] || []).find(x => x.pid === pid);
+  return m ? m.status : null;
 }
 
 // The build concatenates this file and rb-app.jsx into one function scope, so
@@ -2018,13 +2192,232 @@ const ConfTabs = ({
     }, "YOU")))));
   }));
 };
+
+// ── Manage Roster (Taxi / IR) ────────────────────────────────────────────────
+// Only rendered for the signed-in owner's own team. Drives MFL's real taxi/IR
+// forms via the data-layer helpers: eligibility is exactly what MFL renders, and
+// each action is a confirmed single-player delta, re-verified by re-reading the
+// roster feed afterward. All identifiers below come from the live data layer;
+// guarded so the sample/demo build (no write layer) never references them.
+const MBtn = ({
+  tone,
+  onClick,
+  children,
+  disabled
+}) => /*#__PURE__*/React.createElement("button", {
+  className: 'rb-mbtn' + (tone ? ' rb-mbtn--' + tone : ''),
+  onClick: onClick,
+  disabled: disabled
+}, children);
+const MngRow = ({
+  p,
+  children
+}) => /*#__PURE__*/React.createElement("div", {
+  className: "rb-mng__row"
+}, /*#__PURE__*/React.createElement(PlayerPhoto, {
+  p: p
+}), /*#__PURE__*/React.createElement("div", {
+  className: "rb-mng__id"
+}, /*#__PURE__*/React.createElement("div", {
+  className: "rb-mng__name"
+}, p.name), /*#__PURE__*/React.createElement("div", {
+  className: "rb-mng__sub"
+}, [p.pos, p.team, p.bye ? 'Bye ' + p.bye : ''].filter(Boolean).join(' · '))), /*#__PURE__*/React.createElement("div", {
+  className: "rb-mng__acts"
+}, children));
+const BUCKET_LABEL = {
+  ROSTER: 'Active Roster',
+  TAXI_SQUAD: 'Taxi Squad',
+  INJURED_RESERVE: 'Injured Reserve'
+};
+const ManageModal = ({
+  team,
+  onClose,
+  onChanged
+}) => {
+  const [actions, setActions] = useState(null); // { taxi, ir } once loaded
+  const [loadErr, setLoadErr] = useState(false);
+  const [busy, setBusy] = useState(null); // pid mid-submit
+  const [pending, setPending] = useState(null); // { kind, pid, name, text, warn }
+  const [result, setResult] = useState(null); // { ok, name, bucket, err }
+
+  const load = async () => {
+    setActions(null);
+    setLoadErr(false);
+    try {
+      const a = await rbLoadActions();
+      setActions(a);
+      if (!a.taxi && !a.ir) setLoadErr(true);
+    } catch (e) {
+      setLoadErr(true);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const r = buildRoster(team);
+  const active = r.groups.reduce((acc, g) => acc.concat(g.players), []);
+  const moveFor = (kind, pid) => actions && actions[kind] && actions[kind].moves[pid];
+  const confirmMove = async () => {
+    const {
+      kind,
+      pid,
+      name
+    } = pending;
+    setPending(null);
+    setBusy(pid);
+    setResult(null);
+    try {
+      const a = actions[kind],
+        mv = a.moves[pid];
+      const res = await rbSubmitMove(a.actionUrl, a.hidden, mv.name, pid);
+      await rbReloadRosters();
+      setResult({
+        ok: res.ok,
+        name,
+        bucket: rbStatusOf(team, pid)
+      });
+      setActions(await rbLoadActions());
+      onChanged();
+    } catch (e) {
+      setResult({
+        ok: false,
+        name,
+        err: e && e.message
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const ask = (kind, pid, name, text, warn) => () => setPending({
+    kind,
+    pid,
+    name,
+    text,
+    warn
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal",
+    role: "dialog",
+    "aria-modal": "true",
+    onClick: e => {
+      if (e.target.classList.contains('rb-modal')) onClose();
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal__box"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal__head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal__eyebrow"
+  }, "Manage Roster"), /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal__title"
+  }, TEAMS[team].name)), /*#__PURE__*/React.createElement("button", {
+    className: "rb-modal__x",
+    onClick: onClose,
+    "aria-label": "Close"
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal__note"
+  }, "Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here \u2014 MFL enforces every eligibility and lock rule."), actions === null && !loadErr && /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__load"
+  }, "Loading eligibility from MFL\u2026"), loadErr && /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__load rb-mng__load--err"
+  }, "Couldn't load MFL eligibility (are you signed in?). ", /*#__PURE__*/React.createElement(MBtn, {
+    onClick: load
+  }, "Retry")), result && /*#__PURE__*/React.createElement("div", {
+    className: 'rb-mng__result ' + (result.ok ? 'is-ok' : 'is-err')
+  }, result.ok ? /*#__PURE__*/React.createElement("span", null, "\u2713 ", result.name, " \u2014 now on ", BUCKET_LABEL[result.bucket] || 'the updated roster', ".") : /*#__PURE__*/React.createElement("span", null, "\u26A0 ", result.name, " \u2014 MFL didn't confirm the move", result.err ? ' (' + result.err + ')' : '', ". Verify in MFL before retrying.")), pending && /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__confirm"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__confirm-txt"
+  }, pending.text, pending.warn && /*#__PURE__*/React.createElement("span", {
+    className: "rb-mng__warn"
+  }, pending.warn)), /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__confirm-btns"
+  }, /*#__PURE__*/React.createElement(MBtn, {
+    tone: "go",
+    onClick: confirmMove
+  }, "Confirm"), /*#__PURE__*/React.createElement(MBtn, {
+    onClick: () => setPending(null)
+  }, "Cancel"))), actions && /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__body"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__sec"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__sechead"
+  }, "Active Roster ", /*#__PURE__*/React.createElement("span", null, active.length)), active.map(p => {
+    const canTaxi = (() => {
+      const mv = moveFor('taxi', p.pid);
+      return mv && mv.dir === 'out';
+    })();
+    const canIR = (() => {
+      const mv = moveFor('ir', p.pid);
+      return mv && mv.dir === 'out';
+    })();
+    return /*#__PURE__*/React.createElement(MngRow, {
+      key: p.pid,
+      p: p
+    }, canTaxi && /*#__PURE__*/React.createElement(MBtn, {
+      tone: "taxi",
+      disabled: busy === p.pid,
+      onClick: ask('taxi', p.pid, p.name, 'Send ' + p.name + ' to the Taxi Squad?', 'Uses a ' + SEASON + ' redshirt — the player can’t score while on taxi.')
+    }, "\u2192 Taxi"), canIR && /*#__PURE__*/React.createElement(MBtn, {
+      tone: "ir",
+      disabled: busy === p.pid,
+      onClick: ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', 'Applies a ' + SEASON + ' medical redshirt.')
+    }, "\u2192 IR"), !canTaxi && !canIR && /*#__PURE__*/React.createElement("span", {
+      className: "rb-mng__none",
+      title: "MFL offers no taxi/IR move for this player right now"
+    }, "\u2014"));
+  })), r.taxi.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__sec"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__sechead"
+  }, "Taxi Squad ", /*#__PURE__*/React.createElement("span", null, r.taxi.length)), r.taxi.map(p => {
+    const mv = moveFor('taxi', p.pid);
+    const canAct = mv && mv.dir === 'in';
+    return /*#__PURE__*/React.createElement(MngRow, {
+      key: 'tx' + p.pid,
+      p: p
+    }, canAct ? /*#__PURE__*/React.createElement(MBtn, {
+      tone: "go",
+      disabled: busy === p.pid,
+      onClick: ask('taxi', p.pid, p.name, 'Activate ' + p.name + ' from the Taxi Squad to your active roster?', 'Forfeits the ' + SEASON + ' redshirt.')
+    }, "Activate \u2192") : /*#__PURE__*/React.createElement("span", {
+      className: "rb-mng__none",
+      title: "MFL isn't allowing this move right now (locked or roster full)"
+    }, "locked"));
+  })), r.ir.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__sec"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rb-mng__sechead"
+  }, "Injured Reserve ", /*#__PURE__*/React.createElement("span", null, r.ir.length)), r.ir.map(p => {
+    const mv = moveFor('ir', p.pid);
+    const canAct = mv && mv.dir === 'in';
+    return /*#__PURE__*/React.createElement(MngRow, {
+      key: 'ir' + p.pid,
+      p: p
+    }, canAct ? /*#__PURE__*/React.createElement(MBtn, {
+      tone: "go",
+      disabled: busy === p.pid,
+      onClick: ask('ir', p.pid, p.name, 'Activate ' + p.name + ' from Injured Reserve to your active roster?', 'Forfeits the ' + SEASON + ' medical redshirt.')
+    }, "Activate \u2192") : /*#__PURE__*/React.createElement("span", {
+      className: "rb-mng__none",
+      title: "MFL isn't allowing this move right now (locked or roster full)"
+    }, "locked"));
+  })))));
+};
 const App = () => {
   // Always default to the signed-in franchise on load/refresh. Tab switches
   // navigate within the session (React state) but are intentionally NOT
   // persisted, so a refresh returns to your own team.
   const [team, setTeam] = useState(() => TEAMS[MY_TEAM] ? MY_TEAM : TEAM_ORDER[0]);
+  const [manage, setManage] = useState(false);
+  const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
+  // Writes are only offered on your OWN team, and only when a real franchise is
+  // signed in (commissioner '0000' / demo builds without MY_FID are excluded).
+  const canManage = typeof MY_FID !== 'undefined' && !!MY_FID && MY_FID !== '0000' && team === MY_TEAM && !!TEAMS[MY_TEAM];
   return /*#__PURE__*/React.createElement("div", {
     className: "rb-wrap"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2092,7 +2485,11 @@ const App = () => {
     style: r.outCount ? {
       color: '#D88787'
     } : null
-  }, r.outCount)))), /*#__PURE__*/React.createElement("div", {
+  }, r.outCount))), canManage && /*#__PURE__*/React.createElement("button", {
+    className: "rb-manage-btn",
+    onClick: () => setManage(true),
+    title: "Move players to/from Taxi Squad or Injured Reserve"
+  }, "\u2699 Manage Roster")), /*#__PURE__*/React.createElement("div", {
     className: "rb-table"
   }, /*#__PURE__*/React.createElement("div", {
     className: "rb-cols rb-thead"
@@ -2156,7 +2553,11 @@ const App = () => {
     ir: true
   }))), /*#__PURE__*/React.createElement("div", {
     className: "rb-foot"
-  }, /*#__PURE__*/React.createElement("span", null, "\u25CE ring = redshirt year (burned, no eligibility used)"), /*#__PURE__*/React.createElement("span", null, "\u25CF filled = play season used"), /*#__PURE__*/React.createElement("span", null, "\u26A0 NO MRS LEFT \u2014 an IR player with a prior medical redshirt cannot take another"), /*#__PURE__*/React.createElement("span", null, "Other Copy \u2014 every player exists as two copies; click a team to jump to its roster"))));
+  }, /*#__PURE__*/React.createElement("span", null, "\u25CE ring = redshirt year (burned, no eligibility used)"), /*#__PURE__*/React.createElement("span", null, "\u25CF filled = play season used"), /*#__PURE__*/React.createElement("span", null, "\u26A0 NO MRS LEFT \u2014 an IR player with a prior medical redshirt cannot take another"), /*#__PURE__*/React.createElement("span", null, "Other Copy \u2014 every player exists as two copies; click a team to jump to its roster"))), manage && canManage && /*#__PURE__*/React.createElement(ManageModal, {
+    team: team,
+    onClose: () => setManage(false),
+    onChanged: () => setRev(v => v + 1)
+  }));
 };
 const CFFBRosterBoot = () => {
   const [ready, setReady] = React.useState(false);

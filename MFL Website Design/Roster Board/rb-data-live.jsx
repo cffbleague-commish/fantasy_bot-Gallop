@@ -53,16 +53,22 @@ const normPos = (pos) => POS_MAP[(pos || '').toUpperCase()] || 'WR';
 let SEASON = 2026;
 let THRU_WEEK = 1;
 let MY_TEAM = null;
+let MY_FID = '';          // signed-in franchise id ('' or '0000' = commissioner → no writes)
+let FID_TO_ABBR = {};     // retained so reloads after a roster move can rebuild
 let TEAMS = {};
 let TEAM_ORDER = [];
-let MFL_CTX = { origin: '', year: '2026', league: '12011' };
+let MFL_CTX = { origin: '', host: '', year: '2026', league: '12011' };
 // Per-player identity + per-team membership, built once from the export feeds.
 let PLAYERS_BY_ID = {};   // pid -> { name, pos, pts, injury, initials, playerId }
 let ROSTER_MEMBERS = {};  // teamAbbr -> [ { pid, status, enc } ]
 let MEMBERSHIP = {};      // pid -> [teamAbbr, ...]
 let BYE_BY_TEAM = {};     // NFL team abbr -> bye week (fallback when a player lacks bye_week)
 
-const MFL_PLAYER_LINK = (pid) => `${MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
+// MFL's export *API* answers on any host, but league *pages* (/player, etc.) are
+// bound to the league's numbered server (e.g. www46). Building the link from a
+// custom domain or the generic balancer yields a 403 "Forbidden" page, so target
+// the resolved numbered host (MFL_CTX.host), falling back to origin.
+const MFL_PLAYER_LINK = (pid) => `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
 // MFL player headshot (confirmed live path, same as the Player Ledger):
 // /player_photos_2014/{id}_thumb.jpg. Missing photos error out → initials show.
 const PLAYER_PHOTO = (pid) => `https://www46.myfantasyleague.com/player_photos_2014/${pid}_thumb.jpg`;
@@ -222,14 +228,35 @@ function buildRoster(teamAbbr) {
 }
 
 // ── MFL context + franchise directory ────────────────────────────────────────
+// MFL league pages must be requested on the league's numbered server. Prefer
+// location.origin when it already is one (https://wwwNN.myfantasyleague.com);
+// otherwise sniff the numbered host from any MFL asset the page has loaded
+// (its own script/link/img/anchor URLs); finally fall back to origin.
+const MFL_HOST_RE = /^https?:\/\/www\d+\.myfantasyleague\.com/i;
+function resolveMflHost(origin) {
+  try {
+    const om = String(origin).match(MFL_HOST_RE);
+    if (om) return om[0];
+    if (typeof document !== 'undefined' && document.querySelectorAll) {
+      const nodes = document.querySelectorAll('script[src],link[href],img[src],a[href]');
+      for (let i = 0; i < nodes.length; i++) {
+        const m = String(nodes[i].src || nodes[i].href || '').match(MFL_HOST_RE);
+        if (m) return m[0];
+      }
+    }
+  } catch (e) { /* ignore */ }
+  return origin;
+}
 function resolveCtx() {
   const origin = location.origin;
+  const host = resolveMflHost(origin);
   const yr = (String(location.pathname).match(/\/(20\d{2})\//) || [])[1]
     || (String(location.href).match(/\/(20\d{2})\//) || [])[1]
     || String(SEASON);
   const league = String(window.league_id || (String(location.href).match(/[?&]L=(\d+)/) || [])[1] || '12011');
-  MFL_CTX = { origin, year: yr, league };
+  MFL_CTX = { origin, host, year: yr, league };
   SEASON = parseInt(yr, 10) || SEASON;
+  if (host !== origin) console.log('[CFFB Roster Board] player links use MFL host ' + host + ' (page origin ' + origin + ')');
 }
 
 function buildTeams() {
@@ -262,6 +289,8 @@ function buildTeams() {
   TEAM_ORDER = order;
   // Signed-in franchise → default team.
   const myFid = String(window.franchise_id || '');
+  MY_FID = myFid;
+  FID_TO_ABBR = fidToAbbr;
   MY_TEAM = fidToAbbr[myFid] || TEAM_ORDER[0] || null;
   console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team ' + MY_TEAM
     + (fidToAbbr[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
@@ -473,6 +502,84 @@ async function loadRosterBoard() {
   const pd = await rbFetchPayload(fidToAbbr);
   applyPayload(pd, fidToAbbr);
   rbWriteCache(pd);
+}
+
+// ── Roster actions (Taxi / IR) via MFL form-replay ────────────────────────────
+// These drive MFL's OWN action forms rather than a hand-built API call, so:
+//  • auth is the signed-in session cookie (same-origin, no APIKEY/token needed —
+//    the captured forms carry no CSRF field),
+//  • eligibility + locks are whatever MFL renders: a player is movable *iff* the
+//    page emits a checkbox for them (ineligible players show "Cannot be demoted"
+//    / "Can not be deactivated" and get no checkbox),
+//  • we read the EXACT field name (demote/promote/deactivate/activate + fid) out
+//    of the live HTML — never guessed — and POST a single-player delta, so one
+//    action moves exactly one player and nothing else.
+// Only the signed-in owner's own roster is actionable; MFL rejects anything else.
+const RB_ACTION_PAGE = { taxi: 'O=98', ir: 'O=18' };   // options page that renders each form
+const RB_ACTION_SUFFIX = { taxi: 'taxi_squad', ir: 'ir' }; // form action path suffix
+
+// Pull the target form out of a fetched options page and read its hidden fields
+// + per-player checkboxes. Scoped to the form so unrelated page inputs are ignored.
+function rbParseMoveForm(html, suffix) {
+  const open = new RegExp('<form[^>]*action="([^"]+\\/' + suffix + ')"[^>]*>', 'i').exec(html);
+  if (!open) return null;
+  const end = html.indexOf('</form>', open.index);
+  const inner = html.slice(open.index, end < 0 ? html.length : end);
+  const hidden = {};
+  let m;
+  const hidRe = /<input[^>]*type="hidden"[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/gi;
+  while ((m = hidRe.exec(inner))) hidden[m[1]] = m[2];
+  const moves = {}; // pid -> { name, dir }  (dir 'out' = leaves active roster, 'in' = returns to it)
+  const cbRe = /<input[^>]*type="checkbox"[^>]*name="(demote|promote|deactivate|activate)(\d{3,4})"[^>]*value="(\d+)"[^>]*>/gi;
+  while ((m = cbRe.exec(inner))) {
+    const prefix = m[1], fid = m[2], pid = m[3];
+    moves[pid] = { name: prefix + fid, dir: (prefix === 'demote' || prefix === 'deactivate') ? 'out' : 'in' };
+  }
+  return { actionUrl: open[1], hidden, moves };
+}
+
+async function rbFetchForm(kind) {
+  const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/options?L=${MFL_CTX.league}&${RB_ACTION_PAGE[kind]}`;
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return rbParseMoveForm(await res.text(), RB_ACTION_SUFFIX[kind]);
+}
+
+// Load taxi + IR eligibility for the signed-in franchise. Returns, per kind, the
+// action URL, hidden fields, and a { pid -> {name,dir} } map of legal moves.
+async function rbLoadActions() {
+  const out = { taxi: null, ir: null };
+  await Promise.all(['taxi', 'ir'].map(async (k) => {
+    try { out[k] = await rbFetchForm(k); }
+    catch (e) { console.warn('[CFFB Roster Board] ' + k + ' form load failed:', e && e.message); }
+  }));
+  return out;
+}
+
+// POST a single-player delta the way MFL's form would, then report raw result.
+async function rbSubmitMove(actionUrl, hidden, fieldName, pid) {
+  const fields = Object.assign({}, hidden);
+  fields[fieldName] = pid;
+  const body = Object.keys(fields).map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(fields[k])).join('&');
+  const res = await fetch(actionUrl, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
+  });
+  return { ok: res.ok, status: res.status };
+}
+
+// Re-fetch rosters after a write so the board reflects MFL's new truth (the POST
+// response HTML is not trusted — the export feed is the source of truth).
+async function rbReloadRosters() {
+  const pd = await rbFetchPayload(FID_TO_ABBR);
+  applyPayload(pd, FID_TO_ABBR);
+  rbWriteCache(pd);
+}
+
+// Current bucket of a pid on a team ('ROSTER' | 'TAXI_SQUAD' | 'INJURED_RESERVE').
+function rbStatusOf(teamAbbr, pid) {
+  const m = (ROSTER_MEMBERS[teamAbbr] || []).find((x) => x.pid === pid);
+  return m ? m.status : null;
 }
 
 // The build concatenates this file and rb-app.jsx into one function scope, so

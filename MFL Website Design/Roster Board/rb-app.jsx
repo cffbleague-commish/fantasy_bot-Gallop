@@ -181,13 +181,169 @@ const ConfTabs = ({ team, setTeam }) => {
   );
 };
 
+// ── Manage Roster (Taxi / IR) ────────────────────────────────────────────────
+// Only rendered for the signed-in owner's own team. Drives MFL's real taxi/IR
+// forms via the data-layer helpers: eligibility is exactly what MFL renders, and
+// each action is a confirmed single-player delta, re-verified by re-reading the
+// roster feed afterward. All identifiers below come from the live data layer;
+// guarded so the sample/demo build (no write layer) never references them.
+const MBtn = ({ tone, onClick, children, disabled }) => (
+  <button className={'rb-mbtn' + (tone ? ' rb-mbtn--' + tone : '')} onClick={onClick} disabled={disabled}>{children}</button>
+);
+const MngRow = ({ p, children }) => (
+  <div className="rb-mng__row">
+    <PlayerPhoto p={p} />
+    <div className="rb-mng__id">
+      <div className="rb-mng__name">{p.name}</div>
+      <div className="rb-mng__sub">{[p.pos, p.team, p.bye ? 'Bye ' + p.bye : ''].filter(Boolean).join(' · ')}</div>
+    </div>
+    <div className="rb-mng__acts">{children}</div>
+  </div>
+);
+const BUCKET_LABEL = { ROSTER: 'Active Roster', TAXI_SQUAD: 'Taxi Squad', INJURED_RESERVE: 'Injured Reserve' };
+const ManageModal = ({ team, onClose, onChanged }) => {
+  const [actions, setActions] = useState(null);  // { taxi, ir } once loaded
+  const [loadErr, setLoadErr] = useState(false);
+  const [busy, setBusy] = useState(null);        // pid mid-submit
+  const [pending, setPending] = useState(null);  // { kind, pid, name, text, warn }
+  const [result, setResult] = useState(null);    // { ok, name, bucket, err }
+
+  const load = async () => {
+    setActions(null); setLoadErr(false);
+    try {
+      const a = await rbLoadActions();
+      setActions(a);
+      if (!a.taxi && !a.ir) setLoadErr(true);
+    } catch (e) { setLoadErr(true); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const r = buildRoster(team);
+  const active = r.groups.reduce((acc, g) => acc.concat(g.players), []);
+  const moveFor = (kind, pid) => actions && actions[kind] && actions[kind].moves[pid];
+
+  const confirmMove = async () => {
+    const { kind, pid, name } = pending;
+    setPending(null); setBusy(pid); setResult(null);
+    try {
+      const a = actions[kind], mv = a.moves[pid];
+      const res = await rbSubmitMove(a.actionUrl, a.hidden, mv.name, pid);
+      await rbReloadRosters();
+      setResult({ ok: res.ok, name, bucket: rbStatusOf(team, pid) });
+      setActions(await rbLoadActions());
+      onChanged();
+    } catch (e) {
+      setResult({ ok: false, name, err: e && e.message });
+    } finally { setBusy(null); }
+  };
+
+  const ask = (kind, pid, name, text, warn) => () => setPending({ kind, pid, name, text, warn });
+
+  return (
+    <div className="rb-modal" role="dialog" aria-modal="true"
+      onClick={(e) => { if (e.target.classList.contains('rb-modal')) onClose(); }}>
+      <div className="rb-modal__box">
+        <div className="rb-modal__head">
+          <div>
+            <div className="rb-modal__eyebrow">Manage Roster</div>
+            <div className="rb-modal__title">{TEAMS[team].name}</div>
+          </div>
+          <button className="rb-modal__x" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="rb-modal__note">Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here — MFL enforces every eligibility and lock rule.</div>
+
+        {actions === null && !loadErr && <div className="rb-mng__load">Loading eligibility from MFL…</div>}
+        {loadErr && <div className="rb-mng__load rb-mng__load--err">Couldn't load MFL eligibility (are you signed in?). <MBtn onClick={load}>Retry</MBtn></div>}
+
+        {result && (
+          <div className={'rb-mng__result ' + (result.ok ? 'is-ok' : 'is-err')}>
+            {result.ok
+              ? <span>✓ {result.name} — now on {BUCKET_LABEL[result.bucket] || 'the updated roster'}.</span>
+              : <span>⚠ {result.name} — MFL didn't confirm the move{result.err ? ' (' + result.err + ')' : ''}. Verify in MFL before retrying.</span>}
+          </div>
+        )}
+
+        {pending && (
+          <div className="rb-mng__confirm">
+            <div className="rb-mng__confirm-txt">{pending.text}{pending.warn && <span className="rb-mng__warn">{pending.warn}</span>}</div>
+            <div className="rb-mng__confirm-btns">
+              <MBtn tone="go" onClick={confirmMove}>Confirm</MBtn>
+              <MBtn onClick={() => setPending(null)}>Cancel</MBtn>
+            </div>
+          </div>
+        )}
+
+        {actions && (
+          <div className="rb-mng__body">
+            <div className="rb-mng__sec">
+              <div className="rb-mng__sechead">Active Roster <span>{active.length}</span></div>
+              {active.map((p) => {
+                const canTaxi = (() => { const mv = moveFor('taxi', p.pid); return mv && mv.dir === 'out'; })();
+                const canIR = (() => { const mv = moveFor('ir', p.pid); return mv && mv.dir === 'out'; })();
+                return (
+                  <MngRow key={p.pid} p={p}>
+                    {canTaxi && <MBtn tone="taxi" disabled={busy === p.pid}
+                      onClick={ask('taxi', p.pid, p.name, 'Send ' + p.name + ' to the Taxi Squad?', 'Uses a ' + SEASON + ' redshirt — the player can’t score while on taxi.')}>→ Taxi</MBtn>}
+                    {canIR && <MBtn tone="ir" disabled={busy === p.pid}
+                      onClick={ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', 'Applies a ' + SEASON + ' medical redshirt.')}>→ IR</MBtn>}
+                    {!canTaxi && !canIR && <span className="rb-mng__none" title="MFL offers no taxi/IR move for this player right now">—</span>}
+                  </MngRow>
+                );
+              })}
+            </div>
+
+            {r.taxi.length > 0 && (
+              <div className="rb-mng__sec">
+                <div className="rb-mng__sechead">Taxi Squad <span>{r.taxi.length}</span></div>
+                {r.taxi.map((p) => {
+                  const mv = moveFor('taxi', p.pid); const canAct = mv && mv.dir === 'in';
+                  return (
+                    <MngRow key={'tx' + p.pid} p={p}>
+                      {canAct
+                        ? <MBtn tone="go" disabled={busy === p.pid}
+                            onClick={ask('taxi', p.pid, p.name, 'Activate ' + p.name + ' from the Taxi Squad to your active roster?', 'Forfeits the ' + SEASON + ' redshirt.')}>Activate →</MBtn>
+                        : <span className="rb-mng__none" title="MFL isn't allowing this move right now (locked or roster full)">locked</span>}
+                    </MngRow>
+                  );
+                })}
+              </div>
+            )}
+
+            {r.ir.length > 0 && (
+              <div className="rb-mng__sec">
+                <div className="rb-mng__sechead">Injured Reserve <span>{r.ir.length}</span></div>
+                {r.ir.map((p) => {
+                  const mv = moveFor('ir', p.pid); const canAct = mv && mv.dir === 'in';
+                  return (
+                    <MngRow key={'ir' + p.pid} p={p}>
+                      {canAct
+                        ? <MBtn tone="go" disabled={busy === p.pid}
+                            onClick={ask('ir', p.pid, p.name, 'Activate ' + p.name + ' from Injured Reserve to your active roster?', 'Forfeits the ' + SEASON + ' medical redshirt.')}>Activate →</MBtn>
+                        : <span className="rb-mng__none" title="MFL isn't allowing this move right now (locked or roster full)">locked</span>}
+                    </MngRow>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const App = () => {
   // Always default to the signed-in franchise on load/refresh. Tab switches
   // navigate within the session (React state) but are intentionally NOT
   // persisted, so a refresh returns to your own team.
   const [team, setTeam] = useState(() => (TEAMS[MY_TEAM] ? MY_TEAM : TEAM_ORDER[0]));
+  const [manage, setManage] = useState(false);
+  const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
+  // Writes are only offered on your OWN team, and only when a real franchise is
+  // signed in (commissioner '0000' / demo builds without MY_FID are excluded).
+  const canManage = typeof MY_FID !== 'undefined' && !!MY_FID && MY_FID !== '0000' && team === MY_TEAM && !!TEAMS[MY_TEAM];
   return (
     <div className="rb-wrap">
       <div className="rb-head">
@@ -210,6 +366,7 @@ const App = () => {
           <div className="rb-kpi"><span className="rb-kpi__label">Redshirting</span><span className="rb-kpi__val cffb-num">{r.rsCount}</span></div>
           <div className="rb-kpi"><span className="rb-kpi__label">Out</span><span className="rb-kpi__val cffb-num" style={r.outCount ? { color: '#D88787' } : null}>{r.outCount}</span></div>
         </div>
+        {canManage && <button className="rb-manage-btn" onClick={() => setManage(true)} title="Move players to/from Taxi Squad or Injured Reserve">⚙ Manage Roster</button>}
       </div>
       <div className="rb-table">
         <div className="rb-cols rb-thead">
@@ -254,6 +411,7 @@ const App = () => {
           <span>Other Copy — every player exists as two copies; click a team to jump to its roster</span>
         </div>
       </div>
+      {manage && canManage && <ManageModal team={team} onClose={() => setManage(false)} onChanged={() => setRev((v) => v + 1)} />}
     </div>
   );
 };
