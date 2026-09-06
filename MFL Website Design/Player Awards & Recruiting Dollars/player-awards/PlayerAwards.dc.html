@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Awards & Recruiting Dashboard" description="MFL home-page dashboard: toggle between national/conference award shortlists and projected recruiting dollars by franchise." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<script src="./awards-data.js"></script>
+<script src="./recruiting-data.js"></script>
+<style>
+@keyframes cffb-aw-glow{0%,100%{opacity:.55}50%{opacity:.9}}
+</style>
+</helmet>
+<div style="max-width:1280px;margin:0 auto;padding:0 24px 72px;font-family:var(--font-body);color:var(--fg-primary);background:var(--bg-canvas);">
+
+  <!-- ============ MASTHEAD ============ -->
+  <div style="position:relative;padding:48px 0 32px;overflow:hidden;border-bottom:1px solid var(--border);">
+    <div style="position:relative;">
+      <div style="display:flex;align-items:baseline;gap:14px;">
+        <div style="width:8px;height:26px;background:var(--gold-gradient);border-radius:1px;"></div>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">League Awards and Recruiting Dollars</div>
+      </div>
+      <div style="margin-top:14px;font-size:var(--tx-md);color:var(--fg-secondary);max-width:560px;text-wrap:pretty;">Award shortlists and projected recruiting dollars, live through Week {{ week }}.</div>
+      <div style="display:flex;width:max-content;margin-top:24px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);padding:4px;gap:4px;">
+        <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="2">
+          <button onClick="{{ v.onSelect }}" style="cursor:pointer;padding:11px 26px;border-radius:var(--r-2);font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase;border:none;transition:color var(--dur-fast) var(--ease-out);background:transparent;color:var(--fg-tertiary);{{ v.activeStyle }}" style-hover="color:var(--fg-primary)">{{ v.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+<sc-if value="{{ isAwards }}" hint-placeholder-val="{{ true }}">
+<div>
+
+  <!-- ============ NATIONAL AWARDS ============ -->
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:44px 0 20px;">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <div style="width:8px;height:26px;background:var(--gold-gradient);border-radius:1px;"></div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">National Awards</div>
+    </div>
+    <div style="font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">5 Trophies · Top 10 Finalists</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+    <sc-for list="{{ awardTabs }}" as="tab" hint-placeholder-count="5">
+      <button onClick="{{ tab.onSelect }}" style="flex:1 1 170px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;cursor:pointer;padding:13px 15px;border-radius:var(--r-3);font-family:var(--font-body);transition:filter var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ tab.activeStyle }}" style-hover="filter:brightness(1.12)">
+        <span style="font:600 9px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--fg-primary);color:{{ tab.honorsColor }};">{{ tab.honors }}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:19px;line-height:1;text-transform:uppercase;margin-top:7px;">{{ tab.name }}</span>
+        <span style="display:flex;align-items:center;gap:6px;margin-top:9px;font-size:11px;color:var(--fg-secondary);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);flex:none;"></span>{{ tab.leader }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">
+
+    <!-- Front-runner hero -->
+    <div style="flex:1 1 340px;position:relative;display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:20px 22px;overflow:hidden;">
+      <sc-if value="{{ highlightLeader }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold-gradient);pointer-events:none;z-index:2;"></span><span style="position:absolute;inset:0;border-radius:8px;box-shadow:var(--shadow-glow-gold);pointer-events:none;"></span></sc-if>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <span style="font:700 var(--tx-2xs)/1 var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);">★ Front-Runner</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--fg-tertiary);">01</span>
+      </div>
+      <div style="display:grid;grid-template-columns:132px 1fr;gap:18px;align-items:center;margin:18px 0;">
+        <div style="position:relative;width:132px;aspect-ratio:4/5;border-radius:6px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.35);outline-offset:-8px;">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;z-index:3;background:var(--border-strong);background:{{ leader.teamColor }};"></div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#3A3A3A;">
+            <svg viewBox="0 0 56 56" style="width:46px;height:46px;stroke:#3A3A3A;fill:none;stroke-width:1.5;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+            <span style="font:700 9px/1 var(--font-body);letter-spacing:.24em;color:#5A5A5A;">PHOTO</span>
+            <span style="font:500 8px/1 var(--font-body);letter-spacing:.14em;color:#3A3A3A;">MFL PROFILE</span>
+          </div>
+          <span style="position:absolute;top:8px;left:8px;z-index:4;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.06em;padding:3px 6px;border-radius:2px;color:#F5F5F5;background:rgba(10,10,10,.78);">{{ leader.cls }}</span>
+          <div style="position:absolute;bottom:-8px;left:-8px;z-index:5;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 3px var(--bg-surface);background:var(--border-strong);background:{{ leader.teamColor }};color:var(--fg-primary);color:{{ leader.teamTxt }};">{{ leader.teamAbbr }}</div>
+        </div>
+        <div style="min-width:0;display:flex;flex-direction:column;justify-content:center;">
+          <div style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:2px;font:700 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;background:rgba(201,162,39,.12);color:var(--gold);border:1px solid rgba(201,162,39,.3);">{{ leader.badgeLabel }} {{ leader.badge }}</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:36px;line-height:.94;text-transform:uppercase;margin-top:12px;text-wrap:balance;">{{ leader.name }}</div>
+          <div style="font-size:12px;color:var(--fg-secondary);margin-top:8px;">{{ leader.subline }}</div>
+          <div style="margin-top:16px;display:flex;align-items:baseline;gap:8px;padding:10px 12px;border-radius:var(--r-2);background:var(--bg-surface-elev);border:1px solid var(--border);align-self:flex-start;">
+            <span style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--delta-pos);" class="cffb-num">{{ leader.cushionVal }}</span>
+            <span style="font:600 9px/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-secondary);">{{ leader.cushionLabel }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--border);">
+        <sc-for list="{{ leader.metrics }}" as="m" hint-placeholder-count="3">
+          <div>
+            <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">{{ m.label }}</div>
+            <sc-if value="{{ m.isHero }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;margin-top:4px;background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;" class="cffb-num">{{ m.value }}</div></sc-if>
+            <sc-if value="{{ m.isPlain }}" hint-placeholder-val="{{ true }}"><div style="font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;margin-top:4px;" class="cffb-num">{{ m.value }}</div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Finalists 2–10 -->
+    <div style="flex:2 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto;">
+     <div style="min-width:560px;">
+      <div style="display:grid;grid-template-columns:28px 44px max-content 1fr 58px 46px 58px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">
+        <span>#</span><span></span><span></span><span>Chasing the Trophy</span><span style="text-align:right;">{{ statMainLabel }}</span><span style="text-align:right;">{{ statSubLabel }}</span><span style="text-align:right;color:var(--gold);">Score</span>
+      </div>
+      <sc-for list="{{ finalists }}" as="f" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:28px 44px max-content 1fr 58px 46px 58px;gap:12px;align-items:center;padding:10px 18px;border-bottom:1px solid rgba(42,42,42,.55);" style-hover="background:var(--bg-surface-hover)">
+          <span style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--fg-tertiary);" class="cffb-num">{{ f.rankStr }}</span>
+          <span style="position:relative;width:40px;height:40px;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;">
+            <span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--border-strong);background:{{ f.teamColor }};"></span>
+            <svg viewBox="0 0 56 56" style="position:absolute;inset:0;margin:auto;width:26px;height:26px;stroke:#3A3A3A;fill:none;stroke-width:1.6;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+          </span>
+          <span style="display:inline-flex;align-items:stretch;justify-self:start;width:max-content;height:24px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+            <span style="width:5px;background:var(--border-strong);background:{{ f.confAccent }};"></span>
+            <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;white-space:nowrap;background:var(--border-strong);background:{{ f.teamColor }};color:var(--fg-primary);color:{{ f.teamTxt }};">{{ f.teamAbbr }}</span>
+          </span>
+          <span style="min-width:0;">
+            <span style="display:block;font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
+            <span style="display:block;font-size:11px;color:var(--fg-secondary);margin-top:1px;">{{ f.meta }}</span>
+          </span>
+          <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:19px;" class="cffb-num">{{ f.statMain }}</span>
+          <span style="text-align:right;font-size:12px;color:var(--fg-secondary);" class="cffb-num">{{ f.statSub }}</span>
+          <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--gold);" class="cffb-num">{{ f.score }}</span>
+        </div>
+      </sc-for>
+     </div>
+    </div>
+  </div>
+
+  <!-- ============ CONFERENCE AWARDS ============ -->
+  <div style="height:1px;background:var(--border);margin:48px 0 0;"></div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:44px 0 20px;">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <div style="width:8px;height:26px;border-radius:1px;background:var(--border-strong);background:{{ conf.accent }};"></div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">All-Conference Teams</div>
+    </div>
+    <div style="font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">First · Second · Third Team</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;margin-bottom:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);">
+    <sc-for list="{{ confTabs }}" as="c" hint-placeholder-count="6">
+      <button onClick="{{ c.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ c.activeStyle }}" style-hover="color:var(--fg-primary)">
+        <span style="width:22px;height:22px;flex-shrink:0;background-size:contain;background-repeat:no-repeat;background-position:center;transition:filter var(--dur-fast) var(--ease-out);{{ c.logoStyle }}"></span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ c.label }}</span>
+        <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ c.countColor }}" class="cffb-num">{{ c.count }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="display:inline-flex;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-2);padding:3px;gap:3px;">
+      <sc-for list="{{ tierTabs }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.onSelect }}" style="cursor:pointer;padding:7px 15px;border-radius:3px;font:600 12px/1 var(--font-body);letter-spacing:.04em;border:none;transition:color var(--dur-fast) var(--ease-out);background:transparent;color:var(--fg-tertiary);{{ t.activeStyle }}" style-hover="color:var(--fg-primary)">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:8px;font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-primary);color:{{ conf.accent }};"><span style="width:7px;height:7px;border-radius:50%;background:var(--border-strong);background:{{ conf.accent }};"></span>{{ conf.label }} · {{ tierLabel }}</div>
+  </div>
+
+  <div style="overflow-x:auto;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;">
+   <div style="min-width:740px;">
+    <div style="display:grid;grid-template-columns:52px 44px 1fr 50px 60px 54px 60px 58px;gap:10px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-tertiary);">
+      <span>Pos</span><span></span><span>Player</span><span style="text-align:right;">Pos Rk</span><span style="text-align:right;">Fan Pts</span><span style="text-align:right;">% Team</span><span style="text-align:right;">Conf Pts</span><span style="text-align:right;color:var(--gold);">Score</span>
+    </div>
+    <sc-for list="{{ roster }}" as="p" hint-placeholder-count="8">
+      <div style="display:grid;grid-template-columns:52px 44px 1fr 50px 60px 54px 60px 58px;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(42,42,42,.55);" style-hover="background:var(--bg-surface-hover)">
+        <span style="justify-self:start;font-family:var(--font-display);font-weight:700;font-size:13px;text-align:center;padding:4px 7px;border-radius:2px;background:var(--border-strong);background:{{ p.posColor }};color:var(--fg-primary);color:{{ p.posTxt }};">{{ p.pos }}</span>
+        <span style="position:relative;width:40px;height:40px;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;">
+          <span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--border-strong);background:{{ p.teamColor }};"></span>
+          <svg viewBox="0 0 56 56" style="position:absolute;inset:0;margin:auto;width:26px;height:26px;stroke:#3A3A3A;fill:none;stroke-width:1.6;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+        </span>
+        <span style="min-width:0;">
+          <span style="display:block;font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</span>
+          <span style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+            <span style="display:inline-flex;align-items:stretch;height:20px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+              <span style="width:6px;background:var(--border-strong);background:{{ conf.accent }};"></span>
+              <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;background:var(--border-strong);background:{{ p.teamColor }};color:var(--fg-primary);color:{{ p.teamTxt }};">{{ p.teamAbbr }}</span>
+            </span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:.04em;padding:2px 6px;border-radius:2px;background:var(--bg-surface-elev);border:1px solid var(--border);color:var(--fg-secondary);">{{ p.cls }}</span>
+          </span>
+        </span>
+        <span style="text-align:right;font-size:12px;color:var(--fg-secondary);" class="cffb-num">{{ p.posRank }}</span>
+        <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:19px;" class="cffb-num">{{ p.pts }}</span>
+        <span style="text-align:right;font-size:13px;color:var(--fg-primary);" class="cffb-num">{{ p.pctTeam }}</span>
+        <span style="text-align:right;font-size:13px;color:var(--fg-secondary);" class="cffb-num">{{ p.confPts }}</span>
+        <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--gold);" class="cffb-num">{{ p.score }}</span>
+      </div>
+    </sc-for>
+   </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRecruiting }}" hint-placeholder-val="{{ false }}">
+<div>
+  <!-- ============ RECRUITING BONUS DOLLARS ============ -->
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:44px 0 20px;">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <div style="width:8px;height:26px;border-radius:1px;background:var(--gold-gradient);"></div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">Recruiting Bonus Dollars</div>
+    </div>
+    <div style="font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">Bonus $ Accrued for Next Season · Thru Week {{ recWeek }}</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;margin-bottom:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);">
+    <sc-for list="{{ recConfTabs }}" as="rc" hint-placeholder-count="7">
+      <button onClick="{{ rc.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ rc.activeStyle }}" style-hover="color:var(--fg-primary)">
+        <sc-if value="{{ rc.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="width:22px;height:22px;flex-shrink:0;background-size:contain;background-repeat:no-repeat;background-position:center;transition:filter var(--dur-fast) var(--ease-out);{{ rc.logoStyle }}"></span></sc-if>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ rc.label }}</span>
+        <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ rc.countColor }}" class="cffb-num">{{ rc.count }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">
+
+    <!-- League ranking chart -->
+    <div style="flex:3 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--border);">
+        <span style="font:700 var(--tx-2xs)/1 var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--fg-secondary);">League Standings · Bonus $ Accrued</span>
+        <span style="font:600 9px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);">{{ recScopeLabel }} · Click a program for its breakdown</span>
+      </div>
+      <div style="max-height:620px;overflow-y:auto;">
+      <sc-for list="{{ recRank }}" as="rr" hint-placeholder-count="10">
+        <button onClick="{{ rr.onSelect }}" onMouseEnter="{{ rr.onHover }}" onMouseLeave="{{ rr.onLeave }}" style="display:grid;grid-template-columns:30px 96px 1fr 64px;gap:12px;align-items:center;width:100%;text-align:left;cursor:pointer;padding:9px 18px;border:none;border-bottom:1px solid rgba(42,42,42,.55);font-family:var(--font-body);background:transparent;{{ rr.rowStyle }}" style-hover="background:var(--bg-surface-hover)">
+          <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--fg-tertiary);" class="cffb-num">{{ rr.rankStr }}</span>
+          <sc-if value="{{ rr.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="justify-self:start;width:96px;height:24px;background-size:contain;background-repeat:no-repeat;background-position:left center;{{ rr.logoStyle }}"></span></sc-if>
+          <sc-if value="{{ rr.noLogo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:stretch;justify-self:start;width:max-content;height:24px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+            <span style="width:5px;background:var(--border-strong);background:{{ rr.confAccent }};"></span>
+            <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;white-space:nowrap;background:var(--border-strong);background:{{ rr.color }};color:var(--fg-primary);color:{{ rr.txt }};">{{ rr.abbr }}</span>
+          </span></sc-if>
+          <span style="min-width:0;display:flex;align-items:center;">
+            <span style="height:14px;border-radius:2px;flex:none;background:var(--border-strong);{{ rr.barStyle }}"></span>
+          </span>
+          <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--gold);" class="cffb-num">${{ rr.total }}</span>
+        </button>
+      </sc-for>
+      </div>
+    </div>
+
+    <!-- Team breakdown -->
+    <div style="flex:2 1 340px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span style="display:inline-flex;align-items:stretch;height:32px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);">
+            <span style="width:6px;background:var(--border-strong);background:{{ sel.confAccent }};"></span>
+            <span style="display:flex;align-items:center;padding:0 11px;font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;background:var(--border-strong);background:{{ sel.color }};color:var(--fg-primary);color:{{ sel.txt }};">{{ sel.abbr }}</span>
+          </span>
+          <span style="text-align:right;font:600 9px/1.6 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">League Rank {{ sel.rankStr }}<span style="display:block;color:{{ sel.confAccent }};">{{ sel.confLabel }} Rank {{ sel.confRankStr }}</span></span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:14px;">
+          <span style="font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1;background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;" class="cffb-num">${{ sel.total }}</span>
+          <span style="font:600 9px/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-secondary);">Bonus $ for {{ nextSeason }}</span>
+        </div>
+        <div style="display:flex;height:10px;border-radius:var(--r-pill);overflow:hidden;margin-top:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+          <span style="background:#C9A227;{{ sel.winsW }}"></span>
+          <span style="background:#3B82C4;{{ sel.rivW }}"></span>
+          <span style="background:#2F7D5C;{{ sel.draftW }}"></span>
+          <span style="background:#C4574E;{{ sel.gdW }}"></span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-bottom:1px solid var(--border);">
+        <div style="padding:12px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-top:3px solid #C9A227;">
+          <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">Wins</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">${{ sel.wins }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.winsPct }} of total</div>
+        </div>
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);border-top:3px solid #3B82C4;">
+          <div style="display:flex;align-items:center;gap:5px;font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);"><img src="../../assets/icons/rivalry.svg" alt="" style="width:12px;height:12px;object-fit:contain;"/>Rivalry Wagers</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">${{ sel.riv }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.rivPct }} of total</div>
+        </div>
+        <div style="padding:12px 14px;border-right:1px solid var(--border);border-top:3px solid #2F7D5C;">
+          <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">Draft</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">${{ sel.draft }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.draftPct }} of total</div>
+        </div>
+        <div style="padding:12px 14px;border-top:3px solid #C4574E;">
+          <div style="display:flex;align-items:center;gap:5px;font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);"><img src="./gameday-placeholder.svg" alt="College GameDay" style="width:13px;height:13px;object-fit:contain;"/>College GameDay</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">${{ sel.gd }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.gdPct }} of total</div>
+        </div>
+      </div>
+      <div style="padding:16px 18px 12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+          <span style="font:700 var(--tx-2xs)/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--fg-secondary);">Bonus $ Accrual · All 100 Teams</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 9px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);"><span style="width:14px;height:3px;border-radius:2px;background:var(--gold);background:{{ sel.color }};"></span>{{ sel.abbr }} Highlighted</span>
+        </div>
+        <div style="position:relative;">
+        <sc-if value="{{ hasDotTip }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;z-index:5;transform:translate(-50%,-130%);pointer-events:none;max-width:230px;padding:8px 10px;border-radius:var(--r-2);background:#101010;border:1px solid var(--border-strong);box-shadow:0 6px 18px rgba(0,0,0,.5);{{ dotTipPos }}">
+            <div style="font:700 10px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--gold);white-space:nowrap;">{{ dotTipHead }}</div>
+            <div style="font-size:11px;color:var(--fg-secondary);margin-top:5px;line-height:1.4;">{{ dotTipBody }}</div>
+          </div>
+        </sc-if>
+        <svg viewBox="0 0 600 230" preserveAspectRatio="none" style="width:100%;height:210px;display:block;">
+          <line x1="0" y1="229" x2="600" y2="229" stroke="#2A2A2A" stroke-width="1"></line>
+          <line x1="0" y1="115" x2="600" y2="115" stroke="#2A2A2A" stroke-width="0.6" stroke-dasharray="3 4"></line>
+          <sc-for list="{{ teamLines }}" as="tl" hint-placeholder-count="12">
+            <polyline fill="none" points="{{ tl.points }}" style="stroke:#3A3A3A;stroke-width:1;{{ tl.lineStyle }}"></polyline>
+          </sc-for>
+          <sc-for list="{{ hiDots }}" as="d" hint-placeholder-count="5">
+            <circle cx="{{ d.x }}" cy="{{ d.y }}" r="4" stroke="#0A0A0A" stroke-width="1.5" onMouseEnter="{{ d.onEnter }}" onMouseLeave="{{ d.onLeave }}" style="cursor:pointer;fill:#C9A227;{{ d.style }}"></circle>
+          </sc-for>
+        </svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font:600 9px/1 var(--font-body);color:var(--fg-tertiary);"><span class="cffb-num">Wk 1</span><span class="cffb-num">Wk {{ recWeek }}</span></div>
+        <div style="margin-top:8px;font-size:10px;color:var(--fg-tertiary);">Cumulative bonus $ by week — hover or select a program on the left to highlight its line.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1180},&quot;defaultView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Awards Watch&quot;,&quot;options&quot;:[&quot;Awards Watch&quot;,&quot;Recruiting $&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Dashboard&quot;,&quot;label&quot;:&quot;Default view on load&quot;},&quot;highlightLeader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Awards&quot;,&quot;label&quot;:&quot;Gold hero treatment on front-runner&quot;},&quot;maxFinalists&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:9,&quot;min&quot;:4,&quot;max&quot;:9,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Awards&quot;,&quot;label&quot;:&quot;Finalists shown per national award&quot;}}">
+class Component extends DCLogic {
+  state = { view: null, award: 'heisman', conf: 'sec', tier: 'first', recConf: 'all', recTeam: null };
+
+  componentDidMount() {
+    if (!window.CFFB_AWARDS || !window.CFFB_RECRUITING) {
+      this._t = setInterval(() => {
+        if (window.CFFB_AWARDS && window.CFFB_RECRUITING) { clearInterval(this._t); this.forceUpdate(); }
+      }, 40);
+    }
+  }
+  componentWillUnmount() { if (this._t) clearInterval(this._t); }
+
+  posColor(pos) {
+    const m = { QB:['#C9A227','#0A0A0A'], RB:['#3B82C4','#F5F5F5'], WR:['#7BA4C9','#0A0A0A'], TE:['#8B6F1F','#F5F5F5'], HC:['#2A2A2A','#F5F5F5'] };
+    return m[pos] || ['#C9A227','#0A0A0A'];
+  }
+  clsFull(c) { return ({ FR:'Freshman', SO:'Sophomore', JR:'Junior', SR:'Senior', GR:'Graduate' })[c] || c; }
+  pad(n) { return n < 10 ? '0' + n : '' + n; }
+  fmt2(n) { return (+n).toFixed(2); }
+  scoreOf(f, isCoach) {
+    if (isCoach) { const wins = +(f.overall.split('-')[0]) || 0; return Math.round(f.teamPts * 0.45) + wins * 6 + Math.round(f.swing * 1.5); }
+    return Math.round(f.pts * 0.55) + Math.round(f.confPts * 0.25) + Math.round(f.pctTeam * 4 * 0.20);
+  }
+
+  buildLeader(award, highlight) {
+    const f = award.finalists[0], nx = award.finalists[1];
+    if (award.isCoach) {
+      const lead = nx ? f.teamPts - nx.teamPts : 0;
+      const wins = +(f.overall.split('-')[0]) || 0;
+      const c1 = Math.round(f.teamPts * 0.45), c2 = wins * 6, c3 = Math.round(f.swing * 1.5);
+      return {
+        name: f.name, cls: 'HC', teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+        subline: f.team.name + ' · Head Coach', badgeLabel: 'RECORD', badge: f.overall,
+        cushionVal: '+' + lead, cushionLabel: 'Team-pts lead over #2',
+        score: c1 + c2 + c3,
+        formulaExpr: 'Score = (0.45 · Team Pts For) + (6 · Wins) + (1.5 · Point Swing)',
+        formulaParts: [
+          { label: 'Team Pts For', input: '' + f.teamPts, weight: '× 0.45', value: c1 },
+          { label: 'Wins', input: f.overall, weight: '× 6', value: c2 },
+          { label: 'Point Swing', input: (f.swing > 0 ? '+' : '') + f.swing, weight: '× 1.5', value: c3 },
+        ],
+        metrics: [
+          { label: 'OVERALL', value: f.overall, isHero: false, isPlain: true },
+          { label: 'CONF', value: f.confRec, isHero: false, isPlain: true },
+          { label: 'TEAM PTS FOR', value: this.fmt2(f.teamPts), isHero: !!highlight, isPlain: !highlight },
+        ],
+      };
+    }
+    const lead = nx ? f.pts - nx.pts : 0;
+    const c1 = Math.round(f.pts * 0.55), c2 = Math.round(f.confPts * 0.25), c3 = Math.round(f.pctTeam * 4 * 0.20);
+    return {
+      name: f.name, cls: f.cls, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      subline: f.team.name + ' · ' + this.clsFull(f.cls), badgeLabel: f.pos + ' RANK', badge: '#' + f.posRank,
+      cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Fantasy-pt lead over #2',
+      score: c1 + c2 + c3,
+      formulaExpr: 'Score = (0.55 · Fantasy Pts) + (0.25 · Conf Pts) + (0.20 · Team Share × 4)',
+      formulaParts: [
+        { label: 'Fantasy Pts', input: '' + f.pts, weight: '× 0.55', value: c1 },
+        { label: 'Conf-Game Pts', input: '' + f.confPts, weight: '× 0.25', value: c2 },
+        { label: 'Team Point Share', input: f.pctTeam + '% × 4', weight: '× 0.20', value: c3 },
+      ],
+      metrics: [
+        { label: 'FANTASY PTS', value: this.fmt2(f.pts), isHero: !!highlight, isPlain: !highlight },
+        { label: '% OF TEAM', value: f.pctTeam + '%', isHero: false, isPlain: true },
+        { label: 'CONF PTS', value: this.fmt2(f.confPts), isHero: false, isPlain: true },
+      ],
+    };
+  }
+
+  buildFinalist(f, isCoach) {
+    if (isCoach) return {
+      rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      meta: f.confRec + ' conf · ' + (f.swing > 0 ? '+' : '') + f.swing + ' swing', statMain: this.fmt2(f.teamPts), statSub: f.overall,
+      score: this.scoreOf(f, true),
+    };
+    return {
+      rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      meta: f.cls + ' · ' + f.pos + ' #' + f.posRank, statMain: this.fmt2(f.pts), statSub: f.pctTeam + '%',
+      score: this.scoreOf(f, false),
+    };
+  }
+
+  buildRecruiting(R, D) {
+    const srcMeta = { W: ['Wins', '#C9A227', 'rgba(201,162,39,.14)', ''], R: ['Rivalry', '#3B82C4', 'rgba(59,130,196,.14)', '../../assets/icons/rivalry.svg'], D: ['Draft', '#2F7D5C', 'rgba(47,125,92,.14)', ''], G: ['GameDay', '#C4574E', 'rgba(196,87,78,.14)', './gameday-placeholder.svg'] };
+    const keys = Object.keys(R.teams);
+    const totOf = (t) => t.events.reduce((a, e) => a + e.amt, 0);
+    const ranked = keys.map((k) => ({ key: k, ...R.teams[k], total: totOf(R.teams[k]) })).sort((a, b) => b.total - a.total);
+    ranked.forEach((t, i) => { t.rank = i + 1; });
+
+    const confKey = this.state.recConf;
+    const confLogos = { sec: 'sec', b1g: 'b1g', acc: 'acc', big12: 'big12', aac: 'aac', pac: 'pac12' };
+    const recConfTabs = [{ key: 'all', label: 'All Teams' }].concat(D.confOrder.map((k) => ({ key: k, label: D.conferences[k].label }))).map((c) => {
+      const active = c.key === confKey;
+      const count = c.key === 'all' ? ranked.length : ranked.filter((t) => t.conf === c.key).length;
+      return {
+        key: c.key, label: c.label, count,
+        hasLogo: c.key !== 'all',
+        logoStyle: c.key === 'all' ? '' : 'background-image:url(../../assets/conferences/' + confLogos[c.key] + '.png);' + (active ? '' : 'filter:grayscale(1) opacity(.55);'),
+        countColor: active ? 'color:var(--gold);' : '',
+        activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);' : '',
+        onSelect: () => this.setState({ recConf: c.key }),
+      };
+    });
+
+    const teamPills = { UGA: 'georgia', ARMY: 'army', FRES: 'fresno-state', UNC: 'north-carolina' };
+    const scoped = confKey === 'all' ? ranked : ranked.filter((t) => t.conf === confKey);
+    const selT = ranked.find((t) => t.key === this.state.recTeam) || scoped[0] || ranked[0];
+    const max = Math.max(...scoped.map((t) => t.total), 1);
+    const recRank = scoped.map((t) => ({
+      key: t.key, rankStr: this.pad(t.rank), abbr: t.key, name: t.name, total: t.total,
+      color: t.color, txt: t.txt,
+      hasLogo: !!teamPills[t.key], noLogo: !teamPills[t.key],
+      logoStyle: teamPills[t.key] ? 'background-image:url(../../assets/teams/' + teamPills[t.key] + '.png);' : '',
+      confAccent: (D.conferences[t.conf] || {}).accent || 'var(--gold)',
+      barStyle: 'width:' + Math.max(3, Math.round((t.total / max) * 100)) + '%;background:' + t.color + ';' + (t.key === selT.key ? '' : 'opacity:.55;'),
+      rowStyle: t.key === selT.key ? 'background:var(--bg-surface-elev);box-shadow:inset 3px 0 0 var(--gold);' : '',
+      onSelect: () => this.setState({ recTeam: t.key, dotTip: null }),
+      onHover: () => this.setState({ recHover: t.key, dotTip: null }),
+      onLeave: () => this.setState({ recHover: null }),
+    }));
+
+    const hiKey = this.state.recHover || selT.key;
+    const maxTot = Math.max(...ranked.map((t) => t.total), 1);
+    const wk = R.week;
+    const lineOf = (t) => {
+      let cum = 0;
+      const byWk = [];
+      for (let w = 1; w <= wk; w++) { t.events.forEach((e) => { if (e.week === w) cum += e.amt; }); byWk.push(cum); }
+      return byWk.map((v, i) => (Math.round((i / Math.max(wk - 1, 1)) * 600)) + ',' + (Math.round(229 - (v / maxTot) * 220))).join(' ');
+    };
+    const teamLines = ranked.filter((t) => t.key !== hiKey).map((t) => ({
+      points: lineOf(t),
+      lineStyle: 'opacity:.4;',
+    }));
+    const hiT = ranked.find((t) => t.key === hiKey);
+    const hiDots = [];
+    if (hiT) {
+      teamLines.push({ points: lineOf(hiT), lineStyle: 'stroke:' + hiT.color + ';stroke-width:2.5;opacity:1;' });
+      let cum = 0;
+      for (let w = 1; w <= wk; w++) {
+        const wkEvts = hiT.events.filter((e) => e.week === w);
+        const gained = wkEvts.reduce((a, e) => a + e.amt, 0);
+        cum += gained;
+        if (gained > 0) {
+          const x = Math.round(((w - 1) / Math.max(wk - 1, 1)) * 600);
+          const y = Math.round(229 - (cum / maxTot) * 220);
+          const tip = { head: 'Wk ' + w + ' · +$' + gained, body: wkEvts.map((e) => e.desc + ' (+$' + e.amt + ')').join(' · '), pos: 'left:' + (x / 6).toFixed(1) + '%;top:' + ((y / 230) * 100).toFixed(1) + '%;' };
+          hiDots.push({
+            x, y, style: 'fill:' + hiT.color + ';',
+            onEnter: () => this.setState({ dotTip: tip }),
+            onLeave: () => this.setState({ dotTip: null }),
+          });
+        }
+      }
+    }
+
+    const sums = { W: 0, R: 0, D: 0, G: 0 };
+    selT.events.forEach((e) => { sums[e.src] = (sums[e.src] || 0) + e.amt; });
+    const pct = (n) => Math.round((n / Math.max(selT.total, 1)) * 100);
+    const sel = {
+      abbr: selT.key, name: selT.name, color: selT.color, txt: selT.txt,
+      confAccent: (D.conferences[selT.conf] || {}).accent || 'var(--gold)',
+      rankStr: '#' + selT.rank, total: selT.total,
+      confLabel: (D.conferences[selT.conf] || {}).label || '',
+      confRankStr: '#' + (ranked.filter((t) => t.conf === selT.conf).findIndex((t) => t.key === selT.key) + 1),
+      wins: sums.W, riv: sums.R, draft: sums.D, gd: sums.G,
+      winsPct: pct(sums.W) + '%', rivPct: pct(sums.R) + '%', draftPct: pct(sums.D) + '%', gdPct: pct(sums.G) + '%',
+      winsW: 'width:' + pct(sums.W) + '%;', rivW: 'width:' + pct(sums.R) + '%;', draftW: 'width:' + pct(sums.D) + '%;', gdW: 'width:' + pct(sums.G) + '%;',
+    };
+    return {
+      recWeek: R.week, nextSeason: R.season + 1,
+      recScopeLabel: confKey === 'all' ? 'All Conferences' : (D.conferences[confKey] || {}).label,
+      recConfTabs, recRank, sel, teamLines, hiDots,
+      hasDotTip: !!this.state.dotTip,
+      dotTipPos: (this.state.dotTip || {}).pos || '',
+      dotTipHead: (this.state.dotTip || {}).head || '',
+      dotTipBody: (this.state.dotTip || {}).body || '',
+    };
+  }
+
+  renderVals() {
+    const D = window.CFFB_AWARDS;
+    const R = window.CFFB_RECRUITING;
+    const highlight = this.props.highlightLeader !== false;
+    const spot = this.props.showSpotlight !== false;
+    const maxF = Math.max(4, Math.min(9, this.props.maxFinalists ?? 9));
+    const view = this.state.view || (this.props.defaultView === 'Recruiting $' ? 'recruiting' : 'awards');
+    const isAwards = view === 'awards', isRecruiting = view === 'recruiting';
+
+    const viewTabs = [['awards', 'Awards Watch'], ['recruiting', 'Recruiting $']].map(([k, label]) => ({
+      key: k, label,
+      activeStyle: k === view ? 'background:var(--bg-surface-elev);box-shadow:inset 0 2px 0 var(--gold);color:var(--fg-primary);' : '',
+      onSelect: () => this.setState({ view: k }),
+    }));
+
+    if (!D || !R) return { isAwards, isRecruiting, viewTabs, showSpotlight: spot, highlightLeader: highlight, seasonLine: 'Season', week: '—', awardName: '', awardTabs: [], finalists: [], leader: { metrics: [], formulaParts: [] }, confTabs: [], tierTabs: [], roster: [], conf: { accent: 'var(--gold)', label: '' }, statMainLabel: '', statSubLabel: '', tierLabel: '', recWeek: '—', nextSeason: '', recScopeLabel: '', recConfTabs: [], recRank: [], sel: {}, teamLines: [], hiDots: [], hasDotTip: false, dotTipPos: '', dotTipHead: '', dotTipBody: '' };
+
+    const rec = this.buildRecruiting(R, D);
+
+    const awardKey = this.state.award, confKey = this.state.conf, tier = this.state.tier;
+
+    const awardTabs = D.nationalOrder.map((k) => {
+      const a = D.national[k], active = k === awardKey;
+      return {
+        key: k, name: a.name, honors: a.honors, leader: a.finalists[0].name,
+        honorsColor: active ? 'var(--gold)' : 'var(--fg-tertiary)',
+        activeStyle: active
+          ? 'background:var(--bg-surface-elev);border:1px solid rgba(201,162,39,.5);box-shadow:inset 0 2px 0 var(--gold),0 0 20px rgba(201,162,39,.14);color:var(--fg-primary);'
+          : '',
+        onSelect: () => this.setState({ award: k }),
+      };
+    });
+
+    const award = D.national[awardKey];
+    const leader = this.buildLeader(award, highlight);
+    leader.teamColor = leader.teamColor; leader.teamTxt = leader.teamTxt;
+    const finalists = award.finalists.slice(1, 1 + maxF).map((f) => ({ ...this.buildFinalist(f, !!award.isCoach), confAccent: (D.conferences[f.team.conf] || {}).accent || 'var(--gold)' }));
+
+    const confLogos = { sec: 'sec', b1g: 'b1g', acc: 'acc', big12: 'big12', aac: 'aac', pac: 'pac12' };
+    const conf = D.conferences[confKey];
+    const confTabs = D.confOrder.map((k) => {
+      const c = D.conferences[k], active = k === confKey;
+      const tiers = D.confTiers[k] || {};
+      const count = (tiers.first || []).length + (tiers.second || []).length + (tiers.third || []).length;
+      return {
+        key: k, label: c.label, count,
+        logoStyle: 'background-image:url(../../assets/conferences/' + confLogos[k] + '.png);' + (active ? '' : 'filter:grayscale(1) opacity(.55);'),
+        countColor: active ? 'color:var(--gold);' : '',
+        activeStyle: active
+          ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);'
+          : '',
+        onSelect: () => this.setState({ conf: k }),
+      };
+    });
+
+    const tierMeta = [['first', 'First Team'], ['second', 'Second Team'], ['third', 'Third Team']];
+    const tierTabs = tierMeta.map(([tk, lbl]) => {
+      const active = tk === tier;
+      return {
+        key: tk, label: lbl,
+        activeStyle: active
+          ? 'background:' + conf.tint + ';color:' + conf.accent + ';'
+          : '',
+        onSelect: () => this.setState({ tier: tk }),
+      };
+    });
+    const tierLabel = (tierMeta.find((t) => t[0] === tier) || ['', ''])[1];
+
+    const roster = (D.confTiers[confKey][tier] || []).map((p) => {
+      const [pc, pt] = this.posColor(p.pos);
+      return {
+        pos: p.pos, posColor: pc, posTxt: pt,
+        name: p.name, teamAbbr: p.team.abbr, teamColor: p.team.color, teamTxt: p.team.txt,
+        cls: p.cls, posRank: '#' + p.posRank, pts: this.fmt2(p.pts), pctTeam: p.pctTeam + '%', confPts: this.fmt2(p.confPts), score: this.scoreOf(p, false),
+      };
+    });
+
+    return {
+      isAwards, isRecruiting, viewTabs,
+      showSpotlight: spot, highlightLeader: highlight,
+      seasonLine: 'Season ' + D.season + ' · Through Week ' + D.week, week: D.week,
+      awardTabs, leader, finalists, awardName: award.name,
+      statMainLabel: award.isCoach ? 'Team Pts' : 'Fan Pts',
+      statSubLabel: award.isCoach ? 'Record' : '% Team',
+      confTabs, conf, tierTabs, tierLabel, roster,
+      ...rec,
+    };
+  }
+}
+</script>
+</body>
+</html>

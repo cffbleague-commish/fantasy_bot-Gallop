@@ -1229,7 +1229,10 @@ const PLAYER_PHOTO = pid => `https://www46.myfantasyleague.com/player_photos_201
 
 // ── Encoded contract-string parser (mirrors mfl-player-parser.js) ─────────────
 // A single copy string: OWNER_CLASS[_MODS]. OWNER is the 4-digit MFL franchise id
-// (e.g. "0032") or "FA" for a free-agent copy. Returns { owner, cls, redshirt, awards }.
+// (e.g. "0032") or "FA" for a free-agent copy. Returns { owner, cls, redshirts, awards }.
+// A player can carry BOTH a traditional and a medical redshirt encoded back-to-back
+// (e.g. "r23m24" = traditional 2023 + medical 2024), so redshirts is a LIST — one
+// entry per r/m segment — rather than a single value that the later one overwrites.
 const ENC_RE = /^(?:FA|\d{4})_(?:FR|SO|JR|SR|GR)(?:_[A-Za-z0-9]+)*$/;
 function parseEncoded(str) {
   if (!str || !ENC_RE.test(str)) return null;
@@ -1237,7 +1240,7 @@ function parseEncoded(str) {
   const out = {
     owner: parts[0],
     cls: parts[1],
-    redshirt: null,
+    redshirts: [],
     awards: []
   };
   for (let i = 2; i < parts.length; i++) {
@@ -1249,10 +1252,10 @@ function parseEncoded(str) {
         j++;
       } else if (ch === 'r' || ch === 'm') {
         const yy = seg.slice(j + 1, j + 3);
-        if (/^\d{2}$/.test(yy)) out.redshirt = {
+        if (/^\d{2}$/.test(yy)) out.redshirts.push({
           type: ch === 'm' ? 'med' : 'trad',
           year: 2000 + parseInt(yy, 10)
-        };
+        });
         j += 3;
       } else if (ch === 'N' || ch === 'A') {
         const m = seg.slice(j + 1).match(/^(\d+)/);
@@ -1315,27 +1318,29 @@ function encodedForFranchise(pl, fid) {
   };
 }
 
-// ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
-function deriveElig(cls, rs) {
+// ── Eligibility clock from class + redshirt(s) (approximation) ────────────────
+// rss is an array of {type,year} — a player may carry both a traditional and a
+// medical redshirt, and each one adds a year of eligibility + its own dot.
+function deriveElig(cls, rss) {
+  rss = rss || [];
   const idx = Math.max(0, CLASS_SEQ.indexOf(cls)); // FR=0 … GR=4
   const played = idx + 1; // seasons enrolled incl. this one
-  const rsYear = rs ? rs.year : null;
-  const rsKind = rs ? rs.type === 'med' ? 'rs-med' : 'rs' : null;
-  const hasRS = rsYear != null;
+  const nRS = rss.length;
   const dots = [];
   for (let i = 0; i < played; i++) dots.push('used');
-  if (hasRS) dots.splice(Math.min(dots.length, 1), 0, rsKind);
-  const allowed = 4 + (hasRS ? 1 : 0);
+  // Insert one ring per redshirt, right after the first played year.
+  rss.forEach((r, k) => dots.splice(Math.min(dots.length, 1 + k), 0, r.type === 'med' ? 'rs-med' : 'rs'));
+  const allowed = 4 + nRS; // each redshirt buys a year back
   const usedBefore = Math.max(played - 1, 0);
   const remaining = allowed - usedBefore;
-  while (dots.length < Math.min(allowed + (hasRS ? 1 : 0), 6)) dots.push('open');
+  while (dots.length < Math.min(allowed + nRS, 6)) dots.push('open');
   const remainLabel = remaining <= 0 ? 'No eligibility' : remaining === 1 ? 'Final year' : remaining + ' left';
   return {
-    cls: (hasRS ? 'R-' : '') + cls,
+    cls: (nRS ? 'R-' : '') + cls,
     dots,
     remaining,
     remainLabel,
-    redshirtingNow: rsYear === SEASON
+    redshirtingNow: rss.some(r => r.year === SEASON)
   };
 }
 const initialsOf = name => {
@@ -1372,10 +1377,10 @@ const enrichRow = teamKey => m => {
     injury: null
   };
   const enc = m.enc;
-  const rs = enc ? enc.redshirt : null;
+  const rss = enc ? enc.redshirts || [] : []; // may hold BOTH a traditional and a medical redshirt
   // No matching copy for this franchise → leave contract fields blank (never show
   // another team's copy); m.unverified drives the ⚠ "awaiting contract" flag.
-  const elig = enc ? deriveElig(enc.cls, rs) : {
+  const elig = enc ? deriveElig(enc.cls, rss) : {
     cls: '',
     dots: [],
     remaining: null,
@@ -1394,10 +1399,11 @@ const enrichRow = teamKey => m => {
     injury: p.injury || null,
     initials: initialsOf(p.name),
     awards: enc ? enc.awards.map(encAwardToDisplay) : [],
-    rs: rs ? {
-      type: rs.type,
-      year: rs.year
-    } : null,
+    rs: rss.map(r => ({
+      type: r.type,
+      year: r.year
+    })),
+    // array (0, 1, or 2 redshirts)
     elig,
     contractUnverified: !!m.unverified,
     // Same-conference co-owner from the row's other token; 'FA'/absent → null so
@@ -1426,7 +1432,7 @@ function buildRoster(teamKey) {
   }).filter(g => g.players.length);
   const all = active.concat(taxi, ir);
   const totalPts = all.reduce((s, r) => s + r.pts, 0);
-  const rsCount = all.filter(r => r.rs && r.rs.year === SEASON).length;
+  const rsCount = all.filter(r => r.elig.redshirtingNow).length;
   const outCount = all.filter(r => r.injury && r.injury[0] === 'O').length;
   return {
     groups,
@@ -1642,7 +1648,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v10'; // v10: other-copy from the row's same-conference token
+const RB_CACHE_KEY = 'cffb_roster_board_v11'; // v11: capture BOTH redshirts (r+m) per copy
 const RB_FRESH_MS = 30 * 60 * 1000; // serve without refetch
 const RB_MAX_MS = 24 * 60 * 60 * 1000; // hard cap
 function rbReadCache() {
@@ -1972,16 +1978,18 @@ const Elig = ({
     className: 'cffb-elig__dot' + (d === 'used' ? ' is-used' : d === 'rs' ? ' is-rs' : d === 'rs-med' ? ' is-rs-med' : '')
   }))));
 };
+
+// rs is an ARRAY of {type,year} — a player may carry both a traditional and a
+// medical redshirt (e.g. r23m24), so render one chip per redshirt.
 const RSChip = ({
   rs,
   ir
 }) => {
-  if (!rs) return /*#__PURE__*/React.createElement("span", {
+  if (!rs || !rs.length) return /*#__PURE__*/React.createElement("span", {
     className: "rb-none"
   }, "\u2014");
-  const med = rs.type === 'med';
-  const active = rs.year === SEASON;
-  const warn = ir && med && !active; // on IR with a medical redshirt already used
+  const priorMedYear = (rs.find(r => r.type === 'med' && r.year !== SEASON) || {}).year;
+  const warn = ir && priorMedYear != null; // on IR with a medical redshirt already used
   return /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'inline-flex',
@@ -1989,25 +1997,30 @@ const RSChip = ({
       gap: 3,
       alignItems: 'flex-start'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: 'cffb-rs ' + (med ? 'cffb-rs--med' : 'cffb-rs--trad'),
-    title: (med ? 'Medical' : 'Traditional') + ' redshirt · ' + rs.year + (active ? ' (this season)' : '')
-  }, /*#__PURE__*/React.createElement("svg", {
-    className: "cffb-rs__icon",
-    viewBox: "0 0 20 22",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.6",
-    strokeLinejoin: "round",
-    strokeLinecap: "round",
-    dangerouslySetInnerHTML: {
-      __html: med ? SHIELD_MED : SHIELD
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "cffb-rs__txt"
-  }, med ? 'MRS' : 'RS', " \u2019", String(rs.year).slice(2))), warn && /*#__PURE__*/React.createElement("span", {
+  }, rs.map((r, i) => {
+    const med = r.type === 'med';
+    const active = r.year === SEASON;
+    return /*#__PURE__*/React.createElement("span", {
+      key: i,
+      className: 'cffb-rs ' + (med ? 'cffb-rs--med' : 'cffb-rs--trad'),
+      title: (med ? 'Medical' : 'Traditional') + ' redshirt · ' + r.year + (active ? ' (this season)' : '')
+    }, /*#__PURE__*/React.createElement("svg", {
+      className: "cffb-rs__icon",
+      viewBox: "0 0 20 22",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "1.6",
+      strokeLinejoin: "round",
+      strokeLinecap: "round",
+      dangerouslySetInnerHTML: {
+        __html: med ? SHIELD_MED : SHIELD
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "cffb-rs__txt"
+    }, med ? 'MRS' : 'RS', " \u2019", String(r.year).slice(2)));
+  }), warn && /*#__PURE__*/React.createElement("span", {
     className: "rb-inel",
-    title: 'Medical redshirt already used (' + rs.year + ') — this copy is not eligible for another medical redshirt'
+    title: 'Medical redshirt already used (' + priorMedYear + ') — this copy is not eligible for another medical redshirt'
   }, "\u26A0 NO MRS LEFT"));
 };
 const Awards = ({
@@ -2413,8 +2426,10 @@ const ManageModal = ({
       return mv && mv.dir === 'out';
     })();
     // A player who already carries a medical redshirt cannot earn a
-    // second one, so IR grants no redshirt benefit — flag it.
-    const usedMed = !!(p.rs && p.rs.type === 'med');
+    // second one, so IR grants no redshirt benefit — flag it. (p.rs is
+    // a list, and a prior medical redshirt is one from an earlier year.)
+    const priorMed = p.rs && p.rs.find(x => x.type === 'med' && x.year !== SEASON);
+    const usedMed = !!priorMed;
     return /*#__PURE__*/React.createElement(MngRow, {
       key: p.pid,
       p: p
@@ -2425,10 +2440,10 @@ const ManageModal = ({
     }, "\u2192 Taxi"), canIR && /*#__PURE__*/React.createElement(MBtn, {
       tone: "ir",
       disabled: busy === p.pid,
-      onClick: ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', usedMed ? '⚠ ' + p.name + ' already has a medical redshirt (' + p.rs.year + '). Placing on IR will NOT grant another redshirt.' : 'Applies a ' + SEASON + ' medical redshirt (must stay on IR through season end).')
+      onClick: ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', usedMed ? '⚠ ' + p.name + ' already has a medical redshirt (' + priorMed.year + '). Placing on IR will NOT grant another redshirt.' : 'Applies a ' + SEASON + ' medical redshirt (must stay on IR through season end).')
     }, "\u2192 IR"), canIR && usedMed && /*#__PURE__*/React.createElement("span", {
       className: "rb-mng__nors",
-      title: 'Already used a medical redshirt (' + p.rs.year + ') — going on IR will not earn another'
+      title: 'Already used a medical redshirt (' + priorMed.year + ') — going on IR will not earn another'
     }, "no new RS"), !canTaxi && !canIR && /*#__PURE__*/React.createElement("span", {
       className: "rb-mng__none",
       title: "MFL offers no taxi/IR move for this player right now"

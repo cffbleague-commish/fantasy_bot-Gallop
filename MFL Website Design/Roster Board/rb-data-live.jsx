@@ -75,12 +75,15 @@ const PLAYER_PHOTO = (pid) => `https://www46.myfantasyleague.com/player_photos_2
 
 // ── Encoded contract-string parser (mirrors mfl-player-parser.js) ─────────────
 // A single copy string: OWNER_CLASS[_MODS]. OWNER is the 4-digit MFL franchise id
-// (e.g. "0032") or "FA" for a free-agent copy. Returns { owner, cls, redshirt, awards }.
+// (e.g. "0032") or "FA" for a free-agent copy. Returns { owner, cls, redshirts, awards }.
+// A player can carry BOTH a traditional and a medical redshirt encoded back-to-back
+// (e.g. "r23m24" = traditional 2023 + medical 2024), so redshirts is a LIST — one
+// entry per r/m segment — rather than a single value that the later one overwrites.
 const ENC_RE = /^(?:FA|\d{4})_(?:FR|SO|JR|SR|GR)(?:_[A-Za-z0-9]+)*$/;
 function parseEncoded(str) {
   if (!str || !ENC_RE.test(str)) return null;
   const parts = str.split('_');
-  const out = { owner: parts[0], cls: parts[1], redshirt: null, awards: [] };
+  const out = { owner: parts[0], cls: parts[1], redshirts: [], awards: [] };
   for (let i = 2; i < parts.length; i++) {
     const seg = parts[i];
     let j = 0;
@@ -89,7 +92,7 @@ function parseEncoded(str) {
       if (ch === 'E') { j++; }
       else if (ch === 'r' || ch === 'm') {
         const yy = seg.slice(j + 1, j + 3);
-        if (/^\d{2}$/.test(yy)) out.redshirt = { type: ch === 'm' ? 'med' : 'trad', year: 2000 + parseInt(yy, 10) };
+        if (/^\d{2}$/.test(yy)) out.redshirts.push({ type: ch === 'm' ? 'med' : 'trad', year: 2000 + parseInt(yy, 10) });
         j += 3;
       } else if (ch === 'N' || ch === 'A') {
         const m = seg.slice(j + 1).match(/^(\d+)/);
@@ -140,22 +143,24 @@ function encodedForFranchise(pl, fid) {
   return { parsed: mine ? parseEncoded(mine) : null, matched: !!mine, otherOwner };
 }
 
-// ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
-function deriveElig(cls, rs) {
+// ── Eligibility clock from class + redshirt(s) (approximation) ────────────────
+// rss is an array of {type,year} — a player may carry both a traditional and a
+// medical redshirt, and each one adds a year of eligibility + its own dot.
+function deriveElig(cls, rss) {
+  rss = rss || [];
   const idx = Math.max(0, CLASS_SEQ.indexOf(cls));  // FR=0 … GR=4
   const played = idx + 1;                            // seasons enrolled incl. this one
-  const rsYear = rs ? rs.year : null;
-  const rsKind = rs ? (rs.type === 'med' ? 'rs-med' : 'rs') : null;
-  const hasRS = rsYear != null;
+  const nRS = rss.length;
   const dots = [];
   for (let i = 0; i < played; i++) dots.push('used');
-  if (hasRS) dots.splice(Math.min(dots.length, 1), 0, rsKind);
-  const allowed = 4 + (hasRS ? 1 : 0);
+  // Insert one ring per redshirt, right after the first played year.
+  rss.forEach((r, k) => dots.splice(Math.min(dots.length, 1 + k), 0, r.type === 'med' ? 'rs-med' : 'rs'));
+  const allowed = 4 + nRS;                            // each redshirt buys a year back
   const usedBefore = Math.max(played - 1, 0);
   const remaining = allowed - usedBefore;
-  while (dots.length < Math.min(allowed + (hasRS ? 1 : 0), 6)) dots.push('open');
+  while (dots.length < Math.min(allowed + nRS, 6)) dots.push('open');
   const remainLabel = remaining <= 0 ? 'No eligibility' : remaining === 1 ? 'Final year' : remaining + ' left';
-  return { cls: (hasRS ? 'R-' : '') + cls, dots, remaining, remainLabel, redshirtingNow: rsYear === SEASON };
+  return { cls: (nRS ? 'R-' : '') + cls, dots, remaining, remainLabel, redshirtingNow: rss.some((r) => r.year === SEASON) };
 }
 
 const initialsOf = (name) => {
@@ -190,10 +195,10 @@ const otherCopyOf = (pid, teamKey) => {
 const enrichRow = (teamKey) => (m) => {
   const p = PLAYERS_BY_ID[m.pid] || { name: m.pid, pos: 'WR', pts: 0, injury: null };
   const enc = m.enc;
-  const rs = enc ? enc.redshirt : null;
+  const rss = enc ? (enc.redshirts || []) : [];   // may hold BOTH a traditional and a medical redshirt
   // No matching copy for this franchise → leave contract fields blank (never show
   // another team's copy); m.unverified drives the ⚠ "awaiting contract" flag.
-  const elig = enc ? deriveElig(enc.cls, rs)
+  const elig = enc ? deriveElig(enc.cls, rss)
     : { cls: '', dots: [], remaining: null, remainLabel: 'No contract copy assigned to this team yet', redshirtingNow: false };
   return {
     pid: m.pid,
@@ -207,7 +212,7 @@ const enrichRow = (teamKey) => (m) => {
     injury: p.injury || null,
     initials: initialsOf(p.name),
     awards: enc ? enc.awards.map(encAwardToDisplay) : [],
-    rs: rs ? { type: rs.type, year: rs.year } : null,
+    rs: rss.map((r) => ({ type: r.type, year: r.year })),   // array (0, 1, or 2 redshirts)
     elig,
     contractUnverified: !!m.unverified,
     // Same-conference co-owner from the row's other token; 'FA'/absent → null so
@@ -233,7 +238,7 @@ function buildRoster(teamKey) {
   }).filter((g) => g.players.length);
   const all = active.concat(taxi, ir);
   const totalPts = all.reduce((s, r) => s + r.pts, 0);
-  const rsCount  = all.filter((r) => r.rs && r.rs.year === SEASON).length;
+  const rsCount  = all.filter((r) => r.elig.redshirtingNow).length;
   const outCount = all.filter((r) => r.injury && r.injury[0] === 'O').length;
   return { groups, taxi, ir, totalPts, rsCount, outCount, count: all.length };
 }
@@ -421,7 +426,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v10';  // v10: other-copy from the row's same-conference token
+const RB_CACHE_KEY = 'cffb_roster_board_v11';  // v11: capture BOTH redshirts (r+m) per copy
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {

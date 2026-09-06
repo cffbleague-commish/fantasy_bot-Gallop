@@ -42,18 +42,25 @@ const Elig = ({ elig }) => {
   );
 };
 
+// rs is an ARRAY of {type,year} — a player may carry both a traditional and a
+// medical redshirt (e.g. r23m24), so render one chip per redshirt.
 const RSChip = ({ rs, ir }) => {
-  if (!rs) return <span className="rb-none">—</span>;
-  const med = rs.type === 'med';
-  const active = rs.year === SEASON;
-  const warn = ir && med && !active; // on IR with a medical redshirt already used
+  if (!rs || !rs.length) return <span className="rb-none">—</span>;
+  const priorMedYear = (rs.find((r) => r.type === 'med' && r.year !== SEASON) || {}).year;
+  const warn = ir && priorMedYear != null; // on IR with a medical redshirt already used
   return (
     <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
-      <span className={'cffb-rs ' + (med ? 'cffb-rs--med' : 'cffb-rs--trad')} title={(med ? 'Medical' : 'Traditional') + ' redshirt · ' + rs.year + (active ? ' (this season)' : '')}>
-        <svg className="cffb-rs__icon" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" dangerouslySetInnerHTML={{ __html: med ? SHIELD_MED : SHIELD }} />
-        <span className="cffb-rs__txt">{(med ? 'MRS' : 'RS')} ’{String(rs.year).slice(2)}</span>
-      </span>
-      {warn && <span className="rb-inel" title={'Medical redshirt already used (' + rs.year + ') — this copy is not eligible for another medical redshirt'}>⚠ NO MRS LEFT</span>}
+      {rs.map((r, i) => {
+        const med = r.type === 'med';
+        const active = r.year === SEASON;
+        return (
+          <span key={i} className={'cffb-rs ' + (med ? 'cffb-rs--med' : 'cffb-rs--trad')} title={(med ? 'Medical' : 'Traditional') + ' redshirt · ' + r.year + (active ? ' (this season)' : '')}>
+            <svg className="cffb-rs__icon" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" dangerouslySetInnerHTML={{ __html: med ? SHIELD_MED : SHIELD }} />
+            <span className="cffb-rs__txt">{(med ? 'MRS' : 'RS')} ’{String(r.year).slice(2)}</span>
+          </span>
+        );
+      })}
+      {warn && <span className="rb-inel" title={'Medical redshirt already used (' + priorMedYear + ') — this copy is not eligible for another medical redshirt'}>⚠ NO MRS LEFT</span>}
     </span>
   );
 };
@@ -294,8 +301,10 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
                 const canTaxi = (() => { const mv = moveFor('taxi', p.pid); return mv && mv.dir === 'out'; })();
                 const canIR = (() => { const mv = moveFor('ir', p.pid); return mv && mv.dir === 'out'; })();
                 // A player who already carries a medical redshirt cannot earn a
-                // second one, so IR grants no redshirt benefit — flag it.
-                const usedMed = !!(p.rs && p.rs.type === 'med');
+                // second one, so IR grants no redshirt benefit — flag it. (p.rs is
+                // a list, and a prior medical redshirt is one from an earlier year.)
+                const priorMed = p.rs && p.rs.find((x) => x.type === 'med' && x.year !== SEASON);
+                const usedMed = !!priorMed;
                 return (
                   <MngRow key={p.pid} p={p}>
                     {canTaxi && <MBtn tone="taxi" disabled={busy === p.pid}
@@ -303,9 +312,9 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
                     {canIR && <MBtn tone="ir" disabled={busy === p.pid}
                       onClick={ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?',
                         usedMed
-                          ? '⚠ ' + p.name + ' already has a medical redshirt (' + p.rs.year + '). Placing on IR will NOT grant another redshirt.'
+                          ? '⚠ ' + p.name + ' already has a medical redshirt (' + priorMed.year + '). Placing on IR will NOT grant another redshirt.'
                           : 'Applies a ' + SEASON + ' medical redshirt (must stay on IR through season end).')}>→ IR</MBtn>}
-                    {canIR && usedMed && <span className="rb-mng__nors" title={'Already used a medical redshirt (' + p.rs.year + ') — going on IR will not earn another'}>no new RS</span>}
+                    {canIR && usedMed && <span className="rb-mng__nors" title={'Already used a medical redshirt (' + priorMed.year + ') — going on IR will not earn another'}>no new RS</span>}
                     {!canTaxi && !canIR && <span className="rb-mng__none" title="MFL offers no taxi/IR move for this player right now">—</span>}
                   </MngRow>
                 );
