@@ -22,6 +22,8 @@ const TeamChip = ({ id, size }) => {
 const PosChip = ({ pos }) => <span className={'cffb-pos cffb-pos--' + pos.toLowerCase()}>{pos}</span>;
 
 const Elig = ({ elig }) => {
+  // No matching contract copy for this franchise → show a dash, not a fake class.
+  if (!elig || !elig.cls) return <span className="rb-none" title={elig && elig.remainLabel}>—</span>;
   // Color-code the class chip via cffb.css (--fr/--so/--jr/--sr/--gr). elig.cls
   // may carry an "R-" redshirt prefix ("R-JR") — strip it for the modifier but
   // keep it in the visible label.
@@ -112,6 +114,7 @@ const Row = ({ p, onGo, ir }) => (
           {(p.playerId && typeof MFL_PLAYER_LINK === 'function')
             ? <a className="rb-plink" href={MFL_PLAYER_LINK(p.playerId)} target="_blank" rel="noopener noreferrer">{p.name}</a>
             : p.name}
+          {p.contractUnverified && <span className="rb-flag" title="Contract copy couldn't be matched to this team by abbreviation — eligibility/redshirt/awards shown may be inaccurate or awaiting an update">⚠</span>}
           <span className="rb-mob-status"><Status p={p} /></span>
         </span>
         {(p.team || p.bye) && (

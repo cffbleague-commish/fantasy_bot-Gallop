@@ -189,6 +189,8 @@ const extraCss = [
   '.rb-copy-badge{display:inline-flex;align-items:center;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.08em;color:var(--fg-tertiary,#6A6A66);border:1px solid var(--border,#262629);border-radius:2px;padding:3px 5px}',
   // Other-copy franchise logo: constrain so wide "pill" logos fit the narrow column.
   '#' + ROOT_ID + ' .rb-copy .cffb-team{height:20px;width:auto;max-width:110px;object-fit:contain}',
+  // Unverified-contract marker (owner abbrev didn\'t match this franchise).
+  '.rb-flag{display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#E8C547;cursor:help;flex:none}',
 ].join('\n');
 
 // ---------------------------------------------------------------------------

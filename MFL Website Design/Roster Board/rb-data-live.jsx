@@ -105,11 +105,14 @@ const encAwardToDisplay = (a) => ({
 });
 
 // Resolve the encoded contract string for THIS franchise's copy of a player.
-// A player exists as two copies (e.g. "BC_FR_r25" and "VT_FR_r25") and the
-// export row can expose either/both across fields (contractStatus is MFL's own
-// per-row copy; contractInfo may carry the other). Gather every encoded token,
-// then pick the one whose OWNER abbreviation matches this franchise so a team
-// never shows the wrong copy's eligibility/redshirt/awards.
+// A player exists as two copies (e.g. "BC_FR_r25" and "VT_FR_r25"); the export
+// row can expose either/both across fields. Returns { parsed, matched }:
+//  - matched=true  → a copy whose OWNER abbreviation equals this franchise
+//                    (the correct, verified copy),
+//  - matched=false → no owner matched, so we fall back to MFL's per-row
+//                    contractStatus (or the first token) and flag it as
+//                    unverified (info may be inaccurate / awaiting update).
+// Returns null only when the row has no encoded contract token at all.
 function encodedForFranchise(pl, abbr) {
   if (!pl) return null;
   const tokens = [];
@@ -119,14 +122,11 @@ function encodedForFranchise(pl, abbr) {
     v.split(/[;,]/).forEach((s) => { s = s.trim(); if (ENC_RE.test(s)) tokens.push(s); });
   }
   if (!tokens.length) return null;
-  // 1) The copy owned by this exact franchise (the correct one).
   const mine = tokens.find((t) => t.split('_')[0] === abbr);
-  if (mine) return parseEncoded(mine);
-  // 2) MFL's own per-row field (contractStatus is this roster row's copy).
+  if (mine) return { parsed: parseEncoded(mine), matched: true };
   const cs = pl.contractStatus && String(pl.contractStatus).trim();
-  if (cs && ENC_RE.test(cs)) return parseEncoded(cs);
-  // 3) Last resort: first token found (may be the other copy).
-  return parseEncoded(tokens[0]);
+  const fb = (cs && ENC_RE.test(cs)) ? cs : tokens[0];
+  return { parsed: parseEncoded(fb), matched: false };
 }
 
 // ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
@@ -178,7 +178,9 @@ const enrichRow = (teamAbbr) => (m) => {
   const p = PLAYERS_BY_ID[m.pid] || { name: m.pid, pos: 'WR', pts: 0, injury: null };
   const enc = m.enc;
   const rs = enc ? enc.redshirt : null;
-  const cls = enc ? enc.cls : 'FR';
+  // No matching copy for this franchise → leave contract fields blank.
+  const elig = enc ? deriveElig(enc.cls, rs)
+    : { cls: '', dots: [], remaining: null, remainLabel: 'No contract data for this team', redshirtingNow: false };
   return {
     pid: m.pid,
     playerId: p.playerId,
@@ -192,7 +194,8 @@ const enrichRow = (teamAbbr) => (m) => {
     initials: initialsOf(p.name),
     awards: enc ? enc.awards.map(encAwardToDisplay) : [],
     rs: rs ? { type: rs.type, year: rs.year } : null,
-    elig: deriveElig(cls, rs),
+    elig,
+    contractUnverified: !!(enc && !m.verified),
     other: otherCopyOf(m.pid, teamAbbr),
   };
 };
@@ -364,7 +367,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v6';
+const RB_CACHE_KEY = 'cffb_roster_board_v8';
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -421,24 +424,25 @@ async function rbFetchPayload(fidToAbbr) {
   console.log('[CFFB Roster Board] injuries: ' + injList.length + ' report entries, ' + injMatched + ' matched to rostered players');
 
   // Membership + this franchise's encoded contract copy (resolved by abbrev).
-  const rosterMembers = {};   // abbr -> [{pid,status,enc}]
+  const rosterMembers = {};   // abbr -> [{pid,status,enc,verified}]
   const membership = {};      // pid -> [abbr]
-  let encFound = 0, encMissing = 0;
+  let encMatched = 0, encFallback = 0, encNone = 0;
   asArray(rostersD && rostersD.rosters && rostersD.rosters.franchise).forEach((fr) => {
     const abbr = fidToAbbr[fr.id];
     if (!abbr) return;
     rosterMembers[abbr] = rosterMembers[abbr] || [];
     asArray(fr.player).forEach((pl) => {
-      const enc = encodedForFranchise(pl, abbr);
-      if (enc) encFound++; else encMissing++;
-      rosterMembers[abbr].push({ pid: pl.id, status: pl.status || 'ROSTER', enc });
+      const res = encodedForFranchise(pl, abbr);
+      if (res && res.matched) encMatched++; else if (res) encFallback++; else encNone++;
+      rosterMembers[abbr].push({
+        pid: pl.id, status: pl.status || 'ROSTER',
+        enc: res ? res.parsed : null, verified: !!(res && res.matched),
+      });
       (membership[pl.id] = membership[pl.id] || []).push(abbr);
     });
   });
-  if (!encFound && encMissing) {
-    console.warn('[CFFB Roster Board] no encoded contract strings found in the rosters export — '
-      + 'eligibility/redshirt/awards will be blank. Confirm where the league stores the "Copy N Info" string.');
-  }
+  console.log('[CFFB Roster Board] contract copies: ' + encMatched + ' matched by abbrev, '
+    + encFallback + ' unverified fallback (flagged), ' + encNone + ' none');
 
   return { season: SEASON, thruWeek: THRU_WEEK, playersById, rosterMembers, membership, byeMap };
 }
