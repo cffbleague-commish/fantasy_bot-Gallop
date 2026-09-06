@@ -1,0 +1,1568 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Fantasy Football: CFFB Live Scoring</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"  />
+<meta name="keywords" content="Live Scoring, fantasy football, keeper fantasy football league, dynasty fantasy football league, salary cap fantasy football league, IDP fantasy football league, MyFantasyLeague, MFL, ffl, league management"  />
+<meta name="description" content="The most customizable way to run your fantasy football league on the web today, MyFantasyLeague.com was voted 'Best Fantasy Commissioner Product' by the Fantasy Sports Trade Association, and has won several additional significant industry awards.  Our 32 years of experience means we do fantasy football right.  If you're ready to move beyond basic league settings, and onto fantasy football how the hard-core players play it, try MyFantasyLeague.com: Beyond League Management"  />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"  />
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WZDGQ9CBF2"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-WZDGQ9CBF2');
+</script>
+<meta name="viewport" content="initial-scale=1.0, width=device-width" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700|Roboto+Condensed:400,700|Roboto:400,400i,700" rel="stylesheet">
+<link rel="stylesheet" id="default" href="https://www46.myfantasyleague.com/skins17/MFLBaseCSS.css" type="text/css"  />
+<link rel="stylesheet" id="skin" href="https://www46.myfantasyleague.com/skins17/BackinBlack/BackinBlack.css" type="text/css"  />
+<link rel="stylesheet" id="responsive" href="https://www46.myfantasyleague.com/skins17/BackinBlack/responsive.css" type="text/css"  />
+<link rel="apple-touch-icon" href="https://www46.myfantasyleague.com/apple-touch-icon.png" />
+<link rel="shortcut icon" href="https://www46.myfantasyleague.com/favicon.ico" />
+<script type="text/javascript" src="https://www46.myfantasyleague.com/mfl_common.js"></script>
+<script type="text/javascript">
+<!--
+var franchise_id = '0032';
+var league_id = '12011';
+var year = 2026;
+var xmlBaseURL = 'https://www46.myfantasyleague.com/fflnetdynamic2026/';
+var baseURLStatic = 'https://www46.myfantasyleague.com';
+var baseURLDynamic = 'https://www46.myfantasyleague.com';
+var currentServerTime = 1788727583;
+var completedWeek = 0;
+var liveScoringWeek = 1;
+var startWeek = 1;
+var endWeek = 17;
+var standingsEndWeek = "12";
+var h2h_setting = "YES";  
+var precision = 2;
+var thisProgram = "ajax_ls";
+var apiKey = "aRBq38GWvuWpx1mmOVvBYDMeFqUtiQ==";
+
+function Franchise (id, name, division, icon, logo, abbrev) {
+   this.id = id;
+   this.name = name;
+   this.division = division;
+   this.icon = icon;
+   this.logo = logo;
+   this.abbrev = abbrev;
+}
+var leagueAttributes = new Object();
+
+var franchiseDatabase = new Array();
+franchiseDatabase['fid_0000'] = new Franchise('0000', 'Commissioner', undefined, 'https://i.imgur.com/vgaEQUV.png', 'https://imgur.com/jQ2qOyh.png');
+franchiseDatabase['fid_0001'] = new Franchise('0001', 'Boston College Eagles', '00' ,'https://imgur.com/7O17t8S.png' ,'https://i.imgur.com/BUUMuma.png' ,'BC');
+franchiseDatabase['fid_0002'] = new Franchise('0002', 'Clemson Tigers', '00' ,'https://imgur.com/LtzmSKi.png' ,'https://imgur.com/laO3oxb.png' ,'CLEM');
+franchiseDatabase['fid_0003'] = new Franchise('0003', 'Florida State Seminoles', '00' ,'https://imgur.com/ZFSL9pu.png' ,'https://imgur.com/jScwcUh.png' ,'FSU');
+franchiseDatabase['fid_0004'] = new Franchise('0004', 'Louisville Cardinals', '00' ,'https://imgur.com/UZGB1YB.png' ,'https://imgur.com/jzMnM2t.png' ,'LOU');
+franchiseDatabase['fid_0005'] = new Franchise('0005', 'North Carolina State Wolfpack', '00' ,'https://imgur.com/g94MSdV.png' ,'https://imgur.com/ECUMQsZ.png' ,'NCSU');
+franchiseDatabase['fid_0006'] = new Franchise('0006', 'Syracuse Orange', '00' ,'https://imgur.com/MUkLaI1.png' ,'https://imgur.com/uQLhPJD.png' ,'SYR');
+franchiseDatabase['fid_0007'] = new Franchise('0007', 'Wake Forest Demon Deacons', '00' ,'https://imgur.com/6rx06T4.png' ,'https://imgur.com/Gi3baNr.png' ,'WF');
+franchiseDatabase['fid_0008'] = new Franchise('0008', 'UCF Knights', '00' ,'https://imgur.com/Azux1rV.png' ,'https://imgur.com/w8psEM8.png' ,'UCF');
+franchiseDatabase['fid_0009'] = new Franchise('0009', 'Miami Hurricanes', '00' ,'https://imgur.com/BZjVtUl.png' ,'https://imgur.com/lBgBAjV.png' ,'MIA');
+franchiseDatabase['fid_0010'] = new Franchise('0010', 'Georgia Tech Yellow Jackets', '00' ,'https://imgur.com/R3vZKwu.png' ,'https://imgur.com/RIeVKwi.png' ,'GT');
+franchiseDatabase['fid_0011'] = new Franchise('0011', 'Duke Blue Devils', '00' ,'https://imgur.com/cetLdEj.png' ,'https://imgur.com/cL4wGzn.png' ,'DUKE');
+franchiseDatabase['fid_0012'] = new Franchise('0012', 'Kennesaw State Owls', '00' ,'https://imgur.com/ufKCcpl.png' ,'https://www46.myfantasyleague.com/fflnetdynamic2026/12011_franchise_logo0012.jpg' ,'KSU');
+franchiseDatabase['fid_0013'] = new Franchise('0013', 'Pittsburgh Panthers', '00' ,'https://imgur.com/684qMlr.png' ,'https://imgur.com/T6VyMNO.png' ,'PITT');
+franchiseDatabase['fid_0014'] = new Franchise('0014', 'Virginia Cavaliers', '00' ,'https://imgur.com/iKKVygo.png' ,'https://imgur.com/oXgCgUS.png' ,'UVA');
+franchiseDatabase['fid_0015'] = new Franchise('0015', 'Virginia Tech Hokies', '00' ,'https://imgur.com/Fcss8yq.png' ,'https://imgur.com/zHA4WJJ.png' ,'VT');
+franchiseDatabase['fid_0016'] = new Franchise('0016', 'UCONN Huskies', '00' ,'https://imgur.com/s7WT5V3.png' ,'https://imgur.com/A4KXOC5.png' ,'CONN');
+franchiseDatabase['fid_0017'] = new Franchise('0017', 'Indiana Hoosiers', '01' ,'https://imgur.com/HSbythX.png' ,'https://imgur.com/OwMWmLd.png' ,'IU');
+franchiseDatabase['fid_0018'] = new Franchise('0018', 'Maryland Terrapins', '01' ,'https://imgur.com/YDTYndR.png' ,'https://imgur.com/fxFgOMf.png' ,'UMD');
+franchiseDatabase['fid_0019'] = new Franchise('0019', 'Michigan State Spartans', '01' ,'https://imgur.com/NxsXm0X.png' ,'https://imgur.com/zaXhlFV.png' ,'MSU');
+franchiseDatabase['fid_0020'] = new Franchise('0020', 'Michigan Wolverines', '01' ,'https://imgur.com/E22TIrT.png' ,'https://imgur.com/y4191hA.png' ,'MICH');
+franchiseDatabase['fid_0021'] = new Franchise('0021', 'Ohio State Buckeyes', '01' ,'https://imgur.com/pa7FWA0.png' ,'https://imgur.com/U79575m.png' ,'OSU');
+franchiseDatabase['fid_0022'] = new Franchise('0022', 'Penn State Nittany Lions', '01' ,'https://imgur.com/V9AZuwp.png' ,'https://imgur.com/OqUeLRz.png' ,'PSU');
+franchiseDatabase['fid_0023'] = new Franchise('0023', 'Rutgers Scarlet Knights', '01' ,'https://imgur.com/8Q7ySSS.png' ,'https://imgur.com/kR8O9I8.png' ,'RUTG');
+franchiseDatabase['fid_0024'] = new Franchise('0024', 'Navy Midshipmen', '01' ,'https://imgur.com/4whGxpX.png' ,'https://imgur.com/TCoujVl.png' ,'NAVY');
+franchiseDatabase['fid_0025'] = new Franchise('0025', 'Illinois Fighting Illini', '01' ,'https://imgur.com/zXyOufT.png' ,'https://imgur.com/oDR7V49.png' ,'ILL');
+franchiseDatabase['fid_0026'] = new Franchise('0026', 'Iowa Hawkeyes', '01' ,'https://imgur.com/jrJcHtX.png' ,'https://imgur.com/DfiE9qP.png' ,'IA');
+franchiseDatabase['fid_0027'] = new Franchise('0027', 'Minnesota Golden Gophers', '01' ,'https://imgur.com/CtFPQdi.png' ,'https://imgur.com/daTOfjl.png' ,'MINN');
+franchiseDatabase['fid_0028'] = new Franchise('0028', 'Nebraska Cornhuskers', '01' ,'https://imgur.com/bywXlyu.png' ,'https://imgur.com/RLqc55w.png' ,'NEB');
+franchiseDatabase['fid_0029'] = new Franchise('0029', 'Northwestern Wildcats', '01' ,'https://imgur.com/VcdbiaX.png' ,'https://imgur.com/orttb3Q.png' ,'NU');
+franchiseDatabase['fid_0030'] = new Franchise('0030', 'Purdue Boilermakers', '01' ,'https://imgur.com/PLomQQs.png' ,'https://imgur.com/G0bQPyb.png' ,'PUR');
+franchiseDatabase['fid_0031'] = new Franchise('0031', 'Wisconsin Badgers', '01' ,'https://imgur.com/dLIi18j.png' ,'https://imgur.com/kK0rwZ5.png' ,'WISC');
+franchiseDatabase['fid_0032'] = new Franchise('0032', 'Notre Dame Fighting Irish', '01' ,'https://imgur.com/tEx2oQX.png' ,'https://imgur.com/SJizH3v.png' ,'ND');
+franchiseDatabase['fid_0033'] = new Franchise('0033', 'Cincinnati Bearcats', '02' ,'https://imgur.com/Z2awLuW.png' ,'https://imgur.com/baULlIa.png' ,'CIN');
+franchiseDatabase['fid_0034'] = new Franchise('0034', 'Iowa State Cyclones', '02' ,'https://imgur.com/guqNnbk.png' ,'https://imgur.com/mmH0AY0.png' ,'ISU');
+franchiseDatabase['fid_0035'] = new Franchise('0035', 'Kansas Jayhawks', '02' ,'https://imgur.com/kTXR7t7.png' ,'https://imgur.com/bfdLtQJ.png' ,'KU');
+franchiseDatabase['fid_0036'] = new Franchise('0036', 'Kansas State Wildcats', '02' ,'https://imgur.com/rXnJp8T.png' ,'https://imgur.com/olyBcda.png' ,'KSU');
+franchiseDatabase['fid_0037'] = new Franchise('0037', 'Army Black Knights', '02' ,'https://imgur.com/YusuhUe.png' ,'https://imgur.com/rMbdLfE.png' ,'ARMY');
+franchiseDatabase['fid_0038'] = new Franchise('0038', 'Marshall Thundering Herd', '02' ,'https://imgur.com/yZgEfsW.png' ,'https://imgur.com/6s6O5JN.png' ,'MRSH');
+franchiseDatabase['fid_0039'] = new Franchise('0039', 'Tulsa Golden Hurricanes', '02' ,'https://imgur.com/SvEqUjB.png' ,'https://imgur.com/naAYIyG.png' ,'TUL');
+franchiseDatabase['fid_0040'] = new Franchise('0040', 'West Virginia Mountaineers', '02' ,'https://imgur.com/a5O1KJN.png' ,'https://imgur.com/i9UrD8r.png' ,'WVU');
+franchiseDatabase['fid_0041'] = new Franchise('0041', 'Baylor Bears', '02' ,'https://imgur.com/MaFi8BB.png' ,'https://imgur.com/VDRkINX.png' ,'BAY');
+franchiseDatabase['fid_0042'] = new Franchise('0042', 'Houston Cougars', '02' ,'https://imgur.com/r5yzAuc.png' ,'https://imgur.com/HKM55FS.png' ,'UH');
+franchiseDatabase['fid_0043'] = new Franchise('0043', 'Oklahoma Sooners', '02' ,'https://imgur.com/hLJYWo6.png' ,'https://imgur.com/hYEYXao.png' ,'OU');
+franchiseDatabase['fid_0044'] = new Franchise('0044', 'Oklahoma State Cowboys', '02' ,'https://imgur.com/QxDsGr9.png' ,'https://imgur.com/mvvljLi.png' ,'OKST');
+franchiseDatabase['fid_0045'] = new Franchise('0045', 'SMU Mustangs', '02' ,'https://imgur.com/eniSn1i.png' ,'https://imgur.com/MjAxGy9.png' ,'SMU');
+franchiseDatabase['fid_0046'] = new Franchise('0046', 'TCU Horned Frogs', '02' ,'https://imgur.com/Qx7CWS6.png' ,'https://imgur.com/DoxRFYx.png' ,'TCU');
+franchiseDatabase['fid_0047'] = new Franchise('0047', 'Texas Longhorns', '02' ,'https://imgur.com/pvHOfoO.png' ,'https://imgur.com/eu9DJ75.png' ,'TEX');
+franchiseDatabase['fid_0048'] = new Franchise('0048', 'Texas Tech Red Raiders', '02' ,'https://imgur.com/0zT5IeZ.png' ,'https://imgur.com/muGXWIv.png' ,'TTU');
+franchiseDatabase['fid_0049'] = new Franchise('0049', 'BYU Cougars', '03' ,'https://imgur.com/4LRu2hs.png' ,'https://imgur.com/G66jFg7.png' ,'BYU');
+franchiseDatabase['fid_0050'] = new Franchise('0050', 'Boise State Broncos', '03' ,'https://imgur.com/bQcEmsG.png' ,'https://imgur.com/0ZMLZ8H.png' ,'BOI');
+franchiseDatabase['fid_0051'] = new Franchise('0051', 'California Golden Bears', '03' ,'https://imgur.com/yOL6yng.png' ,'https://imgur.com/jTuJu1u.png' ,'CAL');
+franchiseDatabase['fid_0052'] = new Franchise('0052', 'Oregon Ducks', '03' ,'https://imgur.com/04DKcN5.png' ,'https://imgur.com/5mwoel0.png' ,'ORE');
+franchiseDatabase['fid_0053'] = new Franchise('0053', 'Oregon State Beavers', '03' ,'https://imgur.com/RFtcAQO.png' ,'https://imgur.com/5LPzhHg.png' ,'ORST');
+franchiseDatabase['fid_0054'] = new Franchise('0054', 'Stanford Cardinal', '03' ,'https://imgur.com/SZRFavd.png' ,'https://imgur.com/r9xOo4J.png' ,'STAN');
+franchiseDatabase['fid_0055'] = new Franchise('0055', 'Washington Huskies', '03' ,'https://imgur.com/OiW1y4x.png' ,'https://imgur.com/Q0bDsqW.png' ,'UW');
+franchiseDatabase['fid_0056'] = new Franchise('0056', 'Washington State Cougars', '03' ,'https://imgur.com/voVxGyo.png' ,'https://imgur.com/eWwa92h.png' ,'WSU');
+franchiseDatabase['fid_0057'] = new Franchise('0057', 'Air Force Falcons', '03' ,'https://imgur.com/15oPTUP.png' ,'https://imgur.com/xrx1PAg.png' ,'AF');
+franchiseDatabase['fid_0058'] = new Franchise('0058', 'Arizona State Sun Devils', '03' ,'https://imgur.com/iiwegnP.png' ,'https://imgur.com/2OR47gt.png' ,'ASU');
+franchiseDatabase['fid_0059'] = new Franchise('0059', 'Arizona Wildcats', '03' ,'https://imgur.com/Hc8JJtF.png' ,'https://imgur.com/NqNAbcI.png' ,'ARIZ');
+franchiseDatabase['fid_0060'] = new Franchise('0060', 'Colorado Buffaloes', '03' ,'https://imgur.com/LaJ6upd.png' ,'https://imgur.com/KCiYsrT.png' ,'COL');
+franchiseDatabase['fid_0061'] = new Franchise('0061', 'Colorado State Rams', '03' ,'https://imgur.com/UNJX1E4.png' ,'https://imgur.com/5AViWOz.png' ,'CSU');
+franchiseDatabase['fid_0062'] = new Franchise('0062', 'UCLA Bruins', '03' ,'https://imgur.com/f9XBDi6.png' ,'https://imgur.com/wfMjX4s.png' ,'UCLA');
+franchiseDatabase['fid_0063'] = new Franchise('0063', 'USC Trojans', '03' ,'https://imgur.com/45lbYgW.png' ,'https://imgur.com/V6IRxSP.png' ,'USC');
+franchiseDatabase['fid_0064'] = new Franchise('0064', 'Utah Utes', '03' ,'https://imgur.com/7o6KqZQ.png' ,'https://imgur.com/0QwGjSq.png' ,'UTAH');
+franchiseDatabase['fid_0065'] = new Franchise('0065', 'East Carolina Pirates', '04' ,'https://imgur.com/LouN40W.png' ,'https://imgur.com/so7wtHN.png' ,'ECU');
+franchiseDatabase['fid_0066'] = new Franchise('0066', 'Florida Gators', '04' ,'https://imgur.com/TOGxoH0.png' ,'https://imgur.com/STFaCXh.png' ,'UF');
+franchiseDatabase['fid_0067'] = new Franchise('0067', 'Georgia Bulldogs', '04' ,'https://imgur.com/7t8kNsr.png' ,'https://imgur.com/R1BeYcu.png' ,'UGA');
+franchiseDatabase['fid_0068'] = new Franchise('0068', 'Kentucky Wildcats', '04' ,'https://imgur.com/I8zBXDg.png' ,'https://imgur.com/eVnATv9.png' ,'UK');
+franchiseDatabase['fid_0069'] = new Franchise('0069', 'Missouri Tigers', '04' ,'https://imgur.com/DWUyW6v.png' ,'https://imgur.com/RwfuU3t.png' ,'MIZZ');
+franchiseDatabase['fid_0070'] = new Franchise('0070', 'South Carolina Gamecocks', '04' ,'https://imgur.com/g429sMp.png' ,'https://imgur.com/xlRhlHg.png' ,'SC');
+franchiseDatabase['fid_0071'] = new Franchise('0071', 'Tennessee Volunteers', '04' ,'https://imgur.com/haz4k6L.png' ,'https://imgur.com/hjrSHq3.png' ,'TENN');
+franchiseDatabase['fid_0072'] = new Franchise('0072', 'Texas State Bobcats', '04' ,'https://imgur.com/qbz0u0j.png' ,'https://imgur.com/55BVqDm.png' ,'TXST');
+franchiseDatabase['fid_0073'] = new Franchise('0073', 'Alabama Crimson Tide', '04' ,'https://imgur.com/1yz1tQI.png' ,'https://imgur.com/MPxqEpM.png' ,'ALA');
+franchiseDatabase['fid_0074'] = new Franchise('0074', 'Arkansas Razorbacks', '04' ,'https://imgur.com/U1YHscd.png' ,'https://imgur.com/lxQmo7K.png' ,'ARK');
+franchiseDatabase['fid_0075'] = new Franchise('0075', 'Auburn Tigers', '04' ,'https://imgur.com/ObFizj3.png' ,'https://imgur.com/gJKHvSO.png' ,'AUB');
+franchiseDatabase['fid_0076'] = new Franchise('0076', 'LSU Tigers', '04' ,'https://imgur.com/LylasTY.png' ,'https://imgur.com/9XGYWr6.png' ,'LSU');
+franchiseDatabase['fid_0077'] = new Franchise('0077', 'Tulane Green Wave', '04' ,'https://imgur.com/derqliC.png' ,'https://imgur.com/LljHNHH.png' ,'TULN');
+franchiseDatabase['fid_0078'] = new Franchise('0078', 'Mississippi State Bulldogs', '04' ,'https://imgur.com/1eJNodK.png' ,'https://imgur.com/W1tE7GG.png' ,'MSST');
+franchiseDatabase['fid_0079'] = new Franchise('0079', 'Ole Miss Rebels', '04' ,'https://imgur.com/XfVzrFp.png' ,'https://imgur.com/boxVMdq.png' ,'MISS');
+franchiseDatabase['fid_0080'] = new Franchise('0080', 'Texas A&M Aggies', '04' ,'https://imgur.com/dfoN0He.png' ,'https://imgur.com/DO6eO2E.png' ,'TAMU');
+franchiseDatabase['fid_0081'] = new Franchise('0081', 'Ball State Cardinals', '05' ,'https://imgur.com/lkoIVbI.png' ,'https://imgur.com/5DA4hc4.png' ,'BALL');
+franchiseDatabase['fid_0082'] = new Franchise('0082', 'Bowling Green Falcons', '05' ,'https://imgur.com/gwmqVhU.png' ,'https://imgur.com/a7nJ5P1.png' ,'BGSU');
+franchiseDatabase['fid_0083'] = new Franchise('0083', 'Buffalo Bulls', '05' ,'https://imgur.com/z7oxvoc.png' ,'https://imgur.com/MJc8RVZ.png' ,'BUFF');
+franchiseDatabase['fid_0084'] = new Franchise('0084', 'Central Michigan Chippewas', '05' ,'https://imgur.com/si6nG8x.png' ,'https://imgur.com/aLtEnrT.png' ,'CMU');
+franchiseDatabase['fid_0085'] = new Franchise('0085', 'Kent State Golden Flashes', '05' ,'https://imgur.com/KReGAIc.png' ,'https://imgur.com/PKd28XT.png' ,'KENT');
+franchiseDatabase['fid_0086'] = new Franchise('0086', 'Miami (OH) Redhawks', '05' ,'https://imgur.com/nMAPv6Q.png' ,'https://imgur.com/aDscBhO.png' ,'M-OH');
+franchiseDatabase['fid_0087'] = new Franchise('0087', 'Northern Illinois Huskies', '05' ,'https://imgur.com/8f1VSRx.png' ,'https://imgur.com/lFcQgwI.png' ,'NIU');
+franchiseDatabase['fid_0088'] = new Franchise('0088', 'Ohio Bobcats', '05' ,'https://imgur.com/svUOiXR.png' ,'https://imgur.com/8LWwkC9.png' ,'OH');
+franchiseDatabase['fid_0089'] = new Franchise('0089', 'USF Bulls', '05' ,'https://imgur.com/CiDVfTp.png' ,'https://www46.myfantasyleague.com/fflnetdynamic2026/12011_franchise_logo0089.jpg' ,'USF');
+franchiseDatabase['fid_0090'] = new Franchise('0090', 'Western Michigan Broncos', '05' ,'https://imgur.com/70LTvaZ.png' ,'https://imgur.com/C4w4Bhh.png' ,'WMU');
+franchiseDatabase['fid_0091'] = new Franchise('0091', 'Fresno State Bulldogs', '05' ,'https://imgur.com/0hbSOw4.png' ,'https://imgur.com/7JEztwX.png' ,'FRES');
+franchiseDatabase['fid_0092'] = new Franchise('0092', 'Hawaii Warriors', '05' ,'https://imgur.com/VHEyhmA.png' ,'https://imgur.com/Pd6KQRs.png' ,'HAW');
+franchiseDatabase['fid_0093'] = new Franchise('0093', 'Nevada Wolfpack', '05' ,'https://imgur.com/vFHuMdZ.png' ,'https://imgur.com/ARclRnV.png' ,'NEV');
+franchiseDatabase['fid_0094'] = new Franchise('0094', 'New Mexico Lobos', '05' ,'https://imgur.com/DCvhq2e.png' ,'https://imgur.com/u40zFUj.png' ,'UNM');
+franchiseDatabase['fid_0095'] = new Franchise('0095', 'New Mexico State Aggies', '05' ,'https://imgur.com/45O6U2g.png' ,'https://imgur.com/jMLizZ3.png' ,'NMSU');
+franchiseDatabase['fid_0096'] = new Franchise('0096', 'Arkansas State Red Wolves', '05' ,'https://imgur.com/RWo1XdI.png' ,'https://imgur.com/EcQYE8J.png' ,'ARST');
+franchiseDatabase['fid_0097'] = new Franchise('0097', 'San Jose State Spartans', '05' ,'https://imgur.com/MSdqBxH.png' ,'https://imgur.com/ldtawwk.png' ,'SJSU');
+franchiseDatabase['fid_0098'] = new Franchise('0098', 'UNLV Rebels', '05' ,'https://imgur.com/xuOE6fq.png' ,'https://imgur.com/uA6hY3f.png' ,'UNLV');
+franchiseDatabase['fid_0099'] = new Franchise('0099', 'Utah State Aggies', '05' ,'https://imgur.com/FsoWADY.png' ,'https://i.imgur.com/x5ump8t.png' ,'USU');
+franchiseDatabase['fid_0100'] = new Franchise('0100', 'Wyoming Cowboys', '05' ,'https://imgur.com/T4Z2F1h.png' ,'https://i.imgur.com/wHhWGf1.png' ,'WYO');
+leagueAttributes['Draft'] = true;
+leagueAttributes['Auction'] = true;
+leagueAttributes['IR'] = true;
+leagueAttributes['TS'] = true;
+leagueAttributes['MinStarters'] = 8;
+leagueAttributes['MaxStarters'] = 8;
+leagueAttributes['Franchises'] = 100;
+leagueAttributes['Conferences'] = new Array('ACC', 'B1G', 'B12', 'P12', 'SEC', 'AAC'); // This will be deprecated soon, use leagueConferences instead
+leagueAttributes['Divisions'] = new Array('ACC', 'B1G', 'B12', 'P12', 'SEC', 'AAC'); // This will be deprecated soon, use leagueDivisions instead
+leagueConferences = new Object();
+leagueConferences['00'] = { 'id' : '00', 'name' : 'ACC' }
+leagueConferences['01'] = { 'id' : '01', 'name' : 'B1G' }
+leagueConferences['02'] = { 'id' : '02', 'name' : 'B12' }
+leagueConferences['03'] = { 'id' : '03', 'name' : 'P12' }
+leagueConferences['04'] = { 'id' : '04', 'name' : 'SEC' }
+leagueConferences['05'] = { 'id' : '05', 'name' : 'AAC' }
+leagueDivisions = new Object();
+leagueDivisions['00'] = { 'id' : '00', 'conf_id' : '00', 'name' : 'ACC' };
+leagueDivisions['01'] = { 'id' : '01', 'conf_id' : '01', 'name' : 'B1G' };
+leagueDivisions['02'] = { 'id' : '02', 'conf_id' : '02', 'name' : 'B12' };
+leagueDivisions['03'] = { 'id' : '03', 'conf_id' : '03', 'name' : 'P12' };
+leagueDivisions['04'] = { 'id' : '04', 'conf_id' : '04', 'name' : 'SEC' };
+leagueDivisions['05'] = { 'id' : '05', 'conf_id' : '05', 'name' : 'AAC' };
+
+function chat_window (url) {
+    var chatWindow = window.open(url,"chat_window","height=600,width=450,scrollbars=yes,toolbar=no,status=no,resizable=yes,menubar=no");
+    chatWindow.focus();
+}
+
+function live_draft_window (url) {
+    var liveDraftWindow = window.open(url,"live_draft_window","height=800,width=1060,scrollbars=yes,toolbar=no,status=no,resizable=yes,menubar=no");
+    liveDraftWindow.focus();
+}
+
+function live_auction_window (url) {
+    var liveAuctionWindow = window.open(url,"live_auction_window","height=700,width=1060,scrollbars=yes,toolbar=no,status=no,resizable=yes,menubar=no");
+    liveAuctionWindow.focus();
+}
+
+
+//-->
+</script>
+<link rev="MADE" href="mailto:support@myfantasyleague.com"  />
+</head>
+<body id="body_ajax_ls"><noscript>
+  <img src="http://b.scorecardresearch.com/b?c1=2&amp;c2=6035210&amp;c3=&amp;c4=www.myfantasyleague.com&amp;c5=&amp;c6=&amp;c15=&amp;cv=1.3&amp;cj=1" style="display:none" width="0" height="0" alt="" />
+</noscript>
+<div class="myfantasyleague_menu" onclick=""><span>LEAGUE MENU</span><input id="sub0" type="checkbox"><label for="sub0"><span></span></label><ul>
+<li class="mfl-icon"><a class="no-sub" href="http://home.myfantasyleague.com"><img src="/images/mfl-logo-2017.png" alt="MyFantasyLeague.com"><span>MyFantasyLeague.com</span></a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/home/12011">Home</a></li>
+<li class="has-sub sub-default mm-myacct"><a>My Account</a><b aria-haspopup="true" aria-controls="p1"></b><input id="sub1" type="checkbox"><label for="sub1"><span></span></label>
+<ul id="p1">
+<li><a class="no-sub" href="https://www42.myfantasyleague.com/2026/dash" target="">MFL&nbsp;Dashboard</a></li>
+<li><a class="no-sub" href="https://subscribe.myfantasyleague.com" target="">Purchase&nbsp;Premium&nbsp;Projections</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/logout?L=12011" target="">Logout</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/logout?L=12011&BECOME=0000" target="">Become&nbsp;Commissioner</a></li>
+<li><a class="no-sub" href="https://www45.myfantasyleague.com/2026/home/56678">NFL&nbsp;University</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2025/home/12011">2025&nbsp;League&nbsp;Home</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2024/home/12011">2024&nbsp;League&nbsp;Home</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2023/home/12011">2023&nbsp;League&nbsp;Home</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2022/home/12011">2022&nbsp;League&nbsp;Home</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2021/home/12011">2021&nbsp;League&nbsp;Home</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2020/home/12011">2020&nbsp;League&nbsp;Home</a></li>
+<li><a class="no-sub" href="https://www42.myfantasyleague.com/2026/myleagues" target="">All&nbsp;My&nbsp;Leagues</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/league_setup1" target="">Set&nbsp;up&nbsp;A&nbsp;New&nbsp;League</a></li>
+<li><a class="no-sub" href="https://www42.myfantasyleague.com/2026/index" target="">Find&nbsp;A&nbsp;League</a></li>
+<li><a class="no-sub" href="http://php01.myfantasyleague.com/mockdrafts/public.php" target="">Join&nbsp;a&nbsp;Mock&nbsp;Draft</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-scores"><a>Scores</a><b aria-haspopup="true" aria-controls="p2"></b><input id="sub2" type="checkbox"><label for="sub2"><span></span></label>
+<ul id="p2">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/ajax_ls?L=12011" target="">Live&nbsp;Scoring</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/standings?L=12011" target="">Standings</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=22" target="">Weekly&nbsp;Results</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=31" target="">Weekly&nbsp;Summary</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=101" target="">Power&nbsp;Rank</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=06" target="">Starting&nbsp;Lineups</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=15" target="">Fantasy&nbsp;Schedule</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=79" target="">Playoff&nbsp;Brackets</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/pro_schedule?L=12011" target="">NFL&nbsp;Schedule</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=207" target="">Fantasy&nbsp;Previews</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=177" target="">Fantasy&nbsp;Recaps</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-trans"><a>Transactions</a><b aria-haspopup="true" aria-controls="p3"></b><input id="sub3" type="checkbox"><label for="sub3"><span></span></label>
+<ul id="p3">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/add_drop?L=12011" target="">Add/Drops</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=02" target="">Submit&nbsp;Lineup</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=07" target="">Rosters</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=03" target="">Transactions</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=76" target="">Processed&nbsp;Waivers</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=05" target="">Trades</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=18" target="">Injured&nbsp;Reserve</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=98" target="">Taxi&nbsp;Squad</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=257" target="">Drop&nbsp;Players</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/locked_players?L=12011" target="">Locked&nbsp;Players</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-player"><a>Player Research</a><b aria-haspopup="true" aria-controls="p4"></b><input id="sub4" type="checkbox"><label for="sub4"><span></span></label>
+<ul id="p4">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=08" target="">Top&nbsp;Performers/Player&nbsp;Stats</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=236" target="">Projected&nbsp;Stats</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/reports?L=12011&R=RANKS" target="">Player&nbsp;Ranks</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/depth_chart?L=12011" target="">Fantasy&nbsp;Depth&nbsp;Charts</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=117" target="">Top&nbsp;Adds/Drops/Starters</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=81" target="">Points&nbsp;Allowed&nbsp;-&nbsp;By&nbsp;Position</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=205" target="">Who&nbsp;Should&nbsp;I&nbsp;Start?</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/reports?L=12011&R=FULLFA" target="">Complete&nbsp;Free&nbsp;Agent&nbsp;Listing</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/injury?L=12011" target="">NFL&nbsp;Injury&nbsp;Report</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/news_articles?L=12011&P=*" target="">Player&nbsp;News</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/news_articles?L=12011&MYNEWS=1" target="">My&nbsp;Player&nbsp;News</a></li>
+<li><a class="no-sub" href="http://subscribe.myfantasyleague.com/" target="">Get&nbsp;Projection&nbsp;Sources</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/player_search?L=12011" target="">Player&nbsp;Search</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-draft"><a>Draft/Auction</a><b aria-haspopup="true" aria-controls="p5"></b><input id="sub5" type="checkbox"><label for="sub5"><span></span></label>
+<ul id="p5">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=17" target="">Draft&nbsp;Results</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=52" target="">Make&nbsp;Draft&nbsp;Pick</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/reports?L=12011&R=ADP" target="">ADP&nbsp;Report</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=129" target="">My&nbsp;Draft&nbsp;List</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/csetup?L=12011&C=DRAFTPREF" target="">Set&nbsp;Draft&nbsp;Preferences</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=44" target="">Auction&nbsp;Results</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=43" target="">Auction&nbsp;Bid</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/reports?L=12011&R=AAV" target="">AAV&nbsp;Report</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-league"><a>League</a><b aria-haspopup="true" aria-controls="p6"></b><input id="sub6" type="checkbox"><label for="sub6"><span></span></label>
+<ul id="p6">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/all_reports?L=12011" target="">All&nbsp;Reports</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=123" target="">League&nbsp;Calendar</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=09" target="">League&nbsp;Rules</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/accounting_report?L=12011" target="">Accounting</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=01" target="">Franchise&nbsp;Information</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/reports?L=12011&R=FSUMMARY" target="">Franchise&nbsp;Summary</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=122" target="">NFL&nbsp;Pool&nbsp;Results</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=180" target="">Fantasy&nbsp;Pool&nbsp;Results</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=120" target="">Survivor&nbsp;Pool</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=194" target="">League&nbsp;Champions</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-franchise"><a>My Franchise</a><b aria-haspopup="true" aria-controls="p7"></b><input id="sub7" type="checkbox"><label for="sub7"><span></span></label>
+<ul id="p7">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/csetup?L=12011&C=FRANCHISE" target="">Franchise&nbsp;Setup</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=133" target="">Trade&nbsp;Bait</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=178" target="">My&nbsp;Watch&nbsp;List</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=234" target="">My&nbsp;Scratchpad</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/edit_my_links?L=12011" target="">My&nbsp;Links</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-social"><a>Social</a><b aria-haspopup="true" aria-controls="p8"></b><input id="sub8" type="checkbox"><label for="sub8"><span></span></label>
+<ul id="p8">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=28" target="">Message&nbsp;Board</a></li>
+<li><a class="no-sub" href="javascript:chat_window('https://www46.myfantasyleague.com/2026/chat?L=12011&COUNT=40');" target="">League&nbsp;Chat</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=73" target="">League&nbsp;Articles</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=69" target="">League&nbsp;Polls</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=244" target="">Trash-Talk&nbsp;Videos</a></li>
+<li><a class="no-sub" href="mailto:bzimmer62@gmail.com?Subject=CFFB%20%2812011%29" target="">Email&nbsp;to&nbsp;Commissioner</a></li>
+<li><a class="no-sub" href="mailto:ceide0530@gmail.com,connorcaruso44@gmail.com,rgiiiwsh10@gmail.com,jeffreykelly@gmail.com,Knicks.patriots@gmail.com,wrraymond3@gmail.com,chipper00043@yahoo.com,mjmartin3394@gmail.com,wes.hogarth@gmail.com,djmitteness@gmail.com,tbryce345@gmail.com,rippla33@gmail.com,pancakewaffles1390@gmail.com,aarondrewiske@yahoo.com,joeagresti@gmail.com,dgoldstein502@gmail.com,jwa1417@gmail.com,justinlpage@gmail.com,ecpatrick3284@gmail.com,adamglasier@gmail.com,d.scoblink@gmail.com,matthew.falvo1@gmail.com,michael.salvo@gmail.com,andrewkilinskis@gmail.com,kylemartens.31@gmail.com,keeg.leonard@gmail.com,martellscott@rocketmail.com,Dalambert92@yahoo.com,donnygeisler@live.com,dmuell1@hotmail.com,bzimmer62@gmail.com,anthony.north10@gmail.com,dereklperson@gmail.com,puffin13@rzrbck.com,ggiants1@live.com,Jwhwde@gmail.com,torontovenom@gmail.com,awx316@yahoo.com, hawkd@sbcglobal.net,bobby_reed49@hotmail.com,wickstrom.louis@yahoo.com,jbrenner055@gmail.com,seane777@yahoo.com, phillyphinest0@aol.com,sam_henderson11@yahoo.com,paronbbcoach@yahoo.com,matt.d.ramsey@outlook.com,brendangrey@gmail.com,Pittmanware@gmail.com,jimclark7@gmail.com,Markm2130@gmail.com,jacrawford39@gmail.com,vitaminb6@gmail.com,ofontaine96@gmail.com,russellprentice@gmail.com,wbalkman@hotmail.com,cerianamax@gmail.com,reileydaniel73@gmail.com,mts804@culver.edu,lions1180@yahoo.com,Gunncab4533@gmail.com,claytonkiniry@gmail.com,Louie1197@aol.com,peterannis75@Gmail.com,EliteSangria@gmail.com,kchambers0824@gmail.com,djkoolwhip15@gmail.com,devin.sperle@gmail.com,asimone140@gmail.com,Gbay99.business@gmail.com,draftdodger2023@gmail.com,nickkerger@gmail.com,rtjones923@gmail.com,tjczski1@live.com,ldawg31174@gmail.com,steveng.scholz@gmail.com,tcaacommish@gmail.com,aa25alan@gmail.com,michaelt684@gmail.com,brandoncope63@gmail.com,cpres3@hotmail.com,rpspenner@yahoo.com,stefan.vankampen4@gmail.com,erastelli21@gmail.com,Thedynastyrealm19@gmail.com,afb119@gmail.com,Bshorey85@gmail.com,cbuist_56@yahoo.com,Panzerblitz@att.net,Gunn2685@gmail.com,aaron.jones824@gmail.com,jsjoslin18@yahoo.com,Fenlaa@yahoo.com,rkjonesvo@gmail.com,amirhill19@gmail.com,ssnatrboy@aol.com,kapling@hotmail.com,phillip_gore@yahoo.com?subject=CFFB%20%2812011%29" target="">Email&nbsp;to&nbsp;Entire&nbsp;League</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=218" target="">Send&nbsp;Text&nbsp;Message&nbsp;to&nbsp;League</a></li>
+<li><a class="no-sub" href="https://www.fantasysharks.com/forum/viewforum.php?f=501" target="">MFL&nbsp;Community&nbsp;Forums</a></li>
+<li><a class="no-sub" href="https://twitter.com/MyFantasyLeague" target="">Follow&nbsp;Us&nbsp;On&nbsp;Twitter</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/options?L=12011&O=167" target="">Refer&nbsp;A&nbsp;Friend&nbsp;And&nbsp;Save!</a></li>
+</ul>
+</li>
+<li class="has-sub sub-default mm-help"><a>Help</a><b aria-haspopup="true" aria-controls="p9"></b><input id="sub9" type="checkbox"><label for="sub9"><span></span></label>
+<ul id="p9">
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/support?L=12011" target="">Help&nbsp;Center</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/support?PROGRAM=ajax_ls&L=12011" target="_blank">Help&nbsp;on&nbsp;this&nbsp;Page</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/my_tickets" target="">My&nbsp;Support&nbsp;Tickets</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/site_news?L=12011" target="">What's&nbsp;New?</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/ajax_ls?L=12011&PRINTER=1" target="">Printer&nbsp;Friendly&nbsp;Page</a></li>
+<li><a class="no-sub" href="https://www46.myfantasyleague.com/2026/api_info?L=12011" target="">Developer's&nbsp;API</a></li>
+</ul>
+</li>
+</ul></div>
+<table cellspacing="0" class="pageheader">
+<tr>
+<td rowspan="3" class="brandlogo">
+<a href="http://www.myfantasyleague.com/"><img src="https://www46.myfantasyleague.com/images/new_mfl_logo.png" alt="http://www.myfantasyleague.com/" width="80" height="80" border="0"  /></a></td><td align="center" class="bannerimage">
+</td>
+<td rowspan="3" class="welcome"><b>bzimmer62: Notre Dame Fighting Irish</b> (<a href="https://www46.myfantasyleague.com/2026/logout?L=12011">Logout</a> | <a href="https://www46.myfantasyleague.com/2026/logout?L=12011&amp;BECOME=0000">Become Commissioner</a>)</td>
+</tr>
+<tr>
+<td class="pagetitle">
+<h1>
+ <span>Live Scoring</span></h1></td></tr></table><div class="pagebody" id="ajax_ls">
+<img src="https://imgur.com/jQ2qOyh.png" alt="CFFB" title="CFFB" class="leaguelogo"  /><script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" type="text/css"/><script src="https://www.mflscripts.com/mfl-apps/global/cache.js"></script>
+<!-- TICKER HTML -->
+<div class="ticker-wrapper"></div>
+
+<script>
+// TICKER DISPLAY SETTINGS
+var tickerHomePageOnly 		= false;         // SET TO TRUE IF YOU HAVE TICKER AS A HEADER MESSAGE BUT ONLY WANT IT ON HOME PAGE; FALSE FOR ALL PAGES
+var tickerName         		= "TICKER";  // ENTER TICKER NAME
+var responsiveTicker   		= true;         // SET TO TRUE IF YOUR MFL THEME/SKIN IS RESPONSIVE FOR MOBILE SO THAT THE MARQUEE WILL BE ALSO
+var isLeagueIDP        		= false;        // SET TO TRUE IF YOU WANT TO INCLUDE IDP OPTIONS; IF FALSE THEN ALL IDP SETTINGS BELOW WILL BE IGNORED
+var tickerSize         		= "large";     // ENTER TICKER SIZE "small" , "medium" or "large" 
+var tickerLastPlayoffWeek	= 16;      	// SET TO LAST PLAYOFF WEEK 
+
+// CUSTOM MESSAGES 
+var tickerContent = new Array();
+//ADD CUSTOM MESSAGE(S) IN THE FORMAT BELOW
+//tickerContent.push( ({"header":"MESSAGE TITLE" , "message":"MESSAGE CONTENT"}) );
+tickerContent.push( ({"header":"League Update" , "message":"Scheduling Closes Aug 14th; Preseason Coaches Poll Open Aug 15th"}) );
+
+//BOTH STANDARD AND LIVE DISPLAY (also includes custom messages above if any)
+var includeFranchiseIcons      = true;   // true or false; when showing players include franchise icon if on a MFL roster REQUIRES cache.js
+var includeLatestArticles      = 5;      // 0=disabled; #=The number of articles to show
+
+//STANDARD DISPLAY SETTINGS (when NFL games have not kicked off in a given week)
+var includeTopPlayerStats      = 5;      // 0=disabled; #=The number of top yardage (Pass/Rush/Rec) to show;
+var includeTopPlayerStatsIDP   = false;  // true or false; only applicable when displaying top players and shows the number of top tackles/sacks for IDP;
+var includeTopPlayerPts        = 5;      // 0=disabled; #=The number of ytd fantasy pts by position offense to show;
+var includeLastWeekResults     = true;   // true or false; show results for fantasy matchups
+var includeNextWeekMatchups    = true;   // true or false; show next weeks fantasy matchups
+var includeLastWeekNflResults  = true;   // true or false; show results for nfl matchups
+var includeNextWeekNflMatchups = true;   // true or false; show next weeks nfl matchups
+var includeWaiverOrder         = false;   // true or false; current waiver priority
+var includeDraft               = false;   // true or false; used in conjunction with below draft settings
+var draftShowEntire            = false;  // true or false; show entire draft; both picks made and future pending selections
+var draftShowPicksMade         = 5;      // #=Display the last # of picks made; only appicable if draftShowEntire = false;
+var draftShowPicksPending      = 5;      // #=Display the next # of picks pending; only appicable if draftShowEntire = false;
+
+//LIVE DISPLAY SETTINGS (when NFL games have kicked off in a given week)
+var includeLiveLeaders         = 5;      // 0=disabled; #=The number of live leaders (Pass/Rush/Rec), when applicable, to show;
+var includeLiveLeadersIDP      = false;  // true or false; only applicable when displaying live leaders	
+var includeNflMatchups         = true;   // true or false; show live NFL matchups
+var includeNflMatchupLeaders   = true;   // true or false; show live NFL matchup leaders
+var includeFantasyMatchups     = true;   // true or false; show live Fantasy matchups
+
+// TICKER COLORING - SETUP TO MATCH MFL DEFAULT SKIN
+var tickerWidth     = "100%";                         // set max width of ticker - set to 100% if you want it full width
+var tickerMargin    = "20px auto";                      // set ticker margin - currently set for margin top 10px , margin bottom 10px and side to side auto to center
+var tickerFont      = "Roboto Condensed";               // set font for ticker - default is Roboto Condensed
+var bigHeadingBG    = "#DAA520";                        // set color of background behind text "Headlines" and the border of the ticker
+var tickerTxtShdw   = "#DAA520";                           // set the color of the drop shadow for "Headlines" text and icons set to "transparent" to remove
+var bigHeadingClr   = "#000";                           // set color of the text for "Headlines"
+var tickerHeadBG    = "#DAA520";                           // set the bg color for the ticker header
+var tickerHeadClr   = "#000";                        // set the text color for the ticker header
+var tickerTxtBG     = "#EFEFEF";                           // set the bg color for the ticker scrolling text
+var tickerTxtClr    = "#000";                        // set the text color for the ticker scrolling text
+var tickerTxtWgt    = "400";                            // set the text weight for the ticker scrolling text
+var tickerTxtTrans  = "uppercase";                           // set the text-transform for the ticker scrolling text - change to "uppercase" to capitalize
+var tickerLinkClr   = "#000";                        // set the color for the links in scrolling text
+var tickerLinkHvr   = "#cd2122";                        // set the color for the links on hover in scrolling text
+var tickerBoxShdw   = "0 0 1px 1px rgba(0,0,0,0.1)";    // set box shadow - if you dont want shadow set to "none"
+var controlsGreen   = "green";                          // set color for the controls boxes when positive setting - current color green
+var controlsRed     = "red";                            // set color for the controls boxes when negative setting - current color red
+</script>
+
+<!-- MARQUEE JS FILE -->
+<script src="https://www.mflscripts.com/mfl-apps/marquee/script.js"></script><div id="contentframe">
+<div id="hsubmenu"><ul id="hsubmenuitems"><li><a href="/2026/home/12011">Home</a></li><li><a href="/2026/options?L=12011&O=07">Rosters</a></li><li><a href="/2026/options?L=12011&O=17">Draft</a></li><li><a href="/2026/lineup?L=12011">Submit Lineup</a></li><li><a href="/2026/add_drop?L=12011">Add/Drops</a></li><li><a href="/2026/options?L=12011&O=08">Player Stats</a></li><li><a href="/2026/standings?L=12011">Standings</a></li><li><a href="/2026/options?L=12011&O=03">Transactions</a></li><li><a href="https://www46.myfantasyleague.com/2026/ajax_ls?L=12011">Live Scoring</a></li><li><a href="/2026/options?L=12011&O=15">Schedule</a></li></ul></div>
+<div id="withmenus"><div width="100%" align="center" style="margin-bottom:5px;"><!-- Below is a recommended list of pre-connections, which allow the network to establish each connection quicker, speeding up response times and improving ad performance. -->
+<link rel="preconnect" href="https://a.pub.network/" crossorigin />
+<link rel="preconnect" href="https://b.pub.network/" crossorigin />
+<link rel="preconnect" href="https://c.pub.network/" crossorigin />
+<link rel="preconnect" href="https://d.pub.network/" crossorigin />
+<link rel="preconnect" href="https://c.amazon-adsystem.com" crossorigin />
+<link rel="preconnect" href="https://s.amazon-adsystem.com" crossorigin />
+<link rel="preconnect" href="https://btloader.com/" crossorigin />
+<link rel="preconnect" href="https://api.btloader.com/" crossorigin />
+<link rel="preconnect" href="https://confiant-integrations.global.ssl.fastly.net" crossorigin />
+<!-- Below is a link to a CSS file that accounts for Cumulative Layout Shift, a new Core Web Vitals subset that Google uses to help rank your site in search -->
+<!-- The file is intended to eliminate the layout shifts that are seen when ads load into the page. If you don't want to use this, simply remove this file -->
+<!-- To find out more about CLS, visit https://web.dev/vitals/ -->
+<link rel="stylesheet" href="https://a.pub.network/myfantasyleague-com/cls.css">
+<script data-cfasync="false" type="text/javascript">
+  var freestar = freestar || {};
+  freestar.queue = freestar.queue || [];
+  freestar.config = freestar.config || {};
+  freestar.config.enabled_slots = [];
+  freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+</script>
+<script src="https://a.pub.network/myfantasyleague-com/pubfig.min.js" data-cfasync="false" async></script>
+<!-- Tag ID: myfantasyleague_leaderboard_atf_desktop -->
+<div align="center" data-freestar-ad="__970x90" id="myfantasyleague_leaderboard_atf_desktop">
+  <script data-cfasync="false" type="text/javascript">
+    freestar.config.enabled_slots.push({ placementName: "myfantasyleague_leaderboard_atf_desktop", slotId: "myfantasyleague_leaderboard_atf_desktop" });
+  </script>
+</div>
+</div>
+
+<style> 
+.ls_changed { background-color:#ffffaa; color:#000000; }
+div.ls_team_name { font-size:120%; font-weight:bold; display:none; }
+div.ls_team_points { font-size:120%; font-weight:bold; padding-left:10px; padding-right:10px; }
+td.ls_marquee_label { font-weight:bold; }
+td.ls_marquee_value { font-weight:bold; padding-left:10px; padding-right:10px; }
+div.ls_redzone { border-style:solid; border-width:2px; border-color:#ff0000; }
+div.ls_withposs { border-style:solid; border-width:2px; border-color:#0000ff; }
+div.ls_noposs { border-style:dotted; border-width:2px; border-color:#666666; }
+div#ls_ticker_label { text-align:left; white-space:nowrap; max-width:150px;
+                      font-weight:bold; display:inline-block;
+                      height:20px; line-height:20px; }
+div#ls_ticker_odiv { overflow:hidden; display:inline-block; white-space:nowrap;
+                     height:20px; line-height:20px; }
+div#ls_ticker_idiv { float:right; display:inline-block; white-space:nowrap; }
+table#roster_away { margin-right:3px; }
+table#roster_home { margin-left:3px; }
+div.ls_other_game { border-style:solid; border-width:1px; border-color:#a0a0a0; }
+div.ls_og_selected { font-weight:bold; }
+td.ls_og_cell { text-align:left; width:100px; border:none; }
+.popup { position:relative; display:inline-block; cursor:pointer; }
+.popup .popuptext { visibility:hidden; width:160px; text-align:left;
+                    border-radius:6px; padding:8px 0; position:absolute;
+                    z-index:1; bottom:125%; left:50%; margin-left:-80px; }
+.popup .show { visibility:visible; }
+</style>
+<script type="text/javascript" src="https://www46.myfantasyleague.com/mfl_live_scoring.js?VERSION=3.54"></script>
+<script type="text/javascript" src="https://www46.myfantasyleague.com/mfl_win_prob.js?VERSION=1.08"></script>
+<script type="text/javascript">
+var ls_nfl_games = []
+ls_nfl_games["NEP"] = [];
+ls_nfl_games["SEA"] = [];
+ls_nfl_games["NEP"].time = 1788999600;
+ls_nfl_games["NEP"].pretty_time = "Wed&nbsp;8:20pm&nbsp;ET";
+ls_nfl_games["NEP"].opp = "SEA";
+ls_nfl_games["NEP"].where = 'away';
+ls_nfl_games["SEA"].time = 1788999600;
+ls_nfl_games["SEA"].pretty_time = "Wed&nbsp;8:20pm&nbsp;ET";
+ls_nfl_games["SEA"].opp = "NEP";
+ls_nfl_games["SEA"].where = 'home';
+ls_nfl_games["SFO"] = [];
+ls_nfl_games["LAR"] = [];
+ls_nfl_games["SFO"].time = 1789086900;
+ls_nfl_games["SFO"].pretty_time = "Thu&nbsp;8:35pm&nbsp;ET";
+ls_nfl_games["SFO"].opp = "LAR";
+ls_nfl_games["SFO"].where = 'away';
+ls_nfl_games["LAR"].time = 1789086900;
+ls_nfl_games["LAR"].pretty_time = "Thu&nbsp;8:35pm&nbsp;ET";
+ls_nfl_games["LAR"].opp = "SFO";
+ls_nfl_games["LAR"].where = 'home';
+ls_nfl_games["BAL"] = [];
+ls_nfl_games["IND"] = [];
+ls_nfl_games["BAL"].time = 1789318800;
+ls_nfl_games["BAL"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["BAL"].opp = "IND";
+ls_nfl_games["BAL"].where = 'away';
+ls_nfl_games["IND"].time = 1789318800;
+ls_nfl_games["IND"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["IND"].opp = "BAL";
+ls_nfl_games["IND"].where = 'home';
+ls_nfl_games["TBB"] = [];
+ls_nfl_games["CIN"] = [];
+ls_nfl_games["TBB"].time = 1789318800;
+ls_nfl_games["TBB"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["TBB"].opp = "CIN";
+ls_nfl_games["TBB"].where = 'away';
+ls_nfl_games["CIN"].time = 1789318800;
+ls_nfl_games["CIN"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["CIN"].opp = "TBB";
+ls_nfl_games["CIN"].where = 'home';
+ls_nfl_games["NYJ"] = [];
+ls_nfl_games["TEN"] = [];
+ls_nfl_games["NYJ"].time = 1789318800;
+ls_nfl_games["NYJ"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["NYJ"].opp = "TEN";
+ls_nfl_games["NYJ"].where = 'away';
+ls_nfl_games["TEN"].time = 1789318800;
+ls_nfl_games["TEN"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["TEN"].opp = "NYJ";
+ls_nfl_games["TEN"].where = 'home';
+ls_nfl_games["CLE"] = [];
+ls_nfl_games["JAC"] = [];
+ls_nfl_games["CLE"].time = 1789318800;
+ls_nfl_games["CLE"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["CLE"].opp = "JAC";
+ls_nfl_games["CLE"].where = 'away';
+ls_nfl_games["JAC"].time = 1789318800;
+ls_nfl_games["JAC"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["JAC"].opp = "CLE";
+ls_nfl_games["JAC"].where = 'home';
+ls_nfl_games["ATL"] = [];
+ls_nfl_games["PIT"] = [];
+ls_nfl_games["ATL"].time = 1789318800;
+ls_nfl_games["ATL"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["ATL"].opp = "PIT";
+ls_nfl_games["ATL"].where = 'away';
+ls_nfl_games["PIT"].time = 1789318800;
+ls_nfl_games["PIT"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["PIT"].opp = "ATL";
+ls_nfl_games["PIT"].where = 'home';
+ls_nfl_games["NOS"] = [];
+ls_nfl_games["DET"] = [];
+ls_nfl_games["NOS"].time = 1789318800;
+ls_nfl_games["NOS"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["NOS"].opp = "DET";
+ls_nfl_games["NOS"].where = 'away';
+ls_nfl_games["DET"].time = 1789318800;
+ls_nfl_games["DET"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["DET"].opp = "NOS";
+ls_nfl_games["DET"].where = 'home';
+ls_nfl_games["CHI"] = [];
+ls_nfl_games["CAR"] = [];
+ls_nfl_games["CHI"].time = 1789318800;
+ls_nfl_games["CHI"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["CHI"].opp = "CAR";
+ls_nfl_games["CHI"].where = 'away';
+ls_nfl_games["CAR"].time = 1789318800;
+ls_nfl_games["CAR"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["CAR"].opp = "CHI";
+ls_nfl_games["CAR"].where = 'home';
+ls_nfl_games["BUF"] = [];
+ls_nfl_games["HOU"] = [];
+ls_nfl_games["BUF"].time = 1789318800;
+ls_nfl_games["BUF"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["BUF"].opp = "HOU";
+ls_nfl_games["BUF"].where = 'away';
+ls_nfl_games["HOU"].time = 1789318800;
+ls_nfl_games["HOU"].pretty_time = "Sun&nbsp;1:00pm&nbsp;ET";
+ls_nfl_games["HOU"].opp = "BUF";
+ls_nfl_games["HOU"].where = 'home';
+ls_nfl_games["MIA"] = [];
+ls_nfl_games["LVR"] = [];
+ls_nfl_games["MIA"].time = 1789331100;
+ls_nfl_games["MIA"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["MIA"].opp = "LVR";
+ls_nfl_games["MIA"].where = 'away';
+ls_nfl_games["LVR"].time = 1789331100;
+ls_nfl_games["LVR"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["LVR"].opp = "MIA";
+ls_nfl_games["LVR"].where = 'home';
+ls_nfl_games["ARI"] = [];
+ls_nfl_games["LAC"] = [];
+ls_nfl_games["ARI"].time = 1789331100;
+ls_nfl_games["ARI"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["ARI"].opp = "LAC";
+ls_nfl_games["ARI"].where = 'away';
+ls_nfl_games["LAC"].time = 1789331100;
+ls_nfl_games["LAC"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["LAC"].opp = "ARI";
+ls_nfl_games["LAC"].where = 'home';
+ls_nfl_games["WAS"] = [];
+ls_nfl_games["PHI"] = [];
+ls_nfl_games["WAS"].time = 1789331100;
+ls_nfl_games["WAS"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["WAS"].opp = "PHI";
+ls_nfl_games["WAS"].where = 'away';
+ls_nfl_games["PHI"].time = 1789331100;
+ls_nfl_games["PHI"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["PHI"].opp = "WAS";
+ls_nfl_games["PHI"].where = 'home';
+ls_nfl_games["GBP"] = [];
+ls_nfl_games["MIN"] = [];
+ls_nfl_games["GBP"].time = 1789331100;
+ls_nfl_games["GBP"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["GBP"].opp = "MIN";
+ls_nfl_games["GBP"].where = 'away';
+ls_nfl_games["MIN"].time = 1789331100;
+ls_nfl_games["MIN"].pretty_time = "Sun&nbsp;4:25pm&nbsp;ET";
+ls_nfl_games["MIN"].opp = "GBP";
+ls_nfl_games["MIN"].where = 'home';
+ls_nfl_games["DAL"] = [];
+ls_nfl_games["NYG"] = [];
+ls_nfl_games["DAL"].time = 1789345200;
+ls_nfl_games["DAL"].pretty_time = "Sun&nbsp;8:20pm&nbsp;ET";
+ls_nfl_games["DAL"].opp = "NYG";
+ls_nfl_games["DAL"].where = 'away';
+ls_nfl_games["NYG"].time = 1789345200;
+ls_nfl_games["NYG"].pretty_time = "Sun&nbsp;8:20pm&nbsp;ET";
+ls_nfl_games["NYG"].opp = "DAL";
+ls_nfl_games["NYG"].where = 'home';
+ls_nfl_games["DEN"] = [];
+ls_nfl_games["KCC"] = [];
+ls_nfl_games["DEN"].time = 1789431300;
+ls_nfl_games["DEN"].pretty_time = "Mon&nbsp;8:15pm&nbsp;ET";
+ls_nfl_games["DEN"].opp = "KCC";
+ls_nfl_games["DEN"].where = 'away';
+ls_nfl_games["KCC"].time = 1789431300;
+ls_nfl_games["KCC"].pretty_time = "Mon&nbsp;8:15pm&nbsp;ET";
+ls_nfl_games["KCC"].opp = "DEN";
+ls_nfl_games["KCC"].where = 'home';
+function score_player(pid,ppos) {
+  var patt;
+  var points = 0;
+  var val = undefined;
+  var nfl_team;
+  pid_str = "";
+  ls_explain = "";
+  if(/QB|RB|WR|TE/.test(ppos)) {
+     if(ls_stats[pid] != undefined) {
+        val = ls_stats[pid]["P2"];
+        points += ls_get_points("P2", val, "0", "99", "*2", "");
+        val = ls_stats[pid]["#KT"];
+        points += ls_get_points("#KT", val, "0", "10", "*6", "");
+        val = ls_stats[pid]["#UT"];
+        points += ls_get_points("#UT", val, "0", "10", "*6", "");
+        val = ls_stats[pid]["UY"];
+        points += ls_get_points("UY", val, "-50", "999", "*.05", "");
+        val = ls_stats[pid]["R2"];
+        points += ls_get_points("R2", val, "0", "99", "*2", "");
+        val = ls_stats[pid]["#P"];
+        points += ls_get_points("#P", val, "0", "99", "*4", "");
+        val = ls_stats[pid]["#C"];
+        points += ls_get_points("#C", val, "0", "99", "*6", "");
+        val = ls_stats[pid]["#R"];
+        points += ls_get_points("#R", val, "0", "99", "*6", "");
+        val = ls_stats[pid]["1C"];
+        points += ls_get_points("1C", val, "1", "50", "*.5", "");
+        val = ls_stats[pid]["1R"];
+        points += ls_get_points("1R", val, "1", "50", "*.5", "");
+        val = ls_stats[pid]["1P"];
+        points += ls_get_points("1P", val, "1", "50", "*.2", "");
+        val = ls_stats[pid]["C2"];
+        points += ls_get_points("C2", val, "0", "99", "*2", "");
+        val = ls_stats[pid]["IN"];
+        points += ls_get_points("IN", val, "0", "99", "*-2", "");
+        val = ls_stats[pid]["CC"];
+        points += ls_get_points("CC", val, "0", "99", "*.5", "");
+        val = ls_stats[pid]["CY"];
+        points += ls_get_points("CY", val, "-50", "999", "*.1", "");
+        val = ls_stats[pid]["PY"];
+        points += ls_get_points("PY", val, "-50", "999", "*.04", "");
+        val = ls_stats[pid]["FL"];
+        points += ls_get_points("FL", val, "0", "10", "*-2", "");
+        val = ls_stats[pid]["KY"];
+        points += ls_get_points("KY", val, "-50", "999", "*.05", "");
+        val = ls_stats[pid]["RY"];
+        points += ls_get_points("RY", val, "-50", "999", "*.1", "");
+    }
+  }
+  show_math[pid] = pid_str;
+  return(points);
+}
+var show_tstats = [ ];
+var show_ostats = [ "PY","RY"];
+
+function score_player_proj(pid,ppos) {
+  var patt;
+  var points = 0;
+  var val = undefined;
+  var nfl_team;
+  if(/QB|RB|WR|TE/.test(ppos)) {
+     if(ls_projs[pid] != undefined) {
+        val = ls_projs[pid]["P2"];
+        points += ls_get_points("P2", val, "0", "99", "*2", "");
+        val = ls_projs[pid]["#R"];
+        points += ls_get_points("#R", val, "0", "99", "*6", "");
+        val = ls_projs[pid]["#C"];
+        points += ls_get_points("#C", val, "0", "99", "*6", "");
+        val = ls_projs[pid]["R2"];
+        points += ls_get_points("R2", val, "0", "99", "*2", "");
+        val = ls_projs[pid]["#P"];
+        points += ls_get_points("#P", val, "0", "99", "*4", "");
+        val = ls_projs[pid]["IN"];
+        points += ls_get_points("IN", val, "0", "99", "*-2", "");
+        val = ls_projs[pid]["C2"];
+        points += ls_get_points("C2", val, "0", "99", "*2", "");
+        val = ls_projs[pid]["CC"];
+        points += ls_get_points("CC", val, "0", "99", "*.5", "");
+        val = ls_projs[pid]["CY"];
+        points += ls_get_points("CY", val, "-50", "999", "*.1", "");
+        val = ls_projs[pid]["PY"];
+        points += ls_get_points("PY", val, "-50", "999", "*.04", "");
+        val = ls_projs[pid]["FL"];
+        points += ls_get_points("FL", val, "0", "10", "*-2", "");
+        val = ls_projs[pid]["RY"];
+        points += ls_get_points("RY", val, "-50", "999", "*.1", "");
+    }
+  }
+  return(points);
+}
+
+function format_points (points) {
+  points = points + 0.00000001;
+  var pstr = points.toFixed(2);
+  return (pstr);
+}
+
+var ls_cat_desc = { 
+      '1P' : "Passing First Downs",
+      '#P' : "Passing TDs",
+      '#KT' : "Kickoff Return TDs",
+      'RY' : "Rushing Yards",
+      'PC' : "Completions",
+      'KY' : "Kickoff Return Yards",
+      'TYA' : "Total Net Yards Allowed",
+      'PY' : "Passing Yards",
+      'TGT' : "Targets",
+      'CY' : "Receiving Yards",
+      '#T' : "Defensive/Special Teams TDs",
+      '#M' : "Field Goals Missed",
+      'CC' : "Receptions",
+      'PA' : "Pass Attempts",
+      'IN' : "Interceptions",
+      'C2' : "Receiving 2 Pointers",
+      '#F' : "Field Goals Made",
+      'EM' : "Extra Points Missed",
+      'RA' : "Rushes",
+      'FR' : "yd Offensive Fumble Recovery TD",
+      '1R' : "Rushing First Downs",
+      '1C' : "Receiving First Downs",
+      '#C' : "Receiving TDs",
+      '#R' : "Rushing TDs",
+      'R2' : "Rushing 2 Pointers",
+      'UY' : "Punt Return Yards",
+      '#UT' : "Punt Return TDs",
+      'P2' : "Passing 2 Pointers",
+      'IC' : "Interceptions",
+      'FL' : "Fumbles Lost (to Opponent)",
+      'EP' : "Extra Points",
+      'TPA' : "Total Points Allowed",
+      'SK' : "Sacked a QB",
+      'dummy' : ""
+};
+var ls_list_cats = { 
+     'FR' : 1
+};
+var ls_num_starters = 8;
+var ls_min_pos = [];
+var ls_max_pos = [];
+var ls_is_idp_pos = [];
+var ls_best_lineup = 0;
+var ls_show_win_prob = 1;
+var ls_team_pos = { QB:0,RB:0,WR:0,TE:0};
+var ls_def_pos = { QB:0,RB:0,WR:0,TE:0};
+var ls_uses_idps = 0;
+var ls_idps = 0;
+var ls_player = [];
+var ls_rosters = [];
+var ls_addns = 0;
+ls_rosters["0001"] = {};
+ls_player["17034"] = new LSPlayer("17034","Ewers, Quinn", "QB", "JAC", "QB");
+ls_player["17657"] = new LSPlayer("17657","Green, Taylen", "QB", "CLE", "QB");
+ls_player["16584"] = new LSPlayer("16584","McCarthy, J.J.", "QB", "MIN", "QB");
+ls_player["17462"] = new LSPlayer("17462","Mendoza, Fernando", "QB", "LVR", "QB");
+ls_player["16164"] = new LSPlayer("16164","Bigsby, Tank", "RB", "PHI", "RB");
+ls_player["17481"] = new LSPlayer("17481","Claiborne, Demond", "RB", "MIN", "RB");
+ls_player["17060"] = new LSPlayer("17060","Giddens, DJ", "RB", "IND", "RB");
+ls_player["17652"] = new LSPlayer("17652","Randall, Adam", "RB", "BAL", "RB");
+ls_player["15716"] = new LSPlayer("15716","Robinson, Brian", "RB", "ATL", "RB");
+ls_player["17047"] = new LSPlayer("17047","Sampson, Dylan", "RB", "CLE", "RB");
+ls_player["16610"] = new LSPlayer("16610","Wright, Jaylen", "RB", "MIA", "RB");
+ls_player["17073"] = new LSPlayer("17073","Ayomanor, Elic", "WR", "TEN", "WR+TE");
+ls_player["17506"] = new LSPlayer("17506","Bell, Chris", "WR", "MIA", "WR+TE");
+ls_player["17511"] = new LSPlayer("17511","Fields, Malachi", "WR", "NYG", "WR+TE");
+ls_player["17072"] = new LSPlayer("17072","Harris, Tre", "WR", "LAC", "WR+TE");
+ls_player["17517"] = new LSPlayer("17517","Lane, Ja'Kobi", "WR", "BAL", "WR+TE");
+ls_player["16635"] = new LSPlayer("16635","McCaffrey, Luke", "WR", "WAS", "WR+TE");
+ls_player["16622"] = new LSPlayer("16622","Pearsall, Ricky", "WR", "SFO", "WR+TE");
+ls_player["17505"] = new LSPlayer("17505","Sarratt, Elijah", "WR", "BAL", "WR+TE");
+ls_player["17548"] = new LSPlayer("17548","Joly, Justin", "TE", "MIA", "WR+TE");
+ls_rosters["0001"].NS = [ "17034","17657","16584","17462","16164","17481","17060","17652","15716","17047","16610","17073","17506","17511","17072","17517","16635","16622","17505","17548" ];
+ls_player["16169"] = new LSPlayer("16169","Charbonnet, Zach", "RB", "SEA", "RB");
+ls_player["17083"] = new LSPlayer("17083","Higgins, Jayden", "WR", "HOU", "WR+TE");
+ls_rosters["0001"].IR = [ "16169","17083" ];
+ls_player["16583"] = new LSPlayer("16583","Penix Jr., Michael", "QB", "ATL", "QB");
+ls_player["16167"] = new LSPlayer("16167","Achane, De'Von", "RB", "MIA", "RB");
+ls_player["17045"] = new LSPlayer("17045","Skattebo, Cam", "RB", "NYG", "RB");
+ls_player["17052"] = new LSPlayer("17052","Tuten, Bhayshul", "RB", "JAC", "RB");
+ls_player["16186"] = new LSPlayer("16186","Addison, Jordan", "WR", "MIN", "WR+TE");
+ls_player["17075"] = new LSPlayer("17075","Golden, Matthew", "WR", "GBP", "WR+TE");
+ls_player["16194"] = new LSPlayer("16194","Rice, Rashee", "WR", "KCC", "WR+TE");
+ls_player["16788"] = new LSPlayer("16788","Vele, Devaughn", "WR", "NOS", "WR+TE");
+ls_rosters["0001"].S = [ "16583","16167","17045","17052","16186","17075","16194","16788" ];
+ls_rosters["0002"] = {};
+ls_rosters["0003"] = {};
+ls_player["16152"] = new LSPlayer("16152","Richardson, Anthony", "QB", "IND", "QB");
+ls_player["17061"] = new LSPlayer("17061","Allen, LeQuint", "RB", "JAC", "RB");
+ls_player["17069"] = new LSPlayer("17069","Blue, Jaydon", "RB", "PHI", "RB");
+ls_player["16387"] = new LSPlayer("16387","Brooks, Chris", "RB", "GBP", "RB");
+ls_player["16688"] = new LSPlayer("16688","Guerendo, Isaac", "RB", "SFO", "RB");
+ls_player["17486"] = new LSPlayer("17486","Miller, Jam", "RB", "FA", "RB");
+ls_player["17508"] = new LSPlayer("17508","Bell, Skyler", "WR", "BUF", "WR+TE");
+ls_player["17082"] = new LSPlayer("17082","Bryant, Pat", "WR", "DEN", "WR+TE");
+ls_player["17527"] = new LSPlayer("17527","Cameron, Josh", "WR", "JAC", "WR+TE");
+ls_player["17502"] = new LSPlayer("17502","Cooper Jr., Omar", "WR", "NYJ", "WR+TE");
+ls_player["17097"] = new LSPlayer("17097","Felton, Tai", "WR", "MIN", "WR+TE");
+ls_player["17074"] = new LSPlayer("17074","Hunter, Travis", "WR", "JAC", "WR+TE");
+ls_player["16639"] = new LSPlayer("16639","Legette, Xavier", "WR", "CAR", "WR+TE");
+ls_player["17157"] = new LSPlayer("17157","TeSlaa, Isaac", "WR", "DET", "WR+TE");
+ls_player["17529"] = new LSPlayer("17529","Thompson, Brenen", "WR", "LAC", "WR+TE");
+ls_player["16287"] = new LSPlayer("16287","Tucker, Tre", "WR", "LVR", "WR+TE");
+ls_player["17498"] = new LSPlayer("17498","Tyson, Jordyn", "WR", "NOS", "WR+TE");
+ls_player["17526"] = new LSPlayer("17526","Virgil, Reggie", "WR", "ARI", "WR+TE");
+ls_player["17542"] = new LSPlayer("17542","Young, Colbie", "WR", "CIN", "WR+TE");
+ls_player["17655"] = new LSPlayer("17655","Traore, Seydou", "TE", "MIA", "WR+TE");
+ls_rosters["0003"].NS = [ "16152","17061","17069","16387","16688","17486","17652","17508","17082","17527","17502","17097","17074","16639","16635","17157","17529","16287","17498","17526","17542","17655" ];
+ls_player["16581"] = new LSPlayer("16581","Daniels, Jayden", "QB", "WAS", "QB");
+ls_player["16181"] = new LSPlayer("16181","Brown, Chase", "RB", "CIN", "RB");
+ls_player["15715"] = new LSPlayer("15715","Cook, James", "RB", "BUF", "RB");
+ls_player["17256"] = new LSPlayer("17256","Croskey-Merritt, Jacory", "RB", "WAS", "RB");
+ls_player["16747"] = new LSPlayer("16747","Tracy, Tyrone", "RB", "NYG", "RB");
+ls_player["17071"] = new LSPlayer("17071","McMillan, Tetairoa", "WR", "CAR", "WR+TE");
+ls_player["16211"] = new LSPlayer("16211","Nacua, Puka", "WR", "LAR", "WR+TE");
+ls_player["16192"] = new LSPlayer("16192","Washington, Parker", "WR", "JAC", "WR+TE");
+ls_rosters["0003"].S = [ "16581","16181","15715","17256","16747","17071","16211","16192" ];
+ls_rosters["0004"] = {};
+ls_player["15777"] = new LSPlayer("15777","Austin III, Calvin", "WR", "NYG", "WR+TE");
+ls_rosters["0004"].IR = [ "15777" ];
+ls_rosters["0005"] = {};
+ls_player["17033"] = new LSPlayer("17033","Milroe, Jalen", "QB", "SEA", "QB");
+ls_player["16585"] = new LSPlayer("16585","Milton, Joe", "QB", "DAL", "QB");
+ls_player["15694"] = new LSPlayer("15694","Willis, Malik", "QB", "MIA", "QB");
+ls_player["16608"] = new LSPlayer("16608","Holani, George", "RB", "SEA", "RB");
+ls_player["17053"] = new LSPlayer("17053","Marks, Woody", "RB", "HOU", "RB");
+ls_player["16178"] = new LSPlayer("16178","Mitchell, Keaton", "RB", "LAC", "RB");
+ls_player["17062"] = new LSPlayer("17062","Sanders, Raheim", "RB", "CLE", "RB");
+ls_player["17078"] = new LSPlayer("17078","Bech, Jack", "WR", "LVR", "WR+TE");
+ls_player["17504"] = new LSPlayer("17504","Daniels, CJ", "WR", "LAR", "WR+TE");
+ls_player["16204"] = new LSPlayer("16204","Dell, Tank", "WR", "HOU", "WR+TE");
+ls_player["16188"] = new LSPlayer("16188","Johnston, Quentin", "WR", "LAC", "WR+TE");
+ls_player["17519"] = new LSPlayer("17519","Lance, Bryce", "WR", "NOS", "WR+TE");
+ls_player["17184"] = new LSPlayer("17184","Lane, Jaylin", "WR", "WAS", "WR+TE");
+ls_player["17647"] = new LSPlayer("17647","Law, Kendrick", "WR", "DET", "WR+TE");
+ls_player["15759"] = new LSPlayer("15759","Metchie, John", "WR", "CAR", "WR+TE");
+ls_player["17521"] = new LSPlayer("17521","Thomas, Zavion", "WR", "CHI", "WR+TE");
+ls_player["17620"] = new LSPlayer("17620","Wetjen, Kaden", "WR", "PIT", "WR+TE");
+ls_player["16222"] = new LSPlayer("16222","Kraft, Tucker", "TE", "GBP", "WR+TE");
+ls_player["16643"] = new LSPlayer("16643","Sanders, Ja'Tavion", "TE", "CAR", "WR+TE");
+ls_rosters["0005"].NS = [ "17033","16585","15694","16608","17053","16178","17062","17078","17504","16204","17097","16188","17519","17184","17647","15759","17521","17526","17620","17542","16222","16643" ];
+ls_player["16579"] = new LSPlayer("16579","Williams, Caleb", "QB", "CHI", "QB");
+ls_player["16162"] = new LSPlayer("16162","Gibbs, Jahmyr", "RB", "DET", "RB");
+ls_player["16598"] = new LSPlayer("16598","Irving, Bucky", "RB", "TBB", "RB");
+ls_player["17042"] = new LSPlayer("17042","Jeanty, Ashton", "RB", "LVR", "RB");
+ls_player["17472"] = new LSPlayer("17472","Love, Jeremiyah", "RB", "ARI", "RB");
+ls_player["17171"] = new LSPlayer("17171","Dike, Chimere", "WR", "TEN", "WR+TE");
+ls_player["15761"] = new LSPlayer("15761","Shakir, Khalil", "WR", "BUF", "WR+TE");
+ls_player["16641"] = new LSPlayer("16641","Bowers, Brock", "TE", "LVR", "WR+TE");
+ls_rosters["0005"].S = [ "16579","16162","16598","17042","17472","17171","15761","16641" ];
+ls_rosters["0006"] = {};
+ls_player["17036"] = new LSPlayer("17036","Howard, Will", "QB", "PIT", "QB");
+ls_player["17467"] = new LSPlayer("17467","Klubnik, Cade", "QB", "NYJ", "QB");
+ls_player["17035"] = new LSPlayer("17035","Leonard, Riley", "QB", "IND", "QB");
+ls_player["17068"] = new LSPlayer("17068","Harvey, RJ", "RB", "DEN", "RB");
+ls_player["17475"] = new LSPlayer("17475","McGowan, Seth", "RB", "IND", "RB");
+ls_player["17046"] = new LSPlayer("17046","Neal, Devin", "RB", "FA", "RB");
+ls_player["15749"] = new LSPlayer("15749","Pacheco, Isiah", "RB", "DET", "RB");
+ls_player["16165"] = new LSPlayer("16165","Spears, Tyjae", "RB", "TEN", "RB");
+ls_player["15721"] = new LSPlayer("15721","White, Rachaad", "RB", "WAS", "RB");
+ls_player["17706"] = new LSPlayer("17706","Benson, Malik", "WR", "LVR", "WR+TE");
+ls_player["17507"] = new LSPlayer("17507","Branch, Zachariah", "WR", "ATL", "WR+TE");
+ls_player["17528"] = new LSPlayer("17528","Coleman, Kevin", "WR", "MIA", "WR+TE");
+ls_player["17086"] = new LSPlayer("17086","Royals, Jalen", "WR", "KCC", "WR+TE");
+ls_player["16684"] = new LSPlayer("16684","Washington, Malik", "WR", "MIA", "WR+TE");
+ls_player["17512"] = new LSPlayer("17512","Williams, Antonio", "WR", "WAS", "WR+TE");
+ls_player["17567"] = new LSPlayer("17567","Delp, Oscar", "TE", "NOS", "WR+TE");
+ls_player["17107"] = new LSPlayer("17107","Ferguson, Terrance", "TE", "LAR", "WR+TE");
+ls_player["17607"] = new LSPlayer("17607","Raridon, Eli", "TE", "NEP", "WR+TE");
+ls_rosters["0006"].NS = [ "17036","17467","17035","17060","17068","17475","17046","15749","16165","15721","17706","17507","17528","17519","17086","17505","16684","17512","17567","17107","17607" ];
+ls_player["17096"] = new LSPlayer("17096","Williams, Savion", "WR", "GBP", "WR+TE");
+ls_rosters["0006"].IR = [ "17096" ];
+ls_player["17043"] = new LSPlayer("17043","Henderson, TreVeyon", "RB", "NEP", "RB");
+ls_player["15757"] = new LSPlayer("15757","Robinson, Wan'Dale", "WR", "TEN", "WR+TE");
+ls_player["16185"] = new LSPlayer("16185","Smith-Njigba, Jaxon", "WR", "SEA", "WR+TE");
+ls_player["16618"] = new LSPlayer("16618","Thomas Jr., Brian", "WR", "JAC", "WR+TE");
+ls_player["15753"] = new LSPlayer("15753","Wilson, Garrett", "WR", "NYJ", "WR+TE");
+ls_rosters["0006"].S = [ "16581","17043","17052","15757","16185","16618","17498","15753" ];
+ls_rosters["0007"] = {};
+ls_player["16153"] = new LSPlayer("16153","Bennett, Stetson", "QB", "LAR", "QB");
+ls_player["16151"] = new LSPlayer("16151","Hooker, Hendon", "QB", "TEN", "QB");
+ls_player["16149"] = new LSPlayer("16149","Levis, Will", "QB", "FA", "QB");
+ls_player["16586"] = new LSPlayer("16586","Rattler, Spencer", "QB", "NOS", "QB");
+ls_player["17031"] = new LSPlayer("17031","Sanders, Shedeur", "QB", "CLE", "QB");
+ls_player["17477"] = new LSPlayer("17477","Coleman, Jonah", "RB", "DEN", "RB");
+ls_player["16595"] = new LSPlayer("16595","Estime, Audric", "RB", "NOS", "RB");
+ls_player["17059"] = new LSPlayer("17059","Gordon, Ollie", "RB", "MIA", "RB");
+ls_player["16390"] = new LSPlayer("16390","McLaughlin, Jaleel", "RB", "CLE", "RB");
+ls_player["17049"] = new LSPlayer("17049","Smith, Brashard", "RB", "KCC", "RB");
+ls_player["17509"] = new LSPlayer("17509","Brazzell II, Chris", "WR", "CAR", "WR+TE");
+ls_player["15779"] = new LSPlayer("15779","Doubs, Romeo", "WR", "NEP", "WR+TE");
+ls_player["17098"] = new LSPlayer("17098","Horton, Tory", "WR", "SEA", "WR+TE");
+ls_player["16189"] = new LSPlayer("16189","Mims, Marvin", "WR", "DEN", "WR+TE");
+ls_player["15787"] = new LSPlayer("15787","Thornton, Tyquan", "WR", "KCC", "WR+TE");
+ls_player["16625"] = new LSPlayer("16625","Wilson, Johnny", "WR", "PHI", "WR+TE");
+ls_player["17543"] = new LSPlayer("17543","Sadiq, Kenyon", "TE", "NYJ", "WR+TE");
+ls_rosters["0007"].NS = [ "16153","16151","16149","16586","17031","17477","16595","17059","16390","17049","16747","17507","17509","17171","15779","17098","16189","15787","16625","17543" ];
+ls_player["17030"] = new LSPlayer("17030","Ward, Cam", "QB", "TEN", "QB");
+ls_player["15710"] = new LSPlayer("15710","Williams, Kyren", "RB", "LAR", "RB");
+ls_player["16190"] = new LSPlayer("16190","Flowers, Zay", "WR", "BAL", "WR+TE");
+ls_player["15768"] = new LSPlayer("15768","Pierce, Alec", "WR", "IND", "WR+TE");
+ls_player["15789"] = new LSPlayer("15789","Watson, Christian", "WR", "GBP", "WR+TE");
+ls_player["16214"] = new LSPlayer("16214","LaPorta, Sam", "TE", "DET", "WR+TE");
+ls_rosters["0007"].S = [ "17030","16598","15710","16190","15768","15789","16641","16214" ];
+ls_rosters["0008"] = {};
+ls_player["16384"] = new LSPlayer("16384","Bagent, Tyson", "QB", "CHI", "QB");
+ls_player["16596"] = new LSPlayer("16596","Allen, Braelon", "RB", "NYJ", "RB");
+ls_player["16597"] = new LSPlayer("16597","Brooks, Jonathon", "RB", "CAR", "RB");
+ls_player["17474"] = new LSPlayer("17474","Johnson, Emmett", "RB", "KCC", "RB");
+ls_player["16601"] = new LSPlayer("16601","Shipley, Will", "RB", "PHI", "RB");
+ls_player["16166"] = new LSPlayer("16166","Tucker, Sean", "RB", "TBB", "RB");
+ls_player["17070"] = new LSPlayer("17070","Burden, Luther", "WR", "CHI", "WR+TE");
+ls_player["16207"] = new LSPlayer("16207","Iosivas, Andrei", "WR", "CIN", "WR+TE");
+ls_player["16628"] = new LSPlayer("16628","McMillan, Jalen", "WR", "TBB", "WR+TE");
+ls_player["16212"] = new LSPlayer("16212","Mayer, Michael", "TE", "LVR", "WR+TE");
+ls_rosters["0008"].NS = [ "16384","16596","16597","17474","16601","16166","17073","17070","16207","16628","16212" ];
+ls_player["16594"] = new LSPlayer("16594","Benson, Trey", "RB", "ARI", "RB");
+ls_player["17056"] = new LSPlayer("17056","Etienne, Trevor", "RB", "CAR", "RB");
+ls_rosters["0008"].IR = [ "16594","17056","17083" ];
+ls_player["17466"] = new LSPlayer("17466","Beck, Carson", "QB", "ARI", "QB");
+ls_player["17465"] = new LSPlayer("17465","Nussmeier, Garrett", "QB", "KCC", "QB");
+ls_player["17482"] = new LSPlayer("17482","Washington Jr., Mike", "RB", "LVR", "RB");
+ls_player["17503"] = new LSPlayer("17503","Bernard, Germie", "WR", "PIT", "WR+TE");
+ls_player["17500"] = new LSPlayer("17500","Boston, Denzel", "WR", "CLE", "WR+TE");
+ls_player["17520"] = new LSPlayer("17520","Hurst, Ted", "WR", "TBB", "WR+TE");
+ls_player["17544"] = new LSPlayer("17544","Stowers, Eli", "TE", "PHI", "WR+TE");
+ls_rosters["0008"].TS = [ "17466","17465","17482","17503","17500","17509","17502","17520","17544" ];
+ls_player["16580"] = new LSPlayer("16580","Maye, Drake", "QB", "NEP", "QB");
+ls_player["17051"] = new LSPlayer("17051","Judkins, Quinshon", "RB", "CLE", "RB");
+ls_player["16193"] = new LSPlayer("16193","Boutte, Kayshon", "WR", "HOU", "WR+TE");
+ls_player["15752"] = new LSPlayer("15752","Burks, Treylon", "WR", "WAS", "WR+TE");
+ls_player["17104"] = new LSPlayer("17104","Loveland, Colston", "TE", "CHI", "WR+TE");
+ls_rosters["0008"].S = [ "16580","17051","16186","16193","15752","15789","17104" ];
+ls_rosters["0009"] = {};
+ls_player["17468"] = new LSPlayer("17468","Allar, Drew", "QB", "PIT", "QB");
+ls_player["17463"] = new LSPlayer("17463","Simpson, Ty", "QB", "LAR", "QB");
+ls_player["16752"] = new LSPlayer("16752","Davis, Isaiah", "RB", "NYJ", "RB");
+ls_player["16174"] = new LSPlayer("16174","Rodriguez, Chris", "RB", "JAC", "RB");
+ls_player["16640"] = new LSPlayer("16640","Cowing, Jacob", "WR", "SFO", "WR+TE");
+ls_player["16191"] = new LSPlayer("16191","Tillman, Cedric", "WR", "NOS", "WR+TE");
+ls_player["16195"] = new LSPlayer("16195","Wicks, Dontayvion", "WR", "PHI", "WR+TE");
+ls_player["16630"] = new LSPlayer("16630","Williams, Isaiah", "WR", "NYJ", "WR+TE");
+ls_player["17108"] = new LSPlayer("17108","Arroyo, Elijah", "TE", "SEA", "WR+TE");
+ls_player["17547"] = new LSPlayer("17547","Klare, Max", "TE", "LAR", "WR+TE");
+ls_player["17102"] = new LSPlayer("17102","Warren, Tyler", "TE", "IND", "WR+TE");
+ls_rosters["0009"].NS = [ "17468","17462","16152","17463","16752","16174","17482","16610","16193","16640","16204","17511","16189","17157","16191","16195","16630","17108","17547","17544","17102" ];
+ls_player["17087"] = new LSPlayer("17087","Thornton, Dont'e", "WR", "LVR", "WR+TE");
+ls_rosters["0009"].IR = [ "17087" ];
+ls_player["16187"] = new LSPlayer("16187","Downs, Josh", "WR", "IND", "WR+TE");
+ls_player["16614"] = new LSPlayer("16614","Harrison Jr., Marvin", "WR", "ARI", "WR+TE");
+ls_player["16184"] = new LSPlayer("16184","Reed, Jayden", "WR", "GBP", "WR+TE");
+ls_player["17514"] = new LSPlayer("17514","Stribling, De'Zhaun", "WR", "SFO", "WR+TE");
+ls_rosters["0009"].S = [ "16584","17042","16187","16614","16184","16194","17514","16222" ];
+ls_rosters["0010"] = {};
+ls_rosters["0011"] = {};
+ls_player["15702"] = new LSPlayer("15702","McKee, Tanner", "QB", "PHI", "QB");
+ls_player["17039"] = new LSPlayer("17039","Shough, Tyler", "QB", "NOS", "QB");
+ls_player["17058"] = new LSPlayer("17058","Brooks, Tahj", "RB", "CIN", "RB");
+ls_player["17685"] = new LSPlayer("17685","Heidenreich, Eli", "RB", "PIT", "RB");
+ls_player["17055"] = new LSPlayer("17055","James, Jordan", "RB", "SFO", "RB");
+ls_player["15727"] = new LSPlayer("15727","Knight, Bam", "RB", "ARI", "RB");
+ls_player["17476"] = new LSPlayer("17476","Singleton, Nicholas", "RB", "TEN", "RB");
+ls_player["16757"] = new LSPlayer("16757","Vidal, Kimani", "RB", "LAC", "RB");
+ls_player["16809"] = new LSPlayer("16809","Coker, Jalen", "WR", "CAR", "WR+TE");
+ls_player["15755"] = new LSPlayer("15755","Dotson, Jahan", "WR", "ATL", "WR+TE");
+ls_player["17079"] = new LSPlayer("17079","Johnson, Tez", "WR", "TBB", "WR+TE");
+ls_player["16621"] = new LSPlayer("16621","Walker, Devontez", "WR", "BAL", "WR+TE");
+ls_player["16723"] = new LSPlayer("16723","Barner, AJ", "TE", "SEA", "WR+TE");
+ls_rosters["0011"].NS = [ "15702","17039","16596","16164","16597","17058","16595","17685","17055","15727","15716","17476","16757","16809","15755","17079","15759","15757","16621","16625","16723","17567" ];
+ls_player["16148"] = new LSPlayer("16148","Young, Bryce", "QB", "CAR", "QB");
+ls_player["17044"] = new LSPlayer("17044","Hampton, Omarion", "RB", "LAC", "RB");
+ls_player["17473"] = new LSPlayer("17473","Price, Jadarian", "RB", "SEA", "RB");
+ls_player["16615"] = new LSPlayer("16615","Nabers, Malik", "WR", "NYG", "WR+TE");
+ls_player["15754"] = new LSPlayer("15754","Olave, Chris", "WR", "NOS", "WR+TE");
+ls_player["16206"] = new LSPlayer("16206","Wilson, Michael", "WR", "ARI", "WR+TE");
+ls_rosters["0011"].S = [ "16148","17044","17051","17473","16615","16211","15754","16206" ];
+ls_rosters["0012"] = {};
+ls_player["17040"] = new LSPlayer("17040","Cook, Brady", "QB", "MIA", "QB");
+ls_player["17478"] = new LSPlayer("17478","Allen, Kaytron", "RB", "WAS", "RB");
+ls_player["16175"] = new LSPlayer("16175","Johnson, Roschon", "RB", "CHI", "RB");
+ls_player["17501"] = new LSPlayer("17501","Concepcion, KC", "WR", "CLE", "WR+TE");
+ls_player["16342"] = new LSPlayer("16342","Douglas, Demario", "WR", "NEP", "WR+TE");
+ls_player["16778"] = new LSPlayer("16778","Flournoy, Ryan", "WR", "DAL", "WR+TE");
+ls_player["17360"] = new LSPlayer("17360","Price, Myles", "WR", "MIN", "WR+TE");
+ls_player["16633"] = new LSPlayer("16633","Whittington, Jordan", "WR", "LAR", "WR+TE");
+ls_player["17099"] = new LSPlayer("17099","Gadsden, Oronde", "TE", "LAC", "WR+TE");
+ls_player["17105"] = new LSPlayer("17105","Helm, Gunnar", "TE", "TEN", "WR+TE");
+ls_rosters["0012"].NS = [ "17040","17467","16149","16586","17478","17477","17056","16175","15749","17501","16342","16778","17517","17360","16621","16633","16195","16630","17096","17099","17105","17543" ];
+ls_player["15742"] = new LSPlayer("15742","Warren, Jaylen", "RB", "PIT", "RB");
+ls_player["15762"] = new LSPlayer("15762","Pickens, George", "WR", "DAL", "WR+TE");
+ls_player["15788"] = new LSPlayer("15788","Tolbert, Jalen", "WR", "MIA", "WR+TE");
+ls_player["15799"] = new LSPlayer("15799","Ferguson, Jake", "TE", "DAL", "WR+TE");
+ls_rosters["0012"].S = [ "17030","16162","15742","16190","15762","15788","16723","15799" ];
+ls_rosters["0013"] = {};
+ls_rosters["0014"] = {};
+ls_rosters["0015"] = {};
+ls_player["16171"] = new LSPlayer("16171","Miller, Kendre", "RB", "NOS", "RB");
+ls_player["16678"] = new LSPlayer("16678","Vaki, Sione", "RB", "DET", "RB");
+ls_player["16432"] = new LSPlayer("16432","Wilson, Emanuel", "RB", "SEA", "RB");
+ls_player["17076"] = new LSPlayer("17076","Bond, Isaiah", "WR", "CLE", "WR+TE");
+ls_player["16617"] = new LSPlayer("16617","Coleman, Keon", "WR", "BUF", "WR+TE");
+ls_player["16636"] = new LSPlayer("16636","Corley, Malachi", "WR", "CLE", "WR+TE");
+ls_player["17134"] = new LSPlayer("17134","Williams, Kyle", "WR", "NEP", "WR+TE");
+ls_player["16629"] = new LSPlayer("16629","Wilson, Roman", "WR", "PIT", "WR+TE");
+ls_player["17591"] = new LSPlayer("17591","Boerkircher, Nate", "TE", "JAC", "WR+TE");
+ls_player["16269"] = new LSPlayer("16269","Strange, Brenton", "TE", "JAC", "WR+TE");
+ls_rosters["0015"].NS = [ "17468","17034","16585","17465","17478","17061","16387","17685","16171","17046","16166","16678","16432","17506","17076","16617","16636","17134","16629","17591","16269" ];
+ls_rosters["0015"].IR = [ "16688" ];
+ls_player["16593"] = new LSPlayer("16593","Corum, Blake", "RB", "LAR", "RB");
+ls_player["16604"] = new LSPlayer("16604","Lloyd, MarShawn", "RB", "GBP", "RB");
+ls_player["17497"] = new LSPlayer("17497","Tate, Carnell", "WR", "TEN", "WR+TE");
+ls_rosters["0015"].S = [ "16580","16593","17068","16604","17075","17072","16614","17497" ];
+ls_rosters["0016"] = {};
+ls_player["16626"] = new LSPlayer("16626","Mitchell, Adonai", "WR", "NYJ", "WR+TE");
+ls_rosters["0016"].NS = [ "17031","16165","17078","17098","17074","17184","16626","16684","17105","16214" ];
+ls_player["17485"] = new LSPlayer("17485","Black, Kaelon", "RB", "SFO", "RB");
+ls_player["17541"] = new LSPlayer("17541","Brown, Barion", "WR", "NOS", "WR+TE");
+ls_player["17599"] = new LSPlayer("17599","Douglas, Caleb", "WR", "MIA", "WR+TE");
+ls_rosters["0016"].TS = [ "17463","17485","17503","17500","17541","17501","17504","17599","17520","17521","17529","17591" ];
+ls_player["16582"] = new LSPlayer("16582","Nix, Bo", "QB", "DEN", "QB");
+ls_player["16627"] = new LSPlayer("16627","McConkey, Ladd", "WR", "LAC", "WR+TE");
+ls_player["15756"] = new LSPlayer("15756","Williams, Jameson", "WR", "DET", "WR+TE");
+ls_player["15794"] = new LSPlayer("15794","McBride, Trey", "TE", "ARI", "WR+TE");
+ls_rosters["0016"].S = [ "16582","16167","15715","16604","16627","15756","17104","15794" ];
+ls_rosters["0017"] = {};
+ls_player["16213"] = new LSPlayer("16213","Kincaid, Dalton", "TE", "BUF", "WR+TE");
+ls_player["15889"] = new LSPlayer("15889","Okonkwo, Chigoziem", "TE", "WAS", "WR+TE");
+ls_player["17106"] = new LSPlayer("17106","Taylor, Mason", "TE", "NYJ", "WR+TE");
+ls_rosters["0017"].NS = [ "17031","15694","16596","17073","17082","17079","16639","16628","15788","16723","16213","15889","17106" ];
+ls_rosters["0017"].IR = [ "17056","17652","17509" ];
+ls_player["17743"] = new LSPlayer("17743","Strand, Jack", "QB", "ATL", "QB");
+ls_rosters["0017"].TS = [ "17743","17478","17476","17500","17529","17512" ];
+ls_player["15708"] = new LSPlayer("15708","Hall, Breece", "RB", "NYJ", "RB");
+ls_rosters["0017"].S = [ "17030","16167","15708","17052","15710","16188","16627","17102" ];
+ls_rosters["0018"] = {};
+ls_player["17717"] = new LSPlayer("17717","Booth, Davon", "RB", "IND", "RB");
+ls_player["16603"] = new LSPlayer("16603","Davis, Ray", "RB", "BUF", "RB");
+ls_player["17234"] = new LSPlayer("17234","Horn, Jimmy", "WR", "CAR", "WR+TE");
+ls_player["15873"] = new LSPlayer("15873","Bellinger, Daniel", "TE", "TEN", "WR+TE");
+ls_player["16642"] = new LSPlayer("16642","Stover, Cade", "TE", "HOU", "WR+TE");
+ls_player["16648"] = new LSPlayer("16648","Wiley, Jared", "TE", "KCC", "WR+TE");
+ls_rosters["0018"].NS = [ "17462","17717","16752","16603","16688","17475","16171","17506","15752","16809","16640","17234","16622","17521","15787","16621","17542","15873","17105","16642","17544","16648" ];
+ls_player["16620"] = new LSPlayer("16620","Worthy, Xavier", "WR", "KCC", "WR+TE");
+ls_rosters["0018"].S = [ "16148","15715","17042","16757","16190","16618","16620","17102" ];
+ls_rosters["0019"] = {};
+ls_player["17041"] = new LSPlayer("17041","Rourke, Kurtis", "QB", "SFO", "QB");
+ls_player["16173"] = new LSPlayer("16173","Gray, Eric", "RB", "FA", "RB");
+ls_player["16180"] = new LSPlayer("16180","Hull, Evan", "RB", "ARI", "RB");
+ls_player["16183"] = new LSPlayer("16183","Hyatt, Jalin", "WR", "NYG", "WR+TE");
+ls_player["17254"] = new LSPlayer("17254","Mumpfield, Konata", "WR", "LAR", "WR+TE");
+ls_rosters["0019"].NS = [ "16384","17034","16151","17041","16173","16180","16183","16626","17254","16195","17107","17106" ];
+ls_rosters["0019"].IR = [ "15777" ];
+ls_player["17679"] = new LSPlayer("17679","Kaliakmanis, Athan", "QB", "WAS", "QB");
+ls_player["17654"] = new LSPlayer("17654","Payton, Cole", "QB", "PHI", "QB");
+ls_rosters["0019"].TS = [ "17466","17679","17467","17654","17463","17481","17475","17519","17497" ];
+ls_player["17103"] = new LSPlayer("17103","Fannin, Harold", "TE", "CLE", "WR+TE");
+ls_rosters["0019"].S = [ "16579","17068","17043","16617","16627","16684","16206","17103" ];
+ls_rosters["0020"] = {};
+ls_rosters["0020"].IR = [ "17056","15749","17096" ];
+ls_rosters["0020"].TS = [ "17462","17477","17527","17567" ];
+ls_rosters["0021"] = {};
+ls_rosters["0021"].NS = [ "16152","16596","17069","17055","17046","15716","16166","15752","16778","17098","17074","16635","15757","17157","16191","16287" ];
+ls_rosters["0021"].IR = [ "15749" ];
+ls_rosters["0021"].TS = [ "17657","17465","17507","17517","17521" ];
+ls_player["16161"] = new LSPlayer("16161","Robinson, Bijan", "RB", "ATL", "RB");
+ls_rosters["0021"].S = [ "16582","16598","16604","17473","16161","16192","15753","16641" ];
+ls_rosters["0022"] = {};
+ls_player["16150"] = new LSPlayer("16150","Stroud, C.J.", "QB", "HOU", "QB");
+ls_rosters["0022"].NS = [ "16150","17061","17256","16178","16193","17082","16204","17098","16207","16191","16287" ];
+ls_rosters["0022"].IR = [ "16169","17083","17087" ];
+ls_player["17518"] = new LSPlayer("17518","Allen, Cyrus", "WR", "KCC", "WR+TE");
+ls_rosters["0022"].TS = [ "17466","17485","17685","17518","17502","17599","17529" ];
+ls_player["16616"] = new LSPlayer("16616","Odunze, Rome", "WR", "CHI", "WR+TE");
+ls_rosters["0022"].S = [ "16580","17044","17473","17045","16616","15756","16641","17103" ];
+ls_rosters["0023"] = {};
+ls_player["17048"] = new LSPlayer("17048","Johnson, Kaleb", "RB", "GBP", "RB");
+ls_player["17499"] = new LSPlayer("17499","Lemon, Makai", "WR", "PHI", "WR+TE");
+ls_rosters["0023"].NS = [ "17033","17478","16164","16603","16608","17055","17048","17047","16432","16610","17500","16617","16204","17520","17499" ];
+ls_player["17469"] = new LSPlayer("17469","Daniels, Jalon", "QB", "TBB", "QB");
+ls_rosters["0023"].TS = [ "17469","17657","17654","17652","17542","17567","17543" ];
+ls_player["17032"] = new LSPlayer("17032","Dart, Jaxson", "QB", "NYG", "QB");
+ls_rosters["0023"].S = [ "17032","17482","16615","16194","17107","16222","17104","16269" ];
+ls_rosters["0024"] = {};
+ls_player["17066"] = new LSPlayer("17066","Monangai, Kyle", "RB", "CHI", "RB");
+ls_player["16619"] = new LSPlayer("16619","Franklin, Troy", "WR", "DEN", "WR+TE");
+ls_rosters["0024"].NS = [ "17039","17061","17058","17256","17066","17047","16165","16166","16757","16619","17099" ];
+ls_rosters["0024"].IR = [ "16622" ];
+ls_rosters["0024"].TS = [ "17486","17482","17518","17706","17541","17511","17514","17498","17547","17607" ];
+ls_player["15972"] = new LSPlayer("15972","Mason, Jordan", "RB", "MIN", "RB");
+ls_player["17081"] = new LSPlayer("17081","Egbuka, Emeka", "WR", "TBB", "WR+TE");
+ls_rosters["0024"].S = [ "16582","17051","15972","15742","15710","17081","16614","16684" ];
+ls_rosters["0025"] = {};
+ls_rosters["0025"].TS = [ "17743" ];
+ls_rosters["0026"] = {};
+ls_player["15714"] = new LSPlayer("15714","White, Zamir", "RB", "NOS", "RB");
+ls_player["16649"] = new LSPlayer("16649","Johnson, Theo", "TE", "NYG", "WR+TE");
+ls_rosters["0026"].NS = [ "17468","16149","17033","16586","17463","16597","17053","17062","15714","17507","17501","16635","16189","17505","17087","16788","17512","17134","16629","16649","16212","16643" ];
+ls_rosters["0026"].S = [ "16581","17051","16165","16747","17075","16185","16214","15794" ];
+ls_rosters["0027"] = {};
+ls_player["17037"] = new LSPlayer("17037","Gabriel, Dillon", "QB", "CLE", "QB");
+ls_player["17064"] = new LSPlayer("17064","Hunter, Jarquez", "RB", "MIA", "RB");
+ls_player["17080"] = new LSPlayer("17080","Noel, Jaylin", "WR", "HOU", "WR+TE");
+ls_player["15981"] = new LSPlayer("15981","Turpin, KaVontae", "WR", "DAL", "WR+TE");
+ls_player["17192"] = new LSPlayer("17192","Watkins, Jordan", "WR", "SFO", "WR+TE");
+ls_rosters["0027"].NS = [ "17037","16584","16752","17060","17064","17474","17053","16174","17073","17076","17097","16189","17080","17086","17505","15761","17514","15981","17192","16633","16723","16222" ];
+ls_rosters["0027"].S = [ "16581","16598","17042","16161","15742","16186","16185","16618" ];
+ls_rosters["0028"] = {};
+ls_rosters["0029"] = {};
+ls_rosters["0030"] = {};
+ls_rosters["0031"] = {};
+ls_rosters["0032"] = {};
+ls_player["16201"] = new LSPlayer("16201","Hutchinson, Xavier", "WR", "HOU", "WR+TE");
+ls_player["15786"] = new LSPlayer("15786","Nailor, Jalen", "WR", "LVR", "WR+TE");
+ls_rosters["0032"].NS = [ "17030","16594","17485","16178","16432","17078","17508","17503","17076","17070","17501","17502","17097","16619","16201","16207","15786","16194","17108","17543" ];
+ls_rosters["0032"].TS = [ "17469","17548" ];
+ls_rosters["0032"].S = [ "16148","16593","16187","16616","16184","16192","16195","17104" ];
+ls_rosters["0033"] = {};
+ls_rosters["0033"].TS = [ "17465","17463","17506","17501","17599","17517","17543" ];
+ls_rosters["0034"] = {};
+ls_rosters["0035"] = {};
+ls_rosters["0036"] = {};
+ls_player["15802"] = new LSPlayer("15802","Otton, Cade", "TE", "TBB", "WR+TE");
+ls_rosters["0036"].NS = [ "17657","17036","17462","17033","17060","17048","17053","16178","17473","16601","17049","15721","16610","17082","17074","16207","17519","17529","15787","16788","17526","15802" ];
+ls_rosters["0036"].S = [ "16152","16174","16190","16614","16185","16287","15756","16620" ];
+ls_rosters["0037"] = {};
+ls_rosters["0038"] = {};
+ls_rosters["0039"] = {};
+ls_player["15698"] = new LSPlayer("15698","Purdy, Brock", "QB", "SFO", "QB");
+ls_rosters["0039"].NS = [ "16384","17040","16584","15698","16596","16164","16593","17256","15721","16193","17082","15768","15761","15789","16222","15802","17102" ];
+ls_rosters["0039"].IR = [ "15749" ];
+ls_rosters["0039"].TS = [ "17466","17478","17481","17475" ];
+ls_rosters["0039"].S = [ "15694","15715","15710","16186","17081","16211","17104","15794" ];
+ls_rosters["0040"] = {};
+ls_rosters["0040"].NS = [ "17034","16148","17061","16597","17047","17049","17171","16188","16184","16684" ];
+ls_player["17593"] = new LSPlayer("17593","Klein, Marlin", "TE", "HOU", "WR+TE");
+ls_rosters["0040"].TS = [ "17469","17657","17654","17463","17474","17500","17541","17517","17497","17529","17593","17607" ];
+ls_player["15256"] = new LSPlayer("15256","Williams, Javonte", "RB", "DAL", "RB");
+ls_rosters["0040"].S = [ "16579","15715","17044","17052","15256","17070","16194","15753" ];
+ls_rosters["0041"] = {};
+ls_player["17038"] = new LSPlayer("17038","McCord, Kyle", "QB", "MIA", "QB");
+ls_player["16645"] = new LSPlayer("16645","All, Erick", "TE", "CIN", "WR+TE");
+ls_rosters["0041"].NS = [ "17038","17069","16752","17053","16178","17066","17070","16809","16778","17075","16626","16184","17157","16645","17107" ];
+ls_rosters["0041"].IR = [ "17037","16622" ];
+ls_rosters["0041"].TS = [ "17469","17518","17706","17528","17502" ];
+ls_rosters["0041"].S = [ "16580","16161","16187","17071","17497","16684","17103","17104" ];
+ls_rosters["0042"] = {};
+ls_rosters["0043"] = {};
+ls_player["17627"] = new LSPlayer("17627","Hibner, Matthew", "TE", "BAL", "WR+TE");
+ls_rosters["0043"].NS = [ "17468","17654","16152","17743","17061","16608","17055","15749","17476","16747","16166","16678","16757","17518","17078","17083","17520","16628","17105","17627","17547","17593" ];
+ls_player["15798"] = new LSPlayer("15798","Likely, Isaiah", "TE", "NYG", "WR+TE");
+ls_rosters["0043"].S = [ "17030","16162","17472","15742","16615","15789","15798","15889" ];
+ls_rosters["0044"] = {};
+ls_player["16644"] = new LSPlayer("16644","Sinnott, Ben", "TE", "WAS", "WR+TE");
+ls_rosters["0044"].NS = [ "16586","17039","17069","17058","16593","17474","16171","16747","17076","17507","16617","17502","16626","15786","16195","17134","16644","16269" ];
+ls_rosters["0044"].IR = [ "16688","17083" ];
+ls_rosters["0044"].TS = [ "17467","17509" ];
+ls_rosters["0044"].S = [ "16582","16181","17051","17473","16188","16194","16213","15794" ];
+ls_rosters["0045"] = {};
+ls_rosters["0046"] = {};
+ls_rosters["0046"].NS = [ "17033","15698","16596","16603","15972","16171","17506","17501","17080","16788","15889" ];
+ls_rosters["0046"].IR = [ "16169" ];
+ls_rosters["0046"].TS = [ "17485","17685","17652","17706","17507","17519","17505","17512","17567","17544" ];
+ls_rosters["0046"].S = [ "17032","16167","16604","17045","16186","16616","16192","17102" ];
+ls_rosters["0047"] = {};
+ls_player["15712"] = new LSPlayer("15712","Allgeier, Tyler", "RB", "ARI", "RB");
+ls_player["16385"] = new LSPlayer("16385","Demercado, Emari", "RB", "DAL", "RB");
+ls_player["17063"] = new LSPlayer("17063","Mafah, Phil", "RB", "FA", "RB");
+ls_player["16216"] = new LSPlayer("16216","Washington, Darnell", "TE", "PIT", "WR+TE");
+ls_rosters["0047"].NS = [ "17040","17035","16585","15712","17481","17477","16385","17063","17482","17508","17500","17528","17072","16635","17514","17521","16191","17512","17542","16643","16216" ];
+ls_rosters["0047"].IR = [ "16169" ];
+ls_rosters["0047"].S = [ "16582","17042","16342","16619","16201","16639","16206","17106" ];
+ls_rosters["0048"] = {};
+ls_player["15254"] = new LSPlayer("15254","Harris, Najee", "RB", "NYG", "RB");
+ls_player["16850"] = new LSPlayer("16850","Saylors, Jacob", "RB", "DET", "RB");
+ls_rosters["0048"].NS = [ "17031","15694","16387","17058","17256","15254","16175","17047","17062","16850","17541","16204","17097","16207","17567","17099","16213","17547","16214","17607" ];
+ls_rosters["0048"].TS = [ "17468","17685" ];
+ls_rosters["0048"].S = [ "16581","17044","17068","17472","17066","16616","16185","16618" ];
+ls_rosters["0049"] = {};
+ls_player["16170"] = new LSPlayer("16170","McIntosh, Kenny", "RB", "FA", "RB");
+ls_player["17479"] = new LSPlayer("17479","Moss, Le'Veon", "RB", "MIA", "RB");
+ls_player["16197"] = new LSPlayer("16197","Mingo, Jonathan", "WR", "DAL", "WR+TE");
+ls_player["16623"] = new LSPlayer("16623","Rice, Brenden", "WR", "FA", "WR+TE");
+ls_player["15840"] = new LSPlayer("15840","Woods, Jelani", "TE", "NYJ", "WR+TE");
+ls_rosters["0049"].NS = [ "17462","17033","16594","16595","17053","16170","17479","15716","16757","17511","17075","17083","16197","16623","17157","17134","16629","17543","16643","16269","16216","15840" ];
+ls_rosters["0049"].S = [ "16148","17045","17482","16615","15754","15761","16641","16213" ];
+ls_rosters["0050"] = {};
+ls_rosters["0051"] = {};
+ls_rosters["0051"].NS = [ "17466","17463","17478","15712","16169","17481","17256","17048","16166","15721","17507","17501","17171","16619","17075","16635","17080","16622","16287","17512","17096","17099" ];
+ls_player["15711"] = new LSPlayer("15711","Walker III, Kenneth", "RB", "KCC", "RB");
+ls_rosters["0051"].S = [ "16582","16167","15711","16616","16194","16192","17103","17102" ];
+ls_rosters["0052"] = {};
+ls_player["16159"] = new LSPlayer("16159","O'Connell, Aidan", "QB", "LVR", "QB");
+ls_rosters["0052"].NS = [ "17468","17037","17467","16159","17069","16603","16688","17475","17046","17473","15721","17073","17506","17706","17509","17082","16617","17254","17529","17087","16684","17107" ];
+ls_rosters["0052"].S = [ "17032","16181","17044","16598","17072","16614","16194","15757" ];
+ls_rosters["0053"] = {};
+ls_rosters["0054"] = {};
+ls_rosters["0055"] = {};
+ls_rosters["0056"] = {};
+ls_rosters["0056"].NS = [ "16149","17031","16597","17058","17060","17053","17046","16165","17078","16809","17074","16639","15761","16723","16212" ];
+ls_rosters["0056"].IR = [ "16169" ];
+ls_rosters["0056"].TS = [ "17466","17657","17465","17502","17519","17544" ];
+ls_rosters["0056"].S = [ "15694","16162","17497","16206","17103","15798","15794","17102" ];
+ls_rosters["0057"] = {};
+ls_player["17205"] = new LSPlayer("17205","Lambert-Smith, KeAndre", "WR", "LAC", "WR+TE");
+ls_rosters["0057"].NS = [ "16384","17469","17743","17475","17652","16747","15742","16432","17073","17508","17507","17528","17504","16342","17520","17205","17184","17497","16788","17134","17567","16649" ];
+ls_rosters["0057"].S = [ "16582","17042","16161","15256","16614","16185","15789","15756" ];
+ls_rosters["0058"] = {};
+ls_player["16203"] = new LSPlayer("16203","Jones, Charlie", "WR", "FA", "WR+TE");
+ls_player["16631"] = new LSPlayer("16631","Polk, Ja'Lynn", "WR", "FA", "WR+TE");
+ls_player["16624"] = new LSPlayer("16624","Thrash, Jamari", "WR", "CLE", "WR+TE");
+ls_player["17644"] = new LSPlayer("17644","Koziol, Tanner", "TE", "JAC", "WR+TE");
+ls_rosters["0058"].NS = [ "16583","16596","16752","17059","17043","16171","17078","16636","17097","16207","16203","17499","16635","16631","16624","16191","16788","17644","17106" ];
+ls_rosters["0058"].S = [ "16580","17047","16757","17501","16619","16188","16626","16620" ];
+ls_rosters["0059"] = {};
+ls_rosters["0059"].NS = [ "16585","17039","17055","17048","16601","16610","16193","17082","16204","17072","17184","17514","17087","17108" ];
+ls_rosters["0059"].TS = [ "17486","17506","17504","17505","17529","17498","17591","17547" ];
+ls_rosters["0059"].S = [ "16581","17068","16598","16809","16188","16627","15768","16684" ];
+ls_rosters["0060"] = {};
+ls_rosters["0061"] = {};
+ls_player["15693"] = new LSPlayer("15693","Howell, Sam", "QB", "DAL", "QB");
+ls_player["15713"] = new LSPlayer("15713","Ford, Jerome", "RB", "FA", "RB");
+ls_player["17510"] = new LSPlayer("17510","Burks, Deion", "WR", "IND", "WR+TE");
+ls_rosters["0061"].NS = [ "17036","15693","16150","16164","17069","16593","16752","17056","15713","17060","17685","15749","16174","15777","17510","17528","16207","16189","15787","16633","16195","16206" ];
+ls_rosters["0061"].S = [ "17039","17051","17472","16615","16211","15754","16618","16214" ];
+ls_rosters["0062"] = {};
+ls_rosters["0063"] = {};
+ls_player["17240"] = new LSPlayer("17240","Miller, Cam", "QB", "FA", "QB");
+ls_player["17054"] = new LSPlayer("17054","Martinez, Damien", "RB", "FA", "RB");
+ls_rosters["0063"].NS = [ "17040","17034","17037","17036","17467","17035","16149","17240","16387","17481","17054","17476","17049","17518","17599","17254","17620","16633","17105","17548","17544","17106" ];
+ls_rosters["0063"].S = [ "16579","17477","17068","17171","15755","16628","17071","16723" ];
+ls_rosters["0064"] = {};
+ls_player["17492"] = new LSPlayer("17492","Donaldson, CJ", "RB", "NOS", "RB");
+ls_player["17719"] = new LSPlayer("17719","Haynes, Jamal", "RB", "FA", "RB");
+ls_player["17718"] = new LSPlayer("17718","Montgomery, Myles", "RB", "NEP", "RB");
+ls_player["17490"] = new LSPlayer("17490","Whittington, Noah", "RB", "HOU", "RB");
+ls_player["17549"] = new LSPlayer("17549","Roush, Sam", "TE", "CHI", "WR+TE");
+ls_rosters["0064"].NS = [ "17040","17032","17465","16596","17717","16603","17492","17719","16178","17718","17490","17518","17503","17076","17502","16342","16626","17521","16191","17498","16222","17549" ];
+ls_rosters["0064"].S = [ "16579","16167","16181","17066","16747","17070","17071","16287" ];
+ls_rosters["0065"] = {};
+ls_rosters["0066"] = {};
+ls_rosters["0066"].NS = [ "16384","16586","17061","16169","16752","16608","17706","17076","17500","17507","17504","17074","17520","16201","17079","17519","17184","17499","17521","17542","17567","17105","17607" ];
+ls_rosters["0066"].S = [ "16579","17068","16165","17070","16778","17099","16269" ];
+ls_rosters["0067"] = {};
+ls_rosters["0068"] = {};
+ls_rosters["0068"].NS = [ "15693","17463","16596","16387","17064","15749","16757","17073","17082","17502","17599","17075","17098","16207","17079","17517","15759","16626","17529","17087","16788" ];
+ls_rosters["0068"].S = [ "16581","17051","17171","16190","16188","17499","16211","15789" ];
+ls_rosters["0069"] = {};
+ls_rosters["0070"] = {};
+ls_rosters["0071"] = {};
+ls_player["17750"] = new LSPlayer("17750","Brown, Camden", "WR", "DAL", "WR+TE");
+ls_rosters["0071"].NS = [ "17466","17469","16583","17031","17039","16596","16593","15972","16747","17052","17078","17509","17750","16617","16778","16635","15761","17157","15799","16213","15802","17543" ];
+ls_rosters["0071"].S = [ "15698","16181","16162","16598","17071","16616","16194","17497" ];
+ls_rosters["0072"] = {};
+ls_rosters["0073"] = {};
+ls_player["17353"] = new LSPlayer("17353","Walker, Jahdae", "WR", "CHI", "WR+TE");
+ls_rosters["0073"].NS = [ "17039","17743","17256","16603","17060","17048","17475","16178","17066","16174","17518","17706","16809","17528","17504","16342","17520","16628","16189","17521","17353","16206" ];
+ls_rosters["0073"].S = [ "16579","17043","15742","15710","16615","15757","16185","15753" ];
+ls_rosters["0074"] = {};
+ls_rosters["0074"].NS = [ "17033","16608","16171","16174","16850","16166","16193","16189","15786","17080","16287","16633","17134","16723","15802" ];
+ls_rosters["0074"].IR = [ "17096" ];
+ls_rosters["0074"].TS = [ "17468","17654","17743","17541","17528","17607" ];
+ls_rosters["0074"].S = [ "16582","16162","17042","17472","15710","16186","17171","16187" ];
+ls_rosters["0075"] = {};
+ls_rosters["0076"] = {};
+ls_player["17523"] = new LSPlayer("17523","Caldwell, Jeff", "WR", "KCC", "WR+TE");
+ls_rosters["0076"].NS = [ "17037","17657","17465","17652","16166","17506","17503","17541","17523","17074","16203","16623","17086","17505","17529","17498","17512","17134","17107","17543","16644","17544" ];
+ls_rosters["0076"].S = [ "17463","16161","17072","16615","16788","17099","17105","17102" ];
+ls_rosters["0077"] = {};
+ls_rosters["0078"] = {};
+ls_rosters["0079"] = {};
+ls_rosters["0080"] = {};
+ls_rosters["0080"].NS = [ "16384","16152","17485","16603","15713","17474","16604","15972","17047","17049","16610","16186","17508","17509","17501","17511","16619","16622","16618","16684","16195","17106" ];
+ls_rosters["0080"].S = [ "15694","16167","17051","16161","17045","16627","16192","17103" ];
+ls_rosters["0081"] = {};
+ls_rosters["0082"] = {};
+ls_player["15797"] = new LSPlayer("15797","Dulcich, Greg", "TE", "MIA", "WR+TE");
+ls_rosters["0082"].NS = [ "17657","17060","15254","17055","17053","16171","17046","17047","17073","17503","16193","17501","17517","15761","17514","17542","17567","15797","16213","15798","15802","16216" ];
+ls_rosters["0082"].S = [ "16580","17482","15256","16626","16185","16641","17104","17102" ];
+ls_rosters["0083"] = {};
+ls_rosters["0084"] = {};
+ls_player["16746"] = new LSPlayer("16746","Ali, Rasheen", "RB", "BAL", "RB");
+ls_player["17491"] = new LSPlayer("17491","Connors, Dean", "RB", "LAR", "RB");
+ls_player["17333"] = new LSPlayer("17333","Cooper, Darius", "WR", "PHI", "WR+TE");
+ls_player["17255"] = new LSPlayer("17255","Lovett, Dominic", "WR", "DET", "WR+TE");
+ls_player["17232"] = new LSPlayer("17232","Wester, LaJohntay", "WR", "BAL", "WR+TE");
+ls_rosters["0084"].NS = [ "16746","17491","16603","15713","16688","17054","16178","15749","17049","16432","16610","17528","17333","17599","17647","17255","16616","16684","17232","16630","17107","17099" ];
+ls_rosters["0084"].S = [ "17032","16167","16162","17043","17472","15789","16214","17102" ];
+ls_rosters["0085"] = {};
+ls_rosters["0086"] = {};
+ls_rosters["0087"] = {};
+ls_rosters["0088"] = {};
+ls_rosters["0089"] = {};
+ls_rosters["0089"].NS = [ "15702","17031","17058","17477","16175","16390","17473","16165","15752","16619","15787","16723","15797","16212" ];
+ls_rosters["0089"].IR = [ "16622" ];
+ls_player["17720"] = new LSPlayer("17720","Gronowski, Mark", "QB", "MIA", "QB");
+ls_player["17545"] = new LSPlayer("17545","Endries, Jack", "TE", "CIN", "WR+TE");
+ls_player["17605"] = new LSPlayer("17605","Kacmarek, Will", "TE", "MIA", "WR+TE");
+ls_rosters["0089"].TS = [ "17720","17706","17599","17545","17627","17605" ];
+ls_rosters["0089"].S = [ "16150","16593","17070","17081","16188","16641","15799" ];
+ls_rosters["0090"] = {};
+ls_player["17760"] = new LSPlayer("17760","Fagnano, Joe", "QB", "BAL", "QB");
+ls_player["15692"] = new LSPlayer("15692","Pickett, Kenny", "QB", "CAR", "QB");
+ls_player["17752"] = new LSPlayer("17752","Meyers, Dohnte", "WR", "CIN", "WR+TE");
+ls_rosters["0090"].NS = [ "17760","17037","17465","15692","17743","17478","17477","16752","16178","16432","17078","17706","17504","16778","17517","17752","15786","17514","16723","17627","17544","17106" ];
+ls_rosters["0090"].S = [ "16579","17256","17043","16174","15256","16186","16222","17104" ];
+ls_rosters["0091"] = {};
+ls_rosters["0092"] = {};
+ls_player["17713"] = new LSPlayer("17713","King, Haynes", "QB", "CAR", "QB");
+ls_player["16613"] = new LSPlayer("16613","Laube, Dylan", "RB", "LVR", "RB");
+ls_player["17480"] = new LSPlayer("17480","Ott, Jaydn", "RB", "KCC", "RB");
+ls_player["15766"] = new LSPlayer("15766","Moore, Skyy", "WR", "GBP", "WR+TE");
+ls_rosters["0092"].NS = [ "16384","17713","16152","17069","16595","15713","16608","16613","17480","17473","16174","16601","16757","16610","15752","15766","15757","15787","16684","16633","16195","16629" ];
+ls_rosters["0092"].S = [ "17030","16161","15742","17081","16190","16627","16618","15756" ];
+ls_rosters["0093"] = {};
+ls_rosters["0093"].NS = [ "16584","16850" ];
+ls_player["16706"] = new LSPlayer("16706","Reiman, Tip", "TE", "ARI", "WR+TE");
+ls_rosters["0093"].IR = [ "16688","16706" ];
+ls_player["17536"] = new LSPlayer("17536","Bell, Dillon", "WR", "MIN", "WR+TE");
+ls_player["17530"] = new LSPlayer("17530","Bond, Lewis", "WR", "HOU", "WR+TE");
+ls_rosters["0093"].TS = [ "17468","17713","17478","17481","17480","17482","17506","17536","17508","17530","17520","17521","17529","17591","17605","17593","17607","17549" ];
+ls_player["17269"] = new LSPlayer("17269","Chism, Efton", "WR", "NEP", "WR+TE");
+ls_rosters["0093"].S = [ "17040","16678","17269","16203","15788","16621","16629","16643" ];
+ls_rosters["0094"] = {};
+ls_player["17540"] = new LSPlayer("17540","Hilton Jr., Chris", "WR", "GBP", "WR+TE");
+ls_player["16221"] = new LSPlayer("16221","Schoonmaker, Luke", "TE", "DAL", "WR+TE");
+ls_rosters["0094"].NS = [ "17040","17033","17058","17056","17059","17685","17064","17063","17475","16850","17078","17082","17523","17540","16639","17752","17080","17108","17567","16221","17544","16648" ];
+ls_rosters["0094"].S = [ "16583","17066","17052","17518","16809","16615","16616","17497" ];
+ls_rosters["0095"] = {};
+ls_player["17471"] = new LSPlayer("17471","Pavia, Diego", "QB", "FA", "QB");
+ls_player["17057"] = new LSPlayer("17057","Edwards, Donovan", "RB", "FA", "RB");
+ls_rosters["0095"].NS = [ "17034","16585","17465","17471","17654","16586","17057","17056","17685","16604","17047","17076","17082","16617","16640","17072","16635","16197","16626","17254","16195","17547" ];
+ls_rosters["0095"].S = [ "17030","17476","17045","17502","17071","17505","17157","17099" ];
+ls_rosters["0096"] = {};
+ls_rosters["0096"].NS = [ "16580","17240","17463","16385","17474","17541","17510","17501","17171","16187","17075","16615","16184","15761","17157","16788","17134","17096","17108","16213","17547","17543" ];
+ls_rosters["0096"].S = [ "17032","16167","16181","16598","16604","17052","16211","15762" ];
+ls_rosters["0097"] = {};
+ls_rosters["0098"] = {};
+ls_rosters["0098"].NS = [ "17466","17469","16149","17033","16585","17463","16594","17069","16752","17059","17048","17053","16171","17046","17652","16166","17073","17076","16619","16633","16645","17644" ];
+ls_rosters["0098"].S = [ "16582","17256","16747","16614","17499","16628","16622","16194" ];
+ls_rosters["0099"] = {};
+ls_rosters["0099"].NS = [ "16596","17061","17485","15716","16747","17503","17500","17269","16809","16204","17075","17074","16201","17107" ];
+ls_rosters["0099"].IR = [ "16594","17652" ];
+ls_rosters["0099"].TS = [ "17468","17469","17467","17519","17529","17620" ];
+ls_rosters["0099"].S = [ "16581","15710","16193","17070","16211","16194","16206","17103" ];
+ls_rosters["0100"] = {};
+ls_player["16732"] = new LSPlayer("16732","Gould, Anthony", "WR", "IND", "WR+TE");
+ls_player["16215"] = new LSPlayer("16215","Musgrave, Luke", "TE", "GBP", "WR+TE");
+ls_rosters["0100"].NS = [ "17462","16583","17031","16746","16164","17060","17508","17500","16204","16732","17184","16189","16631","16184","17086","16215","17607","17106" ];
+ls_rosters["0100"].S = [ "17039","17051","17066","15779","16192","16206","16620","17105" ];
+var ls_adjust = [];
+var ls_records = [];
+ls_records["0001"] = " (0-0)";
+ls_records["0002"] = " (0-0)";
+ls_records["0003"] = " (0-0)";
+ls_records["0004"] = " (0-0)";
+ls_records["0005"] = " (0-0)";
+ls_records["0006"] = " (0-0)";
+ls_records["0007"] = " (0-0)";
+ls_records["0008"] = " (0-0)";
+ls_records["0009"] = " (0-0)";
+ls_records["0010"] = " (0-0)";
+ls_records["0011"] = " (0-0)";
+ls_records["0012"] = " (0-0)";
+ls_records["0013"] = " (0-0)";
+ls_records["0014"] = " (0-0)";
+ls_records["0015"] = " (0-0)";
+ls_records["0016"] = " (0-0)";
+ls_records["0017"] = " (0-0)";
+ls_records["0018"] = " (0-0)";
+ls_records["0019"] = " (0-0)";
+ls_records["0020"] = " (0-0)";
+ls_records["0021"] = " (0-0)";
+ls_records["0022"] = " (0-0)";
+ls_records["0023"] = " (0-0)";
+ls_records["0024"] = " (0-0)";
+ls_records["0025"] = " (0-0)";
+ls_records["0026"] = " (0-0)";
+ls_records["0027"] = " (0-0)";
+ls_records["0028"] = " (0-0)";
+ls_records["0029"] = " (0-0)";
+ls_records["0030"] = " (0-0)";
+ls_records["0031"] = " (0-0)";
+ls_records["0032"] = " (0-0)";
+ls_records["0033"] = " (0-0)";
+ls_records["0034"] = " (0-0)";
+ls_records["0035"] = " (0-0)";
+ls_records["0036"] = " (0-0)";
+ls_records["0037"] = " (0-0)";
+ls_records["0038"] = " (0-0)";
+ls_records["0039"] = " (0-0)";
+ls_records["0040"] = " (0-0)";
+ls_records["0041"] = " (0-0)";
+ls_records["0042"] = " (0-0)";
+ls_records["0043"] = " (0-0)";
+ls_records["0044"] = " (0-0)";
+ls_records["0045"] = " (0-0)";
+ls_records["0046"] = " (0-0)";
+ls_records["0047"] = " (0-0)";
+ls_records["0048"] = " (0-0)";
+ls_records["0049"] = " (0-0)";
+ls_records["0050"] = " (0-0)";
+ls_records["0051"] = " (0-0)";
+ls_records["0052"] = " (0-0)";
+ls_records["0053"] = " (0-0)";
+ls_records["0054"] = " (0-0)";
+ls_records["0055"] = " (0-0)";
+ls_records["0056"] = " (0-0)";
+ls_records["0057"] = " (0-0)";
+ls_records["0058"] = " (0-0)";
+ls_records["0059"] = " (0-0)";
+ls_records["0060"] = " (0-0)";
+ls_records["0061"] = " (0-0)";
+ls_records["0062"] = " (0-0)";
+ls_records["0063"] = " (0-0)";
+ls_records["0064"] = " (0-0)";
+ls_records["0065"] = " (0-0)";
+ls_records["0066"] = " (0-0)";
+ls_records["0067"] = " (0-0)";
+ls_records["0068"] = " (0-0)";
+ls_records["0069"] = " (0-0)";
+ls_records["0070"] = " (0-0)";
+ls_records["0071"] = " (0-0)";
+ls_records["0072"] = " (0-0)";
+ls_records["0073"] = " (0-0)";
+ls_records["0074"] = " (0-0)";
+ls_records["0075"] = " (0-0)";
+ls_records["0076"] = " (0-0)";
+ls_records["0077"] = " (0-0)";
+ls_records["0078"] = " (0-0)";
+ls_records["0079"] = " (0-0)";
+ls_records["0080"] = " (0-0)";
+ls_records["0081"] = " (0-0)";
+ls_records["0082"] = " (0-0)";
+ls_records["0083"] = " (0-0)";
+ls_records["0084"] = " (0-0)";
+ls_records["0085"] = " (0-0)";
+ls_records["0086"] = " (0-0)";
+ls_records["0087"] = " (0-0)";
+ls_records["0088"] = " (0-0)";
+ls_records["0089"] = " (0-0)";
+ls_records["0090"] = " (0-0)";
+ls_records["0091"] = " (0-0)";
+ls_records["0092"] = " (0-0)";
+ls_records["0093"] = " (0-0)";
+ls_records["0094"] = " (0-0)";
+ls_records["0095"] = " (0-0)";
+ls_records["0096"] = " (0-0)";
+ls_records["0097"] = " (0-0)";
+ls_records["0098"] = " (0-0)";
+ls_records["0099"] = " (0-0)";
+ls_records["0100"] = " (0-0)";
+var ls_league_pos = [ "WR+TE","RB","QB"];
+var ls_simulate_week = "";
+</script>
+<table style="margin-top:4px" class="report" border="0" cellspacing="2" cellpadding="0">
+<tr class="oddtablerow"><td colspan=2>
+<table id="other_games" style="margin-bottom:4px;" border="0" cellpadding="0" cellspacing="2"><tr>
+</tr></table>
+<script type="text/javascript">
+var ls_vert_og = 0;
+var ls_games = [ "0032,0041","0100,0078","0001,0062","0002,0081","0003,0019","0004,0053","0005,0036","0006,0092","0007,0035","0008,0059","0009,0086","0010,0061","0011,0069","0012,0082","0013,0093","0014,0094","0015,0090","0016,0079","0017,0070","0018,0033","0020,0066","0021,0072","0022,0043","0023,0038","0024,0067","0025,0040","0026,0084","0027,0076","0028,0046","0029,0049","0030,0050","0031,0088","0034,0060","0037,0097","0039,0099","0042,0063","0044,0065","0045,0052","0047,0073","0048,0077","0051,0080","0054,0089","0055,0087","0056,0098","0057,0083","0058,0071","0064,0085","0068,0091","0074,0096","0075,0095"];
+var ls_hfa = [];
+</script>
+</td>
+</tr>
+<tr><td width="50%" class="mobile-view" valign="top">
+<script type="text/javascript">
+  var ls_icon_dim = "height='60'";
+  ls_icon_dim = ls_icon_dim + " width='250'";
+</script>
+<table id="marquee_away" border="0" cellpadding="0" cellspacing="0"><tr>
+<td rowspan="5" align="left"><div id="ficon_away"></div></td><td align="right"><div id="fname_away" class="ls_team_name"></div></td><td align="right"><div id="ffpts_away" class="ls_team_points"></div></td></tr>
+<tr id="ls_row_playing_away"><td class="ls_marquee_label" align="right">Playing</td><td class="ls_marquee_value" align="right"><div id="playing_away"></div></td></tr>
+<tr id="ls_row_ytp_away"><td class="ls_marquee_label" align="right">Yet&nbsp;to&nbsp;Play</td><td class="ls_marquee_value" align="right"><div id="ytp_away"></div></td></tr>
+<tr id="ls_row_pmr_away"><td class="ls_marquee_label" align="right">Minutes&nbsp;Remaining</td><td class="ls_marquee_value" align="right"><div id="pmr_away"></div></td></tr>
+<tr id="ls_row_winprob_away"><td class="ls_marquee_label" align="right">Win&nbsp;Probability</td><td class="ls_marquee_value" align="right"><div id="winprob_away"></div></td></tr>
+</table>
+<table id="roster_away" border="0" cellpadding="0" cellspacing="0">
+</table></td><td width="50%" class="mobile-view" valign="top">
+<script type="text/javascript">
+  var ls_icon_dim = "height='60'";
+  ls_icon_dim = ls_icon_dim + " width='250'";
+</script>
+<table id="marquee_home" border="0" cellpadding="0" cellspacing="0"><tr>
+<td align="left"><div id="ffpts_home" class="ls_team_points"></div></td><td align="left"><div id="fname_home" class="ls_team_name"></div></td><td rowspan="5" align="right"><div id="ficon_home"></div></td></tr>
+<tr id="ls_row_playing_home"><td class="ls_marquee_value" align="left"><div id="playing_home"></div></td><td class="ls_marquee_label" align="left">Playing</td></tr>
+<tr id="ls_row_ytp_home"><td class="ls_marquee_value" align="left"><div id="ytp_home"></div></td><td class="ls_marquee_label" align="left">Yet&nbsp;to&nbsp;Play</td></tr>
+<tr id="ls_row_pmr_home"><td class="ls_marquee_value" align="left"><div id="pmr_home"></div></td><td class="ls_marquee_label" align="left">Minutes&nbsp;Remaining</td></tr>
+<tr id="ls_row_winprob_home"><td class="ls_marquee_value" align="left"><div id="winprob_home"></div></td><td class="ls_marquee_label" align="left">Win&nbsp;Probability</td></tr>
+</table>
+<table id="roster_home" border="0" cellpadding="0" cellspacing="0">
+</table></td></tr>
+</table>
+<table class="report" border="1" width="90%" id="ls_ticker_tab_id">
+<tr class="oddtablerow">
+<td><div id="ls_ticker_label" valign="middle">Live Stat Updates:</div></td>
+<td style="overflow:hidden;" width="100%"><div id="ls_ticker_odiv" width="100%" valign="middle"><div id="ls_ticker_idiv"></div></div></td>
+</tr></table>
+<p><i>Data last updated at <span id="last_update"></span>. No need to refresh this page, stats will update roughly every 40 seconds while games are in progress.</i></p><p><b>Live Scoring Settings:</b> <input type="checkbox" name="hide_game_info" id="hide_game_info_cb" onclick="ls_hide_game_info(this)" > Hide Game Info | <input type="checkbox" name="hide_stats" id="hide_stats_cb" onclick="ls_hide_stats(this)" > Hide Player Stats | <input type="checkbox" name="hide_nonstarters" id="hide_nonstarters_cb" onclick="ls_hide_nonstarters(this)" > Hide Non-Starters | <input type="checkbox" name="hide_ticker" id="hide_ticker_cb" onclick="ls_hide_ticker(this)" > Hide Ticker | <input type="checkbox" name="hide_win_prob" id="hide_win_prob_cb" onclick="ls_hide_win_prob(this)" > Hide Projections and Win Prob</p><p><b>Live scoring is unofficial.</b>  Stats are subject to change. Not all scoring categories are supported and will not be displayed or points awarded for them. For official results, check the <a target="new" href="options?L=12011&O=22">Weekly Results Report</a>.
+<script type="text/javascript">
+var ls_ticker = 1;
+ls_wp_request_proj();
+request_stats();  
+show_game("0041","0032");
+ls_table_elem = document.getElementById("ls_ticker_tab_id");
+ls_label_elem = document.getElementById("ls_ticker_label");
+ls_div_elem = document.getElementById("ls_ticker_idiv");
+
+</script>
+<script>
+var tradeViewPermission = false;     // true = display trade button , false = hide trade button
+var fid_commish         = "0031";   // enter 4 digit franchiseID of commissioners franchise , if commish has no franchise skip
+var showNav             = false;     // true = mfl nav menu for weekly rosters and display grid , false = hide mfl nav menu
+var showMFLdefaultBtn   = true;     // set to true to add button to click and show MFL default rosters page
+
+                                    // If using contracts and/or salaries you MUST set leagueTypeNormal to false
+var leagueTypeNormal    = false;     // set to true for none salary and/or contract leagues , false if using contracts or salaries
+
+// IF LEAGUETYPENORMAL IS TRUE THEN SET THIS OTHERWISE IGNORE
+var SetLeftColumnWidth  = 150;      // set width of icons/text names that toggle to display rosters - 200px should be max setting
+
+// IF USING ICONS VERSE NAME THEN SET THIS OTHERWISE IGNORE
+var SetCaptionIconWidth = 250;      // set width of icons in roster table captions
+
+var RosterEnableMedia   = true;     // true = if your skin is using responsive design must set true , false = skin not using responsive css
+</script>
+
+<!-- MFL TABBED ROSTER-TRADE JS FILE -->
+<script src="https://www.mflscripts.com/mfl-apps/rosters/script.js"></script></div></div></div><div class="pagefooter"><table border="0" cellpadding="1" cellspacing="1" align="center">
+<tr><td colspan="2" align="center"><a href="#body_ajax_ls">Back To Top Of Page</a></td></tr>
+<tr><td colspan="2" align="center">Page Generated Sun Sep 6 4:46:23 p.m. ET 2026</td></tr>
+<tr><td colspan="2" align="center">Copyright &copy; 1995-2026 <a href="http://home.myfantasyleague.com/">First Pick Labs, Inc.</a> All Rights Reserved. <a href="http://home.myfantasyleague.com/privacy.html">Privacy Policy</a> - <a href="http://home.myfantasyleague.com/terms.html">Terms Of Service</a> 
+ - <a href="http://home.myfantasyleague.com/use.html">Acceptable Use Policy</a> - Powered by: <a href="https://www.geniussports.com/">Genius Sports</a>.
+- <button id="pmLink">Privacy Manager</button>
+</td></tr>
+<tr><td colspan="2" align="center"><b>Disclaimer:</b>  This site is not
+in any way affiliated with, endorsed or licensed by the
+National Football League, any NFL team or NFLPA member.
+</td></tr></table></div>
+</body></html>

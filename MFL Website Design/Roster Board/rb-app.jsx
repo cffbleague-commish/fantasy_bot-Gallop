@@ -14,8 +14,12 @@ const GLYPHS = {
 const TeamChip = ({ id, size }) => {
   const t = TEAMS[id];
   if (!t) return null;
-  const [imgErr, setImgErr] = useState(false);
-  if (t.pill && !imgErr) return <img className={'cffb-team cffb-team--' + (size || 'sm')} src={t.pill} alt={t.name} onError={() => setImgErr(true)} />;
+  // Prefer the franchise ICON (small pill); if it fails to load, fall back to the
+  // LOGO, then to the text chip — so a broken image never leaves a blank cell.
+  const srcs = [t.pill, t.pill2].filter(Boolean);
+  const [step, setStep] = useState(0);
+  const src = srcs[step];
+  if (src) return <img className={'cffb-team cffb-team--' + (size || 'sm')} src={src} alt={t.name} onError={() => setStep((s) => s + 1)} />;
   return <span className={'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : '')} style={{ background: t.bg, color: t.fg }}>{t.abbr}</span>;
 };
 
@@ -259,6 +263,7 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
           <button className="rb-modal__x" onClick={onClose} aria-label="Close">✕</button>
         </div>
         <div className="rb-modal__note">{commish && <b>Acting as commissioner on {TEAMS[team].name}. </b>}Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here — MFL enforces every eligibility and lock rule.</div>
+        <div className="rb-modal__note rb-modal__note--rs">◎ A player must remain on the Taxi Squad or Injured Reserve through the end of the {SEASON} season to earn that redshirt — activating them back to the active roster before season's end forfeits it.</div>
 
         {actions === null && !loadErr && <div className="rb-mng__load">Loading eligibility from MFL…</div>}
         {loadErr && <div className="rb-mng__load rb-mng__load--err">{loadErr} <MBtn onClick={load}>Retry</MBtn></div>}
@@ -288,12 +293,19 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
               {active.map((p) => {
                 const canTaxi = (() => { const mv = moveFor('taxi', p.pid); return mv && mv.dir === 'out'; })();
                 const canIR = (() => { const mv = moveFor('ir', p.pid); return mv && mv.dir === 'out'; })();
+                // A player who already carries a medical redshirt cannot earn a
+                // second one, so IR grants no redshirt benefit — flag it.
+                const usedMed = !!(p.rs && p.rs.type === 'med');
                 return (
                   <MngRow key={p.pid} p={p}>
                     {canTaxi && <MBtn tone="taxi" disabled={busy === p.pid}
-                      onClick={ask('taxi', p.pid, p.name, 'Send ' + p.name + ' to the Taxi Squad?', 'Uses a ' + SEASON + ' redshirt — the player can’t score while on taxi.')}>→ Taxi</MBtn>}
+                      onClick={ask('taxi', p.pid, p.name, 'Send ' + p.name + ' to the Taxi Squad?', 'Uses a ' + SEASON + ' redshirt (must stay on taxi through season end) — the player can’t score while on taxi.')}>→ Taxi</MBtn>}
                     {canIR && <MBtn tone="ir" disabled={busy === p.pid}
-                      onClick={ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', 'Applies a ' + SEASON + ' medical redshirt.')}>→ IR</MBtn>}
+                      onClick={ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?',
+                        usedMed
+                          ? '⚠ ' + p.name + ' already has a medical redshirt (' + p.rs.year + '). Placing on IR will NOT grant another redshirt.'
+                          : 'Applies a ' + SEASON + ' medical redshirt (must stay on IR through season end).')}>→ IR</MBtn>}
+                    {canIR && usedMed && <span className="rb-mng__nors" title={'Already used a medical redshirt (' + p.rs.year + ') — going on IR will not earn another'}>no new RS</span>}
                     {!canTaxi && !canIR && <span className="rb-mng__none" title="MFL offers no taxi/IR move for this player right now">—</span>}
                   </MngRow>
                 );

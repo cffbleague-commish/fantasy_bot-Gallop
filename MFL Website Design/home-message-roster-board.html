@@ -1082,6 +1082,8 @@
 #cffb-rb-root .rb-mbtn--taxi{border-color:rgba(201,162,39,.55);color:var(--gold-light,#E8C547)}
 #cffb-rb-root .rb-mbtn--ir{border-color:rgba(184,69,69,.55);color:#D88787}
 #cffb-rb-root .rb-mbtn--go{background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));color:#0A0A0A;border-color:transparent}
+.rb-mng__nors{font:700 8px/1 var(--font-body,sans-serif);letter-spacing:.08em;text-transform:uppercase;color:#D88787;border:1px solid rgba(184,69,69,.5);border-radius:2px;padding:3px 5px;white-space:nowrap;cursor:help}
+.rb-modal__note--rs{padding-top:0;color:var(--gold-light,#E8C547)}
 </style>
 <div id="cffb-rb-root"></div>
 <script>
@@ -1462,6 +1464,14 @@ function resolveCtx() {
   SEASON = parseInt(yr, 10) || SEASON;
   if (host !== origin) console.log('[CFFB Roster Board] player links use MFL host ' + host + ' (page origin ' + origin + ')');
 }
+
+// MFL franchise ICON URLs are often imgur "gallery" links (imgur.com/{id}.png),
+// which render unreliably as <img> sources; rewrite them to the direct CDN
+// (i.imgur.com/{id}.png) so the small-pill icon actually loads.
+function imgurDirect(u) {
+  const m = String(u || '').match(/^https?:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]+)(?:\.[A-Za-z0-9]+)?$/i);
+  return m ? 'https://i.imgur.com/' + m[1] + '.png' : u || '';
+}
 function buildTeams() {
   const db = window.franchiseDatabase || {};
   const fidToAbbr = {};
@@ -1483,8 +1493,10 @@ function buildTeams() {
       bg: '#1B1B1E',
       fg: '#E8E7E4',
       rec: '',
-      pill: f.icon || f.logo || '',
-      // franchise ICON (small pill) preferred; logo is the large page art
+      pill: imgurDirect(f.icon),
+      // franchise ICON (small pill) — TeamChip shows this first
+      pill2: imgurDirect(f.logo),
+      // franchise LOGO (larger) — fallback if the icon fails to load
       fid: f.id
     };
   });
@@ -1501,6 +1513,7 @@ function buildTeams() {
   FID_TO_ABBR = fidToAbbr;
   MY_TEAM = teams[myFid] ? myFid : TEAM_ORDER[0] || null;
   console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team ' + MY_TEAM + (MY_TEAM && TEAMS[MY_TEAM] ? ' (' + TEAMS[MY_TEAM].abbr + ')' : '') + (teams[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
+  if (MY_TEAM && TEAMS[MY_TEAM]) console.log('[CFFB Roster Board] franchise images — icon(shown first): ' + (TEAMS[MY_TEAM].pill || '(none)') + ' | logo(fallback): ' + (TEAMS[MY_TEAM].pill2 || '(none)'));
   return fidToAbbr;
 }
 
@@ -1899,12 +1912,16 @@ const TeamChip = ({
 }) => {
   const t = TEAMS[id];
   if (!t) return null;
-  const [imgErr, setImgErr] = useState(false);
-  if (t.pill && !imgErr) return /*#__PURE__*/React.createElement("img", {
+  // Prefer the franchise ICON (small pill); if it fails to load, fall back to the
+  // LOGO, then to the text chip — so a broken image never leaves a blank cell.
+  const srcs = [t.pill, t.pill2].filter(Boolean);
+  const [step, setStep] = useState(0);
+  const src = srcs[step];
+  if (src) return /*#__PURE__*/React.createElement("img", {
     className: 'cffb-team cffb-team--' + (size || 'sm'),
-    src: t.pill,
+    src: src,
     alt: t.name,
-    onError: () => setImgErr(true)
+    onError: () => setStep(s => s + 1)
   });
   return /*#__PURE__*/React.createElement("span", {
     className: 'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : ''),
@@ -2346,7 +2363,9 @@ const ManageModal = ({
     "aria-label": "Close"
   }, "\u2715")), /*#__PURE__*/React.createElement("div", {
     className: "rb-modal__note"
-  }, commish && /*#__PURE__*/React.createElement("b", null, "Acting as commissioner on ", TEAMS[team].name, ". "), "Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here \u2014 MFL enforces every eligibility and lock rule."), actions === null && !loadErr && /*#__PURE__*/React.createElement("div", {
+  }, commish && /*#__PURE__*/React.createElement("b", null, "Acting as commissioner on ", TEAMS[team].name, ". "), "Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here \u2014 MFL enforces every eligibility and lock rule."), /*#__PURE__*/React.createElement("div", {
+    className: "rb-modal__note rb-modal__note--rs"
+  }, "\u25CE A player must remain on the Taxi Squad or Injured Reserve through the end of the ", SEASON, " season to earn that redshirt \u2014 activating them back to the active roster before season's end forfeits it."), actions === null && !loadErr && /*#__PURE__*/React.createElement("div", {
     className: "rb-mng__load"
   }, "Loading eligibility from MFL\u2026"), loadErr && /*#__PURE__*/React.createElement("div", {
     className: "rb-mng__load rb-mng__load--err"
@@ -2382,18 +2401,24 @@ const ManageModal = ({
       const mv = moveFor('ir', p.pid);
       return mv && mv.dir === 'out';
     })();
+    // A player who already carries a medical redshirt cannot earn a
+    // second one, so IR grants no redshirt benefit — flag it.
+    const usedMed = !!(p.rs && p.rs.type === 'med');
     return /*#__PURE__*/React.createElement(MngRow, {
       key: p.pid,
       p: p
     }, canTaxi && /*#__PURE__*/React.createElement(MBtn, {
       tone: "taxi",
       disabled: busy === p.pid,
-      onClick: ask('taxi', p.pid, p.name, 'Send ' + p.name + ' to the Taxi Squad?', 'Uses a ' + SEASON + ' redshirt — the player can’t score while on taxi.')
+      onClick: ask('taxi', p.pid, p.name, 'Send ' + p.name + ' to the Taxi Squad?', 'Uses a ' + SEASON + ' redshirt (must stay on taxi through season end) — the player can’t score while on taxi.')
     }, "\u2192 Taxi"), canIR && /*#__PURE__*/React.createElement(MBtn, {
       tone: "ir",
       disabled: busy === p.pid,
-      onClick: ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', 'Applies a ' + SEASON + ' medical redshirt.')
-    }, "\u2192 IR"), !canTaxi && !canIR && /*#__PURE__*/React.createElement("span", {
+      onClick: ask('ir', p.pid, p.name, 'Place ' + p.name + ' on Injured Reserve?', usedMed ? '⚠ ' + p.name + ' already has a medical redshirt (' + p.rs.year + '). Placing on IR will NOT grant another redshirt.' : 'Applies a ' + SEASON + ' medical redshirt (must stay on IR through season end).')
+    }, "\u2192 IR"), canIR && usedMed && /*#__PURE__*/React.createElement("span", {
+      className: "rb-mng__nors",
+      title: 'Already used a medical redshirt (' + p.rs.year + ') — going on IR will not earn another'
+    }, "no new RS"), !canTaxi && !canIR && /*#__PURE__*/React.createElement("span", {
       className: "rb-mng__none",
       title: "MFL offers no taxi/IR move for this player right now"
     }, "\u2014"));

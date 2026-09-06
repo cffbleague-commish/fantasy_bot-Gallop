@@ -227,6 +227,10 @@ const extraCss = [
   '#' + ROOT_ID + ' .rb-mbtn--taxi{border-color:rgba(201,162,39,.55);color:var(--gold-light,#E8C547)}',
   '#' + ROOT_ID + ' .rb-mbtn--ir{border-color:rgba(184,69,69,.55);color:#D88787}',
   '#' + ROOT_ID + ' .rb-mbtn--go{background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));color:#0A0A0A;border-color:transparent}',
+  // "no new redshirt" flag on IR actions for players who already used a medical RS
+  '.rb-mng__nors{font:700 8px/1 var(--font-body,sans-serif);letter-spacing:.08em;text-transform:uppercase;color:#D88787;border:1px solid rgba(184,69,69,.5);border-radius:2px;padding:3px 5px;white-space:nowrap;cursor:help}',
+  // season-retention note in the Manage modal (amber, tighter to the note above)
+  '.rb-modal__note--rs{padding-top:0;color:var(--gold-light,#E8C547)}',
 ].join('\n');
 
 // ---------------------------------------------------------------------------

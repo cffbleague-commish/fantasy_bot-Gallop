@@ -262,6 +262,13 @@ function resolveCtx() {
   if (host !== origin) console.log('[CFFB Roster Board] player links use MFL host ' + host + ' (page origin ' + origin + ')');
 }
 
+// MFL franchise ICON URLs are often imgur "gallery" links (imgur.com/{id}.png),
+// which render unreliably as <img> sources; rewrite them to the direct CDN
+// (i.imgur.com/{id}.png) so the small-pill icon actually loads.
+function imgurDirect(u) {
+  const m = String(u || '').match(/^https?:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]+)(?:\.[A-Za-z0-9]+)?$/i);
+  return m ? 'https://i.imgur.com/' + m[1] + '.png' : (u || '');
+}
 function buildTeams() {
   const db = window.franchiseDatabase || {};
   const fidToAbbr = {};
@@ -283,7 +290,8 @@ function buildTeams() {
       bg: '#1B1B1E',
       fg: '#E8E7E4',
       rec: '',
-      pill: f.icon || f.logo || '',   // franchise ICON (small pill) preferred; logo is the large page art
+      pill: imgurDirect(f.icon),    // franchise ICON (small pill) — TeamChip shows this first
+      pill2: imgurDirect(f.logo),   // franchise LOGO (larger) — fallback if the icon fails to load
       fid: f.id,
     };
   });
@@ -301,6 +309,8 @@ function buildTeams() {
   console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team '
     + MY_TEAM + (MY_TEAM && TEAMS[MY_TEAM] ? ' (' + TEAMS[MY_TEAM].abbr + ')' : '')
     + (teams[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
+  if (MY_TEAM && TEAMS[MY_TEAM]) console.log('[CFFB Roster Board] franchise images — icon(shown first): '
+    + (TEAMS[MY_TEAM].pill || '(none)') + ' | logo(fallback): ' + (TEAMS[MY_TEAM].pill2 || '(none)'));
   return fidToAbbr;
 }
 
