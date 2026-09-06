@@ -192,8 +192,16 @@ const extraCss = [
   // Unverified-contract marker (owner abbrev didn\'t match this franchise).
   '.rb-flag{display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#E8C547;cursor:help;flex:none}',
   // ── Manage Roster (Taxi/IR) — button + modal ──────────────────────────────
-  '#' + ROOT_ID + ' .rb-manage-btn{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}',
+  // Right-side group: KPIs + Manage button travel together and wrap as one unit
+  // (instead of the button and KPIs fighting over the right edge and splitting onto
+  // separate lines). align-items:flex-end keeps the button baseline-aligned with the KPI values.
+  '#' + ROOT_ID + ' .rb-team__aside{margin-left:auto;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;justify-content:flex-end}',
+  '#' + ROOT_ID + ' .rb-team__aside .rb-team__kpis{margin-left:0}',
+  '#' + ROOT_ID + ' .rb-manage-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}',
   '#' + ROOT_ID + ' .rb-manage-btn:hover{filter:brightness(1.07)}',
+  // Mobile (container ≤720px): the aside spans full width; the button drops below the
+  // KPI row full-width so nothing is cramped.
+  '@container (max-width:720px){#' + ROOT_ID + ' .rb-team__aside{width:100%;margin-left:0;gap:12px}#' + ROOT_ID + ' .rb-manage-btn{width:100%;justify-content:center;padding:11px 14px}}',
   '.rb-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;background:rgba(0,0,0,.66);overflow-y:auto}',
   '.rb-modal__box{width:100%;max-width:560px;background:var(--bg-surface,#141414);border:1px solid var(--border,#2A2A2A);border-top:3px solid var(--gold,#C9A227);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.7)}',
   '.rb-modal__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 8px}',

@@ -131,8 +131,13 @@ function encodedForFranchise(pl, fid) {
   }
   if (!tokens.length) return null;
   const mine = tokens.find((t) => t.split('_')[0] === fid);
-  if (mine) return { parsed: parseEncoded(mine), matched: true };
-  return { parsed: null, matched: false };
+  // "Other copy" = owner of the OTHER token on this same row. Copy 1 / Copy 2 are
+  // the two copies within THIS franchise's conference, so this is the true
+  // same-conference co-owner (a 4-digit fid, or 'FA' if the other copy is a free
+  // agent) — not a cross-conference owner picked from league-wide membership.
+  const otherTok = tokens.find((t) => t.split('_')[0] !== fid);
+  const otherOwner = otherTok ? otherTok.split('_')[0] : null;
+  return { parsed: mine ? parseEncoded(mine) : null, matched: !!mine, otherOwner };
 }
 
 // ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
@@ -205,7 +210,10 @@ const enrichRow = (teamKey) => (m) => {
     rs: rs ? { type: rs.type, year: rs.year } : null,
     elig,
     contractUnverified: !!m.unverified,
-    other: otherCopyOf(m.pid, teamKey),
+    // Same-conference co-owner from the row's other token; 'FA'/absent → null so
+    // the app shows the "FA" badge. (Replaces the old membership-order lookup that
+    // always surfaced the lowest-fid — i.e. an ACC — owner.)
+    other: (m.other && m.other !== 'FA') ? m.other : null,
   };
 };
 
@@ -413,7 +421,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v9';   // v9: franchise-id keying + id-based contract match
+const RB_CACHE_KEY = 'cffb_roster_board_v10';  // v10: other-copy from the row's same-conference token
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -486,6 +494,7 @@ async function rbFetchPayload(fidToAbbr) {
         enc: res ? res.parsed : null,
         verified: !!(res && res.matched),
         unverified: !!(res && !res.matched),   // tokens present but none owned by this franchise
+        other: res ? res.otherOwner : null,     // same-conference co-owner (fid) or 'FA'
       });
       (membership[pl.id] = membership[pl.id] || []).push(fr.id);
     });

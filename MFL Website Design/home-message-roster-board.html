@@ -1047,8 +1047,11 @@
 .rb-copy-badge{display:inline-flex;align-items:center;font:700 10px/1 var(--font-body,sans-serif);letter-spacing:.08em;color:var(--fg-tertiary,#6A6A66);border:1px solid var(--border,#262629);border-radius:2px;padding:3px 5px}
 #cffb-rb-root .rb-copy .cffb-team{height:20px;width:auto;max-width:110px;object-fit:contain}
 .rb-flag{display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#E8C547;cursor:help;flex:none}
-#cffb-rb-root .rb-manage-btn{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+#cffb-rb-root .rb-team__aside{margin-left:auto;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;justify-content:flex-end}
+#cffb-rb-root .rb-team__aside .rb-team__kpis{margin-left:0}
+#cffb-rb-root .rb-manage-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
 #cffb-rb-root .rb-manage-btn:hover{filter:brightness(1.07)}
+@container (max-width:720px){#cffb-rb-root .rb-team__aside{width:100%;margin-left:0;gap:12px}#cffb-rb-root .rb-manage-btn{width:100%;justify-content:center;padding:11px 14px}}
 .rb-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;background:rgba(0,0,0,.66);overflow-y:auto}
 .rb-modal__box{width:100%;max-width:560px;background:var(--bg-surface,#141414);border:1px solid var(--border,#2A2A2A);border-top:3px solid var(--gold,#C9A227);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
 .rb-modal__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 8px}
@@ -1299,13 +1302,16 @@ function encodedForFranchise(pl, fid) {
   }
   if (!tokens.length) return null;
   const mine = tokens.find(t => t.split('_')[0] === fid);
-  if (mine) return {
-    parsed: parseEncoded(mine),
-    matched: true
-  };
+  // "Other copy" = owner of the OTHER token on this same row. Copy 1 / Copy 2 are
+  // the two copies within THIS franchise's conference, so this is the true
+  // same-conference co-owner (a 4-digit fid, or 'FA' if the other copy is a free
+  // agent) — not a cross-conference owner picked from league-wide membership.
+  const otherTok = tokens.find(t => t.split('_')[0] !== fid);
+  const otherOwner = otherTok ? otherTok.split('_')[0] : null;
   return {
-    parsed: null,
-    matched: false
+    parsed: mine ? parseEncoded(mine) : null,
+    matched: !!mine,
+    otherOwner
   };
 }
 
@@ -1394,7 +1400,10 @@ const enrichRow = teamKey => m => {
     } : null,
     elig,
     contractUnverified: !!m.unverified,
-    other: otherCopyOf(m.pid, teamKey)
+    // Same-conference co-owner from the row's other token; 'FA'/absent → null so
+    // the app shows the "FA" badge. (Replaces the old membership-order lookup that
+    // always surfaced the lowest-fid — i.e. an ACC — owner.)
+    other: m.other && m.other !== 'FA' ? m.other : null
   };
 };
 function buildRoster(teamKey) {
@@ -1633,7 +1642,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v9'; // v9: franchise-id keying + id-based contract match
+const RB_CACHE_KEY = 'cffb_roster_board_v10'; // v10: other-copy from the row's same-conference token
 const RB_FRESH_MS = 30 * 60 * 1000; // serve without refetch
 const RB_MAX_MS = 24 * 60 * 60 * 1000; // hard cap
 function rbReadCache() {
@@ -1723,7 +1732,9 @@ async function rbFetchPayload(fidToAbbr) {
         status: pl.status || 'ROSTER',
         enc: res ? res.parsed : null,
         verified: !!(res && res.matched),
-        unverified: !!(res && !res.matched) // tokens present but none owned by this franchise
+        unverified: !!(res && !res.matched),
+        // tokens present but none owned by this franchise
+        other: res ? res.otherOwner : null // same-conference co-owner (fid) or 'FA'
       });
       (membership[pl.id] = membership[pl.id] || []).push(fr.id);
     });
@@ -2513,6 +2524,8 @@ const App = () => {
   }, "YOUR TEAM")), /*#__PURE__*/React.createElement("div", {
     className: "rb-team__owner"
   }, t.owner, " \xB7 ", t.rec)), /*#__PURE__*/React.createElement("div", {
+    className: "rb-team__aside"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "rb-team__kpis"
   }, /*#__PURE__*/React.createElement("div", {
     className: "rb-kpi"
@@ -2545,7 +2558,7 @@ const App = () => {
     className: "rb-manage-btn",
     onClick: () => setManage(true),
     title: "Move players to/from Taxi Squad or Injured Reserve"
-  }, "\u2699 Manage Roster")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2699 Manage Roster"))), /*#__PURE__*/React.createElement("div", {
     className: "rb-table"
   }, /*#__PURE__*/React.createElement("div", {
     className: "rb-cols rb-thead"
