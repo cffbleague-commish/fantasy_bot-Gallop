@@ -74,8 +74,9 @@ const MFL_PLAYER_LINK = (pid) => `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.ye
 const PLAYER_PHOTO = (pid) => `https://www46.myfantasyleague.com/player_photos_2014/${pid}_thumb.jpg`;
 
 // ── Encoded contract-string parser (mirrors mfl-player-parser.js) ─────────────
-// A single copy string: OWNER_CLASS[_MODS]. Returns { owner, cls, redshirt, awards }.
-const ENC_RE = /^(?:FA|[A-Z]{2,4})_(?:FR|SO|JR|SR|GR)(?:_[A-Za-z0-9]+)*$/;
+// A single copy string: OWNER_CLASS[_MODS]. OWNER is the 4-digit MFL franchise id
+// (e.g. "0032") or "FA" for a free-agent copy. Returns { owner, cls, redshirt, awards }.
+const ENC_RE = /^(?:FA|\d{4})_(?:FR|SO|JR|SR|GR)(?:_[A-Za-z0-9]+)*$/;
 function parseEncoded(str) {
   if (!str || !ENC_RE.test(str)) return null;
   const parts = str.split('_');
@@ -111,15 +112,16 @@ const encAwardToDisplay = (a) => ({
 });
 
 // Resolve the encoded contract string for THIS franchise's copy of a player.
-// A player exists as two copies (e.g. "BC_FR_r25" and "VT_FR_r25"); the export
-// row can expose either/both across fields. Returns { parsed, matched }:
-//  - matched=true  → a copy whose OWNER abbreviation equals this franchise
-//                    (the correct, verified copy),
-//  - matched=false → no owner matched, so we fall back to MFL's per-row
-//                    contractStatus (or the first token) and flag it as
-//                    unverified (info may be inaccurate / awaiting update).
+// A player exists as two copies (e.g. "0032_FR_r25" and "0015_FR_r25"); the
+// export row exposes them in contractStatus (Copy 1) and contractInfo (Copy 2).
+// The owner segment is now the 4-digit MFL franchise id, so we match it exactly
+// against fid (fr.id) — no abbreviation aliasing. Returns { parsed, matched }:
+//  - matched=true  → a copy whose OWNER id equals this franchise (the correct copy),
+//  - matched=false → tokens exist but none belong to this franchise (a free-agent
+//                    copy or awaiting an import) → we show NOTHING (never another
+//                    team's copy) and flag it.
 // Returns null only when the row has no encoded contract token at all.
-function encodedForFranchise(pl, abbr) {
+function encodedForFranchise(pl, fid) {
   if (!pl) return null;
   const tokens = [];
   for (const k in pl) {
@@ -128,11 +130,9 @@ function encodedForFranchise(pl, abbr) {
     v.split(/[;,]/).forEach((s) => { s = s.trim(); if (ENC_RE.test(s)) tokens.push(s); });
   }
   if (!tokens.length) return null;
-  const mine = tokens.find((t) => t.split('_')[0] === abbr);
+  const mine = tokens.find((t) => t.split('_')[0] === fid);
   if (mine) return { parsed: parseEncoded(mine), matched: true };
-  const cs = pl.contractStatus && String(pl.contractStatus).trim();
-  const fb = (cs && ENC_RE.test(cs)) ? cs : tokens[0];
-  return { parsed: parseEncoded(fb), matched: false };
+  return { parsed: null, matched: false };
 }
 
 // ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
@@ -173,20 +173,23 @@ function injuryCode(status) {
   return 'Q'; // unrecognized but present → surface it as questionable rather than hide
 }
 
-const otherCopyOf = (pid, teamAbbr) => {
+// MEMBERSHIP is keyed by franchise id, so teamKey and the returned "other copy"
+// are franchise ids (the app resolves them via TEAMS[id] for display).
+const otherCopyOf = (pid, teamKey) => {
   const on = MEMBERSHIP[pid] || [];
-  for (const t of on) if (t !== teamAbbr) return t;
+  for (const t of on) if (t !== teamKey) return t;
   return null;
 };
 
-// ── buildRoster(teamAbbr): same return shape as the sample data layer ─────────
-const enrichRow = (teamAbbr) => (m) => {
+// ── buildRoster(teamKey): teamKey is a franchise id ───────────────────────────
+const enrichRow = (teamKey) => (m) => {
   const p = PLAYERS_BY_ID[m.pid] || { name: m.pid, pos: 'WR', pts: 0, injury: null };
   const enc = m.enc;
   const rs = enc ? enc.redshirt : null;
-  // No matching copy for this franchise → leave contract fields blank.
+  // No matching copy for this franchise → leave contract fields blank (never show
+  // another team's copy); m.unverified drives the ⚠ "awaiting contract" flag.
   const elig = enc ? deriveElig(enc.cls, rs)
-    : { cls: '', dots: [], remaining: null, remainLabel: 'No contract data for this team', redshirtingNow: false };
+    : { cls: '', dots: [], remaining: null, remainLabel: 'No contract copy assigned to this team yet', redshirtingNow: false };
   return {
     pid: m.pid,
     playerId: p.playerId,
@@ -201,14 +204,14 @@ const enrichRow = (teamAbbr) => (m) => {
     awards: enc ? enc.awards.map(encAwardToDisplay) : [],
     rs: rs ? { type: rs.type, year: rs.year } : null,
     elig,
-    contractUnverified: !!(enc && !m.verified),
-    other: otherCopyOf(m.pid, teamAbbr),
+    contractUnverified: !!m.unverified,
+    other: otherCopyOf(m.pid, teamKey),
   };
 };
 
-function buildRoster(teamAbbr) {
-  const members = ROSTER_MEMBERS[teamAbbr] || [];
-  const e = enrichRow(teamAbbr);
+function buildRoster(teamKey) {
+  const members = ROSTER_MEMBERS[teamKey] || [];
+  const e = enrichRow(teamKey);
   const active = [], taxi = [], ir = [];
   members.forEach((m) => {
     const row = e(m);
@@ -269,7 +272,10 @@ function buildTeams() {
     const abbr = (f.abbrev || f.id).toUpperCase();
     const conf = DIV_TO_CONF[f.division] || 'acc';
     fidToAbbr[f.id] = abbr;
-    teams[abbr] = {
+    // TEAMS is keyed by the 4-digit franchise id (the same key the contract
+    // tokens now use and the rosters export groups by). abbr/name stay as
+    // display fields — the id is never shown to the user.
+    teams[f.id] = {
       name: f.name || abbr,
       abbr,
       owner: '',
@@ -277,7 +283,7 @@ function buildTeams() {
       bg: '#1B1B1E',
       fg: '#E8E7E4',
       rec: '',
-      pill: f.logo || f.icon || '',   // franchise logo (external image; loads on MFL pages)
+      pill: f.icon || f.logo || '',   // franchise ICON (small pill) preferred; logo is the large page art
       fid: f.id,
     };
   });
@@ -286,14 +292,15 @@ function buildTeams() {
     return ca !== cb ? ca - cb : teams[a].name.localeCompare(teams[b].name);
   });
   TEAMS = teams;
-  TEAM_ORDER = order;
-  // Signed-in franchise → default team.
+  TEAM_ORDER = order;   // list of franchise ids, sorted by conference then name
+  // Signed-in franchise → default team (its id).
   const myFid = String(window.franchise_id || '');
   MY_FID = myFid;
   FID_TO_ABBR = fidToAbbr;
-  MY_TEAM = fidToAbbr[myFid] || TEAM_ORDER[0] || null;
-  console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team ' + MY_TEAM
-    + (fidToAbbr[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
+  MY_TEAM = teams[myFid] ? myFid : (TEAM_ORDER[0] || null);
+  console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team '
+    + MY_TEAM + (MY_TEAM && TEAMS[MY_TEAM] ? ' (' + TEAMS[MY_TEAM].abbr + ')' : '')
+    + (teams[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
   return fidToAbbr;
 }
 
@@ -396,7 +403,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v8';
+const RB_CACHE_KEY = 'cffb_roster_board_v9';   // v9: franchise-id keying + id-based contract match
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -452,26 +459,29 @@ async function rbFetchPayload(fidToAbbr) {
   });
   console.log('[CFFB Roster Board] injuries: ' + injList.length + ' report entries, ' + injMatched + ' matched to rostered players');
 
-  // Membership + this franchise's encoded contract copy (resolved by abbrev).
-  const rosterMembers = {};   // abbr -> [{pid,status,enc,verified}]
-  const membership = {};      // pid -> [abbr]
-  let encMatched = 0, encFallback = 0, encNone = 0;
+  // Membership + this franchise's encoded contract copy (matched by franchise id).
+  // Keyed by the 4-digit franchise id (fr.id) — the same key TEAMS uses and the
+  // token owner now carries — so no abbreviation aliasing.
+  const rosterMembers = {};   // fid -> [{pid,status,enc,verified,unverified}]
+  const membership = {};      // pid -> [fid]
+  let encMatched = 0, encUnverified = 0, encNone = 0;
   asArray(rostersD && rostersD.rosters && rostersD.rosters.franchise).forEach((fr) => {
-    const abbr = fidToAbbr[fr.id];
-    if (!abbr) return;
-    rosterMembers[abbr] = rosterMembers[abbr] || [];
+    if (!TEAMS[fr.id]) return;   // skip franchises not in the directory (commissioner/unknown)
+    rosterMembers[fr.id] = rosterMembers[fr.id] || [];
     asArray(fr.player).forEach((pl) => {
-      const res = encodedForFranchise(pl, abbr);
-      if (res && res.matched) encMatched++; else if (res) encFallback++; else encNone++;
-      rosterMembers[abbr].push({
+      const res = encodedForFranchise(pl, fr.id);
+      if (res && res.matched) encMatched++; else if (res) encUnverified++; else encNone++;
+      rosterMembers[fr.id].push({
         pid: pl.id, status: pl.status || 'ROSTER',
-        enc: res ? res.parsed : null, verified: !!(res && res.matched),
+        enc: res ? res.parsed : null,
+        verified: !!(res && res.matched),
+        unverified: !!(res && !res.matched),   // tokens present but none owned by this franchise
       });
-      (membership[pl.id] = membership[pl.id] || []).push(abbr);
+      (membership[pl.id] = membership[pl.id] || []).push(fr.id);
     });
   });
-  console.log('[CFFB Roster Board] contract copies: ' + encMatched + ' matched by abbrev, '
-    + encFallback + ' unverified fallback (flagged), ' + encNone + ' none');
+  console.log('[CFFB Roster Board] contract copies: ' + encMatched + ' matched by id, '
+    + encUnverified + ' no copy for this franchise (flagged), ' + encNone + ' no contract token');
 
   return { season: SEASON, thruWeek: THRU_WEEK, playersById, rosterMembers, membership, byeMap };
 }
@@ -538,19 +548,28 @@ function rbParseMoveForm(html, suffix) {
   return { actionUrl: open[1], hidden, moves };
 }
 
-async function rbFetchForm(kind) {
-  const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/options?L=${MFL_CTX.league}&${RB_ACTION_PAGE[kind]}`;
+// forceFid appends &FRANCHISE_ID for the commissioner (franchise '0000'), who
+// can act on any team — MFL scopes a regular owner's form to their own session,
+// so the param is only added for the commish. The parsed form's own FRANCHISE_ID
+// is stamped on the result so the caller can verify MFL returned the intended
+// team and refuse to act on the wrong one.
+async function rbFetchForm(kind, targetFid, forceFid) {
+  const fidParam = (forceFid && targetFid) ? '&FRANCHISE_ID=' + targetFid : '';
+  const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/options?L=${MFL_CTX.league}&${RB_ACTION_PAGE[kind]}${fidParam}`;
   const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  return rbParseMoveForm(await res.text(), RB_ACTION_SUFFIX[kind]);
+  const parsed = rbParseMoveForm(await res.text(), RB_ACTION_SUFFIX[kind]);
+  if (parsed) parsed.fid = parsed.hidden.FRANCHISE_ID || parsed.hidden.FRANCHISE || null;
+  return parsed;
 }
 
-// Load taxi + IR eligibility for the signed-in franchise. Returns, per kind, the
-// action URL, hidden fields, and a { pid -> {name,dir} } map of legal moves.
-async function rbLoadActions() {
+// Load taxi + IR eligibility for the target franchise. Returns, per kind, the
+// action URL, hidden fields, the franchise the form is scoped to (.fid), and a
+// { pid -> {name,dir} } map of legal moves.
+async function rbLoadActions(targetFid, forceFid) {
   const out = { taxi: null, ir: null };
   await Promise.all(['taxi', 'ir'].map(async (k) => {
-    try { out[k] = await rbFetchForm(k); }
+    try { out[k] = await rbFetchForm(k, targetFid, forceFid); }
     catch (e) { console.warn('[CFFB Roster Board] ' + k + ' form load failed:', e && e.message); }
   }));
   return out;

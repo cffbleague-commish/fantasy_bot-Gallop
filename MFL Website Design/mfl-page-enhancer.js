@@ -42,7 +42,9 @@
   // ==================================================================
 
   var VALID_ELIGIBILITY = new Set(["FR", "SO", "JR", "SR", "GR"]);
-  var OWNER_RE = /^(?:FA|[A-Z]{2,4})$/;
+  // OWNER is now the 4-digit MFL franchise id (e.g. "0032") or "FA". It is
+  // translated to the franchise abbrev for display in parseCopy().
+  var OWNER_RE = /^(?:FA|\d{4})$/;
 
   function parseModifierSegment(segment, result) {
     var i = 0;
@@ -129,8 +131,13 @@
     if (!VALID_ELIGIBILITY.has(eligRaw)) {
       return { error: 'invalid eligibility "' + eligRaw + '"', raw: raw };
     }
+    // Translate a 4-digit franchise id to its abbrev for display (readability on
+    // native MFL pages); FA stays FA; fall back to the raw id if the directory
+    // has no matching franchise. Team-tag color lookup then keys on the abbrev.
+    var owner = ownerRaw === "FA" ? "FA"
+      : (getFranchiseCodeFromDb(ownerRaw) || ownerRaw);
     var result = {
-      owner: ownerRaw,
+      owner: owner,
       isFreeAgent: ownerRaw === "FA",
       eligibility: eligRaw,
       isEarlyDeclare: false,

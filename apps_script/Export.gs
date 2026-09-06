@@ -30,11 +30,15 @@
  * @returns {String} - Formatted copy info string
  */
 function generateCopyInfo(ownerFranchiseId, eligibilityYearsUsed, traditionalRedshirtUsed, medicalRedshirtUsed, traditionalRedshirtYear, medicalRedshirtYear, abbreviationMap, maxYears = 4, declarationInfo = null) {
-  // Owner part
+  // Owner part — the 4-digit MFL franchise ID (e.g. "0032"), NOT an abbreviation.
+  // Matching downstream (Roster Board widget, page-enhancer) is done against the
+  // franchise id the rosters export groups each player under (fr.id / fid_XXXX),
+  // which is always 4-digit — so the token owner must be 4-digit too. The
+  // abbreviationMap param is now unused (kept to avoid touching call sites);
+  // readability is restored at display time by translating id -> abbrev.
   let owner = "FA";
   if (ownerFranchiseId && ownerFranchiseId !== "") {
-    const normalizedId = String(Number(ownerFranchiseId)).padStart(3, "0");
-    owner = abbreviationMap[normalizedId] || "UNK";
+    owner = String(Number(ownerFranchiseId)).padStart(4, "0");
   }
 
   // Class part

@@ -2,6 +2,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { parseCopy, parsePlayerLine } from "./mfl-player-parser.js";
 
+// OWNER is now the 4-digit MFL franchise id (e.g. "0044") or "FA".
+
 // ---------------------------------------------------------------------------
 // parseCopy
 // ---------------------------------------------------------------------------
@@ -19,10 +21,10 @@ describe("parseCopy", () => {
     });
   });
 
-  it("parses Marshall senior with early declare and concatenated awards", () => {
-    const result = parseCopy("MRSH_SR_EN1A3");
+  it("parses a franchise-owned senior with early declare and concatenated awards", () => {
+    const result = parseCopy("0044_SR_EN1A3");
     assert.deepStrictEqual(result, {
-      owner: "MRSH",
+      owner: "0044",
       isFreeAgent: false,
       eligibility: "SR",
       isEarlyDeclare: true,
@@ -32,10 +34,10 @@ describe("parseCopy", () => {
     });
   });
 
-  it("parses Oklahoma junior with redshirt and all-conference award", () => {
-    const result = parseCopy("OU_JR_r23_A2");
+  it("parses a franchise-owned junior with redshirt and all-conference award", () => {
+    const result = parseCopy("0033_JR_r23_A2");
     assert.deepStrictEqual(result, {
-      owner: "OU",
+      owner: "0033",
       isFreeAgent: false,
       eligibility: "JR",
       isEarlyDeclare: false,
@@ -46,9 +48,9 @@ describe("parseCopy", () => {
   });
 
   it("parses a graduated player", () => {
-    const result = parseCopy("ALAB_GR");
+    const result = parseCopy("0067_GR");
     assert.deepStrictEqual(result, {
-      owner: "ALAB",
+      owner: "0067",
       isFreeAgent: false,
       eligibility: "GR",
       isEarlyDeclare: false,
@@ -59,9 +61,9 @@ describe("parseCopy", () => {
   });
 
   it("parses a player with both traditional and medical redshirts in different years", () => {
-    const result = parseCopy("OU_SO_r22_m23");
+    const result = parseCopy("0033_SO_r22_m23");
     assert.deepStrictEqual(result, {
-      owner: "OU",
+      owner: "0033",
       isFreeAgent: false,
       eligibility: "SO",
       isEarlyDeclare: false,
@@ -108,9 +110,9 @@ describe("parseCopy", () => {
   });
 
   it("concatenated modifiers in one segment: r22m23EN2A1", () => {
-    const result = parseCopy("OU_JR_r22m23EN2A1");
+    const result = parseCopy("0033_JR_r22m23EN2A1");
     assert.deepStrictEqual(result, {
-      owner: "OU",
+      owner: "0033",
       isFreeAgent: false,
       eligibility: "JR",
       isEarlyDeclare: true,
@@ -140,25 +142,27 @@ describe("parseCopy", () => {
   });
 
   it("returns error for invalid eligibility", () => {
-    const result = parseCopy("OU_XX");
+    const result = parseCopy("0033_XX");
     assert.ok(result.error);
     assert.match(result.error, /eligibility/i);
   });
 
-  it("returns error for lowercase owner", () => {
-    const result = parseCopy("ou_JR");
+  it("returns error for a letter owner code (abbrev no longer valid)", () => {
+    const result = parseCopy("BC_JR");
     assert.ok(result.error);
     assert.match(result.error, /owner/i);
   });
 
-  it("returns error for owner code too long (5 chars)", () => {
-    const result = parseCopy("ABCDE_JR");
+  it("returns error for a 3-digit owner (must be 4)", () => {
+    const result = parseCopy("032_JR");
     assert.ok(result.error);
+    assert.match(result.error, /owner/i);
   });
 
-  it("returns error for owner code too short (1 char)", () => {
-    const result = parseCopy("A_JR");
+  it("returns error for a 5-digit owner (must be 4)", () => {
+    const result = parseCopy("00321_JR");
     assert.ok(result.error);
+    assert.match(result.error, /owner/i);
   });
 
   it("returns error for unknown modifier character", () => {
@@ -179,13 +183,13 @@ describe("parseCopy", () => {
   });
 
   it("returns error for traditional and medical redshirt in same year", () => {
-    const result = parseCopy("OU_SO_r23_m23");
+    const result = parseCopy("0033_SO_r23_m23");
     assert.ok(result.error);
     assert.match(result.error, /same year/i);
   });
 
   it("returns error for duplicate traditional redshirt", () => {
-    const result = parseCopy("OU_SO_r22_r23");
+    const result = parseCopy("0033_SO_r22_r23");
     assert.ok(result.error);
     assert.match(result.error, /duplicate/i);
   });
@@ -208,25 +212,25 @@ describe("parsePlayerLine", () => {
 
   it("parses Gibbs example (different copies)", () => {
     const result = parsePlayerLine(
-      "Gibbs, Jahmyr;MRSH_SR_EN1A3;OU_JR_r23_A2"
+      "Gibbs, Jahmyr;0044_SR_EN1A3;0033_JR_r23_A2"
     );
     assert.deepStrictEqual(result.name, { last: "Gibbs", first: "Jahmyr" });
 
     // copy 1
-    assert.strictEqual(result.copy1.owner, "MRSH");
+    assert.strictEqual(result.copy1.owner, "0044");
     assert.strictEqual(result.copy1.eligibility, "SR");
     assert.strictEqual(result.copy1.isEarlyDeclare, true);
     assert.deepStrictEqual(result.copy1.awards, { national: 1, allConference: 3 });
 
     // copy 2
-    assert.strictEqual(result.copy2.owner, "OU");
+    assert.strictEqual(result.copy2.owner, "0033");
     assert.strictEqual(result.copy2.eligibility, "JR");
     assert.deepStrictEqual(result.copy2.redshirt, { type: "traditional", year: 23 });
     assert.deepStrictEqual(result.copy2.awards, { national: 0, allConference: 2 });
   });
 
   it("parses a graduated player line", () => {
-    const result = parsePlayerLine("Smith, John;ALAB_GR;ALAB_GR");
+    const result = parsePlayerLine("Smith, John;0067_GR;0067_GR");
     assert.strictEqual(result.copy1.eligibility, "GR");
     assert.strictEqual(result.copy2.eligibility, "GR");
   });
@@ -257,7 +261,7 @@ describe("parsePlayerLine", () => {
   it("propagates copy-level parse errors without throwing", () => {
     const result = parsePlayerLine("Smith, John;BADOWNER_JR;FA_JR");
     // parsePlayerLine itself succeeds (returns name + copies)
-    // but copy1 should be an error object
+    // but copy1 should be an error object (letters are not a valid owner)
     assert.ok(result.copy1.error);
     assert.strictEqual(result.copy2.owner, "FA");
   });

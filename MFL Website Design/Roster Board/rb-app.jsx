@@ -201,9 +201,9 @@ const MngRow = ({ p, children }) => (
   </div>
 );
 const BUCKET_LABEL = { ROSTER: 'Active Roster', TAXI_SQUAD: 'Taxi Squad', INJURED_RESERVE: 'Injured Reserve' };
-const ManageModal = ({ team, onClose, onChanged }) => {
+const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
   const [actions, setActions] = useState(null);  // { taxi, ir } once loaded
-  const [loadErr, setLoadErr] = useState(false);
+  const [loadErr, setLoadErr] = useState(false); // false | error message string
   const [busy, setBusy] = useState(null);        // pid mid-submit
   const [pending, setPending] = useState(null);  // { kind, pid, name, text, warn }
   const [result, setResult] = useState(null);    // { ok, name, bucket, err }
@@ -211,10 +211,18 @@ const ManageModal = ({ team, onClose, onChanged }) => {
   const load = async () => {
     setActions(null); setLoadErr(false);
     try {
-      const a = await rbLoadActions();
+      const a = await rbLoadActions(targetFid, commish);
+      // Safety: confirm MFL scoped the form to the intended franchise before we
+      // ever offer an action — otherwise a commish request could target the
+      // wrong team. Block rather than risk moving the wrong player.
+      const gotFid = (a.taxi && a.taxi.fid) || (a.ir && a.ir.fid) || null;
+      if (gotFid && targetFid && gotFid !== targetFid) {
+        setLoadErr('MFL returned a different franchise (' + gotFid + ' ≠ ' + targetFid + '); actions blocked to avoid changing the wrong team.');
+        return;
+      }
       setActions(a);
-      if (!a.taxi && !a.ir) setLoadErr(true);
-    } catch (e) { setLoadErr(true); }
+      if (!a.taxi && !a.ir) setLoadErr('Couldn’t load MFL eligibility (are you signed in?).');
+    } catch (e) { setLoadErr('Couldn’t load MFL eligibility (are you signed in?).'); }
   };
   useEffect(() => { load(); }, []);
 
@@ -250,10 +258,10 @@ const ManageModal = ({ team, onClose, onChanged }) => {
           </div>
           <button className="rb-modal__x" onClick={onClose} aria-label="Close">✕</button>
         </div>
-        <div className="rb-modal__note">Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here — MFL enforces every eligibility and lock rule.</div>
+        <div className="rb-modal__note">{commish && <b>Acting as commissioner on {TEAMS[team].name}. </b>}Moves run against MFL live and take effect immediately. Only actions MFL currently permits appear here — MFL enforces every eligibility and lock rule.</div>
 
         {actions === null && !loadErr && <div className="rb-mng__load">Loading eligibility from MFL…</div>}
-        {loadErr && <div className="rb-mng__load rb-mng__load--err">Couldn't load MFL eligibility (are you signed in?). <MBtn onClick={load}>Retry</MBtn></div>}
+        {loadErr && <div className="rb-mng__load rb-mng__load--err">{loadErr} <MBtn onClick={load}>Retry</MBtn></div>}
 
         {result && (
           <div className={'rb-mng__result ' + (result.ok ? 'is-ok' : 'is-err')}>
@@ -341,9 +349,12 @@ const App = () => {
   const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
-  // Writes are only offered on your OWN team, and only when a real franchise is
-  // signed in (commissioner '0000' / demo builds without MY_FID are excluded).
-  const canManage = typeof MY_FID !== 'undefined' && !!MY_FID && MY_FID !== '0000' && team === MY_TEAM && !!TEAMS[MY_TEAM];
+  // Writes: a regular owner may manage only their OWN team; the commissioner
+  // ('0000') may manage whichever team is being viewed (MFL lets the commish act
+  // on any franchise). Demo builds without MY_FID are excluded.
+  const isCommish = typeof MY_FID !== 'undefined' && MY_FID === '0000';
+  const canManage = typeof MY_FID !== 'undefined' && !!MY_FID && !!TEAMS[team]
+    && (isCommish || team === MY_TEAM);
   return (
     <div className="rb-wrap">
       <div className="rb-head">
@@ -411,7 +422,7 @@ const App = () => {
           <span>Other Copy — every player exists as two copies; click a team to jump to its roster</span>
         </div>
       </div>
-      {manage && canManage && <ManageModal team={team} onClose={() => setManage(false)} onChanged={() => setRev((v) => v + 1)} />}
+      {manage && canManage && <ManageModal team={team} targetFid={TEAMS[team].fid} commish={isCommish} onClose={() => setManage(false)} onChanged={() => setRev((v) => v + 1)} />}
     </div>
   );
 };

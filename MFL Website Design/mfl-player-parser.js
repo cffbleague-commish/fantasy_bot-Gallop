@@ -2,7 +2,10 @@
 // Parses semicolon-delimited player contract/eligibility strings into objects.
 
 const VALID_ELIGIBILITY = new Set(["FR", "SO", "JR", "SR", "GR"]);
-const OWNER_RE = /^(?:FA|[A-Z]{2,4})$/;
+// OWNER is the 4-digit MFL franchise id (e.g. "0032") or "FA". (This pure parser
+// returns the id as-is; id→abbrev translation for display happens in consumers
+// that have the MFL franchiseDatabase available, e.g. the page-enhancer.)
+const OWNER_RE = /^(?:FA|\d{4})$/;
 
 /**
  * Parse the modifier characters from a single segment (between underscores).
