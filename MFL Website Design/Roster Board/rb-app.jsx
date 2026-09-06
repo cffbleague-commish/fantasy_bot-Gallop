@@ -179,11 +179,10 @@ const ConfTabs = ({ team, setTeam }) => {
 };
 
 const App = () => {
-  const [team, setTeam] = useState(() => {
-    const saved = localStorage.getItem('cffb-roster-team');
-    return TEAMS[saved] ? saved : MY_TEAM;
-  });
-  useEffect(() => { localStorage.setItem('cffb-roster-team', team); }, [team]);
+  // Always default to the signed-in franchise on load/refresh. Tab switches
+  // navigate within the session (React state) but are intentionally NOT
+  // persisted, so a refresh returns to your own team.
+  const [team, setTeam] = useState(() => (TEAMS[MY_TEAM] ? MY_TEAM : TEAM_ORDER[0]));
   const t = TEAMS[team];
   const r = buildRoster(team);
   return (

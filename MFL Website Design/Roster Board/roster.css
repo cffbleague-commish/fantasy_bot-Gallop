@@ -14,7 +14,7 @@
 .rb-conflogo{width:26px;height:26px;object-fit:contain;flex:none}
 .rb-caret{font-size:10px;color:var(--fg-tertiary);margin-left:2px}
 .rb-tab__cur{font:700 10px/1 var(--font-body);letter-spacing:.08em;color:var(--gold);background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.35);border-radius:2px;padding:3px 5px}
-.rb-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:150px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--bg-surface-elev);border:1px solid var(--border);border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.6)}
+.rb-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:150px;max-height:min(60vh,360px);overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--bg-surface-elev);border:1px solid var(--border);border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.6)}
 .rb-menu--right{left:auto;right:0}
 .rb-menu__item{display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 9px;border-radius:3px;border:none;background:transparent;color:var(--fg-secondary);text-align:left;transition:background 120ms cubic-bezier(.2,.8,.2,1),color 120ms}
 .rb-menu__item:hover{background:var(--bg-surface-hover);color:var(--fg-primary)}

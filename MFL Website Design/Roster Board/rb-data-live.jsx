@@ -104,27 +104,29 @@ const encAwardToDisplay = (a) => ({
   conf: null,
 });
 
-// Find the encoded contract string on an arbitrary export player object by
-// scanning its string values for the pattern (field-name agnostic).
-function encodedFrom(obj) {
-  if (!obj) return null;
-  for (const k in obj) {
-    const v = obj[k];
-    if (typeof v === 'string') {
-      // A field may carry both copies ("BC_FR_r25;VT_FR_r25") — split on delimiters.
-      const cands = v.split(/[;,]/).map((s) => s.trim());
-      for (const c of cands) if (ENC_RE.test(c)) return v; // keep raw to resolve owner later
-    }
+// Resolve the encoded contract string for THIS franchise's copy of a player.
+// A player exists as two copies (e.g. "BC_FR_r25" and "VT_FR_r25") and the
+// export row can expose either/both across fields (contractStatus is MFL's own
+// per-row copy; contractInfo may carry the other). Gather every encoded token,
+// then pick the one whose OWNER abbreviation matches this franchise so a team
+// never shows the wrong copy's eligibility/redshirt/awards.
+function encodedForFranchise(pl, abbr) {
+  if (!pl) return null;
+  const tokens = [];
+  for (const k in pl) {
+    const v = pl[k];
+    if (typeof v !== 'string') continue;
+    v.split(/[;,]/).forEach((s) => { s = s.trim(); if (ENC_RE.test(s)) tokens.push(s); });
   }
-  return null;
-}
-// From a raw field value pick the copy whose owner matches this franchise abbr,
-// else the first valid copy.
-function pickCopy(raw, abbr) {
-  if (!raw) return null;
-  const cands = raw.split(/[;,]/).map((s) => s.trim()).filter((c) => ENC_RE.test(c));
-  const owned = cands.find((c) => c.split('_')[0] === abbr);
-  return parseEncoded(owned || cands[0]);
+  if (!tokens.length) return null;
+  // 1) The copy owned by this exact franchise (the correct one).
+  const mine = tokens.find((t) => t.split('_')[0] === abbr);
+  if (mine) return parseEncoded(mine);
+  // 2) MFL's own per-row field (contractStatus is this roster row's copy).
+  const cs = pl.contractStatus && String(pl.contractStatus).trim();
+  if (cs && ENC_RE.test(cs)) return parseEncoded(cs);
+  // 3) Last resort: first token found (may be the other copy).
+  return parseEncoded(tokens[0]);
 }
 
 // ── Eligibility clock from class + redshirt (approximation of deriveElig) ─────
@@ -258,6 +260,8 @@ function buildTeams() {
   // Signed-in franchise → default team.
   const myFid = String(window.franchise_id || '');
   MY_TEAM = fidToAbbr[myFid] || TEAM_ORDER[0] || null;
+  console.log('[CFFB Roster Board] signed-in franchise_id=' + (myFid || '(none)') + ' → default team ' + MY_TEAM
+    + (fidToAbbr[myFid] ? '' : ' (fell back — commissioner/unknown franchise)'));
   return fidToAbbr;
 }
 
@@ -360,7 +364,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v5';
+const RB_CACHE_KEY = 'cffb_roster_board_v6';
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -416,8 +420,8 @@ async function rbFetchPayload(fidToAbbr) {
   });
   console.log('[CFFB Roster Board] injuries: ' + injList.length + ' report entries, ' + injMatched + ' matched to rostered players');
 
-  // Membership + encoded contract per copy.
-  const rosterMembers = {};   // abbr -> [{pid,status,rawEnc}]
+  // Membership + this franchise's encoded contract copy (resolved by abbrev).
+  const rosterMembers = {};   // abbr -> [{pid,status,enc}]
   const membership = {};      // pid -> [abbr]
   let encFound = 0, encMissing = 0;
   asArray(rostersD && rostersD.rosters && rostersD.rosters.franchise).forEach((fr) => {
@@ -425,9 +429,9 @@ async function rbFetchPayload(fidToAbbr) {
     if (!abbr) return;
     rosterMembers[abbr] = rosterMembers[abbr] || [];
     asArray(fr.player).forEach((pl) => {
-      const raw = encodedFrom(pl);
-      if (raw) encFound++; else encMissing++;
-      rosterMembers[abbr].push({ pid: pl.id, status: pl.status || 'ROSTER', rawEnc: raw });
+      const enc = encodedForFranchise(pl, abbr);
+      if (enc) encFound++; else encMissing++;
+      rosterMembers[abbr].push({ pid: pl.id, status: pl.status || 'ROSTER', enc });
       (membership[pl.id] = membership[pl.id] || []).push(abbr);
     });
   });
@@ -444,14 +448,8 @@ function applyPayload(pd, fidToAbbr) {
   MEMBERSHIP = pd.membership || {};
   BYE_BY_TEAM = pd.byeMap || {};
   THRU_WEEK = pd.thruWeek || THRU_WEEK;
-  // Resolve each copy's encoded string against its franchise abbr now that
-  // membership is known (a raw field may contain both copies).
-  ROSTER_MEMBERS = {};
-  Object.keys(pd.rosterMembers || {}).forEach((abbr) => {
-    ROSTER_MEMBERS[abbr] = pd.rosterMembers[abbr].map((m) => ({
-      pid: m.pid, status: m.status, enc: pickCopy(m.rawEnc, abbr),
-    }));
-  });
+  // enc is already resolved to this franchise's copy at build time.
+  ROSTER_MEMBERS = pd.rosterMembers || {};
 }
 
 // ── Public loader (awaited by the boot wrapper before mount) ──────────────────
