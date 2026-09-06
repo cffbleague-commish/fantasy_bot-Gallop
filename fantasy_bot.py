@@ -8753,10 +8753,19 @@ class DevyRetentionView(discord.ui.View):
 
     async def process_decision(self, interaction: discord.Interaction, player_id: str, decision: str):
         """Process a retention decision for a player."""
+        # Acknowledge the click immediately. The sheet reads/writes below take longer
+        # than Discord's 3s interaction window, so without this defer the user sees
+        # "the bot didn't respond in time". defer() (no thinking) keeps the message and
+        # lets us edit it via edit_original_response afterward.
+        try:
+            await interaction.response.defer()
+        except discord.InteractionResponded:
+            pass
+
         # Find the player
         player = next((p for p in self.players if p["playerId"] == player_id), None)
         if not player:
-            await interaction.response.send_message("Player not found.", ephemeral=True)
+            await interaction.followup.send("Player not found.", ephemeral=True)
             return
 
         if decision == "retain":
@@ -8764,19 +8773,22 @@ class DevyRetentionView(discord.ui.View):
             if result["success"]:
                 self.decisions[player_id] = "retain"
             else:
-                await interaction.response.send_message(f"Error: {result['message']}", ephemeral=True)
+                await interaction.followup.send(f"Error: {result['message']}", ephemeral=True)
                 return
         else:  # release
             # Return the player to the pool and log the RELEASE decision, whether
             # they were Drafted or already Retained.
             result = release_devy_player(player_id, self.franchise_id, self.retention_year)
             if not result["success"]:
-                await interaction.response.send_message(f"Error: {result['message']}", ephemeral=True)
+                await interaction.followup.send(f"Error: {result['message']}", ephemeral=True)
                 return
             self.decisions[player_id] = "release"
 
-        # Update the message
-        await interaction.response.edit_message(embed=self.get_embed(), view=self)
+        # Update the message in place (edit the component message we deferred).
+        try:
+            await interaction.edit_original_response(embed=self.get_embed(), view=self)
+        except Exception as e:
+            print(f"Could not edit retention view message: {e}")
 
         # Check if all decisions are made
         if all(d is not None for d in self.decisions.values()):
