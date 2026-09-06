@@ -8768,8 +8768,10 @@ class DevyRetentionView(discord.ui.View):
             await interaction.followup.send("Player not found.", ephemeral=True)
             return
 
+        # Run the (synchronous, blocking) Google Sheets work off the event loop so it
+        # can't stall Discord's heartbeat / other interactions.
         if decision == "retain":
-            result = retain_devy_player(player_id, self.franchise_id, self.retention_year)
+            result = await asyncio.to_thread(retain_devy_player, player_id, self.franchise_id, self.retention_year)
             if result["success"]:
                 self.decisions[player_id] = "retain"
             else:
@@ -8778,7 +8780,7 @@ class DevyRetentionView(discord.ui.View):
         else:  # release
             # Return the player to the pool and log the RELEASE decision, whether
             # they were Drafted or already Retained.
-            result = release_devy_player(player_id, self.franchise_id, self.retention_year)
+            result = await asyncio.to_thread(release_devy_player, player_id, self.franchise_id, self.retention_year)
             if not result["success"]:
                 await interaction.followup.send(f"Error: {result['message']}", ephemeral=True)
                 return

@@ -278,11 +278,10 @@ function injuryListOf(d) {
 
 // Best-effort current NFL week from the browser clock (MFL's injuries export is
 // week-specific and the page exposes no reliable week global). Week 1 ~ the
-// first Tuesday of September of the page's season.
-function guessNflWeek() {
+// first Tuesday of September of the given season.
+function guessNflWeek(y) {
   try {
     const now = new Date();
-    const y = SEASON;
     const sep1 = new Date(y, 8, 1);
     const firstTue = new Date(y, 8, 1 + ((2 - sep1.getDay() + 7) % 7));
     const wk = Math.floor((now - firstTue) / (7 * 864e5)) + 1;
@@ -290,37 +289,53 @@ function guessNflWeek() {
   } catch (e) { return 0; }
 }
 
-// Injuries are a GLOBAL NFL feed — no league id, week-specific. Build its URL
-// separately (a stray &L= can make MFL error, which the caller's .catch() would
-// silently turn into "no injuries"). Try MFL's current-week default first; if
-// that comes back empty, retry with a browser-computed week.
-async function fetchInjuriesForWeek(wk) {
-  const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=injuries${wk ? '&W=' + wk : ''}&JSON=1`;
+// Injuries and byes are GLOBAL NFL state, not league data — MFL merges the
+// *current* season's status into pages regardless of the league's year. A
+// rolled-back test league (e.g. /2025/) still shows injury/bye badges, but the
+// 2025 injury/bye export is archived/empty. So sweep the league's URL year AND
+// the real current year, using whichever returns data. (No &L= — global feed.)
+function nflYears() {
+  const ys = [];
+  const push = (y) => { y = parseInt(y, 10); if (y && ys.indexOf(y) < 0) ys.push(y); };
+  push(MFL_CTX.year);
+  try { push(new Date().getFullYear()); } catch (e) { /* ignore */ }
+  return ys;
+}
+async function fetchExport(year, type, extra) {
+  const url = `${MFL_CTX.origin}/${year}/export?TYPE=${type}&JSON=1${extra || ''}`;
   const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP ' + res.status + ' for injuries');
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + type + ' ' + year);
   return res.json();
 }
-async function fetchInjuries() {
-  let d = await fetchInjuriesForWeek(0);
-  if (!injuryListOf(d).length) {
-    const wk = guessNflWeek();
-    if (wk) {
-      console.log('[CFFB Roster Board] injuries default week empty — retrying week ' + wk);
+// Returns the raw injuries payload from the first (year, week) that has data.
+async function loadInjuriesRaw() {
+  for (const y of nflYears()) {
+    for (const wk of [0, guessNflWeek(y)]) {
       try {
-        const d2 = await fetchInjuriesForWeek(wk);
-        if (injuryListOf(d2).length) d = d2;
-      } catch (e) { /* keep the default response */ }
+        const d = await fetchExport(y, 'injuries', wk ? '&W=' + wk : '');
+        if (injuryListOf(d).length) {
+          console.log('[CFFB Roster Board] injuries from year ' + y + ' week ' + (wk || 'default'));
+          return d;
+        }
+      } catch (e) { /* try next */ }
     }
   }
-  return d;
+  console.log('[CFFB Roster Board] injuries: none found across years ' + nflYears().join(', '));
+  return null;
 }
-
-// NFL team bye weeks (fallback when the players export omits bye_week per player).
-async function fetchByeWeeks() {
-  const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=nflByeWeeks&JSON=1`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP ' + res.status + ' for nflByeWeeks');
-  return res.json();
+// Returns team->bye map from the first year that has data.
+async function loadByeMap() {
+  for (const y of nflYears()) {
+    try {
+      const m = parseByeWeeks(await fetchExport(y, 'nflByeWeeks'));
+      if (Object.keys(m).length) {
+        console.log('[CFFB Roster Board] byes from year ' + y + ' (' + Object.keys(m).length + ' teams)');
+        return m;
+      }
+    } catch (e) { /* try next */ }
+  }
+  console.log('[CFFB Roster Board] byes: none found across years ' + nflYears().join(', '));
+  return {};
 }
 // Map NFL team -> bye week from whatever shape MFL uses. Handles both
 // team-keyed rows ({id/team, bye_week/week}) and week-keyed rows that nest a
@@ -345,7 +360,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v4';
+const RB_CACHE_KEY = 'cffb_roster_board_v5';
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -363,16 +378,13 @@ function rbWriteCache(payload) {
 
 // ── Assemble the live payload from the export feeds ───────────────────────────
 async function rbFetchPayload(fidToAbbr) {
-  const [rostersD, playersD, scoresD, injuriesD, byeD] = await Promise.all([
+  const [rostersD, playersD, scoresD, injuriesD, byeMap] = await Promise.all([
     fetchJSON('rosters'),
     fetchJSON('players', '&DETAILS=1'),
     fetchJSON('playerScores', '&W=YTD&YEAR=' + MFL_CTX.year).catch(() => null),
-    fetchInjuries().catch((e) => { console.warn('[CFFB Roster Board] injuries fetch failed:', e && e.message); return null; }),
-    fetchByeWeeks().catch(() => null),
+    loadInjuriesRaw().catch((e) => { console.warn('[CFFB Roster Board] injuries fetch failed:', e && e.message); return null; }),
+    loadByeMap().catch(() => ({})),
   ]);
-
-  // NFL team -> bye week (fallback for players whose export row omits bye_week).
-  const byeMap = parseByeWeeks(byeD);
 
   // Player identity: id -> name/pos/team/bye.
   const playersById = {};
@@ -402,16 +414,7 @@ async function rbFetchPayload(fidToAbbr) {
     const code = injuryCode(inj.status);
     if (code && playersById[inj.id]) { playersById[inj.id].injury = [code, inj.details || inj.status || '']; injMatched++; }
   });
-  console.log('[CFFB Roster Board] injuries feed: ' + injList.length + ' entries, ' + injMatched + ' matched to known players');
-  console.log('[CFFB Roster Board] bye weeks: ' + Object.keys(byeMap).length + ' NFL teams mapped');
-  if (!Object.keys(byeMap).length) {
-    console.log('[CFFB Roster Board] byeWeeks raw shape:', byeD ? Object.keys(byeD) : byeD,
-      byeD && byeD.nflByeWeeks ? Object.keys(byeD.nflByeWeeks) : '(no .nflByeWeeks)');
-  }
-  if (!injList.length) {
-    console.log('[CFFB Roster Board] injuries raw shape:', injuriesD ? Object.keys(injuriesD) : injuriesD,
-      injuriesD && injuriesD.injuries ? Object.keys(injuriesD.injuries) : '(no .injuries)');
-  }
+  console.log('[CFFB Roster Board] injuries: ' + injList.length + ' report entries, ' + injMatched + ' matched to rostered players');
 
   // Membership + encoded contract per copy.
   const rosterMembers = {};   // abbr -> [{pid,status,rawEnc}]
