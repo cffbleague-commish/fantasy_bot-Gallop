@@ -197,7 +197,10 @@ const extraCss = [
   // separate lines). align-items:flex-end keeps the button baseline-aligned with the KPI values.
   '#' + ROOT_ID + ' .rb-team__aside{margin-left:auto;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;justify-content:flex-end}',
   '#' + ROOT_ID + ' .rb-team__aside .rb-team__kpis{margin-left:0}',
-  '.rb-team__btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}',
+  // Action buttons sit on their OWN full-width line below the KPIs (they wrap in
+  // the .rb-team flex row because they are 100% wide), right-aligned to line up
+  // under the KPI column rather than reading as attached to the roster count.
+  '.rb-team__btns{width:100%;display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-top:4px}',
   '#' + ROOT_ID + ' .rb-manage-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}',
   '#' + ROOT_ID + ' .rb-manage-btn:hover{filter:brightness(1.07)}',
   // Set Lineup — secondary (outlined) so Manage Roster stays the primary gold action.

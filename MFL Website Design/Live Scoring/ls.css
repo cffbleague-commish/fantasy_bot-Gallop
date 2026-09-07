@@ -49,6 +49,11 @@
 .ls-conftab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
 .ls-strip-empty{margin:14px 0 24px;padding:18px;text-align:center;background:var(--bg-surface);border:1px dashed var(--border-strong);border-radius:8px;font:600 11px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-tertiary)}
 
+/* On-bye aggregate note (players whose team is on a bye this week) */
+.ls-bye{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:10px 18px;background:var(--bg-surface-elev);border-top:1px solid var(--border)}
+.ls-bye__lbl{font:700 9px/1.3 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold-light,#E8C547);flex:none}
+.ls-bye__names{font:500 11px/1.4 var(--font-body);color:var(--fg-tertiary);min-width:0}
+
 /* Row + card hover accents */
 .ls-row{transition:background 140ms cubic-bezier(.2,.8,.2,1)}
 .ls-row:hover{background:var(--bg-surface-hover)}

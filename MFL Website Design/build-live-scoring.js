@@ -29,6 +29,14 @@ const CSS_PATH = path.join(SRC_DIR, 'ls.css');
 const CFFB_CSS_PATH = path.join(DIR, '..', 'apps_script_recruiting', 'CFFB Design System', 'cffb.css');
 const OUT_PATH = path.join(DIR, 'home-message-live-scoring.html');
 
+// Apps Script Web App /exec URL — the SAME deployment Power Rankings + Standings
+// use. Live Scoring calls it only to reuse the league's official team colors
+// (bg/fg per franchise id) and shares their localStorage cache. Overridable via
+// LS_WEBAPP_URL / PR_WEBAPP_URL. The data layer degrades to logo colors if unset.
+const WEBAPP_URL = process.env.LS_WEBAPP_URL
+  || process.env.PR_WEBAPP_URL
+  || 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+
 // ls-data-live.jsx (live MFL data) + ls-app.jsx (React UI).
 const JSX_FILES = ['ls-data-live.jsx', 'ls-app.jsx'];
 
@@ -134,7 +142,10 @@ ReactDOM.createRoot(document.getElementById('${ROOT_ID}')).render(<CFFBLiveScori
 }).join('\n');
 
 // Precompile JSX -> plain JS at build time (drops the runtime Babel dependency).
-const compiledApp = Babel.transform(jsxBundle, { presets: ['react'] }).code;
+let compiledApp = Babel.transform(jsxBundle, { presets: ['react'] }).code;
+// Substitute the live web-app /exec URL (used only to reuse the league's official
+// team colors, shared with Power Rankings + Standings).
+compiledApp = compiledApp.replace(/__WEBAPP_URL__/g, WEBAPP_URL);
 
 // Boot wrapper. Guarded IIFE (function-scoped — no cross-widget const collisions,
 // idempotent). Loads React ONCE, shared across every CFFB widget on the page via

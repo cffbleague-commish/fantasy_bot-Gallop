@@ -109,14 +109,19 @@ function extractLogoColor(url) {
     img.src = url;
   });
 }
+// The official sheet color (same as Power Rankings) wins when available; else the
+// logo-sampled color; else a distinct stable hash.
+const sheetColorOf = (side) => (typeof SHEET_COLOR !== 'undefined' && SHEET_COLOR[side.fid] && SHEET_COLOR[side.fid].bg) || null;
 const useTeamColor = (side) => {
-  const [color, setColor] = useState(() => LS_TEAM_COLOR[side.fid] || hashColor(side.fid || side.abbr));
+  const [color, setColor] = useState(() => sheetColorOf(side) || LS_TEAM_COLOR[side.fid] || hashColor(side.fid || side.abbr));
   useEffect(() => {
     let alive = true;
+    const sheet = sheetColorOf(side);
+    if (sheet) { setColor(sheet); return; }              // official color — no sampling needed
     if (LS_TEAM_COLOR[side.fid]) { setColor(LS_TEAM_COLOR[side.fid]); return; }
     (async () => {
       const c = (await extractLogoColor(side.pill2)) || (await extractLogoColor(side.pill));
-      if (alive && c) { LS_TEAM_COLOR[side.fid] = c; setColor(c); }
+      if (alive && c && !sheetColorOf(side)) { LS_TEAM_COLOR[side.fid] = c; setColor(c); }
     })();
     return () => { alive = false; };
   }, [side.fid]);
@@ -196,11 +201,17 @@ const LineupColumn = ({ side, flashes }) => {
               onClick={() => setOpenBench((o) => !o)}
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 18px', background: 'var(--bg-surface-elev)', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left' }}
             >
-              <span style={{ font: '700 9px/1 var(--font-body)', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }}>{openBench ? '▾' : '▸'} Bench</span>
+              <span style={{ font: '700 9px/1 var(--font-body)', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }}>{openBench ? '▾' : '▸'} Bench <span style={{ color: 'var(--fg-secondary)' }}>{side.bench.length}</span></span>
               <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               <span className="cffb-num" style={{ font: '600 10px/1 var(--font-body)', color: 'var(--fg-tertiary)' }}>{fmt(benchPts)} pts</span>
             </button>
             {openBench && side.bench.map((p, i, arr) => <PlayerRow key={p.pid} p={p} flash={fl(p)} bench groupStart={i > 0 && arr[i - 1].pos !== p.pos} />)}
+          </div>
+        )}
+        {side.onBye && side.onBye.length > 0 && (
+          <div className="ls-bye" title="On a bye this week — not playing">
+            <span className="ls-bye__lbl">◷ On bye · {side.onBye.length}</span>
+            <span className="ls-bye__names">{side.onBye.map((p) => p.name).join(' · ')}</span>
           </div>
         )}
       </div>

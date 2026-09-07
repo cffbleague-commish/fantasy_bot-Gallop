@@ -962,6 +962,11 @@
 .ls-conftab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
 .ls-strip-empty{margin:14px 0 24px;padding:18px;text-align:center;background:var(--bg-surface);border:1px dashed var(--border-strong);border-radius:8px;font:600 11px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-tertiary)}
 
+/* On-bye aggregate note (players whose team is on a bye this week) */
+.ls-bye{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:10px 18px;background:var(--bg-surface-elev);border-top:1px solid var(--border)}
+.ls-bye__lbl{font:700 9px/1.3 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold-light,#E8C547);flex:none}
+.ls-bye__names{font:500 11px/1.4 var(--font-body);color:var(--fg-tertiary);min-width:0}
+
 /* Row + card hover accents */
 .ls-row{transition:background 140ms cubic-bezier(.2,.8,.2,1)}
 .ls-row:hover{background:var(--bg-surface-hover)}
@@ -1096,10 +1101,23 @@ let MFL_CTX = {
   year: '2026',
   league: '12011'
 };
-let PLAYERS_BY_ID = {}; // pid -> { name, pos, team, playerId }
+let PLAYERS_BY_ID = {}; // pid -> { name, pos, team, playerId, bye }
 let PROJ_BY_ID = {}; // pid -> projected fantasy points (number)
+let ROSTER_BY_FID = {}; // fid -> [pid,...] active-roster players (starters+bench, not taxi/IR)
+let LIVE_PTS_BY_ID = {}; // pid -> live weekly points (from playerScores; used for bench)
 let PREV_PTS = {}; // pid -> last-seen live points (for delta/flash diffing)
+let BENCH_SOURCE = null; // 'live' (liveScoring returns nonstarters) | 'roster' (we merge in bench)
+let SHEET_COLOR = {}; // fid -> { bg, fg } — the SAME official team colors Power Rankings uses
 let LS_PAYLOAD = null; // last built payload { week, slate, matchups, flashes, ts }
+
+// The league's official team colors live in the Franchise sheet (Primary/Secondary
+// Color), served by the same Apps Script web app the Power Rankings + Standings
+// widgets use, and cached under a SHARED localStorage key those widgets populate.
+// Live Scoring reads that cache (instant, exact match by franchise id) and refreshes
+// it in the background — so bar/pill colors match Power Rankings. If the feed is ever
+// unreachable, team colors fall back to the logo-sampled color (see useTeamColor).
+const CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec'; // build substitutes the /exec URL
+const CFFB_SHARED_CACHE_KEY = 'cffb_webapp_payload_v1'; // shared with Power Rankings + Standings
 
 // MFL league *pages* (/player, etc.) are bound to the league's numbered server
 // (www46). Player links must target the resolved numbered host, not a custom
@@ -1230,6 +1248,63 @@ function winProb(home, away) {
 }
 
 // ── Build model from feeds ────────────────────────────────────────────────────
+// A player is "on bye" when its team's bye week equals the scoring week. Bye
+// players are pulled out of the starter/bench rows and aggregated into a note.
+const onByeNow = idn => idn && idn.bye != null && idn.bye === WEEK;
+
+// One player object from a liveScoring node (has live points + game clock).
+function playerFromLive(pl) {
+  const pid = String(pl.id);
+  const idn = PLAYERS_BY_ID[pid] || {
+    name: pid,
+    pos: 'WR',
+    team: '',
+    playerId: pid,
+    bye: null
+  };
+  const st = gameStateOf(pl.gameSecondsRemaining);
+  return {
+    pid,
+    pos: normPos(idn.pos),
+    name: displayName(idn.name),
+    initials: initialsOf(idn.name),
+    photo: idn.playerId ? PLAYER_PHOTO(idn.playerId) : null,
+    playerId: idn.playerId,
+    team: idn.team || '',
+    bye: idn.bye != null ? idn.bye : null,
+    pts: parseFloat(pl.score) || 0,
+    proj: pid in PROJ_BY_ID ? PROJ_BY_ID[pid] : null,
+    st,
+    gameDetail: st === 'FINAL' ? 'Final' : st === 'PRE' ? 'To play' : 'Live',
+    isLive: st === 'LIVE'
+  };
+}
+// One bench player derived from the roster (no game clock in liveScoring); its
+// live points come from the playerScores feed.
+function playerFromRoster(pid) {
+  const idn = PLAYERS_BY_ID[pid] || {
+    name: pid,
+    pos: 'WR',
+    team: '',
+    playerId: pid,
+    bye: null
+  };
+  return {
+    pid,
+    pos: normPos(idn.pos),
+    name: displayName(idn.name),
+    initials: initialsOf(idn.name),
+    photo: idn.playerId ? PLAYER_PHOTO(idn.playerId) : null,
+    playerId: idn.playerId,
+    team: idn.team || '',
+    bye: idn.bye != null ? idn.bye : null,
+    pts: pid in LIVE_PTS_BY_ID ? LIVE_PTS_BY_ID[pid] : 0,
+    proj: pid in PROJ_BY_ID ? PROJ_BY_ID[pid] : null,
+    st: null,
+    gameDetail: '',
+    isLive: false // no per-player game clock for bench
+  };
+}
 function buildSide(frNode) {
   const fid = String(frNode.id || '');
   const t = TEAMS[fid] || {
@@ -1241,34 +1316,24 @@ function buildSide(frNode) {
     pill2: '',
     fid
   };
-  const players = asArray(frNode.players && frNode.players.player).map(pl => {
-    const pid = String(pl.id);
-    const idn = PLAYERS_BY_ID[pid] || {
-      name: pid,
-      pos: 'WR',
-      team: '',
-      playerId: pid
-    };
-    const st = gameStateOf(pl.gameSecondsRemaining);
-    const proj = pid in PROJ_BY_ID ? PROJ_BY_ID[pid] : null;
-    return {
-      pid,
-      bench: String(pl.status || '').toLowerCase() === 'nonstarter',
-      pos: normPos(idn.pos),
-      name: displayName(idn.name),
-      initials: initialsOf(idn.name),
-      photo: idn.playerId ? PLAYER_PHOTO(idn.playerId) : null,
-      playerId: idn.playerId,
-      team: idn.team || '',
-      pts: parseFloat(pl.score) || 0,
-      proj,
-      st,
-      gameDetail: st === 'FINAL' ? 'Final' : st === 'PRE' ? 'To play' : 'Live',
-      isLive: st === 'LIVE'
-    };
-  });
-  const starters = players.filter(p => !p.bench).sort(byLineup);
-  const bench = players.filter(p => p.bench).sort(byLineup);
+  const raw = asArray(frNode.players && frNode.players.player);
+  const starterNodes = raw.filter(pl => String(pl.status || '').toLowerCase() !== 'nonstarter');
+  const benchNodes = raw.filter(pl => String(pl.status || '').toLowerCase() === 'nonstarter');
+  const starterPids = new Set(starterNodes.map(pl => String(pl.id)));
+  let starters = starterNodes.map(playerFromLive);
+  // Bench: prefer liveScoring's own nonstarters; otherwise reconstruct from the
+  // franchise's active roster (minus the starters) and score from playerScores.
+  let bench = benchNodes.length ? benchNodes.map(playerFromLive) : (ROSTER_BY_FID[fid] || []).filter(pid => !starterPids.has(pid)).map(playerFromRoster);
+
+  // Aggregate bye players out of both lists into a single sub-note per team.
+  const isBye = p => p.bye != null && p.bye === WEEK;
+  const onBye = starters.concat(bench).filter(isBye).map(p => ({
+    name: p.name,
+    pos: p.pos,
+    team: p.team
+  }));
+  starters = starters.filter(p => !isBye(p)).sort(byLineup);
+  bench = bench.filter(p => !isBye(p)).sort(byLineup);
   const n = st => starters.filter(p => p.st === st).length;
   // Team total: MFL's franchise-level score is authoritative; fall back to summed starters.
   const teamPts = frNode.score != null && frNode.score !== '' ? parseFloat(frNode.score) : starters.reduce((a, p) => a + p.pts, 0);
@@ -1288,6 +1353,7 @@ function buildSide(frNode) {
     proj: teamProj,
     starters,
     bench,
+    onBye,
     playing: n('LIVE'),
     left: n('PRE'),
     done: n('FINAL')
@@ -1388,10 +1454,14 @@ async function fetchStatic() {
   if (cached) {
     PLAYERS_BY_ID = cached.players || {};
     PROJ_BY_ID = cached.proj || {};
+    ROSTER_BY_FID = cached.rosterByFid || {};
     return;
   }
-  const [playersD, projD] = await Promise.all([fetchJSON('players', '&DETAILS=1'), fetchJSON('projectedScores', '&W=' + WEEK).catch(e => {
+  const [playersD, projD, rostersD] = await Promise.all([fetchJSON('players', '&DETAILS=1'), fetchJSON('projectedScores', '&W=' + WEEK).catch(e => {
     console.warn('[CFFB Live Scoring] projectedScores failed:', e && e.message);
+    return null;
+  }), fetchJSON('rosters').catch(e => {
+    console.warn('[CFFB Live Scoring] rosters failed:', e && e.message);
     return null;
   })]);
   const players = {};
@@ -1400,7 +1470,8 @@ async function fetchStatic() {
       name: p.name || String(p.id),
       pos: p.position || 'WR',
       team: (p.team || '').toUpperCase(),
-      playerId: String(p.id)
+      playerId: String(p.id),
+      bye: parseInt(p.bye_week || p.bye || p.byeweek, 10) || null // for the on-bye aggregation
     };
   });
   const proj = {};
@@ -1408,19 +1479,58 @@ async function fetchStatic() {
     const v = parseFloat(s.score);
     if (isFinite(v)) proj[String(s.id)] = v;
   });
+  // Active roster per franchise (exclude taxi/IR) — the source of bench players
+  // when liveScoring returns only starters.
+  const rosterByFid = {};
+  asArray(rostersD && rostersD.rosters && rostersD.rosters.franchise).forEach(fr => {
+    rosterByFid[fr.id] = asArray(fr.player).filter(pl => {
+      const s = String(pl.status || '').toUpperCase();
+      return s !== 'TAXI_SQUAD' && s !== 'INJURED_RESERVE';
+    }).map(pl => String(pl.id));
+  });
   PLAYERS_BY_ID = players;
   PROJ_BY_ID = proj;
-  console.log('[CFFB Live Scoring] identity ' + Object.keys(players).length + ' players, projections ' + Object.keys(proj).length);
+  ROSTER_BY_FID = rosterByFid;
+  console.log('[CFFB Live Scoring] identity ' + Object.keys(players).length + ' players, projections ' + Object.keys(proj).length + ', rosters ' + Object.keys(rosterByFid).length);
   writeStaticCache({
     players,
-    proj
+    proj,
+    rosterByFid
   });
+}
+
+// Live per-player points for ALL players (starters + bench). Only needed when
+// liveScoring omits bench players (BENCH_SOURCE === 'roster').
+async function fetchLivePlayerScores() {
+  try {
+    const psD = await fetchJSON('playerScores', '&W=' + WEEK);
+    const map = {};
+    asArray(psD && psD.playerScores && psD.playerScores.playerScore).forEach(s => {
+      const v = parseFloat(s.score);
+      if (isFinite(v)) map[String(s.id)] = v;
+    });
+    LIVE_PTS_BY_ID = map;
+  } catch (e) {
+    console.warn('[CFFB Live Scoring] playerScores failed:', e && e.message);
+  }
+}
+
+// Does liveScoring already carry bench (nonstarter) players?
+function liveHasBench(ld) {
+  return asArray(ld && ld.liveScoring && ld.liveScoring.matchup).some(mt => asArray(mt.franchise).some(fr => asArray(fr.players && fr.players.player).some(pl => String(pl.status || '').toLowerCase() === 'nonstarter')));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 // Fresh liveScoring fetch → matchups → deltas → payload. Never cached.
 async function refreshLiveScoring() {
   const ld = await fetchJSON('liveScoring', '&W=' + WEEK);
+  // Decide once whether liveScoring includes bench; if not, we merge bench from
+  // the roster + a live playerScores feed (fetched each poll for fresh points).
+  if (BENCH_SOURCE == null) {
+    BENCH_SOURCE = liveHasBench(ld) ? 'live' : 'roster';
+    console.log('[CFFB Live Scoring] bench source: ' + BENCH_SOURCE + (BENCH_SOURCE === 'roster' ? ' (merging bench from rosters + playerScores)' : ''));
+  }
+  if (BENCH_SOURCE === 'roster') await fetchLivePlayerScores();
   const matchups = buildMatchups(ld);
   const flashes = computeDeltas(matchups);
   SLATE = slateSummary(matchups);
@@ -1435,10 +1545,51 @@ async function refreshLiveScoring() {
   return LS_PAYLOAD;
 }
 
+// Official team colors, keyed by franchise id, from the shared web-app payload.
+function applySheetTeams(teams) {
+  asArray(teams).forEach(t => {
+    if (t && t.id != null && (t.bg || t.fg)) SHEET_COLOR[String(t.id)] = {
+      bg: t.bg || null,
+      fg: t.fg || null
+    };
+  });
+}
+function loadSheetColors() {
+  // Instant: reuse the payload the Standings / Power Rankings widgets already
+  // cached (team bg/fg keyed by franchise id — the exact Power Rankings colors).
+  try {
+    const rec = JSON.parse(localStorage.getItem(CFFB_SHARED_CACHE_KEY) || 'null');
+    const teams = rec && rec.payload && rec.payload.teams;
+    if (teams) {
+      applySheetTeams(teams);
+      console.log('[CFFB Live Scoring] team colors from shared cache: ' + Object.keys(SHEET_COLOR).length);
+    }
+  } catch (e) {/* ignore */}
+  // Background refresh so colors stay current and the shared cache stays warm for
+  // every widget. Non-blocking; failure just leaves the logo-sampled fallback.
+  if (CFFB_WEBAPP_URL && CFFB_WEBAPP_URL.indexOf('__') !== 0) {
+    fetch(CFFB_WEBAPP_URL, {
+      cache: 'no-store'
+    }).then(r => r.ok ? r.json() : null).then(d => {
+      if (d && d.teams) {
+        applySheetTeams(d.teams);
+        try {
+          localStorage.setItem(CFFB_SHARED_CACHE_KEY, JSON.stringify({
+            ts: Date.now(),
+            payload: d
+          }));
+        } catch (e) {/* ignore */}
+        console.log('[CFFB Live Scoring] team colors refreshed from web app: ' + Object.keys(SHEET_COLOR).length);
+      }
+    }).catch(() => {/* offline / blocked → keep cache + logo fallback */});
+  }
+}
+
 // Awaited by the boot wrapper before first mount.
 async function loadLiveScoring() {
   resolveCtx();
   buildTeams();
+  loadSheetColors(); // instant cache read + background refresh (non-blocking)
   WEEK = parseInt(window.currentWeek, 10) || parseInt(window.liveScoringWeek, 10) || guessNflWeek(SEASON);
   console.log('[CFFB Live Scoring] context', MFL_CTX, 'week', WEEK);
   await fetchStatic();
@@ -1637,17 +1788,25 @@ function extractLogoColor(url) {
     img.src = url;
   });
 }
+// The official sheet color (same as Power Rankings) wins when available; else the
+// logo-sampled color; else a distinct stable hash.
+const sheetColorOf = side => typeof SHEET_COLOR !== 'undefined' && SHEET_COLOR[side.fid] && SHEET_COLOR[side.fid].bg || null;
 const useTeamColor = side => {
-  const [color, setColor] = useState(() => LS_TEAM_COLOR[side.fid] || hashColor(side.fid || side.abbr));
+  const [color, setColor] = useState(() => sheetColorOf(side) || LS_TEAM_COLOR[side.fid] || hashColor(side.fid || side.abbr));
   useEffect(() => {
     let alive = true;
+    const sheet = sheetColorOf(side);
+    if (sheet) {
+      setColor(sheet);
+      return;
+    } // official color — no sampling needed
     if (LS_TEAM_COLOR[side.fid]) {
       setColor(LS_TEAM_COLOR[side.fid]);
       return;
     }
     (async () => {
       const c = (await extractLogoColor(side.pill2)) || (await extractLogoColor(side.pill));
-      if (alive && c) {
+      if (alive && c && !sheetColorOf(side)) {
         LS_TEAM_COLOR[side.fid] = c;
         setColor(c);
       }
@@ -1896,7 +2055,11 @@ const LineupColumn = ({
       textTransform: 'uppercase',
       color: 'var(--fg-tertiary)'
     }
-  }, openBench ? '▾' : '▸', " Bench"), /*#__PURE__*/React.createElement("span", {
+  }, openBench ? '▾' : '▸', " Bench ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--fg-secondary)'
+    }
+  }, side.bench.length)), /*#__PURE__*/React.createElement("span", {
     style: {
       flex: 1,
       height: '1px',
@@ -1914,7 +2077,14 @@ const LineupColumn = ({
     flash: fl(p),
     bench: true,
     groupStart: i > 0 && arr[i - 1].pos !== p.pos
-  })))));
+  }))), side.onBye && side.onBye.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "ls-bye",
+    title: "On a bye this week \u2014 not playing"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ls-bye__lbl"
+  }, "\u25F7 On bye \xB7 ", side.onBye.length), /*#__PURE__*/React.createElement("span", {
+    className: "ls-bye__names"
+  }, side.onBye.map(p => p.name).join(' · ')))));
 };
 
 // ── Featured scoreboard ───────────────────────────────────────────────────────

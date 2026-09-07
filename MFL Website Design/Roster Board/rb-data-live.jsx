@@ -140,7 +140,8 @@ function encodedForFranchise(pl, fid) {
   // agent) — not a cross-conference owner picked from league-wide membership.
   const otherTok = tokens.find((t) => t.split('_')[0] !== fid);
   const otherOwner = otherTok ? otherTok.split('_')[0] : null;
-  return { parsed: mine ? parseEncoded(mine) : null, matched: !!mine, otherOwner };
+  const otherCls = otherTok ? otherTok.split('_')[1] : null;   // class of the other copy (FR..GR)
+  return { parsed: mine ? parseEncoded(mine) : null, matched: !!mine, otherOwner, otherCls };
 }
 
 // ── Eligibility clock from class + redshirt(s) (approximation) ────────────────
@@ -220,10 +221,14 @@ const enrichRow = (teamKey) => (m) => {
     rs: rss.map((r) => ({ type: r.type, year: r.year })),   // array (0, 1, or 2 redshirts)
     elig,
     contractUnverified: !!m.unverified,
-    // Same-conference co-owner from the row's other token; 'FA'/absent → null so
-    // the app shows the "FA" badge. (Replaces the old membership-order lookup that
-    // always surfaced the lowest-fid — i.e. an ACC — owner.)
-    other: (m.other && m.other !== 'FA') ? m.other : null,
+    // Same-conference co-owner from the row's other token:
+    //  • a 4-digit fid  → owned by that franchise (shows its icon),
+    //  • FA + GR class  → that copy graduated → 'GRAD' (out of eligibility, NOT
+    //                     available — avoids the misleading "free agent" vibe),
+    //  • plain FA / none → null → the app shows the "FA" (unowned) badge.
+    other: (m.other && m.other !== 'FA') ? m.other
+      : (m.other === 'FA' && m.otherCls === 'GR') ? 'GRAD'
+      : null,
   };
 };
 
@@ -431,7 +436,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v11';  // v11: capture BOTH redshirts (r+m) per copy
+const RB_CACHE_KEY = 'cffb_roster_board_v13';  // v13: other-copy GRAD (FA+GR); owner names
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -449,13 +454,23 @@ function rbWriteCache(payload) {
 
 // ── Assemble the live payload from the export feeds ───────────────────────────
 async function rbFetchPayload(fidToAbbr) {
-  const [rostersD, playersD, scoresD, injuriesD, byeMap] = await Promise.all([
+  const [rostersD, playersD, scoresD, injuriesD, byeMap, leagueD] = await Promise.all([
     fetchJSON('rosters'),
     fetchJSON('players', '&DETAILS=1'),
     fetchJSON('playerScores', '&W=YTD&YEAR=' + MFL_CTX.year).catch(() => null),
     loadInjuriesRaw().catch((e) => { console.warn('[CFFB Roster Board] injuries fetch failed:', e && e.message); return null; }),
     loadByeMap().catch(() => ({})),
+    fetchJSON('league').catch((e) => { console.warn('[CFFB Roster Board] league fetch failed:', e && e.message); return null; }),
   ]);
+
+  // Franchise owner (manager) names — from TYPE=league, keyed by 4-digit fid.
+  // franchiseDatabase carries no owner name, so this is the only source.
+  const ownerByFid = {};
+  asArray(leagueD && leagueD.league && leagueD.league.franchises && leagueD.league.franchises.franchise).forEach((fr) => {
+    const nm = (fr.owner_name || fr.ownerName || '').trim();
+    if (fr.id && nm) ownerByFid[fr.id] = nm;
+  });
+  console.log('[CFFB Roster Board] owner names: ' + Object.keys(ownerByFid).length + ' franchises');
 
   // Player identity: id -> name/pos/team/bye.
   const playersById = {};
@@ -505,6 +520,7 @@ async function rbFetchPayload(fidToAbbr) {
         verified: !!(res && res.matched),
         unverified: !!(res && !res.matched),   // tokens present but none owned by this franchise
         other: res ? res.otherOwner : null,     // same-conference co-owner (fid) or 'FA'
+        otherCls: res ? res.otherCls : null,    // that copy's class — 'GR' free agent shows as GRAD
       });
       (membership[pl.id] = membership[pl.id] || []).push(fr.id);
     });
@@ -512,7 +528,7 @@ async function rbFetchPayload(fidToAbbr) {
   console.log('[CFFB Roster Board] contract copies: ' + encMatched + ' matched by id, '
     + encUnverified + ' no copy for this franchise (flagged), ' + encNone + ' no contract token');
 
-  return { season: SEASON, thruWeek: THRU_WEEK, playersById, rosterMembers, membership, byeMap };
+  return { season: SEASON, thruWeek: THRU_WEEK, playersById, rosterMembers, membership, byeMap, ownerByFid };
 }
 
 function applyPayload(pd, fidToAbbr) {
@@ -522,6 +538,10 @@ function applyPayload(pd, fidToAbbr) {
   THRU_WEEK = pd.thruWeek || THRU_WEEK;
   // enc is already resolved to this franchise's copy at build time.
   ROSTER_MEMBERS = pd.rosterMembers || {};
+  // Merge franchise owner (manager) names onto the team directory (built from
+  // franchiseDatabase, which has no owner field). Shown under the team name.
+  const owners = pd.ownerByFid || {};
+  Object.keys(owners).forEach((fid) => { if (TEAMS[fid]) TEAMS[fid].owner = owners[fid]; });
 }
 
 // ── Public loader (awaited by the boot wrapper before mount) ──────────────────

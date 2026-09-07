@@ -578,7 +578,7 @@ const App = () => {
         <TeamChip id={team} size="lg" />
         <div>
           <div className="rb-team__name">{t.name}{team === MY_TEAM && <span style={{ marginLeft: 10, verticalAlign: 3, font: '700 9px/1 var(--font-body)', letterSpacing: '.16em', color: '#0A0A0A', background: 'var(--gold)', borderRadius: 2, padding: '3px 5px' }}>YOUR TEAM</span>}</div>
-          <div className="rb-team__owner">{t.owner} · {t.rec}</div>
+          <div className="rb-team__owner">{[t.owner].filter(Boolean).join(' · ') || ' '}</div>
         </div>
         <div className="rb-team__aside">
           <div className="rb-team__kpis">
@@ -587,11 +587,11 @@ const App = () => {
             <div className="rb-kpi"><span className="rb-kpi__label">Redshirting</span><span className="rb-kpi__val cffb-num">{r.rsCount}</span></div>
             <div className="rb-kpi"><span className="rb-kpi__label">Out</span><span className="rb-kpi__val cffb-num" style={r.outCount ? { color: '#D88787' } : null}>{r.outCount}</span></div>
           </div>
-          {canManage && <div className="rb-team__btns">
-            <button className="rb-manage-btn" onClick={() => setManage(true)} title="Move players to/from Taxi Squad or Injured Reserve, or drop them">⚙ Manage Roster</button>
-            <button className="rb-manage-btn rb-manage-btn--alt" onClick={() => setLineup(true)} title="Set your starting lineup for this or a future week">📋 Set Lineup</button>
-          </div>}
         </div>
+        {canManage && <div className="rb-team__btns">
+          <button className="rb-manage-btn" onClick={() => setManage(true)} title="Move players to/from Taxi Squad or Injured Reserve, or drop them">⚙ Manage Roster</button>
+          <button className="rb-manage-btn rb-manage-btn--alt" onClick={() => setLineup(true)} title="Set your starting lineup for this or a future week">📋 Set Lineup</button>
+        </div>}
       </div>
       <div className="rb-table">
         <div className="rb-cols rb-thead">
