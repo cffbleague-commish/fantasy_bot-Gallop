@@ -940,7 +940,11 @@
 .rb-tab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
 /* Team summary card */
 .rb-team{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;border-top:3px solid var(--gold);margin-bottom:16px}
-.rb-team__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;text-transform:uppercase;color:var(--fg-primary)}
+/* Identity block flexes/shrinks so the KPIs stay inline with the icon on desktop
+   (the team name wraps within this block instead of pushing the KPIs to their own
+   line). On mobile the aside/KPIs drop full-width under it (see @container rule). */
+.rb-team__id{flex:1 1 auto;min-width:0}
+.rb-team__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;color:var(--fg-primary)}
 .rb-team__owner{font:500 12px/1.4 var(--font-body);color:var(--fg-secondary)}
 .rb-team__kpis{display:flex;gap:24px;margin-left:auto;flex-wrap:wrap}
 .rb-kpi{display:flex;flex-direction:column;gap:5px;min-width:64px}
@@ -986,14 +990,16 @@
 /* Medical redshirt eligibility dot */
 .cffb-elig__dot.is-rs-med{background:radial-gradient(circle,transparent 0 2.5px,var(--rs-medical,#D17575) 2.5px 100%)}
 /* Distinct per-class eligibility colors (override cffb.css's gold-only scheme):
-   FR green → SO blue → JR purple → SR gold → GR red. Loaded after cffb.css so
-   it wins at equal specificity. The R- redshirt prefix is stripped before the
-   modifier is applied, so a redshirt junior still colors as JR. */
-.cffb-elig__class--fr{border-color:#3E7D57;color:#6FBF8E;background:rgba(74,153,104,.08)}
-.cffb-elig__class--so{border-color:#41608C;color:#85A9D6;background:rgba(74,111,165,.10)}
-.cffb-elig__class--jr{border-color:#6E5794;color:#B79AD9;background:rgba(139,111,176,.10)}
-.cffb-elig__class--sr{border-color:#C9A227;color:#E8C547;background:rgba(201,162,39,.10)}
-.cffb-elig__class--gr{border-color:#9E4141;color:#D88787;background:rgba(184,69,69,.12)}
+   FR green → SO blue → JR purple → SR gold → GR red. Scoped under #cffb-rb-root (→
+   #cffb-rb-root) + !important so they beat MFL's own page CSS, which otherwise
+   recolors these spans to a uniform link/text color (the same reason .rb-plink
+   is forced). The R- redshirt prefix is stripped before the modifier is applied,
+   so a redshirt junior still colors as JR. */
+#cffb-rb-root .cffb-elig__class--fr{border-color:#3E7D57 !important;color:#6FBF8E !important;background:rgba(74,153,104,.08) !important}
+#cffb-rb-root .cffb-elig__class--so{border-color:#41608C !important;color:#85A9D6 !important;background:rgba(74,111,165,.10) !important}
+#cffb-rb-root .cffb-elig__class--jr{border-color:#6E5794 !important;color:#B79AD9 !important;background:rgba(139,111,176,.10) !important}
+#cffb-rb-root .cffb-elig__class--sr{border-color:#C9A227 !important;color:#E8C547 !important;background:rgba(201,162,39,.10) !important}
+#cffb-rb-root .cffb-elig__class--gr{border-color:#9E4141 !important;color:#D88787 !important;background:rgba(184,69,69,.12) !important}
 /* Status (injury / redshirt-now) tags */
 .rb-status{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:2px;border:1px solid var(--border);color:var(--fg-secondary);cursor:help}
 .rb-status .d{width:6px;height:6px;border-radius:50%;flex:none}
@@ -3033,7 +3039,9 @@ const App = () => {
   }, /*#__PURE__*/React.createElement(TeamChip, {
     id: team,
     size: "lg"
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "rb-team__id"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "rb-team__name"
   }, t.name, team === MY_TEAM && /*#__PURE__*/React.createElement("span", {
     style: {

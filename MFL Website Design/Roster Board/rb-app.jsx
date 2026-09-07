@@ -576,7 +576,7 @@ const App = () => {
       <ConfTabs team={team} setTeam={setTeam} />
       <div className="rb-team" style={{ borderTopColor: CONF_ACCENT[t.conf] }}>
         <TeamChip id={team} size="lg" />
-        <div>
+        <div className="rb-team__id">
           <div className="rb-team__name">{t.name}{team === MY_TEAM && <span style={{ marginLeft: 10, verticalAlign: 3, font: '700 9px/1 var(--font-body)', letterSpacing: '.16em', color: '#0A0A0A', background: 'var(--gold)', borderRadius: 2, padding: '3px 5px' }}>YOUR TEAM</span>}</div>
           <div className="rb-team__owner">{[t.owner].filter(Boolean).join(' · ') || ' '}</div>
         </div>
