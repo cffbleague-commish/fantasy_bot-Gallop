@@ -41,8 +41,11 @@
 .rb-thead{border-bottom:1px solid var(--border);background:var(--bg-surface-elev)}
 .rb-thead span{font:700 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);padding:11px 0;display:block}
 .rb-thead .t-r,.rb-row .t-r{text-align:right}
-.rb-group{display:flex;align-items:center;gap:10px;padding:9px 16px;background:#101010;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.rb-group{display:flex;align-items:center;gap:10px;padding:9px 16px;background:#101010;border-top:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background 140ms cubic-bezier(.2,.8,.2,1)}
 .rb-group:first-of-type{border-top:none}
+.rb-group:hover{background:#151515}
+.rb-group:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.rb-group__caret{font-size:10px;line-height:1;color:var(--fg-tertiary);width:10px;flex:none;text-align:center}
 .rb-group__pos{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-primary)}
 .rb-group__bar{width:8px;height:16px;border-radius:1px}
 .rb-group__n{font:600 10px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.1em}

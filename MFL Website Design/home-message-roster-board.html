@@ -954,8 +954,11 @@
 .rb-thead{border-bottom:1px solid var(--border);background:var(--bg-surface-elev)}
 .rb-thead span{font:700 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);padding:11px 0;display:block}
 .rb-thead .t-r,.rb-row .t-r{text-align:right}
-.rb-group{display:flex;align-items:center;gap:10px;padding:9px 16px;background:#101010;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.rb-group{display:flex;align-items:center;gap:10px;padding:9px 16px;background:#101010;border-top:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background 140ms cubic-bezier(.2,.8,.2,1)}
 .rb-group:first-of-type{border-top:none}
+.rb-group:hover{background:#151515}
+.rb-group:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.rb-group__caret{font-size:10px;line-height:1;color:var(--fg-tertiary);width:10px;flex:none;text-align:center}
 .rb-group__pos{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-primary)}
 .rb-group__bar{width:8px;height:16px;border-radius:1px}
 .rb-group__n{font:600 10px/1 var(--font-body);color:var(--fg-tertiary);letter-spacing:.1em}
@@ -1429,6 +1432,11 @@ const enrichRow = teamKey => m => {
     pos: normPos(p.pos),
     pts: p.pts || 0,
     injury: p.injury || null,
+    // On the franchise's IR slot (from the rosters export bucket). MFL only lets
+    // you IR an injured player, so this is a reliable injury signal even when the
+    // weekly NFL injury report (TYPE=injuries) omits the player — the Status tag
+    // falls back to this so an IR'd player never reads "ACTIVE".
+    reserve: m.status === 'INJURED_RESERVE',
     initials: initialsOf(p.name),
     awards: enc ? enc.awards.map(encAwardToDisplay) : [],
     rs: rss.map(r => ({
@@ -2273,7 +2281,30 @@ const Status = ({
     className: "rb-status rb-status--rs",
     title: "Redshirting this season \u2014 cannot score"
   }, "\u25CF REDSHIRT");
-  if (!p.injury) return /*#__PURE__*/React.createElement("span", {
+  if (p.injury) {
+    const [cls, dot, label] = INJ[p.injury[0]];
+    return /*#__PURE__*/React.createElement("span", {
+      className: 'rb-status ' + cls,
+      title: p.injury[1]
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "d",
+      style: {
+        background: dot
+      }
+    }), label);
+  }
+  // No NFL injury-report entry, but the player is on the franchise IR slot →
+  // still show an IR tag (they can't be on IR without an injury) rather than ACTIVE.
+  if (p.reserve) return /*#__PURE__*/React.createElement("span", {
+    className: "rb-status rb-status--o",
+    title: "On Injured Reserve"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "d",
+    style: {
+      background: '#B84545'
+    }
+  }), "IR");
+  return /*#__PURE__*/React.createElement("span", {
     className: "rb-status rb-status--ok",
     title: "No injury designation"
   }, /*#__PURE__*/React.createElement("span", {
@@ -2282,16 +2313,6 @@ const Status = ({
       background: '#2D7A4E'
     }
   }), "ACTIVE");
-  const [cls, dot, label] = INJ[p.injury[0]];
-  return /*#__PURE__*/React.createElement("span", {
-    className: 'rb-status ' + cls,
-    title: p.injury[1]
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "d",
-    style: {
-      background: dot
-    }
-  }), label);
 };
 const OtherCopy = ({
   other,
@@ -2342,7 +2363,7 @@ const Row = ({
   onGo,
   ir
 }) => /*#__PURE__*/React.createElement("div", {
-  className: 'rb-cols rb-row' + (p.elig.redshirtingNow || p.injury && p.injury[0] === 'O' ? ' is-dim' : '')
+  className: 'rb-cols rb-row' + (p.elig.redshirtingNow || p.reserve || p.injury && p.injury[0] === 'O' ? ' is-dim' : '')
 }, /*#__PURE__*/React.createElement("span", {
   className: "rb-player"
 }, /*#__PURE__*/React.createElement(PlayerPhoto, {
@@ -2951,6 +2972,11 @@ const App = () => {
   const [team, setTeam] = useState(() => TEAMS[MY_TEAM] ? MY_TEAM : TEAM_ORDER[0]);
   const [manage, setManage] = useState(false);
   const [lineup, setLineup] = useState(false);
+  const [collapsed, setCollapsed] = useState({}); // group key ('QB','taxi','ir',…) -> hidden?
+  const toggleGroup = k => setCollapsed(c => ({
+    ...c,
+    [k]: !c[k]
+  }));
   const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
@@ -3048,26 +3074,53 @@ const App = () => {
     className: "t-r"
   }, "Pts ", SEASON), /*#__PURE__*/React.createElement("span", {
     className: "rb-cell-copy"
-  }, "Other Copy")), r.groups.map(g => /*#__PURE__*/React.createElement(React.Fragment, {
-    key: g.pos
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rb-group"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "rb-group__bar",
-    style: {
-      background: POS_COLORS[g.pos]
+  }, "Other Copy")), r.groups.map(g => {
+    const isCol = !!collapsed[g.pos];
+    return /*#__PURE__*/React.createElement(React.Fragment, {
+      key: g.pos
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "rb-group",
+      role: "button",
+      tabIndex: 0,
+      "aria-expanded": !isCol,
+      onClick: () => toggleGroup(g.pos),
+      onKeyDown: e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleGroup(g.pos);
+        }
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "rb-group__caret"
+    }, isCol ? '▸' : '▾'), /*#__PURE__*/React.createElement("span", {
+      className: "rb-group__bar",
+      style: {
+        background: POS_COLORS[g.pos]
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "rb-group__pos"
+    }, g.pos), /*#__PURE__*/React.createElement("span", {
+      className: "rb-group__n"
+    }, g.players.length)), !isCol && g.players.map(p => /*#__PURE__*/React.createElement(Row, {
+      key: p.pid,
+      p: p,
+      onGo: setTeam
+    })));
+  }), r.taxi.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "rb-group rb-group--squad",
+    role: "button",
+    tabIndex: 0,
+    "aria-expanded": !collapsed.taxi,
+    onClick: () => toggleGroup('taxi'),
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleGroup('taxi');
+      }
     }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "rb-group__pos"
-  }, g.pos), /*#__PURE__*/React.createElement("span", {
-    className: "rb-group__n"
-  }, g.players.length)), g.players.map(p => /*#__PURE__*/React.createElement(Row, {
-    key: p.pid,
-    p: p,
-    onGo: setTeam
-  })))), r.taxi.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "rb-group rb-group--squad"
   }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__caret"
+  }, collapsed.taxi ? '▸' : '▾'), /*#__PURE__*/React.createElement("span", {
     className: "rb-group__bar",
     style: {
       background: 'var(--gold)'
@@ -3078,13 +3131,25 @@ const App = () => {
     className: "rb-group__n"
   }, r.taxi.length), /*#__PURE__*/React.createElement("span", {
     className: "rb-group__note"
-  }, "Copies redshirting the ", SEASON, " season \u2014 moving off taxi forfeits the year's redshirt")), r.taxi.map(p => /*#__PURE__*/React.createElement(Row, {
+  }, "Copies redshirting the ", SEASON, " season \u2014 moving off taxi forfeits the year's redshirt")), !collapsed.taxi && r.taxi.map(p => /*#__PURE__*/React.createElement(Row, {
     key: 'tx-' + p.pid,
     p: p,
     onGo: setTeam
   }))), r.ir.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "rb-group rb-group--squad rb-group--ir"
+    className: "rb-group rb-group--squad rb-group--ir",
+    role: "button",
+    tabIndex: 0,
+    "aria-expanded": !collapsed.ir,
+    onClick: () => toggleGroup('ir'),
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleGroup('ir');
+      }
+    }
   }, /*#__PURE__*/React.createElement("span", {
+    className: "rb-group__caret"
+  }, collapsed.ir ? '▸' : '▾'), /*#__PURE__*/React.createElement("span", {
     className: "rb-group__bar",
     style: {
       background: '#B84545'
@@ -3095,7 +3160,7 @@ const App = () => {
     className: "rb-group__n"
   }, r.ir.length), /*#__PURE__*/React.createElement("span", {
     className: "rb-group__note"
-  }, "Medical redshirts are applied here \u2014 moving off IR forfeits the year's redshirt")), r.ir.map(p => /*#__PURE__*/React.createElement(Row, {
+  }, "Medical redshirts are applied here \u2014 moving off IR forfeits the year's redshirt")), !collapsed.ir && r.ir.map(p => /*#__PURE__*/React.createElement(Row, {
     key: 'ir-' + p.pid,
     p: p,
     onGo: setTeam,

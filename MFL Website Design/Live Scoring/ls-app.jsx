@@ -56,12 +56,69 @@ const Avatar = ({ p, size }) => {
 const stColor = (st) => (st === 'LIVE' ? '#57B87F' : st === 'PRE' ? 'var(--fg-secondary)' : 'var(--fg-tertiary)');
 const fmt = (n) => (typeof n === 'number' ? n.toFixed(2) : '—');
 
+// ── Per-team color ────────────────────────────────────────────────────────────
+// MFL exposes no franchise color field, so we sample each team's real color from
+// its logo (the MFL-hosted logo is same-origin on the page → canvas-safe; the
+// imgur icon works too when it sends CORS, otherwise it taints and we skip it).
+// Falls back to a distinct, stable hash color so two same-conference teams never
+// render the same. Resolved colors are cached module-wide across re-renders.
+const LS_TEAM_COLOR = {};
+function hashColor(seed) {
+  let h = 0; const s = String(seed || 'x');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return 'hsl(' + (h % 360) + ',58%,52%)';
+}
+function extractLogoColor(url) {
+  return new Promise((resolve) => {
+    if (!url) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onerror = () => resolve(null);
+    img.onload = () => {
+      try {
+        const n = 32, cv = document.createElement('canvas');
+        cv.width = n; cv.height = n;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0, n, n);
+        const d = ctx.getImageData(0, 0, n, n).data;
+        let sr = 0, sg = 0, sb = 0, sw = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
+          if (a < 200) continue;
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          const lum = (mx + mn) / 2;
+          if (lum < 26 || lum > 232) continue;      // skip near-black / near-white
+          const sat = mx === 0 ? 0 : (mx - mn) / mx;
+          const w = sat * sat + 0.04;               // weight vibrant pixels
+          sr += r * w; sg += g * w; sb += b * w; sw += w;
+        }
+        if (sw <= 0) return resolve(null);
+        const to = (x) => Math.round(x / sw).toString(16).padStart(2, '0');
+        resolve('#' + to(sr) + to(sg) + to(sb));
+      } catch (e) { resolve(null); }              // tainted canvas → fall back
+    };
+    img.src = url;
+  });
+}
+const useTeamColor = (side) => {
+  const [color, setColor] = useState(() => LS_TEAM_COLOR[side.fid] || hashColor(side.fid || side.abbr));
+  useEffect(() => {
+    let alive = true;
+    if (LS_TEAM_COLOR[side.fid]) { setColor(LS_TEAM_COLOR[side.fid]); return; }
+    (async () => {
+      const c = (await extractLogoColor(side.pill2)) || (await extractLogoColor(side.pill));
+      if (alive && c) { LS_TEAM_COLOR[side.fid] = c; setColor(c); }
+    })();
+    return () => { alive = false; };
+  }, [side.fid]);
+  return color;
+};
+
 // ── Player row (starters + bench share the same 6-column grid) ────────────────
 const GRID = '36px 34px minmax(0,1fr) 118px 52px 44px';
 
-const PlayerRow = ({ p, flash, bench }) => {
+const PlayerRow = ({ p, flash, bench, groupStart }) => {
   const fxColor = flash ? (flash.dir === 'up' ? '#57B87F' : '#D66A6A') : '';
-  const dim = p.st === 'FINAL' && !flash;
   return (
     <div
       className="ls-row"
@@ -69,6 +126,7 @@ const PlayerRow = ({ p, flash, bench }) => {
         display: 'grid', gridTemplateColumns: GRID, gap: '10px', alignItems: 'center',
         padding: bench ? '8px 18px' : '9px 18px',
         borderBottom: '1px solid rgba(42,42,42,' + (bench ? '.4' : '.55') + ')',
+        borderTop: groupStart ? '1px solid var(--border-strong)' : undefined,
         opacity: bench ? 0.72 : 1,
         animation: flash ? 'cffb-ls-flash' + flash.dir + ' 2.4s ease-out' : 'none',
       }}
@@ -122,7 +180,7 @@ const LineupColumn = ({ side, flashes }) => {
         <div style={{ display: 'grid', gridTemplateColumns: GRID, gap: '10px', alignItems: 'center', padding: '9px 18px', borderBottom: '1px solid var(--border)', font: '600 9px/1 var(--font-body)', letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }}>
           <span /><span /><span>Player</span><span>Game</span><span style={{ textAlign: 'right', color: 'var(--gold)' }}>Pts</span><span style={{ textAlign: 'right' }}>Proj</span>
         </div>
-        {side.starters.map((p) => <PlayerRow key={p.pid} p={p} flash={fl(p)} />)}
+        {side.starters.map((p, i, arr) => <PlayerRow key={p.pid} p={p} flash={fl(p)} groupStart={i > 0 && arr[i - 1].pos !== p.pos} />)}
         {side.bench.length > 0 && (
           <div>
             <button
@@ -133,7 +191,7 @@ const LineupColumn = ({ side, flashes }) => {
               <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               <span className="cffb-num" style={{ font: '600 10px/1 var(--font-body)', color: 'var(--fg-tertiary)' }}>{fmt(benchPts)} pts</span>
             </button>
-            {openBench && side.bench.map((p) => <PlayerRow key={p.pid} p={p} flash={fl(p)} bench />)}
+            {openBench && side.bench.map((p, i, arr) => <PlayerRow key={p.pid} p={p} flash={fl(p)} bench groupStart={i > 0 && arr[i - 1].pos !== p.pos} />)}
           </div>
         )}
       </div>
@@ -142,18 +200,21 @@ const LineupColumn = ({ side, flashes }) => {
 };
 
 // ── Featured scoreboard ───────────────────────────────────────────────────────
-const SideBlock = ({ side, prob, home, leading }) => (
-  <div style={{ flex: '1 1 300px', display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0, flexWrap: 'wrap', flexDirection: home ? 'row-reverse' : 'row' }}>
-    <span style={{ flex: 'none', display: 'flex', alignItems: 'center' }}><Pill side={side} size={64} /></span>
-    <div style={{ minWidth: 0, textAlign: home ? 'right' : 'left' }}>
-      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '26px', lineHeight: 1, textTransform: 'uppercase' }}>{side.name}</div>
-      <div style={{ font: '600 9px/1 var(--font-body)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--fg-tertiary)', marginTop: '9px' }}>
+// A 3-column grid (pill · name+counts · score) so the score never wraps onto a
+// second line and a long team name truncates instead of breaking the layout.
+// Home mirrors on desktop and un-mirrors when the board stacks (see ls.css).
+const SideBlock = ({ side, home, leading }) => (
+  <div className={'ls-sb' + (home ? ' ls-sb--home' : '')}>
+    <span className="ls-sb__pill"><Pill side={side} size={64} /></span>
+    <div className="ls-sb__id">
+      <div className="ls-sb__name" title={side.name}>{side.name}</div>
+      <div className="ls-sb__counts">
         <span style={{ color: '#57B87F' }}>{side.playing} playing</span> · {side.left} to play · {side.done} final
       </div>
     </div>
-    <div style={{ [home ? 'marginRight' : 'marginLeft']: 'auto', textAlign: home ? 'left' : 'right' }}>
-      <div className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '58px', lineHeight: 0.9, color: leading ? 'var(--fg-primary)' : 'var(--fg-secondary)' }}>{fmt(side.pts)}</div>
-      <div style={{ font: '600 10px/1 var(--font-body)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--fg-tertiary)', marginTop: '7px' }}>Proj <span className="cffb-num" style={{ color: 'var(--fg-secondary)' }}>{fmt(side.proj)}</span></div>
+    <div className="ls-sb__score">
+      <div className="cffb-num ls-sb__pts" style={{ color: leading ? 'var(--fg-primary)' : 'var(--fg-secondary)' }}>{fmt(side.pts)}</div>
+      <div className="ls-sb__proj">Proj <span className="cffb-num" style={{ color: 'var(--fg-secondary)' }}>{fmt(side.proj)}</span></div>
     </div>
   </div>
 );
@@ -161,25 +222,25 @@ const SideBlock = ({ side, prob, home, leading }) => (
 const Scoreboard = ({ m }) => {
   const awayProb = 100 - m.homeProb;
   const awayLead = m.away.pts >= m.home.pts;
+  const awayColor = useTeamColor(m.away);
+  const homeColor = useTeamColor(m.home);
   return (
     <div style={{ position: 'relative', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '28px 28px 24px', overflow: 'hidden' }}>
       <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'var(--gold-gradient)' }} />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px 24px', alignItems: 'center' }}>
-        <SideBlock side={m.away} prob={awayProb} leading={awayLead} />
-        <div style={{ flex: '0 0 auto', textAlign: 'center', padding: '0 6px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '15px', color: 'var(--fg-tertiary)', letterSpacing: '.08em' }}>VS</div>
-        </div>
-        <SideBlock side={m.home} prob={m.homeProb} home leading={!awayLead} />
+      <div className="ls-board">
+        <SideBlock side={m.away} leading={awayLead} />
+        <div className="ls-vs">VS</div>
+        <SideBlock side={m.home} home leading={!awayLead} />
       </div>
       <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
-          <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px' }}>{awayProb}%</span>
+          <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: awayColor }}>{awayProb}%</span>
           <span style={{ font: '600 9px/1 var(--font-body)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }} title="Estimated from projected margin — not MFL's official win probability">Win Probability<span style={{ color: 'var(--fg-tertiary)', opacity: 0.7 }}> · est</span></span>
-          <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px' }}>{m.homeProb}%</span>
+          <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: homeColor }}>{m.homeProb}%</span>
         </div>
         <div style={{ display: 'flex', height: '8px', borderRadius: 'var(--r-pill)', overflow: 'hidden', background: 'var(--bg-surface-elev)' }}>
-          <span style={{ height: '100%', transition: 'width var(--dur-fast) var(--ease-out)', width: awayProb + '%', background: m.away.color }} />
-          <span style={{ flex: 1, height: '100%', background: m.home.color }} />
+          <span style={{ height: '100%', transition: 'width var(--dur-fast) var(--ease-out), background var(--dur-base)', width: awayProb + '%', background: awayColor }} />
+          <span style={{ flex: 1, height: '100%', background: homeColor, boxShadow: 'inset 1px 0 0 rgba(10,10,10,.5)' }} />
         </div>
       </div>
     </div>
@@ -223,18 +284,40 @@ const StripCard = ({ m, i, active, onSelect }) => {
 // ── App ───────────────────────────────────────────────────────────────────────
 const POLL_MS = 40000; // MFL live feed refreshes ~every 40s
 
-const defaultMatchupIdx = (matchups) => {
-  const mine = (typeof MY_FID !== 'undefined') ? MY_FID : '';
-  const i = matchups.findIndex((m) => m.away.fid === mine || m.home.fid === mine);
-  return i >= 0 ? i : 0;
-};
+// ── Conference filter tabs ────────────────────────────────────────────────────
+// "All" + one tab per conference that has games this week, each with a game count.
+// Active tab picks up its conference accent color; the user's own conference is
+// flagged. Filters the around-the-league strip to that conference's matchups.
+const ConfTabs = ({ confs, effConf, counts, total, myConf, onPick }) => (
+  <div className="ls-conftabs" role="tablist">
+    <button
+      role="tab" aria-selected={effConf === 'ALL'}
+      className={'ls-conftab' + (effConf === 'ALL' ? ' is-active' : '')}
+      style={effConf === 'ALL' ? { boxShadow: 'inset 0 -2px 0 var(--gold)', color: 'var(--fg-primary)' } : null}
+      onClick={() => onPick('ALL')}
+    >All<span className="ls-conftab__n">{total}</span></button>
+    {confs.map((c) => (
+      <button
+        key={c} role="tab" aria-selected={effConf === c}
+        className={'ls-conftab' + (effConf === c ? ' is-active' : '')}
+        style={effConf === c ? { boxShadow: 'inset 0 -2px 0 ' + CONF_ACCENT[c], color: 'var(--fg-primary)' } : null}
+        onClick={() => onPick(c)}
+      >
+        {CONF_LOGOS[c] && <img className="ls-conflogo" src={CONF_LOGOS[c]} alt="" />}
+        <span style={effConf === c ? { color: CONF_ACCENT[c] } : null}>{CONF_LABEL[c] || c.toUpperCase()}</span>
+        {c === myConf && <span className="ls-conftab__you">YOU</span>}
+        <span className="ls-conftab__n">{counts[c]}</span>
+      </button>
+    ))}
+  </div>
+);
 
 const App = () => {
   const seed = (typeof LS_PAYLOAD !== 'undefined' && LS_PAYLOAD) ? LS_PAYLOAD : { week: '', slate: '', matchups: [], flashes: {} };
   const [data, setData] = useState(seed);
-  const [idx, setIdx] = useState(() => defaultMatchupIdx(seed.matchups));
+  const [conf, setConf] = useState(null);    // selected conference id | 'ALL' | null (→ default to my conference)
+  const [selId, setSelId] = useState(null);  // selected matchup id | null (→ default)
   const [flashes, setFlashes] = useState({});
-  const pickedRef = useRef(false); // once the user taps a matchup, stop auto-defaulting
 
   useEffect(() => {
     let alive = true;
@@ -262,10 +345,35 @@ const App = () => {
   if (!matchups.length) {
     return <div className="cffb-boot">No live matchups for week {data.week || '—'} yet.</div>;
   }
-  const sel = Math.min(idx, matchups.length - 1);
-  const m = matchups[sel];
+
+  const myFid = data.myFid;
+  const myConf = (typeof TEAMS !== 'undefined' && TEAMS[myFid]) ? TEAMS[myFid].conf : null;
+
+  // Conferences present this week (canonical order) with game counts.
+  const counts = {};
+  matchups.forEach((g) => { if (g.conf) counts[g.conf] = (counts[g.conf] || 0) + 1; });
+  const confsPresent = CONF_ORDER.filter((c) => counts[c]);
+  const showConfTabs = confsPresent.length > 1;
+
+  // Effective conference: explicit pick, else the user's conference if it has
+  // games, else All.
+  const effConf = conf != null ? conf
+    : (myConf && counts[myConf]) ? myConf
+      : 'ALL';
+  const filtered = effConf === 'ALL' ? matchups : matchups.filter((g) => g.conf === effConf);
+
+  // Effective featured matchup: an explicit pick that is still in view, else the
+  // user's own matchup within the filter, else the first game of the filter.
+  const myMatchup = matchups.find((g) => g.away.fid === myFid || g.home.fid === myFid);
+  const inView = (id) => filtered.some((g) => g.id === id);
+  const effSelId = (selId != null && inView(selId)) ? selId
+    : (myMatchup && inView(myMatchup.id)) ? myMatchup.id
+      : (filtered[0] ? filtered[0].id : null);
+  const m = matchups.find((g) => g.id === effSelId) || filtered[0] || matchups[0];
+
   const anyLive = matchups.some((g) => (g.away.playing + g.home.playing) > 0);
-  const pick = (i) => { pickedRef.current = true; setIdx(i); };
+  const pickConf = (c) => { setConf(c); setSelId(null); };  // reset featured into the new conference
+  const pickMatchup = (id) => setSelId(id);
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px 72px', fontFamily: 'var(--font-body)', color: 'var(--fg-primary)' }}>
@@ -285,9 +393,14 @@ const App = () => {
         </div>
       </div>
 
-      {/* Around the league */}
-      <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2,auto)', gridAutoColumns: '150px', gap: '6px', margin: '20px 0 24px', overflowX: 'auto', paddingBottom: '6px' }} className="ls-strip">
-        {matchups.map((g, i) => <StripCard key={i} m={g} i={i} active={i === sel} onSelect={() => pick(i)} />)}
+      {/* Conference filter */}
+      {showConfTabs && (
+        <ConfTabs confs={confsPresent} effConf={effConf} counts={counts} total={matchups.length} myConf={myConf} onPick={pickConf} />
+      )}
+
+      {/* Around the league (filtered to the selected conference) */}
+      <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2,auto)', gridAutoColumns: '150px', gap: '6px', margin: '14px 0 24px', overflowX: 'auto', paddingBottom: '6px' }} className="ls-strip">
+        {filtered.map((g, i) => <StripCard key={g.id} m={g} i={i} active={g.id === m.id} onSelect={() => pickMatchup(g.id)} />)}
       </div>
 
       {/* Featured scoreboard */}

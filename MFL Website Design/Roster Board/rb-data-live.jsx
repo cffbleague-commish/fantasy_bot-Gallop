@@ -210,6 +210,11 @@ const enrichRow = (teamKey) => (m) => {
     pos: normPos(p.pos),
     pts: p.pts || 0,
     injury: p.injury || null,
+    // On the franchise's IR slot (from the rosters export bucket). MFL only lets
+    // you IR an injured player, so this is a reliable injury signal even when the
+    // weekly NFL injury report (TYPE=injuries) omits the player — the Status tag
+    // falls back to this so an IR'd player never reads "ACTIVE".
+    reserve: m.status === 'INJURED_RESERVE',
     initials: initialsOf(p.name),
     awards: enc ? enc.awards.map(encAwardToDisplay) : [],
     rs: rss.map((r) => ({ type: r.type, year: r.year })),   // array (0, 1, or 2 redshirts)

@@ -27,6 +27,7 @@
 // ── Static maps ───────────────────────────────────────────────────────────────
 const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A' };
 const CONF_ORDER  = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
+const CONF_LABEL  = { sec: 'SEC', b1g: 'B1G', acc: 'ACC', big12: 'BIG 12', pac: 'PAC', aac: 'AAC' };
 // MFL franchise division code -> conference id.
 const DIV_TO_CONF = { '00': 'acc', '01': 'b1g', '02': 'big12', '03': 'pac', '04': 'sec', '05': 'aac' };
 const POS_COLORS = { QB: '#C9A227', RB: '#3B82C4', WR: '#7BA4C9', TE: '#E8C547', DB: '#6E86A8', K: '#5C7A6A' };
@@ -36,6 +37,16 @@ const POS_MAP = {
   DB: 'DB', CB: 'DB', S: 'DB', SS: 'DB', FS: 'DB', DE: 'DB', DL: 'DB', DT: 'DB', LB: 'DB', ILB: 'DB', OLB: 'DB',
 };
 const normPos = (pos) => POS_MAP[(pos || '').toUpperCase()] || 'WR';
+// Canonical lineup order so starters group by position and NEVER shuffle between
+// polls (MFL's liveScoring returns players in an unstable, score-dependent order).
+const POS_ORDER = ['QB', 'RB', 'WR', 'TE', 'DB', 'K'];
+const posRank = (p) => { const i = POS_ORDER.indexOf(p.pos); return i < 0 ? 99 : i; };
+// Group by position, then a STABLE tiebreak (pid) — not points, which change live.
+const byLineup = (a, b) => (posRank(a) - posRank(b)) || (a.pid < b.pid ? -1 : a.pid > b.pid ? 1 : 0);
+
+// Conference tab logos, inlined as base64 at build time (window.__CFFB_CONF_LOGOS).
+// Absent in the standalone/preview build → tabs fall back to their text label.
+const CONF_LOGOS = (typeof window !== 'undefined' && window.__CFFB_CONF_LOGOS) || {};
 
 // ── Live state (populated during load; ls-app reads these at render) ──────────
 let SEASON = 2026;
@@ -196,8 +207,8 @@ function buildSide(frNode) {
       isLive: st === 'LIVE',
     };
   });
-  const starters = players.filter((p) => !p.bench);
-  const bench = players.filter((p) => p.bench);
+  const starters = players.filter((p) => !p.bench).sort(byLineup);
+  const bench = players.filter((p) => p.bench).sort(byLineup);
   const n = (st) => starters.filter((p) => p.st === st).length;
   // Team total: MFL's franchise-level score is authoritative; fall back to summed starters.
   const teamPts = (frNode.score != null && frNode.score !== '') ? parseFloat(frNode.score) : starters.reduce((a, p) => a + p.pts, 0);
@@ -218,12 +229,20 @@ function buildSide(frNode) {
 function buildMatchups(ld) {
   const ls = ld && ld.liveScoring;
   const rawMatchups = asArray(ls && ls.matchup);
-  return rawMatchups.map((mt) => {
+  const built = rawMatchups.map((mt) => {
     const fs = asArray(mt.franchise);
     const away = buildSide(fs[0] || {});
     const home = buildSide(fs[1] || {});
-    return { away, home, homeProb: winProb(home, away) };
+    // A matchup's conference = the shared conference of its two teams (teams play
+    // within their conference). Cross-conference games (if any) get conf=null and
+    // surface only under the "All" tab.
+    const conf = away.conf && away.conf === home.conf ? away.conf : null;
+    return { away, home, homeProb: winProb(home, away), conf };
   }).filter((m) => m.away.fid && m.home.fid);
+  // Stable id per matchup (post-filter index) so the featured selection and the
+  // conference filter can reference a matchup independent of array order.
+  built.forEach((m, i) => { m.id = i; });
+  return built;
 }
 
 // Diff live points vs the previous poll → flash/delta badges on real changes.

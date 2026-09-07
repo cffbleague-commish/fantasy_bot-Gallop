@@ -85,9 +85,11 @@ const Awards = ({ awards }) => {
 const INJ = { P: ['rb-status--ok', '#4A9968', 'PROB'], Q: ['rb-status--q', '#C9A227', 'QUES'], O: ['rb-status--o', '#B84545', 'OUT'] };
 const Status = ({ p }) => {
   if (p.elig.redshirtingNow) return <span className="rb-status rb-status--rs" title="Redshirting this season — cannot score">● REDSHIRT</span>;
-  if (!p.injury) return <span className="rb-status rb-status--ok" title="No injury designation"><span className="d" style={{ background: '#2D7A4E' }} />ACTIVE</span>;
-  const [cls, dot, label] = INJ[p.injury[0]];
-  return <span className={'rb-status ' + cls} title={p.injury[1]}><span className="d" style={{ background: dot }} />{label}</span>;
+  if (p.injury) { const [cls, dot, label] = INJ[p.injury[0]]; return <span className={'rb-status ' + cls} title={p.injury[1]}><span className="d" style={{ background: dot }} />{label}</span>; }
+  // No NFL injury-report entry, but the player is on the franchise IR slot →
+  // still show an IR tag (they can't be on IR without an injury) rather than ACTIVE.
+  if (p.reserve) return <span className="rb-status rb-status--o" title="On Injured Reserve"><span className="d" style={{ background: '#B84545' }} />IR</span>;
+  return <span className="rb-status rb-status--ok" title="No injury designation"><span className="d" style={{ background: '#2D7A4E' }} />ACTIVE</span>;
 };
 
 const OtherCopy = ({ other, onGo }) => {
@@ -117,7 +119,7 @@ const PlayerPhoto = ({ p }) => {
 };
 
 const Row = ({ p, onGo, ir }) => (
-  <div className={'rb-cols rb-row' + ((p.elig.redshirtingNow || (p.injury && p.injury[0] === 'O')) ? ' is-dim' : '')}>
+  <div className={'rb-cols rb-row' + ((p.elig.redshirtingNow || p.reserve || (p.injury && p.injury[0] === 'O')) ? ' is-dim' : '')}>
     <span className="rb-player">
       <PlayerPhoto p={p} />
       <span className="rb-pname">
@@ -551,6 +553,8 @@ const App = () => {
   const [team, setTeam] = useState(() => (TEAMS[MY_TEAM] ? MY_TEAM : TEAM_ORDER[0]));
   const [manage, setManage] = useState(false);
   const [lineup, setLineup] = useState(false);
+  const [collapsed, setCollapsed] = useState({}); // group key ('QB','taxi','ir',…) -> hidden?
+  const toggleGroup = (k) => setCollapsed((c) => ({ ...c, [k]: !c[k] }));
   const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
@@ -593,36 +597,48 @@ const App = () => {
         <div className="rb-cols rb-thead">
           <span>Player</span><span>Pos</span><span>Eligibility</span><span>Redshirt</span><span className="rb-cell-awards">Awards</span><span>Status</span><span className="t-r">Pts {SEASON}</span><span className="rb-cell-copy">Other Copy</span>
         </div>
-        {r.groups.map((g) => (
-          <React.Fragment key={g.pos}>
-            <div className="rb-group">
-              <span className="rb-group__bar" style={{ background: POS_COLORS[g.pos] }} />
-              <span className="rb-group__pos">{g.pos}</span>
-              <span className="rb-group__n">{g.players.length}</span>
-            </div>
-            {g.players.map((p) => <Row key={p.pid} p={p} onGo={setTeam} />)}
-          </React.Fragment>
-        ))}
+        {r.groups.map((g) => {
+          const isCol = !!collapsed[g.pos];
+          return (
+            <React.Fragment key={g.pos}>
+              <div className="rb-group" role="button" tabIndex={0} aria-expanded={!isCol}
+                onClick={() => toggleGroup(g.pos)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(g.pos); } }}>
+                <span className="rb-group__caret">{isCol ? '▸' : '▾'}</span>
+                <span className="rb-group__bar" style={{ background: POS_COLORS[g.pos] }} />
+                <span className="rb-group__pos">{g.pos}</span>
+                <span className="rb-group__n">{g.players.length}</span>
+              </div>
+              {!isCol && g.players.map((p) => <Row key={p.pid} p={p} onGo={setTeam} />)}
+            </React.Fragment>
+          );
+        })}
         {r.taxi.length > 0 && (
           <React.Fragment>
-            <div className="rb-group rb-group--squad">
+            <div className="rb-group rb-group--squad" role="button" tabIndex={0} aria-expanded={!collapsed.taxi}
+              onClick={() => toggleGroup('taxi')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup('taxi'); } }}>
+              <span className="rb-group__caret">{collapsed.taxi ? '▸' : '▾'}</span>
               <span className="rb-group__bar" style={{ background: 'var(--gold)' }} />
               <span className="rb-group__pos">Taxi Squad</span>
               <span className="rb-group__n">{r.taxi.length}</span>
               <span className="rb-group__note">Copies redshirting the {SEASON} season — moving off taxi forfeits the year's redshirt</span>
             </div>
-            {r.taxi.map((p) => <Row key={'tx-' + p.pid} p={p} onGo={setTeam} />)}
+            {!collapsed.taxi && r.taxi.map((p) => <Row key={'tx-' + p.pid} p={p} onGo={setTeam} />)}
           </React.Fragment>
         )}
         {r.ir.length > 0 && (
           <React.Fragment>
-            <div className="rb-group rb-group--squad rb-group--ir">
+            <div className="rb-group rb-group--squad rb-group--ir" role="button" tabIndex={0} aria-expanded={!collapsed.ir}
+              onClick={() => toggleGroup('ir')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup('ir'); } }}>
+              <span className="rb-group__caret">{collapsed.ir ? '▸' : '▾'}</span>
               <span className="rb-group__bar" style={{ background: '#B84545' }} />
               <span className="rb-group__pos">Injured Reserve</span>
               <span className="rb-group__n">{r.ir.length}</span>
               <span className="rb-group__note">Medical redshirts are applied here — moving off IR forfeits the year's redshirt</span>
             </div>
-            {r.ir.map((p) => <Row key={'ir-' + p.pid} p={p} onGo={setTeam} ir />)}
+            {!collapsed.ir && r.ir.map((p) => <Row key={'ir-' + p.pid} p={p} onGo={setTeam} ir />)}
           </React.Fragment>
         )}
         <div className="rb-foot">

@@ -10,6 +10,44 @@
 @keyframes cffb-ls-flashdn{0%{background:rgba(184,69,69,.32)}100%{background:transparent}}
 @keyframes cffb-ls-pop{0%{transform:scale(1)}30%{transform:scale(1.3)}100%{transform:scale(1)}}
 
+/* Featured scoreboard — a 3-column grid per side so the score never wraps and a
+   long team name truncates instead of shoving the layout around. */
+.ls-board{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center}
+.ls-vs{flex:0 0 auto;text-align:center;padding:0 6px;font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--fg-tertiary);letter-spacing:.08em}
+.ls-sb{flex:1 1 300px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center}
+.ls-sb__pill{display:flex;align-items:center}
+.ls-sb__id{min-width:0}
+.ls-sb__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls-sb__counts{font:600 9px/1.3 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);margin-top:9px}
+.ls-sb__score{text-align:right;white-space:nowrap}
+.ls-sb__pts{font-family:var(--font-display);font-weight:700;font-size:58px;line-height:.9}
+.ls-sb__proj{font:600 10px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);margin-top:7px}
+/* Home side mirrors on desktop: score inner-left, name right-aligned, pill far-right. */
+.ls-sb--home .ls-sb__score{order:1;text-align:left}
+.ls-sb--home .ls-sb__id{order:2;text-align:right}
+.ls-sb--home .ls-sb__pill{order:3}
+/* Stack the two sides once they no longer fit; un-mirror home so both read
+   pill → name → score, and dial the big score/name down to fit a phone. */
+@container (max-width:640px){
+  .ls-board{flex-direction:column;align-items:stretch;gap:10px}
+  .ls-sb{flex:1 1 auto}
+  .ls-sb--home .ls-sb__pill{order:1}
+  .ls-sb--home .ls-sb__id{order:2;text-align:left}
+  .ls-sb--home .ls-sb__score{order:3;text-align:right}
+  .ls-vs{padding:2px 0}
+  .ls-sb__pts{font-size:40px}
+  .ls-sb__name{font-size:20px}
+}
+
+/* Conference filter tabs */
+.ls-conftabs{display:flex;flex-wrap:wrap;gap:6px;padding:6px;margin:20px 0 0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px}
+.ls-conftab{display:inline-flex;align-items:center;gap:7px;flex:none;cursor:pointer;padding:8px 12px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--fg-secondary);font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;text-transform:uppercase;transition:background 140ms cubic-bezier(.2,.8,.2,1),color 140ms}
+.ls-conftab:hover{background:var(--bg-surface-hover);color:var(--fg-primary)}
+.ls-conflogo{width:22px;height:22px;object-fit:contain;flex:none}
+.ls-conftab.is-active{background:var(--bg-surface-elev)}
+.ls-conftab__n{font:700 10px/1 var(--font-body);color:var(--fg-tertiary);background:var(--bg-canvas);border:1px solid var(--border);border-radius:2px;padding:2px 5px;font-variant-numeric:tabular-nums}
+.ls-conftab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
+
 /* Row + card hover accents */
 .ls-row{transition:background 140ms cubic-bezier(.2,.8,.2,1)}
 .ls-row:hover{background:var(--bg-surface-hover)}
