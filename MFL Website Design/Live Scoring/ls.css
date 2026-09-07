@@ -14,29 +14,51 @@
    long team name truncates instead of shoving the layout around. */
 .ls-board{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center}
 .ls-vs{flex:0 0 auto;text-align:center;padding:0 6px;font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--fg-tertiary);letter-spacing:.08em}
-.ls-sb{flex:1 1 300px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center}
-.ls-sb__pill{display:flex;align-items:center}
-.ls-sb__id{min-width:0}
-.ls-sb__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ls-sb__counts{font:600 9px/1.3 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);margin-top:9px}
-.ls-sb__score{text-align:right;white-space:nowrap}
+.ls-sb{flex:1 1 300px;min-width:0;display:grid;column-gap:16px;align-items:center;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pill name score" "pill counts score"}
+.ls-sb__pill{grid-area:pill;display:flex;align-items:center;justify-content:center}
+.ls-sb__name{grid-area:name;align-self:end;font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls-sb__counts{grid-area:counts;align-self:start;margin-top:6px;font:600 9px/1.3 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls-sb__score{grid-area:score;text-align:right;white-space:nowrap}
 .ls-sb__pts{font-family:var(--font-display);font-weight:700;font-size:58px;line-height:.9}
 .ls-sb__proj{font:600 10px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);margin-top:7px}
-/* Home side mirrors on desktop: score inner-left, name right-aligned, pill far-right. */
-.ls-sb--home .ls-sb__score{order:1;text-align:left}
-.ls-sb--home .ls-sb__id{order:2;text-align:right}
-.ls-sb--home .ls-sb__pill{order:3}
-/* Stack the two sides once they no longer fit; un-mirror home so both read
-   pill → name → score, and dial the big score/name down to fit a phone. */
+/* Home side mirrors on desktop: score inner-left, name/counts right-aligned, pill far-right. */
+.ls-sb--home{grid-template-areas:"score name pill" "score counts pill"}
+.ls-sb--home .ls-sb__name,.ls-sb--home .ls-sb__counts{text-align:right}
+.ls-sb--home .ls-sb__score{text-align:left}
+
+/* Lineup column + player-row grid. The column is its OWN container so each row
+   reflows based on the column's width (not the whole widget) — no horizontal
+   scroll at any size. */
+.ls-lcol{container-type:inline-size;flex:1 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto}
+.ls-lcol__inner{min-width:520px}
+.ls-lhead,.ls-prow{display:grid;column-gap:10px;align-items:center;grid-template-columns:36px 34px minmax(0,1fr) 118px 52px 44px;grid-template-areas:"pos av name game pts proj"}
+.ls-lhead{padding:9px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary)}
+.ls-prow{padding:9px 18px;border-bottom:1px solid rgba(42,42,42,.55)}
+.ls-prow--bench{padding:8px 18px;border-bottom-color:rgba(42,42,42,.4);opacity:.72}
+.ls-prow__pos{grid-area:pos}
+.ls-prow__av{grid-area:av;display:flex;align-items:center}
+.ls-prow__name{grid-area:name;min-width:0}
+.ls-prow__game{grid-area:game;min-width:0}
+.ls-prow__pts{grid-area:pts;text-align:right}
+.ls-prow__proj{grid-area:proj;text-align:right;font-size:12px;color:var(--fg-secondary)}
+
+/* Narrow WIDGET: stack the two sides, hide the team name, counts under the icon. */
 @container (max-width:640px){
   .ls-board{flex-direction:column;align-items:stretch;gap:10px}
-  .ls-sb{flex:1 1 auto}
-  .ls-sb--home .ls-sb__pill{order:1}
-  .ls-sb--home .ls-sb__id{order:2;text-align:left}
-  .ls-sb--home .ls-sb__score{order:3;text-align:right}
+  .ls-sb,.ls-sb--home{flex:1 1 auto;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"pill score" "counts score"}
+  .ls-sb__name{display:none}
+  .ls-sb__pill{justify-content:flex-start}
+  .ls-sb__counts,.ls-sb--home .ls-sb__counts{text-align:left;white-space:normal}
+  .ls-sb__score,.ls-sb--home .ls-sb__score{text-align:right}
   .ls-vs{padding:2px 0}
   .ls-sb__pts{font-size:40px}
-  .ls-sb__name{font-size:20px}
+}
+/* Narrow COLUMN: reflow the player row to two lines so all data fits, no scroll. */
+@container (max-width:520px){
+  .ls-lcol__inner{min-width:0}
+  .ls-lhead{display:none}
+  .ls-prow{grid-template-columns:24px 34px minmax(0,1fr) auto;grid-template-areas:"pos av name pts" "pos av game proj";column-gap:8px;row-gap:1px;padding:9px 12px}
+  .ls-prow--bench{padding:8px 12px}
 }
 
 /* Conference filter tabs */

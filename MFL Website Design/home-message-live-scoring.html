@@ -927,29 +927,51 @@
    long team name truncates instead of shoving the layout around. */
 .ls-board{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center}
 .ls-vs{flex:0 0 auto;text-align:center;padding:0 6px;font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--fg-tertiary);letter-spacing:.08em}
-.ls-sb{flex:1 1 300px;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center}
-.ls-sb__pill{display:flex;align-items:center}
-.ls-sb__id{min-width:0}
-.ls-sb__name{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ls-sb__counts{font:600 9px/1.3 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);margin-top:9px}
-.ls-sb__score{text-align:right;white-space:nowrap}
+.ls-sb{flex:1 1 300px;min-width:0;display:grid;column-gap:16px;align-items:center;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pill name score" "pill counts score"}
+.ls-sb__pill{grid-area:pill;display:flex;align-items:center;justify-content:center}
+.ls-sb__name{grid-area:name;align-self:end;font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls-sb__counts{grid-area:counts;align-self:start;margin-top:6px;font:600 9px/1.3 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls-sb__score{grid-area:score;text-align:right;white-space:nowrap}
 .ls-sb__pts{font-family:var(--font-display);font-weight:700;font-size:58px;line-height:.9}
 .ls-sb__proj{font:600 10px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);margin-top:7px}
-/* Home side mirrors on desktop: score inner-left, name right-aligned, pill far-right. */
-.ls-sb--home .ls-sb__score{order:1;text-align:left}
-.ls-sb--home .ls-sb__id{order:2;text-align:right}
-.ls-sb--home .ls-sb__pill{order:3}
-/* Stack the two sides once they no longer fit; un-mirror home so both read
-   pill → name → score, and dial the big score/name down to fit a phone. */
+/* Home side mirrors on desktop: score inner-left, name/counts right-aligned, pill far-right. */
+.ls-sb--home{grid-template-areas:"score name pill" "score counts pill"}
+.ls-sb--home .ls-sb__name,.ls-sb--home .ls-sb__counts{text-align:right}
+.ls-sb--home .ls-sb__score{text-align:left}
+
+/* Lineup column + player-row grid. The column is its OWN container so each row
+   reflows based on the column's width (not the whole widget) — no horizontal
+   scroll at any size. */
+.ls-lcol{container-type:inline-size;flex:1 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto}
+.ls-lcol__inner{min-width:520px}
+.ls-lhead,.ls-prow{display:grid;column-gap:10px;align-items:center;grid-template-columns:36px 34px minmax(0,1fr) 118px 52px 44px;grid-template-areas:"pos av name game pts proj"}
+.ls-lhead{padding:9px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary)}
+.ls-prow{padding:9px 18px;border-bottom:1px solid rgba(42,42,42,.55)}
+.ls-prow--bench{padding:8px 18px;border-bottom-color:rgba(42,42,42,.4);opacity:.72}
+.ls-prow__pos{grid-area:pos}
+.ls-prow__av{grid-area:av;display:flex;align-items:center}
+.ls-prow__name{grid-area:name;min-width:0}
+.ls-prow__game{grid-area:game;min-width:0}
+.ls-prow__pts{grid-area:pts;text-align:right}
+.ls-prow__proj{grid-area:proj;text-align:right;font-size:12px;color:var(--fg-secondary)}
+
+/* Narrow WIDGET: stack the two sides, hide the team name, counts under the icon. */
 @container (max-width:640px){
   .ls-board{flex-direction:column;align-items:stretch;gap:10px}
-  .ls-sb{flex:1 1 auto}
-  .ls-sb--home .ls-sb__pill{order:1}
-  .ls-sb--home .ls-sb__id{order:2;text-align:left}
-  .ls-sb--home .ls-sb__score{order:3;text-align:right}
+  .ls-sb,.ls-sb--home{flex:1 1 auto;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"pill score" "counts score"}
+  .ls-sb__name{display:none}
+  .ls-sb__pill{justify-content:flex-start}
+  .ls-sb__counts,.ls-sb--home .ls-sb__counts{text-align:left;white-space:normal}
+  .ls-sb__score,.ls-sb--home .ls-sb__score{text-align:right}
   .ls-vs{padding:2px 0}
   .ls-sb__pts{font-size:40px}
-  .ls-sb__name{font-size:20px}
+}
+/* Narrow COLUMN: reflow the player row to two lines so all data fits, no scroll. */
+@container (max-width:520px){
+  .ls-lcol__inner{min-width:0}
+  .ls-lhead{display:none}
+  .ls-prow{grid-template-columns:24px 34px minmax(0,1fr) auto;grid-template-areas:"pos av name pts" "pos av game proj";column-gap:8px;row-gap:1px;padding:9px 12px}
+  .ls-prow--bench{padding:8px 12px}
 }
 
 /* Conference filter tabs */
@@ -1818,8 +1840,7 @@ const useTeamColor = side => {
   return color;
 };
 
-// ── Player row (starters + bench share the same 6-column grid) ────────────────
-const GRID = '36px 34px minmax(0,1fr) 118px 52px 44px';
+// ── Player row — CSS grid (.ls-prow) so it can reflow on a narrow container ────
 const PlayerRow = ({
   p,
   flash,
@@ -1828,19 +1849,13 @@ const PlayerRow = ({
 }) => {
   const fxColor = flash ? flash.dir === 'up' ? '#57B87F' : '#D66A6A' : '';
   return /*#__PURE__*/React.createElement("div", {
-    className: "ls-row",
+    className: 'ls-row ls-prow' + (bench ? ' ls-prow--bench' : ''),
     style: {
-      display: 'grid',
-      gridTemplateColumns: GRID,
-      gap: '10px',
-      alignItems: 'center',
-      padding: bench ? '8px 18px' : '9px 18px',
-      borderBottom: '1px solid rgba(42,42,42,' + (bench ? '.4' : '.55') + ')',
       borderTop: groupStart ? '1px solid var(--border-strong)' : undefined,
-      opacity: bench ? 0.72 : 1,
       animation: flash ? 'cffb-ls-flash' + flash.dir + ' 2.4s ease-out' : 'none'
     }
   }, /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__pos",
     style: {
       fontFamily: 'var(--font-display)',
       fontWeight: 700,
@@ -1848,13 +1863,13 @@ const PlayerRow = ({
       color: 'var(--fg-tertiary)',
       letterSpacing: '.04em'
     }
-  }, p.pos), /*#__PURE__*/React.createElement(Avatar, {
+  }, p.pos), /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__av"
+  }, /*#__PURE__*/React.createElement(Avatar, {
     p: p,
     size: 34
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      minWidth: 0
-    }
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__name"
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
@@ -1889,9 +1904,7 @@ const PlayerRow = ({
       textOverflow: 'ellipsis'
     }
   }, p.name))), /*#__PURE__*/React.createElement("span", {
-    style: {
-      minWidth: 0
-    }
+    className: "ls-prow__game"
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'block',
@@ -1920,9 +1933,7 @@ const PlayerRow = ({
       animation: 'cffb-ls-pulse 1.6s ease-in-out infinite'
     }
   }), p.gameDetail)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      textAlign: 'right'
-    }
+    className: "ls-prow__pts"
   }, /*#__PURE__*/React.createElement("span", {
     className: "cffb-num",
     style: {
@@ -1945,12 +1956,7 @@ const PlayerRow = ({
       color: fxColor
     }
   }, flash.delta)), /*#__PURE__*/React.createElement("span", {
-    className: "cffb-num",
-    style: {
-      textAlign: 'right',
-      fontSize: '12px',
-      color: 'var(--fg-secondary)'
-    }
+    className: "cffb-num ls-prow__proj"
   }, p.proj != null ? fmt(p.proj) : '—'));
 };
 
@@ -1959,23 +1965,15 @@ const LineupColumn = ({
   side,
   flashes
 }) => {
-  const [openBench, setOpenBench] = useState(true);
+  // On a narrow (phone-width) container the bench starts collapsed to keep the
+  // lineup compact; on desktop it starts open.
+  const [openBench, setOpenBench] = useState(() => typeof window === 'undefined' || window.innerWidth > 640);
   const benchPts = side.bench.reduce((a, p) => a + p.pts, 0);
   const fl = p => flashes[side.key + '|' + p.pid];
   return /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: '1 1 460px',
-      minWidth: 0,
-      background: 'var(--bg-surface)',
-      border: '1px solid var(--border)',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      overflowX: 'auto'
-    }
+    className: "ls-lcol"
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      minWidth: '520px'
-    }
+    className: "ls-lcol__inner"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
@@ -2008,27 +2006,22 @@ const LineupColumn = ({
       color: 'var(--gold)'
     }
   }, fmt(side.pts))), /*#__PURE__*/React.createElement("div", {
+    className: "ls-lhead"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__pos"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__av"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__name"
+  }, "Player"), /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__game"
+  }, "Game"), /*#__PURE__*/React.createElement("span", {
+    className: "ls-prow__pts",
     style: {
-      display: 'grid',
-      gridTemplateColumns: GRID,
-      gap: '10px',
-      alignItems: 'center',
-      padding: '9px 18px',
-      borderBottom: '1px solid var(--border)',
-      font: '600 9px/1 var(--font-body)',
-      letterSpacing: '.14em',
-      textTransform: 'uppercase',
-      color: 'var(--fg-tertiary)'
-    }
-  }, /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("span", null, "Player"), /*#__PURE__*/React.createElement("span", null, "Game"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      textAlign: 'right',
       color: 'var(--gold)'
     }
   }, "Pts"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      textAlign: 'right'
-    }
+    className: "ls-prow__proj"
   }, "Proj")), side.starters.map((p, i, arr) => /*#__PURE__*/React.createElement(PlayerRow, {
     key: p.pid,
     p: p,
@@ -2103,8 +2096,6 @@ const SideBlock = ({
   side: side,
   size: 64
 })), /*#__PURE__*/React.createElement("div", {
-  className: "ls-sb__id"
-}, /*#__PURE__*/React.createElement("div", {
   className: "ls-sb__name",
   title: side.name
 }, side.name), /*#__PURE__*/React.createElement("div", {
@@ -2113,7 +2104,7 @@ const SideBlock = ({
   style: {
     color: '#57B87F'
   }
-}, side.playing, " playing"), " \xB7 ", side.left, " to play \xB7 ", side.done, " final")), /*#__PURE__*/React.createElement("div", {
+}, side.playing, " playing"), " \xB7 ", side.left, " to play \xB7 ", side.done, " final"), /*#__PURE__*/React.createElement("div", {
   className: "ls-sb__score"
 }, /*#__PURE__*/React.createElement("div", {
   className: "cffb-num ls-sb__pts",

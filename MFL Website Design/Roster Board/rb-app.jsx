@@ -82,10 +82,13 @@ const Awards = ({ awards }) => {
   );
 };
 
-const INJ = { P: ['rb-status--ok', '#4A9968', 'PROB'], Q: ['rb-status--q', '#C9A227', 'QUES'], O: ['rb-status--o', '#B84545', 'OUT'] };
+// Injury severity code → [status class, dot color]. The visible LABEL is the
+// specific MFL designation carried on p.injury[1] (OUT / QUESTIONABLE / IR / …).
+const INJ = { P: ['rb-status--ok', '#4A9968'], Q: ['rb-status--q', '#C9A227'], O: ['rb-status--o', '#B84545'] };
+// Status is the player's MFL injury designation only (redshirt lives in its own
+// column / KPI). Order: a real MFL designation → the franchise IR slot → ACTIVE.
 const Status = ({ p }) => {
-  if (p.elig.redshirtingNow) return <span className="rb-status rb-status--rs" title="Redshirting this season — cannot score">● REDSHIRT</span>;
-  if (p.injury) { const [cls, dot, label] = INJ[p.injury[0]]; return <span className={'rb-status ' + cls} title={p.injury[1]}><span className="d" style={{ background: dot }} />{label}</span>; }
+  if (p.injury) { const [cls, dot] = INJ[p.injury[0]] || INJ.Q; return <span className={'rb-status ' + cls} title={p.injury[2] || p.injury[1]}><span className="d" style={{ background: dot }} />{p.injury[1]}</span>; }
   // No NFL injury-report entry, but the player is on the franchise IR slot →
   // still show an IR tag (they can't be on IR without an injury) rather than ACTIVE.
   if (p.reserve) return <span className="rb-status rb-status--o" title="On Injured Reserve"><span className="d" style={{ background: '#B84545' }} />IR</span>;
@@ -150,11 +153,25 @@ const Row = ({ p, onGo, ir }) => (
 const ConfTabs = ({ team, setTeam }) => {
   const [open, setOpen] = useState(null);
   const [alignRight, setAlignRight] = useState(false);
+  const tabsRef = React.useRef(null);
   useEffect(() => {
     const close = (e) => { if (!e.target.closest('.rb-conftab')) setOpen(null); };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, []);
+  // The widget mount (#cffb-rb-root) has `container-type`, which creates a
+  // containment/stacking context that TRAPS every internal z-index below MFL's
+  // own page chrome (e.g. #homepagetabs) — so the team dropdown can't paint over
+  // it. While a dropdown is open, lift the whole widget root above the page
+  // chrome; restore it on close so the widget never permanently covers MFL's nav.
+  // (closest('[id]') resolves to the mount node — our React tree carries no other id.)
+  useEffect(() => {
+    const root = tabsRef.current && tabsRef.current.closest('[id]');
+    if (!root) return;
+    if (open != null) { root.style.position = 'relative'; root.style.zIndex = '99999'; }
+    else { root.style.zIndex = ''; root.style.position = ''; }
+    return () => { root.style.zIndex = ''; root.style.position = ''; };
+  }, [open]);
   // Align the menu to whichever tab edge keeps it on-screen (tabs can wrap rows).
   const toggle = (c) => (e) => {
     const btn = e.currentTarget;
@@ -164,12 +181,12 @@ const ConfTabs = ({ team, setTeam }) => {
   };
   const activeConf = TEAMS[team].conf;
   return (
-    <div className="rb-tabs" role="tablist">
+    <div className="rb-tabs" role="tablist" ref={tabsRef}>
       {CONF_ORDER.map((c) => {
         const teams = TEAM_ORDER.filter((id) => TEAMS[id].conf === c);
         const isActive = c === activeConf;
         return (
-          <div key={c} className="rb-conftab">
+          <div key={c} className="rb-conftab" style={open === c ? { zIndex: 60 } : null}>
             <button role="tab" aria-selected={isActive} aria-expanded={open === c} className={'rb-tab' + (isActive ? ' is-active' : '')} style={isActive ? { boxShadow: 'inset 0 -2px 0 ' + CONF_ACCENT[c] } : null} onClick={toggle(c)}>
               {CONF_META[c].logo && <img className="rb-conflogo" src={CONF_META[c].logo} alt="" />}
               <span className="rb-tab__abbr">{CONF_META[c].label}</span>

@@ -128,26 +128,20 @@ const useTeamColor = (side) => {
   return color;
 };
 
-// ── Player row (starters + bench share the same 6-column grid) ────────────────
-const GRID = '36px 34px minmax(0,1fr) 118px 52px 44px';
-
+// ── Player row — CSS grid (.ls-prow) so it can reflow on a narrow container ────
 const PlayerRow = ({ p, flash, bench, groupStart }) => {
   const fxColor = flash ? (flash.dir === 'up' ? '#57B87F' : '#D66A6A') : '';
   return (
     <div
-      className="ls-row"
+      className={'ls-row ls-prow' + (bench ? ' ls-prow--bench' : '')}
       style={{
-        display: 'grid', gridTemplateColumns: GRID, gap: '10px', alignItems: 'center',
-        padding: bench ? '8px 18px' : '9px 18px',
-        borderBottom: '1px solid rgba(42,42,42,' + (bench ? '.4' : '.55') + ')',
         borderTop: groupStart ? '1px solid var(--border-strong)' : undefined,
-        opacity: bench ? 0.72 : 1,
         animation: flash ? 'cffb-ls-flash' + flash.dir + ' 2.4s ease-out' : 'none',
       }}
     >
-      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: (bench ? 11 : 12) + 'px', color: 'var(--fg-tertiary)', letterSpacing: '.04em' }}>{p.pos}</span>
-      <Avatar p={p} size={34} />
-      <span style={{ minWidth: 0 }}>
+      <span className="ls-prow__pos" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: (bench ? 11 : 12) + 'px', color: 'var(--fg-tertiary)', letterSpacing: '.04em' }}>{p.pos}</span>
+      <span className="ls-prow__av"><Avatar p={p} size={34} /></span>
+      <span className="ls-prow__name">
         <span style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
           {p.playerId && typeof MFL_PLAYER_LINK === 'function' ? (
             <a
@@ -162,37 +156,39 @@ const PlayerRow = ({ p, flash, bench, groupStart }) => {
           )}
         </span>
       </span>
-      <span style={{ minWidth: 0 }}>
+      <span className="ls-prow__game">
         <span style={{ display: 'block', font: '600 10px/1.2 var(--font-body)', color: 'var(--fg-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.team || '—'}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '5px', font: '600 10px/1.2 var(--font-body)', marginTop: '2px', color: stColor(p.st) }}>
           {p.isLive && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#57B87F', flex: 'none', animation: 'cffb-ls-pulse 1.6s ease-in-out infinite' }} />}
           {p.gameDetail}
         </span>
       </span>
-      <span style={{ textAlign: 'right' }}>
+      <span className="ls-prow__pts">
         <span className="cffb-num" style={{ display: 'inline-block', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: (bench ? 16 : 18) + 'px', color: p.st === 'PRE' ? 'var(--fg-tertiary)' : 'var(--fg-primary)', animation: flash ? 'cffb-ls-pop .6s ease-out' : 'none', ...(flash ? { color: fxColor } : {}) }}>{fmt(p.pts)}</span>
         {flash && <span className="cffb-num" style={{ display: 'block', font: '700 10px/1 var(--font-body)', marginTop: '2px', color: fxColor }}>{flash.delta}</span>}
       </span>
-      <span className="cffb-num" style={{ textAlign: 'right', fontSize: '12px', color: 'var(--fg-secondary)' }}>{p.proj != null ? fmt(p.proj) : '—'}</span>
+      <span className="cffb-num ls-prow__proj">{p.proj != null ? fmt(p.proj) : '—'}</span>
     </div>
   );
 };
 
 // ── Lineup column (starters + collapsible bench) ──────────────────────────────
 const LineupColumn = ({ side, flashes }) => {
-  const [openBench, setOpenBench] = useState(true);
+  // On a narrow (phone-width) container the bench starts collapsed to keep the
+  // lineup compact; on desktop it starts open.
+  const [openBench, setOpenBench] = useState(() => typeof window === 'undefined' || window.innerWidth > 640);
   const benchPts = side.bench.reduce((a, p) => a + p.pts, 0);
   const fl = (p) => flashes[side.key + '|' + p.pid];
   return (
-    <div style={{ flex: '1 1 460px', minWidth: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', overflowX: 'auto' }}>
-      <div style={{ minWidth: '520px' }}>
+    <div className="ls-lcol">
+      <div className="ls-lcol__inner">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '19px', textTransform: 'uppercase' }}>{side.name}</span>
           <span style={{ marginLeft: 'auto', font: '600 9px/1 var(--font-body)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }}>Starters</span>
           <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '19px', color: 'var(--gold)' }}>{fmt(side.pts)}</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: GRID, gap: '10px', alignItems: 'center', padding: '9px 18px', borderBottom: '1px solid var(--border)', font: '600 9px/1 var(--font-body)', letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }}>
-          <span /><span /><span>Player</span><span>Game</span><span style={{ textAlign: 'right', color: 'var(--gold)' }}>Pts</span><span style={{ textAlign: 'right' }}>Proj</span>
+        <div className="ls-lhead">
+          <span className="ls-prow__pos" /><span className="ls-prow__av" /><span className="ls-prow__name">Player</span><span className="ls-prow__game">Game</span><span className="ls-prow__pts" style={{ color: 'var(--gold)' }}>Pts</span><span className="ls-prow__proj">Proj</span>
         </div>
         {side.starters.map((p, i, arr) => <PlayerRow key={p.pid} p={p} flash={fl(p)} groupStart={i > 0 && arr[i - 1].pos !== p.pos} />)}
         {side.bench.length > 0 && (
@@ -226,11 +222,9 @@ const LineupColumn = ({ side, flashes }) => {
 const SideBlock = ({ side, home, leading }) => (
   <div className={'ls-sb' + (home ? ' ls-sb--home' : '')}>
     <span className="ls-sb__pill"><Pill side={side} size={64} /></span>
-    <div className="ls-sb__id">
-      <div className="ls-sb__name" title={side.name}>{side.name}</div>
-      <div className="ls-sb__counts">
-        <span style={{ color: '#57B87F' }}>{side.playing} playing</span> · {side.left} to play · {side.done} final
-      </div>
+    <div className="ls-sb__name" title={side.name}>{side.name}</div>
+    <div className="ls-sb__counts">
+      <span style={{ color: '#57B87F' }}>{side.playing} playing</span> · {side.left} to play · {side.done} final
     </div>
     <div className="ls-sb__score">
       <div className="cffb-num ls-sb__pts" style={{ color: leading ? 'var(--fg-primary)' : 'var(--fg-secondary)' }}>{fmt(side.pts)}</div>

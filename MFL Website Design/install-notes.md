@@ -152,9 +152,41 @@ share one React runtime (loaded once) and coexist on the same page.
 | Standings | `home-message-standings.html` | `npm run build:standings` | Apps Script `/exec` |
 | Power Rankings | `home-message-power-rankings.html` | `npm run build:power-rankings` | Apps Script `/exec` |
 | Contract Board | `home-message.html` | `npm run build:contract-board` | `players.txt` |
-| Playoff Bracket | `home-message-bracket.html` | hand-authored | sample / stub |
+| Playoff Bracket | `home-message-bracket.html` | hand-authored | MFL export API (live, client-side) |
 | **Player Ledger** | `home-message-player-ledger.html` | `npm run build:player-ledger` | Apps Script `/exec?feed=ledger` |
 | **Roster Board** | `home-message-roster-board.html` | `npm run build:roster-board` | MFL export API (live, client-side) |
+
+### Playoff Bracket
+
+The 16-team bracket, filled **live from the league's own playoff data** — no
+Apps Script, no deploy, no external service. Paste the whole
+`home-message-bracket.html` into its own home page message (Advanced Editor
+**OFF**).
+
+- **Live, client-side, same-origin.** Because it runs *on* an MFL page, it reads
+  the globals MFL already defines (`franchiseDatabase`, `franchise_id`,
+  `league_id`) and calls the MFL export API same-origin (no CORS, logged-in
+  session honored for private leagues):
+  - `export?TYPE=playoffBrackets` — locate the bracket. It auto-selects the one
+    **named "National Championship Playoffs"** (regex match), falling back to the
+    first bracket if the name changes.
+  - `export?TYPE=playoffBracket&BRACKET_ID=…` — the games, seeds, points, and
+    results. **Winners are derived from MFL's own advancement** (the next round's
+    `winner_of_game` link), so a team only shows as a winner once MFL has actually
+    advanced it; the championship is decided by higher score once the week is past.
+  - `export?TYPE=leagueStandings` — record / points-for / points-against for the
+    click-through detail panel (best-effort; the bracket still renders if it fails).
+- **Auto status.** Each game reads Final / Live / TBD on its own: past-week games
+  are Final, current-week games with points are Live, and future/undecided slots
+  show "Winner of Game N". The header pill switches between "<Round> Live" and
+  "Champion Crowned", and the champion fills in automatically.
+- **Team identity** (name, logo, seed) comes from `franchiseDatabase` + the
+  bracket seeds; the panel defaults to the **signed-in franchise** if it made the
+  field, else the 1-seed.
+- **Preview fallback.** Opened as a plain file (no MFL globals), it renders the
+  built-in demo bracket so the layout can be previewed locally.
+- **Override week (debug):** set `window.CFFB_BRACKET_WEEK = <n>` before the
+  widget to force which playoff week counts as "current".
 
 ### Player Ledger
 

@@ -149,19 +149,34 @@ function encodedForFranchise(pl, fid) {
 // medical redshirt, and each one adds a year of eligibility + its own dot.
 function deriveElig(cls, rss) {
   rss = rss || [];
-  const idx = Math.max(0, CLASS_SEQ.indexOf(cls));  // FR=0 … GR=4
-  const played = idx + 1;                            // seasons enrolled incl. this one
+  const idx = Math.max(0, CLASS_SEQ.indexOf(cls));  // FR=0 … GR=4  (== competition years used)
   const nRS = rss.length;
-  const dots = [];
-  for (let i = 0; i < played; i++) dots.push('used');
-  // Insert one ring per redshirt, right after the first played year.
-  rss.forEach((r, k) => dots.splice(Math.min(dots.length, 1 + k), 0, r.type === 'med' ? 'rs-med' : 'rs'));
+  const rsMap = {};                                  // year -> ring kind ('rs' | 'rs-med')
+  rss.forEach((r) => { rsMap[r.year] = r.type === 'med' ? 'rs-med' : 'rs'; });
+  const redshirtingNow = !!rsMap[SEASON];
+
+  // Reconstruct the enrollment timeline chronologically so a redshirt renders as a
+  // RING in the year it actually happened — e.g. a redshirt freshman's FIRST dot is
+  // the ring (redshirt year), then a filled dot for the season played. The old code
+  // always jammed the ring after the first filled dot, mis-ordering it.
+  //
+  // Competition (play) seasons = class index, +1 for the in-progress season unless
+  // that season is itself a redshirt. Walk them back from the current season,
+  // skipping redshirt years, then merge with the redshirt years and sort ascending.
+  const compCount = idx + (redshirtingNow ? 0 : 1);
+  const compYears = [];
+  for (let y = SEASON; y > SEASON - 40 && compYears.length < compCount; y--) {
+    if (!rsMap[y]) compYears.push(y);
+  }
+  const years = compYears.concat(Object.keys(rsMap).map(Number)).sort((a, b) => a - b);
+  const dots = years.map((y) => rsMap[y] || 'used');
+
   const allowed = 4 + nRS;                            // each redshirt buys a year back
-  const usedBefore = Math.max(played - 1, 0);
+  const usedBefore = Math.max(idx, 0);
   const remaining = allowed - usedBefore;
   while (dots.length < Math.min(allowed + nRS, 6)) dots.push('open');
   const remainLabel = remaining <= 0 ? 'No eligibility' : remaining === 1 ? 'Final year' : remaining + ' left';
-  return { cls: (nRS ? 'R-' : '') + cls, dots, remaining, remainLabel, redshirtingNow: rss.some((r) => r.year === SEASON) };
+  return { cls: (nRS ? 'R-' : '') + cls, dots, remaining, remainLabel, redshirtingNow };
 }
 
 const initialsOf = (name) => {
@@ -171,17 +186,24 @@ const initialsOf = (name) => {
 };
 const displayName = (name) => (name.indexOf(',') >= 0 ? name.split(',').map((s) => s.trim()).reverse().join(' ') : name);
 
-// Normalize an MFL injury status string to the board's P / Q / O codes.
-function injuryCode(status) {
+// Normalize an MFL injury-report status string into { code, label }:
+//  • code  = severity bucket that drives color + the "Out" KPI (P green / Q gold / O red),
+//  • label = the SPECIFIC MFL designation to display (OUT, DOUBTFUL, QUESTIONABLE,
+//            IR, PUP, SUSPENDED, …) rather than a collapsed bucket.
+// Returns null for no/empty designation (the player reads ACTIVE).
+function injuryDesignation(status) {
   const s = String(status || '').toUpperCase().trim();
   if (!s) return null;
-  if (s === 'P' || s.indexOf('PROB') >= 0) return 'P';                       // probable
-  if (s === 'Q' || s.indexOf('QUES') >= 0 || s.indexOf('GTD') >= 0
-    || s.indexOf('GAME') >= 0 || s.indexOf('DAY') >= 0) return 'Q';          // questionable / day-to-day
-  if (s === 'O' || s.indexOf('OUT') >= 0 || s === 'D' || s.indexOf('DOUBT') >= 0
-    || s === 'IR' || s.indexOf('RESERVE') >= 0 || s.indexOf('PUP') >= 0
-    || s.indexOf('SUSP') >= 0 || s.indexOf('NFI') >= 0) return 'O';          // out / doubtful / IR / PUP / suspended
-  return 'Q'; // unrecognized but present → surface it as questionable rather than hide
+  const has = (sub) => s.indexOf(sub) >= 0;
+  if (s === 'IR' || has('INJURED RESERVE') || has('RESERVE')) return { code: 'O', label: 'IR' };
+  if (has('PUP')) return { code: 'O', label: 'PUP' };
+  if (has('NFI')) return { code: 'O', label: 'NFI' };
+  if (has('SUSP')) return { code: 'O', label: 'SUSP' };
+  if (s === 'O' || has('OUT')) return { code: 'O', label: 'OUT' };
+  if (s === 'D' || has('DOUBT')) return { code: 'O', label: 'DOUBTFUL' };
+  if (s === 'Q' || has('QUES') || has('GTD') || has('GAME') || has('DAY')) return { code: 'Q', label: 'QUESTIONABLE' };
+  if (s === 'P' || has('PROB')) return { code: 'P', label: 'PROBABLE' };
+  return { code: 'Q', label: s }; // unrecognized but present → surface it verbatim (gold)
 }
 
 // MEMBERSHIP is keyed by franchise id, so teamKey and the returned "other copy"
@@ -249,7 +271,9 @@ function buildRoster(teamKey) {
   const all = active.concat(taxi, ir);
   const totalPts = all.reduce((s, r) => s + r.pts, 0);
   const rsCount  = all.filter((r) => r.elig.redshirtingNow).length;
-  const outCount = all.filter((r) => r.injury && r.injury[0] === 'O').length;
+  // "Out" = OUT-level MFL injury designation (Out/IR/PUP/Doubtful/etc.) OR sitting
+  // on the franchise IR slot — counted across the active roster, taxi, and IR.
+  const outCount = all.filter((r) => (r.injury && r.injury[0] === 'O') || r.reserve).length;
   return { groups, taxi, ir, totalPts, rsCount, outCount, count: all.length };
 }
 
@@ -436,7 +460,7 @@ function parseByeWeeks(d) {
 }
 
 // ── localStorage stale-while-revalidate cache (widget-unique key) ─────────────
-const RB_CACHE_KEY = 'cffb_roster_board_v13';  // v13: other-copy GRAD (FA+GR); owner names
+const RB_CACHE_KEY = 'cffb_roster_board_v14';  // v14: injury = [code,label,details] (specific MFL designations)
 const RB_FRESH_MS  = 30 * 60 * 1000;             // serve without refetch
 const RB_MAX_MS    = 24 * 60 * 60 * 1000;        // hard cap
 function rbReadCache() {
@@ -490,15 +514,15 @@ async function rbFetchPayload(fidToAbbr) {
   });
 
   // Injuries: MFL's TYPE=injuries report (these are real NFL players, so it
-  // matches by id). Normalize the status to P / Q / O — MFL sends full words
-  // ("Questionable"), short codes ("Q"), or variants ("IR", "PUP", "Doubtful"),
-  // so map broadly and treat any other non-empty designation as questionable
-  // rather than dropping it.
+  // matches by id). We keep the SPECIFIC designation (OUT/QUESTIONABLE/IR/…) for
+  // the Status column plus a severity code for color/KPIs. MFL sends full words
+  // ("Questionable"), short codes ("Q"), or variants ("IR", "PUP", "Doubtful").
   const injList = injuryListOf(injuriesD);
   let injMatched = 0;
   injList.forEach((inj) => {
-    const code = injuryCode(inj.status);
-    if (code && playersById[inj.id]) { playersById[inj.id].injury = [code, inj.details || inj.status || '']; injMatched++; }
+    const d = injuryDesignation(inj.status);
+    // injury = [code, label, details] — code drives color/KPIs, label is displayed.
+    if (d && playersById[inj.id]) { playersById[inj.id].injury = [d.code, d.label, inj.details || inj.status || '']; injMatched++; }
   });
   console.log('[CFFB Roster Board] injuries: ' + injList.length + ' report entries, ' + injMatched + ' matched to rostered players');
 

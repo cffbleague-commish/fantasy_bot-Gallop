@@ -10,13 +10,19 @@
   This file is self-contained: CSS + JS inline, no external image files.
   Fonts are loaded via @import so MFL's editor does not strip <link> tags.
 
-  Data:
-    The TEAMS / ROUNDS data inside the <script> block is sample data.
-    To wire in real data from a Google Sheet, replace the
-    "LOAD_BRACKET_DATA" stub at the bottom of the script with a fetch()
-    call to either:
-      - An Apps Script web app /exec URL returning JSON
-      - A "Publish to web" CSV URL parsed in the browser
+  Data (LIVE from MFL — no external service, no deploy):
+    When this message is displayed on an MFL page, the script reads the
+    globals MFL already defines (franchiseDatabase / league_id /
+    franchise_id) and calls the MFL export API *same-origin* (no CORS):
+      export?TYPE=playoffBrackets               -> find the bracket
+      export?TYPE=playoffBracket&BRACKET_ID=..  -> games + live results
+      export?TYPE=leagueStandings               -> record / points for/against
+    It auto-selects the bracket named "National Championship Playoffs"
+    (falls back to the first bracket) and fills in real teams, seeds,
+    matchups, scores, winners and the champion.
+    If those globals/feeds are unavailable (e.g. opening this file
+    locally), it falls back to the built-in demo data so the layout
+    still renders.
 -->
 
 <div id="cffb-pb-root">
@@ -349,8 +355,8 @@
       <p class="pb-sub">Sixteen teams. Four rounds. One champion.</p>
     </div>
     <div class="pb-head__r">
-      <span class="pb-live"><span class="pb-live__dot"></span>Semifinals Live</span>
-      <span class="pb-week">WEEK <b>16</b></span>
+      <span class="pb-live" id="pbLiveTag" style="display:none"><span class="pb-live__dot" id="pbLiveDot"></span><span id="pbLiveTxt">Live</span></span>
+      <span class="pb-week" id="pbWeekTag">WEEK <b id="pbWeekNum">&mdash;</b></span>
     </div>
   </div>
 
@@ -374,7 +380,260 @@
   window.__CFFB_PB_LOADED = true;
 
   /* ============================================================
-     Data — placeholder. Edit freely or replace via loadBracketData().
+     LIVE MFL wiring
+     ------------------------------------------------------------
+     TEAMS / ROUNDS / PAIRS / F below are the DEMO fallback used
+     for local preview. On an MFL page they are rebuilt from the
+     league's real playoff bracket (see boot() at the bottom).
+     ============================================================ */
+  var SEASON = 2025;                                  // fallback; overridden by page year
+  var BRACKET_NAME_RE = /national championship/i;     // preferred bracket name
+  var MFL_CTX = { origin:'', host:'', year:String(SEASON), league:'12011' };
+  var BRACKET_META = null;
+
+  /* ---- small utils ---- */
+  var asArray = function(x){ return Array.isArray(x) ? x : (x!=null ? [x] : []); };
+  function fmtNum(v){
+    var n = parseFloat(v);
+    if(!isFinite(n)) return (v==null ? '—' : String(v));
+    return n.toLocaleString('en-US',{maximumFractionDigits:1});
+  }
+  var PALETTE = ['#4B9CD3','#B84545','#C9A227','#2C5F8A','#5C7A6A','#6B5C8B',
+    '#A23B3B','#B5832E','#3A5680','#BC4B3C','#7A3B4A','#C05A3E','#C77A33',
+    '#6B4A8B','#3E7A52','#B5762E','#3E6B7A','#8B5C3B'];
+  function colorFor(id){
+    var n=0, s=String(id||'');
+    for(var i=0;i<s.length;i++){ n=(n*31 + s.charCodeAt(i))>>>0; }
+    return PALETTE[n % PALETTE.length];
+  }
+  // MFL franchise ICON URLs are often imgur "gallery" links; rewrite to the direct CDN.
+  function imgurDirect(u){
+    var m = String(u||'').match(/^https?:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]+)(?:\.[A-Za-z0-9]+)?$/i);
+    return m ? 'https://i.imgur.com/'+m[1]+'.png' : (u||'');
+  }
+
+  /* ---- MFL context ---- */
+  function resolveCtx(){
+    var origin = location.origin;
+    var yr = (String(location.pathname).match(/\/(20\d{2})\//)||[])[1]
+          || (String(location.href).match(/\/(20\d{2})\//)||[])[1]
+          || String(SEASON);
+    var league = String(window.league_id || (String(location.href).match(/[?&]L=(\d+)/)||[])[1] || MFL_CTX.league);
+    MFL_CTX = { origin:origin, host:origin, year:yr, league:league };
+    SEASON = parseInt(yr,10) || SEASON;
+  }
+  // Best-effort current NFL week from the browser clock (Week 1 ~ first Tuesday of Sept).
+  function guessNflWeek(y){
+    try{
+      var now=new Date(), sep1=new Date(y,8,1);
+      var firstTue=new Date(y,8,1+(2-sep1.getDay()+7)%7);
+      var wk=Math.floor((now-firstTue)/(7*864e5))+1;
+      return Math.min(Math.max(wk,1),18);
+    }catch(e){ return 18; }
+  }
+  function resolveWeek(){
+    if(window.CFFB_BRACKET_WEEK && isFinite(parseInt(window.CFFB_BRACKET_WEEK,10))) return parseInt(window.CFFB_BRACKET_WEEK,10);
+    var g = window.nfl_week || window.current_week || window.week;
+    if(g && isFinite(parseInt(g,10))) return parseInt(g,10);
+    return guessNflWeek(SEASON);
+  }
+  async function fetchJSON(type, extra){
+    var url = MFL_CTX.origin+'/'+MFL_CTX.year+'/export?TYPE='+type+'&L='+MFL_CTX.league+'&JSON=1'+(extra||'');
+    var res = await fetch(url, { cache:'no-store', credentials:'same-origin' });
+    if(!res.ok) throw new Error('HTTP '+res.status+' for '+type);
+    return res.json();
+  }
+
+  /* ---- Build TEAMS from the page's franchiseDatabase global ---- */
+  function buildTeamsFromDb(){
+    var db = window.franchiseDatabase;
+    if(!db || typeof db!=='object') return false;
+    var out={}, n=0;
+    Object.keys(db).forEach(function(k){
+      var f=db[k];
+      if(!f || !f.id || f.id==='0000') return; // skip commissioner pseudo-franchise
+      var abbr=(f.abbrev||f.id).toUpperCase();
+      out[f.id]={
+        id:f.id, name:f.name||abbr, abbr:abbr,
+        color:colorFor(f.id),
+        logo:imgurDirect(f.icon)||imgurDirect(f.logo)||'',
+        seed:null, mgr:'', rec:'—', pf:'—', pa:'—', streak:'—'
+      };
+      n++;
+    });
+    if(!n) return false;
+    TEAMS = out;
+    return true;
+  }
+
+  /* ---- Round naming (generic; handles the 16-team bracket + others) ---- */
+  function roundName(gamesInRound, isLast){
+    if(isLast) return { name:'Championship', short:'FIN' };
+    var teams = gamesInRound*2;
+    var map = {32:['Round of 32','R32'],16:['Round of 16','R16'],8:['Quarterfinals','QF'],4:['Semifinals','SF'],2:['Championship','FIN']};
+    if(map[teams]) return { name:map[teams][0], short:map[teams][1] };
+    return { name:teams+'-Team Round', short:'R'+teams };
+  }
+
+  function slotData(side){
+    side = side || {};
+    var team = side.franchise_id ? side.franchise_id : null;
+    var score = (side.points!=null && side.points!=='') ? side.points : null;
+    var tbd = team ? null
+      : (side.winner_of_game ? 'Winner of Game '+side.winner_of_game
+        : (side.seed ? ('No. '+side.seed+' seed') : 'To be decided'));
+    return { team:team, score:score, tbd:tbd, seed:(side.seed!=null&&side.seed!=='')?side.seed:null };
+  }
+
+  function makeMatch(g, week, winnerByGame, currentWeek){
+    var home=g.home||{}, away=g.away||{};
+    var a=slotData(home), b=slotData(away);
+    var wk=parseInt(week,10);
+    var win=winnerByGame[g.game_id]||null;                 // franchise that advanced (ground truth)
+    var hasBoth = !!(home.franchise_id && away.franchise_id);
+    var hp=parseFloat(home.points), ap=parseFloat(away.points);
+    var havePts = isFinite(hp)&&isFinite(ap)&&(hp>0||ap>0);
+    var status, winner=null;
+    if(!hasBoth){ status='pending'; }
+    else if(win){ status='final'; winner=win; }
+    else if(isFinite(wk) && wk<currentWeek){
+      status='final';
+      winner = (isFinite(hp)&&isFinite(ap)) ? (hp>=ap ? home.franchise_id : away.franchise_id) : null;
+    }
+    else if(isFinite(wk) && wk===currentWeek && havePts){ status='live'; }
+    else { status='pending'; }
+    return { id:'g'+g.game_id, a:a, b:b, status:status, winner:winner };
+  }
+
+  /* ---- Turn the MFL playoffBracket feed into ROUNDS / PAIRS / F ---- */
+  function buildModel(rawRounds){
+    var rounds = asArray(rawRounds).map(function(r){ return { week:r.week, games:asArray(r.playoffGame) }; });
+    if(!rounds.length) return false;
+    var currentWeek = resolveWeek();
+
+    // seeds + winner propagation (a later game's side lists winner_of_game + the franchise that advanced)
+    var seedMap={}, winnerByGame={};
+    rounds.forEach(function(r){
+      r.games.forEach(function(g){
+        ['home','away'].forEach(function(k){
+          var s=g[k]||{};
+          if(s.franchise_id){
+            if(s.seed!=null && s.seed!=='' && seedMap[s.franchise_id]==null) seedMap[s.franchise_id]=s.seed;
+            if(s.winner_of_game) winnerByGame[s.winner_of_game]=s.franchise_id;
+          }
+        });
+      });
+    });
+    Object.keys(seedMap).forEach(function(fid){ if(TEAMS[fid]) TEAMS[fid].seed=parseInt(seedMap[fid],10); });
+
+    var newRounds=[], newPairs=[];
+    rounds.forEach(function(r, ri){
+      var isLast = ri===rounds.length-1;
+      var rn = roundName(r.games.length, isLast);
+      var matches = r.games.map(function(g){ return makeMatch(g, r.week, winnerByGame, currentWeek); });
+      newRounds.push({ key:rn.short, name:rn.name, short:rn.short, week:'Wk '+r.week, weekNum:parseInt(r.week,10), matches:matches });
+      r.games.forEach(function(g){
+        ['home','away'].forEach(function(k){
+          var s=g[k]||{};
+          if(s.winner_of_game) newPairs.push(['g'+s.winner_of_game, 'g'+g.game_id]);
+        });
+      });
+    });
+
+    ROUNDS = newRounds;
+    PAIRS = newPairs;
+    F = ROUNDS[ROUNDS.length-1].matches[0];
+    return true;
+  }
+
+  /* ---- Enrich detail-panel stats from leagueStandings (best-effort) ---- */
+  async function enrichStandings(){
+    var s = await fetchJSON('leagueStandings');
+    asArray(s.leagueStandings && s.leagueStandings.franchise).forEach(function(f){
+      var t=TEAMS[f.id]; if(!t) return;
+      var w=parseInt(f.h2hw,10)||0, l=parseInt(f.h2hl,10)||0, ti=parseInt(f.h2ht,10)||0;
+      t.rec = w+'-'+l+(ti>0?'-'+ti:'');
+      t.pf = fmtNum(f.pf);
+      t.pa = fmtNum(f.pa);
+    });
+  }
+
+  /* ---- Playoff win streak, derived from the bracket path ---- */
+  function playoffStreak(id){
+    var rows=buildPath(id), w=0, out=false;
+    rows.forEach(function(r){ if(r[2]==='done') w++; else if(r[2]==='out') out=true; });
+    return out ? 'OUT' : (w>0 ? ('W'+w) : '—');
+  }
+
+  function inBracket(id){
+    return ROUNDS.some(function(r){ return r.matches.some(function(m){ return m.a.team===id || m.b.team===id; }); });
+  }
+  function pickFeatured(){
+    var my=String(window.franchise_id||'');
+    if(my && TEAMS[my] && inBracket(my)) return my;
+    var one=Object.keys(TEAMS).filter(function(k){ return TEAMS[k].seed===1 && inBracket(k); })[0];
+    if(one) return one;
+    var any=Object.keys(TEAMS).filter(inBracket)[0];
+    return any || Object.keys(TEAMS)[0];
+  }
+
+  /* ---- Final column + champion (dynamic) ---- */
+  function finalCol(round){
+    var fm=round.matches[0];
+    var title=(MFL_CTX.year||SEASON)+' '+((BRACKET_META&&BRACKET_META.bracketWinnerTitle)||'League Champion');
+    var champVal='&mdash; Awaiting Title Game &mdash;';
+    if(fm && fm.winner && TEAMS[fm.winner]) champVal=TEAMS[fm.winner].name;
+    var statusHtml = fm && fm.status==='live' ? '<span class="pb-match__status is-live">Live</span>'
+                   : fm && fm.status==='final' ? '<span class="pb-match__status is-final">Final</span>'
+                   : '<span class="pb-match__status">'+round.week+'</span>';
+    return '<div class="pb-col pb-col--final">' +
+      '<div class="pb-round-label">'+round.name+'<span>'+round.week+'</span></div>' +
+      '<div class="pb-col__body">' +
+        '<div class="pb-final-wrap">' +
+          '<div class="pb-trophy">'+TROPHY+'</div>' +
+          '<div class="pb-match pb-final" id="m-'+(fm?fm.id:'F')+'" data-match="'+(fm?fm.id:'F')+'">' +
+            '<div class="pb-match__tag">' +
+              '<span class="pb-match__tag-name">Title Game</span>' +
+              statusHtml +
+            '</div>' +
+            slot('a',fm,{tbdLabel:'Semifinal 1 winner'}) +
+            slot('b',fm,{tbdLabel:'Semifinal 2 winner'}) +
+            '<div class="pb-champion-slot">' +
+              '<div class="pb-champion-slot__label">'+title+'</div>' +
+              '<div class="pb-champion-slot__val">'+champVal+'</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ---- Header (live pill + week), driven by the current model ---- */
+  function updateHeader(){
+    var sub=document.querySelector('#cffb-pb-root .pb-sub');
+    var teams=BRACKET_META?parseInt(BRACKET_META.teamsInvolved,10):0;
+    if(sub && teams) sub.textContent = teams+' teams. '+ROUNDS.length+' rounds. One champion.';
+
+    var liveRound=null, anyLive=false;
+    ROUNDS.forEach(function(r){ r.matches.forEach(function(m){ if(m.status==='live'){ anyLive=true; if(!liveRound) liveRound=r; } }); });
+    var champ = (F && F.status==='final' && F.winner && TEAMS[F.winner]) ? TEAMS[F.winner] : null;
+    var active = liveRound
+      || ROUNDS.filter(function(r){ return r.matches.some(function(m){ return m.status!=='final'; }); })[0]
+      || ROUNDS[ROUNDS.length-1];
+
+    var weekNum=document.getElementById('pbWeekNum');
+    if(weekNum) weekNum.textContent = active && active.weekNum ? active.weekNum : '—';
+
+    var tag=document.getElementById('pbLiveTag'), txt=document.getElementById('pbLiveTxt'), dot=document.getElementById('pbLiveDot');
+    if(tag && txt){
+      if(champ){ tag.style.display=''; txt.textContent='Champion Crowned'; if(dot) dot.style.display='none'; tag.style.color='var(--gold)'; }
+      else if(anyLive){ tag.style.display=''; txt.textContent=(liveRound?liveRound.name:'Playoffs')+' Live'; if(dot) dot.style.display=''; tag.style.color=''; }
+      else { tag.style.display='none'; }
+    }
+  }
+
+  /* ============================================================
+     DEMO fallback data (used only when not running on an MFL page).
      CFFB managers; "players" are the college athletes they drafted.
      ============================================================ */
   var TEAMS = {
@@ -464,23 +723,24 @@
 
   function slot(side,match,opts){
     opts = opts || {};
-    var data=match[side];
+    var data=(match && match[side]) || {};
     if(!data.team){
       return '<div class="pb-slot is-tbd">' +
         '<span class="pb-seed"></span>' +
         '<span class="pb-pill pb-pill--tbd"><span class="pb-pill__dot"></span>TBD</span>' +
-        '<span class="pb-slot__name pb-slot__name--tbd">'+(opts.tbdLabel||'To be decided')+'</span>' +
+        '<span class="pb-slot__name pb-slot__name--tbd">'+(data.tbd||opts.tbdLabel||'To be decided')+'</span>' +
         '<span class="pb-slot__score pb-slot__score--tbd">&mdash;</span>' +
       '</div>';
     }
-    var t=TEAMS[data.team];
+    var t=TEAMS[data.team] || { id:data.team, name:data.team, abbr:String(data.team), color:colorFor(data.team), seed:data.seed };
+    if(t.seed==null && data.seed!=null) t.seed=data.seed;
     var isWinner=match.winner===data.team;
     var isLoser=match.winner&&match.winner!==data.team;
     var scoreCls=match.status==='pending'?'pb-slot__score pb-slot__score--tbd':'pb-slot__score';
     var scoreVal=data.score!=null?data.score:'&mdash;';
     var nameHtml=SHOW_NAMES?'<span class="pb-slot__name">'+t.name+'</span>':'';
     return '<button class="pb-slot '+(isWinner?'is-winner':'')+' '+(isLoser?'is-loser':'')+'" data-team="'+t.id+'" type="button">' +
-      '<span class="pb-seed">'+t.seed+'</span>' +
+      '<span class="pb-seed">'+(t.seed!=null?t.seed:'')+'</span>' +
       pillIcon(t) +
       nameHtml +
       '<span class="'+scoreCls+'">'+scoreVal+'</span>' +
@@ -524,32 +784,14 @@
   function render(){
     var grid=document.getElementById('pbGrid');
     if(!grid) return;
-    grid.innerHTML =
-      col(ROUNDS[0]) +
-      col(ROUNDS[1]) +
-      col(ROUNDS[2]) +
-      '<div class="pb-col pb-col--final">' +
-        '<div class="pb-round-label">Championship<span>Wk 17</span></div>' +
-        '<div class="pb-col__body">' +
-          '<div class="pb-final-wrap">' +
-            '<div class="pb-trophy">'+TROPHY+'</div>' +
-            '<div class="pb-match pb-final" id="m-F" data-match="F">' +
-              '<div class="pb-match__tag">' +
-                '<span class="pb-match__tag-name">Title Game</span>' +
-                '<span class="pb-match__status">Wk 17</span>' +
-              '</div>' +
-              slot('a',F,{tbdLabel:'Semifinal 1 winner'}) +
-              slot('b',F,{tbdLabel:'Semifinal 2 winner'}) +
-              '<div class="pb-champion-slot">' +
-                '<div class="pb-champion-slot__label">2025 League Champion</div>' +
-                '<div class="pb-champion-slot__val">&mdash; Awaiting Title Game &mdash;</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+    if(!ROUNDS.length){ grid.innerHTML=''; return; }
+    var html='';
+    for(var i=0;i<ROUNDS.length-1;i++){ html+=col(ROUNDS[i]); }
+    html+=finalCol(ROUNDS[ROUNDS.length-1]);
+    grid.innerHTML=html;
     bindSlots();
     drawConnectors();
+    updateHeader();
   }
 
   /* ---------------- Connectors ---------------- */
@@ -610,7 +852,11 @@
     if(F.status==='final'&&F.winner===id) return {k:'adv',t:'Champion'};
     return {k:'adv',t:'Advanced'};
   }
-  function netOf(t){ return Math.round(parseFloat(t.pf.replace(/,/g,''))-parseFloat(t.pa.replace(/,/g,''))); }
+  function netOf(t){
+    var pf=parseFloat(String(t.pf).replace(/,/g,'')), pa=parseFloat(String(t.pa).replace(/,/g,''));
+    if(!isFinite(pf)||!isFinite(pa)) return null;
+    return Math.round(pf-pa);
+  }
 
   /* ---------------- Detail panel ---------------- */
   function bindSlots(){
@@ -631,18 +877,25 @@
     var pillCls=st.k==='live'?'pb-statuspill--live':st.k==='out'?'pb-statuspill--out':'pb-statuspill--adv';
     var pathHtml=buildPath(id).map(function(row){
       return '<div class="pb-path__row is-'+row[2]+'"><span class="pb-path__node">'+row[0]+'</span><span class="pb-path__txt">'+row[1]+'</span></div>';
-    }).join('');
-    var streakPos=t.streak.charAt(0)==='W';
+    }).join('') || '<div class="pb-path__row is-next"><span class="pb-path__node">&mdash;</span><span class="pb-path__txt">Not in this bracket.</span></div>';
+    var streak=playoffStreak(id);
+    var streakPos=streak.charAt(0)==='W';
+    var streakCls=streak==='—'?'':(streakPos?'is-pos':'is-neg');
     var net=netOf(t);
+    var seedTxt=t.seed!=null?('No. '+t.seed+' Seed'):'Playoff Team';
+    var mgrHtml=t.mgr?'<span class="pb-detail__mgr">Managed by <b>'+t.mgr+'</b></span>':'';
+    var chip = t.logo
+      ? '<span class="pb-detail__chip" style="background:'+(t.color||'#1C1C1C')+';padding:0;overflow:hidden"><img src="'+t.logo+'" alt="'+t.abbr+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></span>'
+      : '<span class="pb-detail__chip" style="background:'+(t.color||'#1C1C1C')+'">'+t.abbr+'</span>';
     var d=document.getElementById('pbDetail');
     d.innerHTML =
       '<div class="pb-detail__bar"></div>' +
       '<div class="pb-detail__top">' +
-        '<span class="pb-detail__chip" style="background:'+t.color+'">'+t.abbr+'</span>' +
+        chip +
         '<span class="pb-detail__id">' +
           '<span class="pb-detail__seedline">' +
-            '<span class="pb-detail__seedbadge">No. '+t.seed+' Seed</span>' +
-            '<span class="pb-detail__mgr">Managed by <b>'+t.mgr+'</b></span>' +
+            '<span class="pb-detail__seedbadge">'+seedTxt+'</span>' +
+            mgrHtml +
           '</span>' +
           '<span class="pb-detail__name">'+t.name+'</span>' +
         '</span>' +
@@ -654,11 +907,11 @@
           '<div class="pb-detail__h">Season R&eacute;sum&eacute;</div>' +
           '<div class="pb-stats">' +
             statRow('Record',t.rec) +
-            statRow('Streak',t.streak,streakPos?'is-pos':'is-neg') +
-            statRow('Seed','#'+t.seed) +
+            statRow('Playoffs',streak,streakCls) +
+            statRow('Seed',t.seed!=null?('#'+t.seed):'&mdash;') +
             statRow('Points For',t.pf) +
             statRow('Points Against',t.pa) +
-            statRow('Net',(net>=0?'+':'')+net.toLocaleString(),net>=0?'is-pos':'is-neg') +
+            statRow('Net',net==null?'&mdash;':((net>=0?'+':'')+net.toLocaleString()),net==null?'':(net>=0?'is-pos':'is-neg')) +
           '</div>' +
         '</div>' +
         '<div class="pb-detail__col">' +
@@ -677,10 +930,11 @@
     });
   }
 
-  /* ---------------- Boot ---------------- */
-  function boot(){
+  /* ---------------- Render + boot ---------------- */
+  function finishRender(){
     render();
-    openDetail('tht');
+    var feat=pickFeatured();
+    if(feat) openDetail(feat);
     function redraw(){ drawConnectors(); }
     window.addEventListener('load',redraw);
     if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(redraw); }
@@ -688,27 +942,45 @@
     setTimeout(redraw,600);
   }
 
+  // Pull the league's real playoff bracket from MFL (same-origin).
+  async function loadLive(){
+    var bl=await fetchJSON('playoffBrackets');
+    var list=asArray(bl.playoffBrackets && bl.playoffBrackets.playoffBracket);
+    var meta=list.filter(function(b){ return BRACKET_NAME_RE.test(b.name||''); })[0] || list[0];
+    if(!meta) throw new Error('no playoff bracket defined for this league');
+    BRACKET_META=meta;
+    var bd=await fetchJSON('playoffBracket','&BRACKET_ID='+meta.id);
+    var rr=asArray(bd.playoffBracket && bd.playoffBracket.playoffRound);
+    if(!rr.length) throw new Error('bracket "'+meta.name+'" has no games yet');
+    try{ await enrichStandings(); }catch(e){ console.warn('[CFFB Bracket] standings enrich skipped', e); }
+    if(!buildModel(rr)) throw new Error('could not build bracket model');
+    console.log('[CFFB Bracket] "'+meta.name+'" — '+ROUNDS.length+' rounds loaded from MFL '+MFL_CTX.year);
+  }
+
+  function boot(){
+    // Snapshot the demo data so we can fall back if the live load fails.
+    var DEMO={ TEAMS:TEAMS, ROUNDS:ROUNDS, PAIRS:PAIRS, F:F };
+    var haveDb=false;
+    try{ haveDb=!!(window.franchiseDatabase); }catch(e){ haveDb=false; }
+    if(haveDb){
+      resolveCtx();
+      if(!buildTeamsFromDb()){ finishRender(); return; }   // no usable franchises → demo
+      loadLive().then(finishRender).catch(function(e){
+        console.warn('[CFFB Bracket] live load failed; showing demo bracket.', e);
+        TEAMS=DEMO.TEAMS; ROUNDS=DEMO.ROUNDS; PAIRS=DEMO.PAIRS; F=DEMO.F;
+        finishRender();
+      });
+    } else {
+      console.log('[CFFB Bracket] no MFL context detected — showing demo bracket.');
+      finishRender();
+    }
+  }
+
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',boot);
   } else {
     boot();
   }
-
-  /* ---------------- Sheet data hook ----------------
-     Replace the body of loadBracketData() with a fetch() call to either:
-       (a) Apps Script web app:
-           fetch('https://script.google.com/macros/s/AKfycb.../exec')
-             .then(r=>r.json()).then(applyBracketData);
-       (b) Published-to-web CSV:
-           fetch('https://docs.google.com/spreadsheets/d/e/.../pub?output=csv')
-             .then(r=>r.text()).then(csv=>applyBracketData(parseCsv(csv)));
-
-     `applyBracketData(payload)` should overwrite TEAMS / R1..R8 / Q1..Q4 /
-     S1 / S2 / F from `payload`, then call render() + openDetail(payload.featuredTeam).
-     For now the placeholder data above renders unchanged.
-  ------------------------------------------------- */
-  // function loadBracketData(){ /* TODO: fetch + applyBracketData */ }
-  // loadBracketData();
 })();
 </script>
 
