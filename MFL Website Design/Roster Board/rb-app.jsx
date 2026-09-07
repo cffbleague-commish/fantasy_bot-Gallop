@@ -240,19 +240,33 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
   const r = buildRoster(team);
   const active = r.groups.reduce((acc, g) => acc.concat(g.players), []);
   const moveFor = (kind, pid) => actions && actions[kind] && actions[kind].moves[pid];
+  // Drop is offered only when MFL scoped the add_drop form to THIS franchise
+  // (a regular owner's own team, or the commish where add_drop honors the id).
+  const canDrop = !!(actions && actions.drop && actions.drop.fid && actions.drop.fid === targetFid);
+  const dropBtn = (p) => canDrop && (
+    <MBtn tone="drop" disabled={busy === p.pid}
+      onClick={ask('drop', p.pid, p.name,
+        'Drop ' + p.name + '? This releases the player to free agency.',
+        'This cannot be undone — the player leaves your roster and any redshirt / eligibility on this copy is forfeited.')}>Drop</MBtn>
+  );
 
   const confirmMove = async () => {
     const { kind, pid, name } = pending;
     setPending(null); setBusy(pid); setResult(null);
     try {
-      const a = actions[kind], mv = a.moves[pid];
-      const res = await rbSubmitMove(a.actionUrl, a.hidden, mv.name, pid);
+      let res;
+      if (kind === 'drop') res = await rbSubmitDrop(actions.drop, pid);
+      else { const a = actions[kind], mv = a.moves[pid]; res = await rbSubmitMove(a.actionUrl, a.hidden, mv.name, pid); }
       await rbReloadRosters();
-      setResult({ ok: res.ok, name, bucket: rbStatusOf(team, pid) });
-      setActions(await rbLoadActions());
+      const bucket = rbStatusOf(team, pid);
+      // A drop is confirmed only if the player actually left the roster feed
+      // (MFL returns 200 even when it rejects, so trust the re-read, not res.ok).
+      const ok = kind === 'drop' ? !bucket : res.ok;
+      setResult({ ok, name, bucket, dropped: kind === 'drop' });
+      setActions(await rbLoadActions(targetFid, commish));
       onChanged();
     } catch (e) {
-      setResult({ ok: false, name, err: e && e.message });
+      setResult({ ok: false, name, err: e && e.message, dropped: pending.kind === 'drop' });
     } finally { setBusy(null); }
   };
 
@@ -278,8 +292,10 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
         {result && (
           <div className={'rb-mng__result ' + (result.ok ? 'is-ok' : 'is-err')}>
             {result.ok
-              ? <span>✓ {result.name} — now on {BUCKET_LABEL[result.bucket] || 'the updated roster'}.</span>
-              : <span>⚠ {result.name} — MFL didn't confirm the move{result.err ? ' (' + result.err + ')' : ''}. Verify in MFL before retrying.</span>}
+              ? (result.dropped
+                  ? <span>✓ {result.name} — dropped. The player is released to free agency.</span>
+                  : <span>✓ {result.name} — now on {BUCKET_LABEL[result.bucket] || 'the updated roster'}.</span>)
+              : <span>⚠ {result.name} — MFL didn't confirm the {result.dropped ? 'drop' : 'move'}{result.err ? ' (' + result.err + ')' : ''}. Verify in MFL before retrying.</span>}
           </div>
         )}
 
@@ -315,7 +331,8 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
                           ? '⚠ ' + p.name + ' already has a medical redshirt (' + priorMed.year + '). Placing on IR will NOT grant another redshirt.'
                           : 'Applies a ' + SEASON + ' medical redshirt (must stay on IR through season end).')}>→ IR</MBtn>}
                     {canIR && usedMed && <span className="rb-mng__nors" title={'Already used a medical redshirt (' + priorMed.year + ') — going on IR will not earn another'}>no new RS</span>}
-                    {!canTaxi && !canIR && <span className="rb-mng__none" title="MFL offers no taxi/IR move for this player right now">—</span>}
+                    {dropBtn(p)}
+                    {!canTaxi && !canIR && !canDrop && <span className="rb-mng__none" title="MFL offers no move for this player right now">—</span>}
                   </MngRow>
                 );
               })}
@@ -332,6 +349,7 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
                         ? <MBtn tone="go" disabled={busy === p.pid}
                             onClick={ask('taxi', p.pid, p.name, 'Activate ' + p.name + ' from the Taxi Squad to your active roster?', 'Forfeits the ' + SEASON + ' redshirt.')}>Activate →</MBtn>
                         : <span className="rb-mng__none" title="MFL isn't allowing this move right now (locked or roster full)">locked</span>}
+                      {dropBtn(p)}
                     </MngRow>
                   );
                 })}
@@ -349,11 +367,176 @@ const ManageModal = ({ team, targetFid, commish, onClose, onChanged }) => {
                         ? <MBtn tone="go" disabled={busy === p.pid}
                             onClick={ask('ir', p.pid, p.name, 'Activate ' + p.name + ' from Injured Reserve to your active roster?', 'Forfeits the ' + SEASON + ' medical redshirt.')}>Activate →</MBtn>
                         : <span className="rb-mng__none" title="MFL isn't allowing this move right now (locked or roster full)">locked</span>}
+                      {dropBtn(p)}
                     </MngRow>
                   );
                 })}
               </div>
             )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Set Lineup (starters per slot, per week) ──────────────────────────────────
+// Renders MFL's real lineup form for a chosen week: one togglable list per slot
+// with the min/max MFL enforces, live per-player weekly detail (opponent + proj),
+// and a running starter count. Save replays MFL's checkbox POST, then re-reads the
+// form to reflect MFL's truth. Future weeks stay editable until each locks.
+const LINEUP_MAX_WEEK = 18;
+const fmtLock = (expires) => {
+  if (!expires) return '';
+  const secs = expires - Math.floor(Date.now() / 1000);
+  if (secs <= 0) return 'Locked';
+  const h = Math.floor(secs / 3600), d = Math.floor(h / 24);
+  if (d >= 1) return 'Locks in ' + d + 'd ' + (h % 24) + 'h';
+  if (h >= 1) return 'Locks in ' + h + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+  return 'Locks in ' + Math.floor(secs / 60) + 'm';
+};
+const LineupModal = ({ team, targetFid, commish, onClose }) => {
+  const [week, setWeek] = useState(null);      // null → fetch current, then adopt MFL's week
+  const [form, setForm] = useState(null);
+  const [sel, setSel] = useState({});          // slot -> [pid,...] chosen starters
+  const [tb, setTb] = useState(null);          // tiebreaker pid
+  const [loadErr, setLoadErr] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [saveResult, setSaveResult] = useState(null);
+
+  const initFrom = (f) => {
+    const s = {};
+    (f.order || []).forEach((slot) => { s[slot] = (f.slots[slot] || []).filter((x) => x.checked).map((x) => x.pid); });
+    setSel(s); setTb(f.tiebreaker || null);
+  };
+  const load = async (wk) => {
+    setForm(null); setLoadErr(false); setSaveResult(null);
+    try {
+      const f = await rbFetchLineup(wk, targetFid, commish);
+      if (!f) { setLoadErr('Couldn’t read the lineup form from MFL.'); return; }
+      if (f.fid && targetFid && f.fid !== targetFid) {
+        setLoadErr('MFL returned a different franchise (' + f.fid + ' ≠ ' + targetFid + '); lineup blocked to avoid changing the wrong team.'); return;
+      }
+      setForm(f); setWeek(f.week); initFrom(f);
+    } catch (e) { setLoadErr('Couldn’t load the lineup (are you signed in?).'); }
+  };
+  useEffect(() => { load(null); }, []);        // initial → current editable week
+
+  const total = form ? Object.keys(sel).reduce((n, slot) => n + (sel[slot] || []).length, 0) : 0;
+  const slotOk = (slot) => { const n = (sel[slot] || []).length; const rq = form.req[slot] || { min: 0, max: 99 }; return n >= rq.min && n <= rq.max; };
+  const valid = !!form && form.order.every(slotOk)
+    && (!form.minStarters || total >= form.minStarters) && (!form.maxStarters || total <= form.maxStarters);
+  const locked = !!(form && form.expires && Math.floor(Date.now() / 1000) > form.expires);
+
+  const toggle = (slot, pid) => {
+    if (locked || busy) return;
+    setSel((cur) => {
+      const arr = cur[slot] || [];
+      if (arr.indexOf(pid) >= 0) return Object.assign({}, cur, { [slot]: arr.filter((x) => x !== pid) });
+      const tot = Object.keys(cur).reduce((n, s) => n + (cur[s] || []).length, 0);
+      const rq = (form.req[slot]) || { max: 99 };
+      if (arr.length >= rq.max) return cur;                         // this slot is full
+      if (form.maxStarters && tot >= form.maxStarters) return cur;  // total starters full
+      return Object.assign({}, cur, { [slot]: arr.concat(pid) });
+    });
+  };
+  const save = async () => {
+    setBusy(true); setSaveResult(null);
+    try {
+      const res = await rbSubmitLineup(form, sel, tb);
+      const fresh = await rbFetchLineup(week, targetFid, commish);  // re-read = MFL truth
+      if (fresh) { setForm(fresh); initFrom(fresh); }
+      setSaveResult({ ok: res.ok });
+    } catch (e) { setSaveResult({ ok: false, err: e && e.message }); }
+    finally { setBusy(false); }
+  };
+
+  const startWk = week || (form && form.week) || 1;
+  const weekOpts = [];
+  for (let w = startWk; w <= LINEUP_MAX_WEEK; w++) weekOpts.push(w);
+  const selectedPids = form ? form.order.reduce((acc, slot) => acc.concat(sel[slot] || []), []) : [];
+
+  return (
+    <div className="rb-modal" role="dialog" aria-modal="true"
+      onClick={(e) => { if (e.target.classList.contains('rb-modal')) onClose(); }}>
+      <div className="rb-modal__box rb-modal__box--wide">
+        <div className="rb-modal__head">
+          <div>
+            <div className="rb-modal__eyebrow">Set Lineup</div>
+            <div className="rb-modal__title">{TEAMS[team].name}</div>
+          </div>
+          <button className="rb-modal__x" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="rb-modal__note">
+          {commish && <b>Acting as commissioner on {TEAMS[team].name}. </b>}
+          Pick your starters and Save — this posts to MFL live. Future weeks stay editable until each locks at kickoff.
+        </div>
+
+        <div className="rb-lu__bar">
+          <label className="rb-lu__wk">Week&nbsp;
+            <select value={week || ''} disabled={!form || busy} onChange={(e) => { const w = parseInt(e.target.value, 10); setWeek(w); load(w); }}>
+              {weekOpts.map((w) => <option key={w} value={w}>{w}</option>)}
+            </select>
+          </label>
+          {form && <span className={'rb-lu__lock' + (locked ? ' is-locked' : '')}>{locked ? '🔒 Locked' : fmtLock(form.expires)}</span>}
+          {form && <span className={'rb-lu__count' + (valid ? ' is-ok' : '')}>{total} / {form.maxStarters || '?'} starters</span>}
+        </div>
+
+        {form === null && !loadErr && <div className="rb-mng__load">Loading week {week || ''} from MFL…</div>}
+        {loadErr && <div className="rb-mng__load rb-mng__load--err">{loadErr} <MBtn onClick={() => load(week)}>Retry</MBtn></div>}
+        {saveResult && (
+          <div className={'rb-mng__result ' + (saveResult.ok ? 'is-ok' : 'is-err')}>
+            {saveResult.ok
+              ? <span>✓ Lineup saved for Week {week}.</span>
+              : <span>⚠ MFL didn't confirm the save{saveResult.err ? ' (' + saveResult.err + ')' : ''}. Verify in MFL.</span>}
+          </div>
+        )}
+
+        {form && (
+          <div className="rb-mng__body">
+            {form.order.map((slot) => {
+              const rq = form.req[slot] || { min: 0, max: 0 };
+              const n = (sel[slot] || []).length;
+              const label = rq.min === rq.max ? ('Start ' + rq.min) : ('Start ' + rq.min + '–' + rq.max);
+              return (
+                <div className="rb-mng__sec" key={slot}>
+                  <div className="rb-mng__sechead">
+                    {slot} <span>{label}</span>
+                    <span className={'rb-lu__slotn' + (n >= rq.min && n <= rq.max ? ' is-ok' : '')}>{n} picked</span>
+                  </div>
+                  {(form.slots[slot] || []).map((rowp) => {
+                    const p = PLAYERS_BY_ID[rowp.pid] || { name: rowp.pid, pos: '', team: '' };
+                    const on = (sel[slot] || []).indexOf(rowp.pid) >= 0;
+                    const inj = p.injury ? p.injury[0] : null;
+                    return (
+                      <button key={rowp.pid} type="button"
+                        className={'rb-lu__row' + (on ? ' is-on' : '')}
+                        disabled={locked || busy}
+                        onClick={() => toggle(slot, rowp.pid)}>
+                        <span className={'rb-lu__check' + (on ? ' is-on' : '')}>{on ? '✓' : ''}</span>
+                        <span className="rb-lu__pname">
+                          {displayName(p.name)}
+                          <span className="rb-lu__pmeta">{[p.pos, p.team].filter(Boolean).join(' · ')}{rowp.opp ? ' · ' + rowp.opp : ''}</span>
+                        </span>
+                        {inj && <span className={'rb-lu__inj rb-lu__inj--' + inj.toLowerCase()}>{inj}</span>}
+                        <span className="rb-lu__proj">{rowp.proj != null ? rowp.proj.toFixed(1) : '—'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            <div className="rb-lu__foot">
+              <label className="rb-lu__tb">Tie-breaker&nbsp;
+                <select value={tb || ''} disabled={locked || busy} onChange={(e) => setTb(e.target.value || null)}>
+                  <option value="">(none)</option>
+                  {selectedPids.map((pid) => { const p = PLAYERS_BY_ID[pid] || { name: pid }; return <option key={pid} value={pid}>{displayName(p.name)}</option>; })}
+                </select>
+              </label>
+              <MBtn tone="go" disabled={!valid || locked || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>
+            </div>
+            {!valid && !locked && <div className="rb-lu__hint">Pick within each slot’s range and exactly {form.maxStarters || form.minStarters} starters to enable Save.</div>}
           </div>
         )}
       </div>
@@ -367,6 +550,7 @@ const App = () => {
   // persisted, so a refresh returns to your own team.
   const [team, setTeam] = useState(() => (TEAMS[MY_TEAM] ? MY_TEAM : TEAM_ORDER[0]));
   const [manage, setManage] = useState(false);
+  const [lineup, setLineup] = useState(false);
   const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
@@ -399,7 +583,10 @@ const App = () => {
             <div className="rb-kpi"><span className="rb-kpi__label">Redshirting</span><span className="rb-kpi__val cffb-num">{r.rsCount}</span></div>
             <div className="rb-kpi"><span className="rb-kpi__label">Out</span><span className="rb-kpi__val cffb-num" style={r.outCount ? { color: '#D88787' } : null}>{r.outCount}</span></div>
           </div>
-          {canManage && <button className="rb-manage-btn" onClick={() => setManage(true)} title="Move players to/from Taxi Squad or Injured Reserve">⚙ Manage Roster</button>}
+          {canManage && <div className="rb-team__btns">
+            <button className="rb-manage-btn" onClick={() => setManage(true)} title="Move players to/from Taxi Squad or Injured Reserve, or drop them">⚙ Manage Roster</button>
+            <button className="rb-manage-btn rb-manage-btn--alt" onClick={() => setLineup(true)} title="Set your starting lineup for this or a future week">📋 Set Lineup</button>
+          </div>}
         </div>
       </div>
       <div className="rb-table">
@@ -446,6 +633,7 @@ const App = () => {
         </div>
       </div>
       {manage && canManage && <ManageModal team={team} targetFid={TEAMS[team].fid} commish={isCommish} onClose={() => setManage(false)} onChanged={() => setRev((v) => v + 1)} />}
+      {lineup && canManage && <LineupModal team={team} targetFid={TEAMS[team].fid} commish={isCommish} onClose={() => setLineup(false)} />}
     </div>
   );
 };

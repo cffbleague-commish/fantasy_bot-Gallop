@@ -1,0 +1,2236 @@
+<style>
+/* ============================================================
+   CFFB.css — College Fantasy Football League stylesheet
+   Drop-in stylesheet for MyFantasyLeague custom CSS.
+
+   Built on: CFFB Design System (dark mode, championship gold)
+   Inspiration: ESPN GameDay, CFP broadcast graphics, 247sports.
+
+   Sections
+   --------
+   01  Foundations  — tokens, fonts, reset
+   02  Typography   — display + body helpers
+   03  Page chrome  — top bar, sidebar, page shell, ticker
+   04  Surfaces     — cards, KPI tiles, panels
+   05  Tables       — MFL legacy tables + custom data tables
+   06  Buttons + forms
+   07  Player atoms — name plate, position chip, team chip
+   08  NEW · Redshirt chips (traditional + medical bandage)
+   09  NEW · Eligibility dots (class + years used)
+   10  NEW · Award badges (Heisman, Davey O'Brien, Doak Walker,
+            Biletnikoff, Conference All-American)
+   11  Misc · stars, conference badges, grade pills, value delta
+   12  Utilities
+   ============================================================ */
+
+
+/* ============================================================
+   01 · FOUNDATIONS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Star tiers */
+  --star-5: #C9A227;
+  --star-4: #3B82C4;
+  --star-3: #7BA4C9;
+  --star-2: #6A6A6A;
+  --star-1: #4A4A4A;
+
+  /* Grades */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: #C9A227;
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* Deltas */
+  --delta-pos:  #2D7A4E;
+  --delta-neg:  #B84545;
+  --delta-flat: #5A5A5A;
+
+  /* Live */
+  --live: #2D7A4E;
+
+  /* Conferences */
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
+  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
+
+  /* Eligibility / Redshirt */
+  --rs-trad:    #C9A227;   /* gold shield */
+  --rs-medical: #D17575;   /* dusty red bandage */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Type scale */
+  --ds-hero: 64px; --ds-1: 48px; --ds-2: 32px; --ds-3: 24px; --ds-4: 18px;
+  --tx-lg: 16px; --tx-md: 14px; --tx-sm: 13px; --tx-xs: 12px; --tx-2xs: 11px;
+
+  /* Weights */
+  --w-400: 400; --w-500: 500; --w-600: 600; --w-700: 700;
+
+  /* Spacing — 8px base */
+  --s-half: 4px;
+  --s-1:  8px; --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 40px; --s-6: 48px; --s-7: 64px; --s-8: 80px;
+
+  /* Radii */
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+
+  /* Layout */
+  --container-max: 1280px;
+  --topbar-h: 64px;
+  --ticker-h: 44px;
+}
+
+/* Reset (light, MFL-friendly) */
+
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num *, td.cffb-num, th.cffb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+
+/* ============================================================
+   02 · TYPOGRAPHY
+   ============================================================ */
+
+.cffb-display-hero,
+.cffb-display-1,
+.cffb-display-2,
+.cffb-display-3,
+.cffb-display-4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cffb-display-hero { font-weight: 700; font-size: var(--ds-hero); line-height: 1; }
+.cffb-display-1    { font-weight: 700; font-size: var(--ds-1); line-height: 1.05; }
+.cffb-display-2    { font-weight: 700; font-size: var(--ds-2); line-height: 1.1; }
+.cffb-display-3    { font-weight: 600; font-size: var(--ds-3); line-height: 1.15; }
+.cffb-display-4    { font-weight: 600; font-size: var(--ds-4); line-height: 1.2; }
+
+.cffb-h1 { font: 700 28px/1.2 var(--font-body); letter-spacing: -0.01em; margin: 0; }
+.cffb-h2 { font: 600 20px/1.25 var(--font-body); margin: 0; }
+.cffb-h3 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+.cffb-body    { font-size: var(--tx-md); color: var(--fg-primary); }
+.cffb-body-sm { font-size: var(--tx-sm); color: var(--fg-secondary); }
+
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Gold-gradient text — RESERVE for the page's hero value only. */
+.cffb-gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+
+/* ============================================================
+   03 · PAGE CHROME
+   ============================================================ */
+
+.cffb-shell {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar — sticky, 64px, holds wordmark + nav + manager chip */
+.cffb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 var(--s-3);
+  gap: var(--s-3);
+}
+.cffb-topbar__brand {
+  display: flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; font-size: var(--ds-4);
+  letter-spacing: 0.02em;
+  color: var(--fg-primary);
+  border-right: 1px solid var(--border);
+  padding-right: var(--s-3);
+  height: 100%;
+}
+.cffb-topbar__brand-mark {
+  width: 28px; height: 28px;
+  background: var(--gold-gradient);
+  -webkit-mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+          mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+}
+.cffb-topbar__nav {
+  display: flex; align-items: center; gap: var(--s-half);
+  height: 100%;
+}
+.cffb-topbar__nav a {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-sm); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 0 var(--s-2); height: 100%;
+  display: inline-flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cffb-topbar__nav a:hover { color: var(--fg-primary); text-decoration: none; }
+.cffb-topbar__nav a.is-active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--gold);
+}
+.cffb-topbar__spacer { flex: 1; }
+.cffb-topbar__manager {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--tx-sm); font-weight: 600;
+}
+.cffb-topbar__manager-cap {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* Ticker — sticky under topbar, 44px, scrolls left */
+.cffb-ticker {
+  position: sticky; top: var(--topbar-h); z-index: 49;
+  height: var(--ticker-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cffb-ticker__label {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 0 var(--s-2);
+  background: var(--bg-surface-elev);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--tx-sm); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  z-index: 2;
+}
+.cffb-ticker__track {
+  display: inline-flex; align-items: center; gap: var(--s-4);
+  white-space: nowrap;
+  padding-left: 140px;
+  animation: cffb-ticker-scroll 60s linear infinite;
+}
+.cffb-ticker__item {
+  display: inline-flex; align-items: baseline; gap: var(--s-1);
+  font-size: var(--tx-sm); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-ticker__item strong {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-primary); font-size: var(--tx-md);
+  text-transform: uppercase;
+}
+.cffb-ticker__item em { font-style: normal; color: var(--gold); font-weight: 600; }
+.cffb-ticker__sep { color: var(--border-strong); }
+@keyframes cffb-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Page shell */
+.cffb-page {
+  flex: 1;
+  max-width: var(--container-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-7);
+}
+.cffb-page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.cffb-page__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 40px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.005em;
+}
+
+/* Footer */
+.cffb-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-3);
+  font-size: var(--tx-xs);
+  color: var(--fg-tertiary);
+  text-align: center;
+}
+
+
+/* ============================================================
+   04 · SURFACES — cards, KPI tiles, panels
+   ============================================================ */
+
+.cffb-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3);
+}
+.cffb-card--featured { box-shadow: var(--inset-metallic); }
+.cffb-card--featured::before {
+  content: ""; display: block; height: 3px;
+  background: var(--gold-gradient);
+  margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) var(--s-2);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+.cffb-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.cffb-card__title {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.cffb-card__action {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* KPI tile */
+.cffb-kpi {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3) 18px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-kpi__label { /* alias for .cffb-label */
+  font-family: var(--font-body);
+  font-weight: 600; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-kpi__value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--ds-1); line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cffb-kpi__sub {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: var(--delta-pos); }
+.cffb-kpi__sub--neg { color: var(--delta-neg); }
+.cffb-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+/* Live indicator */
+.cffb-live {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--tx-2xs); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--live);
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: var(--shadow-glow-live);
+  animation: cffb-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+
+/* ============================================================
+   05 · TABLES (MFL legacy + custom)
+   ============================================================ */
+
+.cffb-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.cffb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tx-sm);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 12px var(--s-2);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cffb-table tbody td {
+  padding: 12px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.cffb-table tbody tr:last-child td { border-bottom: none; }
+.cffb-table tbody tr {
+  position: relative;
+  transition: background var(--dur-fast);
+}
+.cffb-table tbody tr:hover { background: var(--bg-surface-hover); }
+.cffb-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table tbody tr.is-active td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table__num { text-align: right; }
+.cffb-table__rank {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-secondary);
+  width: 40px; text-align: center;
+}
+
+
+/* ============================================================
+   06 · BUTTONS + FORMS
+   ============================================================ */
+
+.cffb-btn {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-xs); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+.cffb-btn:hover { filter: brightness(1.08); }
+.cffb-btn:active { filter: brightness(0.9); }
+.cffb-btn--primary {
+  background: var(--gold-gradient);
+  color: #0A0A0A;
+  border-color: transparent;
+}
+.cffb-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cffb-btn--sm { padding: 6px 10px; font-size: 10px; }
+
+.cffb-input {
+  font-family: var(--font-body); font-size: var(--tx-md);
+  padding: 10px 12px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  width: 100%;
+}
+.cffb-input::placeholder { color: var(--fg-tertiary); }
+.cffb-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+
+/* ============================================================
+   07 · PLAYER ATOMS — name plate, position chip, team chip
+   ============================================================ */
+
+.cffb-player {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-player__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 18px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.cffb-player__meta {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cffb-pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  min-width: 28px; padding: 3px 6px;
+  border-radius: var(--r-1);
+  color: #0A0A0A;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cffb-pos--qb { background: #C9A227; }
+.cffb-pos--rb { background: #3B82C4; color: #F5F5F5; }
+.cffb-pos--wr { background: #7BA4C9; }
+.cffb-pos--te { background: #8B6F1F; color: #F5F5F5; }
+.cffb-pos--ol { background: #6A6A6A; color: #F5F5F5; }
+.cffb-pos--def, .cffb-pos--lb, .cffb-pos--db { background: #B84545; color: #F5F5F5; }
+.cffb-pos--k  { background: #5C7A6A; color: #F5F5F5; }
+
+/* Team logo — canonical "ripped pill" PNGs in assets/teams/<slug>.png.
+   Conference badge on left, torn-paper edge, team art on right (250×60).
+   Sizes match the design system: sm 30px, md 48px, lg 60px tall. */
+.cffb-team {
+  display: inline-block;
+  height: 48px; width: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+
+/* Team chip — circular fallback for teams without ripped art yet */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cffb-team-chip--sm { width: 24px; height: 24px; font-size: 9px; }
+.cffb-team-chip--lg { width: 48px; height: 48px; font-size: 14px; }
+
+
+/* ============================================================
+   08 · REDSHIRT CHIPS — Traditional + Medical (NEW)
+   ------------------------------------------------------------
+   Sits inline next to a player's name. Shield silhouette,
+   gold for traditional, dusty-red bandage for medical.
+
+   Markup:
+     <span class="cffb-rs cffb-rs--trad" title="Traditional Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield…</svg>
+       <span class="cffb-rs__txt">RS</span>
+     </span>
+     <span class="cffb-rs cffb-rs--med" title="Medical Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield+bandage…</svg>
+       <span class="cffb-rs__txt">MRS</span>
+     </span>
+
+   Sizes: --xs (12px), --sm (14px default), --md (18px)
+   ------------------------------------------------------------ */
+
+.cffb-rs {
+  display: inline-flex; align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.cffb-rs__icon {
+  display: block;
+  width: 14px; height: auto;
+  flex-shrink: 0;
+}
+.cffb-rs__txt {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Sizes */
+.cffb-rs--xs .cffb-rs__icon { width: 10px; }
+.cffb-rs--xs .cffb-rs__txt  { font-size: 8.5px; }
+.cffb-rs--sm .cffb-rs__icon { width: 14px; }
+.cffb-rs--sm .cffb-rs__txt  { font-size: 10px; }
+.cffb-rs--md .cffb-rs__icon { width: 18px; }
+.cffb-rs--md .cffb-rs__txt  { font-size: 12px; }
+
+/* Traditional */
+.cffb-rs--trad           { color: var(--rs-trad); }
+.cffb-rs--trad .cffb-rs__icon { stroke: var(--rs-trad); fill: rgba(201,162,39,0.08); }
+
+/* Medical */
+.cffb-rs--med            { color: var(--rs-medical); }
+.cffb-rs--med .cffb-rs__icon { stroke: var(--rs-medical); fill: rgba(209,117,117,0.08); }
+
+/* Icon-only variant (no text), used in tight rows/tables */
+.cffb-rs--solo .cffb-rs__txt { display: none; }
+.cffb-rs--solo { gap: 0; }
+
+
+/* ============================================================
+   09 · ELIGIBILITY DOTS — class + years used (NEW)
+   ------------------------------------------------------------
+   Class label (FR / SO / JR / SR / GR) + 5 dots showing years
+   used / remaining. Redshirt years marked with a ring (◎) instead
+   of a fill — communicates "burned a year but no eligibility used".
+
+   Markup:
+     <span class="cffb-elig">
+       <span class="cffb-elig__class">JR</span>
+       <span class="cffb-elig__dots" aria-label="2 of 5 eligibility used">
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot is-rs"></span>   ← redshirt
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot"></span>
+         <span class="cffb-elig__dot"></span>
+       </span>
+       <span class="cffb-elig__remain">2 left</span>
+     </span>
+   ------------------------------------------------------------ */
+
+.cffb-elig {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cffb-elig__class {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 26px; padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  color: var(--fg-primary);
+  text-align: center;
+  background: var(--bg-surface-elev);
+}
+.cffb-elig__class--fr { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--so { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--jr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--sr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--gr { border-color: var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+
+.cffb-elig__dots {
+  display: inline-flex; gap: 3px; align-items: center;
+}
+.cffb-elig__dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.cffb-elig__dot.is-used {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.cffb-elig__dot.is-rs {
+  /* Redshirt: filled ring with hollow center — "year burned, no game time" */
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-trad) 2.5px 100%);
+  border-color: var(--rs-trad);
+}
+.cffb-elig__dot.is-rs-med {
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-medical) 2.5px 100%);
+  border-color: var(--rs-medical);
+}
+.cffb-elig__remain {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Compact variant — no remaining label, no class chip */
+.cffb-elig--compact { gap: var(--s-half); }
+.cffb-elig--compact .cffb-elig__class { display: none; }
+.cffb-elig--compact .cffb-elig__remain { display: none; }
+
+
+/* ============================================================
+   10 · AWARD BADGES — Heisman, Davey O'Brien, Doak Walker,
+        Biletnikoff, Conference All-American (NEW)
+   ------------------------------------------------------------
+   Stacked horizontal badges with a stroke-icon glyph, award
+   name, and year. The Heisman is the hero — metallic gold
+   gradient fill; the four position awards share a uniform
+   gold-outline treatment. Conference All-American picks up the
+   player's conference accent color.
+
+   Markup:
+     <div class="cffb-awards">
+       <span class="cffb-award cffb-award--heisman">
+         <svg class="cffb-award__glyph" viewBox="0 0 24 24">…</svg>
+         <span class="cffb-award__name">Heisman</span>
+         <span class="cffb-award__year">2024</span>
+       </span>
+       <span class="cffb-award cffb-award--obrien">…</span>
+       …
+     </div>
+   ------------------------------------------------------------ */
+
+.cffb-awards {
+  display: flex; flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.cffb-award {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-elev);
+  font-family: var(--font-body);
+  font-size: var(--tx-xs); font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  transition: filter var(--dur-fast);
+  cursor: default;
+}
+.cffb-award:hover { filter: brightness(1.08); }
+
+.cffb-award__glyph {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75;
+  color: var(--gold);
+}
+.cffb-award__name {
+  letter-spacing: 0.04em;
+}
+.cffb-award__year {
+  color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* Heisman — hero treatment, metallic gold fill */
+.cffb-award--heisman {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+  font-weight: 700;
+}
+.cffb-award--heisman .cffb-award__glyph { color: #0A0A0A; stroke-width: 2; }
+.cffb-award--heisman .cffb-award__year  { color: rgba(10,10,10,0.65); }
+
+/* Position awards — gold outline */
+.cffb-award--obrien,
+.cffb-award--walker,
+.cffb-award--biletnikoff {
+  border-color: rgba(201,162,39,0.45);
+  background: rgba(201,162,39,0.06);
+}
+
+/* Conference All-American — picks up conference color */
+.cffb-award--allamerican {
+  border-color: rgba(154,154,154,0.35);
+}
+.cffb-award--allamerican.is-sec   { border-color: rgba(201,162,39,0.45); color: var(--fg-primary); }
+.cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
+.cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
+.cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
+.cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+
+/* Size variants */
+.cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
+.cffb-awards--sm .cffb-award__glyph { width: 13px; height: 13px; }
+.cffb-awards--sm .cffb-award__year { font-size: 10px; }
+
+
+/* ============================================================
+   11 · MISC — stars, conference badges, grade pills, value delta
+   ============================================================ */
+
+/* Stars */
+.cffb-stars { display: inline-flex; align-items: center; gap: 2px; }
+.cffb-star { font-size: 14px; line-height: 1; color: var(--star-5); }
+.cffb-star--off { color: var(--border); }
+.cffb-stars--t5 .cffb-star { color: var(--star-5); }
+.cffb-stars--t4 .cffb-star { color: var(--star-4); }
+.cffb-stars--t3 .cffb-star { color: var(--star-3); }
+.cffb-stars--t2 .cffb-star { color: var(--star-2); }
+
+/* Conference badges */
+.cffb-conf {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: var(--r-1);
+  border: 1px solid transparent; color: var(--fg-primary);
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
+
+/* Grade pill */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: var(--r-2);
+  padding: 4px 10px 5px; color: var(--fg-primary);
+  font-size: 20px;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: var(--gold-gradient); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
+.cffb-grade--bp { background: var(--grade-b); color: var(--fg-primary); }
+.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
+.cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
+
+/* Value delta */
+.cffb-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-body); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tx-sm);
+}
+.cffb-delta--pos  { color: var(--delta-pos); }
+.cffb-delta--neg  { color: var(--delta-neg); }
+.cffb-delta--flat { color: var(--delta-flat); }
+.cffb-delta__arrow { font-size: 0.85em; line-height: 1; }
+
+
+/* ============================================================
+   12 · UTILITIES
+   ============================================================ */
+
+.cffb-row     { display: flex; gap: var(--s-2); align-items: center; }
+.cffb-row--sb { justify-content: space-between; }
+.cffb-row--end{ justify-content: flex-end; }
+.cffb-stack   { display: flex; flex-direction: column; gap: var(--s-1); }
+.cffb-stack--2 { gap: var(--s-2); }
+.cffb-stack--3 { gap: var(--s-3); }
+
+.cffb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+.cffb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.cffb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.cffb-divider { height: 1px; background: var(--border); margin: var(--s-2) 0; }
+.cffb-spacer  { flex: 1; }
+
+.cffb-muted     { color: var(--fg-secondary); }
+.cffb-tertiary  { color: var(--fg-tertiary); }
+.cffb-gold      { color: var(--gold); }
+.cffb-mono      { font-family: var(--font-mono); }
+
+.cffb-mt-1 { margin-top: var(--s-1); }
+.cffb-mt-2 { margin-top: var(--s-2); }
+.cffb-mt-3 { margin-top: var(--s-3); }
+.cffb-mb-2 { margin-bottom: var(--s-2); }
+
+/* CFFB · Live Scoring — module styles (extends cffb.css) */
+/* Responsive by CONTAINER width — adapts to the space MFL gives it, not the
+   browser window, so it works in any page column or phone. The build rewrites
+   #cffb-ls-root -> #cffb-ls-root. */
+#cffb-ls-root{container-type:inline-size}
+
+/* Live-scoring animations (ported from the design mock's <helmet> block). */
+@keyframes cffb-ls-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes cffb-ls-flashup{0%{background:rgba(87,184,127,.30)}100%{background:transparent}}
+@keyframes cffb-ls-flashdn{0%{background:rgba(184,69,69,.32)}100%{background:transparent}}
+@keyframes cffb-ls-pop{0%{transform:scale(1)}30%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* Row + card hover accents */
+.ls-row{transition:background 140ms cubic-bezier(.2,.8,.2,1)}
+.ls-row:hover{background:var(--bg-surface-hover)}
+.ls-strip-card:hover{filter:brightness(1.15)}
+
+/* Thin scrollbar on the around-the-league strip */
+.ls-strip{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.ls-strip::-webkit-scrollbar{height:8px}
+.ls-strip::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.ls-strip::-webkit-scrollbar-track{background:transparent}
+/* The two lineup columns wrap on a narrow container on their own (flex 1 1 460px). */
+
+.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}
+.cffb-boot--err{color:#D88787}
+#cffb-ls-root .ls-plink{color:var(--fg-primary,#F5F5F5) !important;text-decoration:none}
+#cffb-ls-root .ls-plink:hover{color:#D88787 !important;text-decoration:underline;text-underline-offset:3px}
+</style>
+<div id="cffb-ls-root"></div>
+<script>
+(function () {
+  if (window.__cffbLiveScoringBooted) return;
+  window.__cffbLiveScoringBooted = true;
+  function __cffbApp() {
+/* ---- ls-data-live.jsx ---- */
+// CFFB · Live Scoring — LIVE data layer
+// ---------------------------------------------------------------------------
+// Feeds ls-app.jsx with real, live head-to-head scoring from the MFL export
+// API. The widget runs ON an MFL page (a home-page message), so every export
+// call is SAME-ORIGIN (no CORS). It reads the page globals:
+//   window.franchiseDatabase  fid_XXXX -> Franchise(id,name,division,icon,logo,abbrev)
+//   window.franchise_id       the signed-in franchise ('0000' = commissioner)
+//   window.league_id          the league id (e.g. '12011')
+//   window.currentWeek        the live scoring week (falls back to a clock guess)
+//
+// Data sources (all real MFL data):
+//   TYPE=players&DETAILS=1        player identity (name / position / NFL team) — cached
+//   TYPE=projectedScores&W=WEEK   pre-scored projected fantasy points       — cached
+//   TYPE=liveScoring&W=WEEK       live franchise + per-player scores + clock — never cached
+//
+// Per-player live/pre/final state is derived from gameSecondsRemaining, whose
+// semantics are confirmed against MFL's own mfl_common.js: < 3600 = currently
+// playing, 3600 (or unset) = yet to play, 0 = game over.
+//
+// Win probability is a fast normal-distribution ESTIMATE from the projected
+// margin (NOT MFL's exact 400-sim Monte Carlo) — labeled as such in the UI.
+//
+// It exposes the identifiers ls-app.jsx consumes: TEAMS, MY_FID, POS_COLORS,
+// CONF_ACCENT, MFL_PLAYER_LINK, LS_PAYLOAD, plus window.__loadLiveScoring
+// (awaited by the boot wrapper) and window.__refreshLiveScoring (the poll).
+
+// ── Static maps ───────────────────────────────────────────────────────────────
+const CONF_ACCENT = {
+  sec: '#C9A227',
+  b1g: '#4A6FA5',
+  acc: '#8B4A5C',
+  big12: '#B84545',
+  aac: '#6B5C8B',
+  pac: '#5C7A6A'
+};
+const CONF_ORDER = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
+// MFL franchise division code -> conference id.
+const DIV_TO_CONF = {
+  '00': 'acc',
+  '01': 'b1g',
+  '02': 'big12',
+  '03': 'pac',
+  '04': 'sec',
+  '05': 'aac'
+};
+const POS_COLORS = {
+  QB: '#C9A227',
+  RB: '#3B82C4',
+  WR: '#7BA4C9',
+  TE: '#E8C547',
+  DB: '#6E86A8',
+  K: '#5C7A6A'
+};
+// Normalize MFL positions into the buckets we color by.
+const POS_MAP = {
+  QB: 'QB',
+  RB: 'RB',
+  FB: 'RB',
+  WR: 'WR',
+  TE: 'TE',
+  PK: 'K',
+  K: 'K',
+  DB: 'DB',
+  CB: 'DB',
+  S: 'DB',
+  SS: 'DB',
+  FS: 'DB',
+  DE: 'DB',
+  DL: 'DB',
+  DT: 'DB',
+  LB: 'DB',
+  ILB: 'DB',
+  OLB: 'DB'
+};
+const normPos = pos => POS_MAP[(pos || '').toUpperCase()] || 'WR';
+
+// ── Live state (populated during load; ls-app reads these at render) ──────────
+let SEASON = 2026;
+let WEEK = 1;
+let SLATE = '';
+let MY_FID = ''; // signed-in franchise id ('' or '0000' = commissioner)
+let TEAMS = {}; // fid -> { name, abbr, conf, fg, pill, pill2, fid }
+let MFL_CTX = {
+  origin: '',
+  host: '',
+  year: '2026',
+  league: '12011'
+};
+let PLAYERS_BY_ID = {}; // pid -> { name, pos, team, playerId }
+let PROJ_BY_ID = {}; // pid -> projected fantasy points (number)
+let PREV_PTS = {}; // pid -> last-seen live points (for delta/flash diffing)
+let LS_PAYLOAD = null; // last built payload { week, slate, matchups, flashes, ts }
+
+// MFL league *pages* (/player, etc.) are bound to the league's numbered server
+// (www46). Player links must target the resolved numbered host, not a custom
+// domain / balancer (which 403s). Export calls work on any host (MFL_CTX.origin).
+const MFL_PLAYER_LINK = pid => `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/player?L=${MFL_CTX.league}&P=${pid}`;
+// MFL player headshot (same path the Roster Board / Player Ledger use). Missing
+// photos error out → the initials placeholder shows through.
+const PLAYER_PHOTO = pid => `https://www46.myfantasyleague.com/player_photos_2014/${pid}_thumb.jpg`;
+const initialsOf = name => {
+  // MFL names are "Last, First" — show First-Last initials.
+  const clean = name.indexOf(',') >= 0 ? name.split(',').reverse().join(' ') : name;
+  return clean.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+};
+const displayName = name => name.indexOf(',') >= 0 ? name.split(',').map(s => s.trim()).reverse().join(' ') : name;
+
+// ── MFL context + franchise directory ────────────────────────────────────────
+const MFL_HOST_RE = /^https?:\/\/www\d+\.myfantasyleague\.com/i;
+function resolveMflHost(origin) {
+  try {
+    const om = String(origin).match(MFL_HOST_RE);
+    if (om) return om[0];
+    if (typeof document !== 'undefined' && document.querySelectorAll) {
+      const nodes = document.querySelectorAll('script[src],link[href],img[src],a[href]');
+      for (let i = 0; i < nodes.length; i++) {
+        const m = String(nodes[i].src || nodes[i].href || '').match(MFL_HOST_RE);
+        if (m) return m[0];
+      }
+    }
+  } catch (e) {/* ignore */}
+  return origin;
+}
+function resolveCtx() {
+  const origin = location.origin;
+  const host = resolveMflHost(origin);
+  const yr = (String(location.pathname).match(/\/(20\d{2})\//) || [])[1] || (String(location.href).match(/\/(20\d{2})\//) || [])[1] || String(SEASON);
+  const league = String(window.league_id || (String(location.href).match(/[?&]L=(\d+)/) || [])[1] || '12011');
+  MFL_CTX = {
+    origin,
+    host,
+    year: yr,
+    league
+  };
+  SEASON = parseInt(yr, 10) || SEASON;
+  if (host !== origin) console.log('[CFFB Live Scoring] player links use MFL host ' + host + ' (page origin ' + origin + ')');
+}
+
+// MFL franchise ICON URLs are often imgur "gallery" links (imgur.com/{id}.png),
+// which render unreliably as <img> sources; rewrite them to the direct CDN.
+function imgurDirect(u) {
+  const m = String(u || '').match(/^https?:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]+)(?:\.[A-Za-z0-9]+)?$/i);
+  return m ? 'https://i.imgur.com/' + m[1] + '.png' : u || '';
+}
+function buildTeams() {
+  const db = window.franchiseDatabase || {};
+  const teams = {};
+  Object.keys(db).forEach(key => {
+    const f = db[key];
+    if (!f || !f.id || f.id === '0000') return; // skip commissioner pseudo-franchise
+    const abbr = (f.abbrev || f.id).toUpperCase();
+    const conf = DIV_TO_CONF[f.division] || 'acc';
+    teams[f.id] = {
+      name: f.name || abbr,
+      abbr,
+      conf,
+      fg: '#E8E7E4',
+      pill: imgurDirect(f.icon),
+      // franchise ICON (small pill) — shown first
+      pill2: imgurDirect(f.logo),
+      // franchise LOGO — fallback if the icon fails to load
+      fid: f.id
+    };
+  });
+  TEAMS = teams;
+  MY_FID = String(window.franchise_id || '');
+  console.log('[CFFB Live Scoring] ' + Object.keys(teams).length + ' franchises; signed-in franchise_id=' + (MY_FID || '(none)') + (teams[MY_FID] ? ' (' + teams[MY_FID].abbr + ')' : ' (commissioner/unknown)'));
+}
+
+// ── Fetch helpers ─────────────────────────────────────────────────────────────
+async function fetchJSON(type, extra) {
+  const url = `${MFL_CTX.origin}/${MFL_CTX.year}/export?TYPE=${type}&L=${MFL_CTX.league}&JSON=1${extra || ''}`;
+  const res = await fetch(url, {
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + type);
+  return res.json();
+}
+const asArray = x => Array.isArray(x) ? x : x != null ? [x] : [];
+
+// Best-effort current NFL week from the browser clock (fallback when the page
+// exposes no week global). Week 1 ~ the first Tuesday of September of the season.
+function guessNflWeek(y) {
+  try {
+    const now = new Date();
+    const sep1 = new Date(y, 8, 1);
+    const firstTue = new Date(y, 8, 1 + (2 - sep1.getDay() + 7) % 7);
+    const wk = Math.floor((now - firstTue) / (7 * 864e5)) + 1;
+    return Math.min(Math.max(wk, 1), 18);
+  } catch (e) {
+    return 1;
+  }
+}
+
+// ── Per-player game state (confirmed vs MFL's mfl_common.js) ──────────────────
+// gameSecondsRemaining: < 3600 = currently playing, 3600/unset = yet to play, 0 = final.
+function gameStateOf(gsr) {
+  const s = parseFloat(gsr);
+  if (!isFinite(s) || s >= 3600) return 'PRE';
+  if (s <= 0) return 'FINAL';
+  return 'LIVE';
+}
+
+// ── Win probability — normal-distribution ESTIMATE ────────────────────────────
+// Standard-normal CDF via the Abramowitz-Stegun 26.2.17 approximation.
+function normCdf(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989422804014327 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return z > 0 ? 1 - p : p;
+}
+// Home win % from the projected-final margin. sigma shrinks toward ~0 as starters
+// finish, so once every game is FINAL the leader reads ~99%.
+function winProb(home, away) {
+  const margin = home.proj - away.proj;
+  const totalStart = home.starters.length + away.starters.length;
+  const openStart = home.playing + home.left + away.playing + away.left; // still-in-play starters
+  const sigma = Math.max(1, 26 * Math.sqrt(openStart / Math.max(1, totalStart)));
+  return Math.round(Math.max(1, Math.min(99, normCdf(margin / sigma) * 100)));
+}
+
+// ── Build model from feeds ────────────────────────────────────────────────────
+function buildSide(frNode) {
+  const fid = String(frNode.id || '');
+  const t = TEAMS[fid] || {
+    name: fid,
+    abbr: fid,
+    conf: 'acc',
+    fg: '#E8E7E4',
+    pill: '',
+    pill2: '',
+    fid
+  };
+  const players = asArray(frNode.players && frNode.players.player).map(pl => {
+    const pid = String(pl.id);
+    const idn = PLAYERS_BY_ID[pid] || {
+      name: pid,
+      pos: 'WR',
+      team: '',
+      playerId: pid
+    };
+    const st = gameStateOf(pl.gameSecondsRemaining);
+    const proj = pid in PROJ_BY_ID ? PROJ_BY_ID[pid] : null;
+    return {
+      pid,
+      bench: String(pl.status || '').toLowerCase() === 'nonstarter',
+      pos: normPos(idn.pos),
+      name: displayName(idn.name),
+      initials: initialsOf(idn.name),
+      photo: idn.playerId ? PLAYER_PHOTO(idn.playerId) : null,
+      playerId: idn.playerId,
+      team: idn.team || '',
+      pts: parseFloat(pl.score) || 0,
+      proj,
+      st,
+      gameDetail: st === 'FINAL' ? 'Final' : st === 'PRE' ? 'To play' : 'Live',
+      isLive: st === 'LIVE'
+    };
+  });
+  const starters = players.filter(p => !p.bench);
+  const bench = players.filter(p => p.bench);
+  const n = st => starters.filter(p => p.st === st).length;
+  // Team total: MFL's franchise-level score is authoritative; fall back to summed starters.
+  const teamPts = frNode.score != null && frNode.score !== '' ? parseFloat(frNode.score) : starters.reduce((a, p) => a + p.pts, 0);
+  // Projected final: finished players lock at pts; others take max(pts, proj).
+  const teamProj = starters.reduce((a, p) => a + (p.st === 'FINAL' ? p.pts : Math.max(p.pts, p.proj != null ? p.proj : p.pts)), 0);
+  return {
+    fid,
+    key: fid,
+    name: t.name,
+    abbr: t.abbr,
+    conf: t.conf,
+    color: CONF_ACCENT[t.conf] || '#5A5A5A',
+    txt: t.fg,
+    pill: t.pill,
+    pill2: t.pill2,
+    pts: teamPts,
+    proj: teamProj,
+    starters,
+    bench,
+    playing: n('LIVE'),
+    left: n('PRE'),
+    done: n('FINAL')
+  };
+}
+
+// Pair matchups from liveScoring. Franchise order within a matchup is not a true
+// home/away — index 0 renders left ("away"), index 1 right ("home"). Presentational
+// only; no scoring impact.
+function buildMatchups(ld) {
+  const ls = ld && ld.liveScoring;
+  const rawMatchups = asArray(ls && ls.matchup);
+  return rawMatchups.map(mt => {
+    const fs = asArray(mt.franchise);
+    const away = buildSide(fs[0] || {});
+    const home = buildSide(fs[1] || {});
+    return {
+      away,
+      home,
+      homeProb: winProb(home, away)
+    };
+  }).filter(m => m.away.fid && m.home.fid);
+}
+
+// Diff live points vs the previous poll → flash/delta badges on real changes.
+function computeDeltas(matchups) {
+  const flashes = {};
+  matchups.forEach(m => [m.away, m.home].forEach(s => {
+    [...s.starters, ...s.bench].forEach(p => {
+      const prev = PREV_PTS[p.pid];
+      if (prev != null && Math.abs(p.pts - prev) >= 0.05 && p.st !== 'PRE') {
+        const d = +(p.pts - prev).toFixed(1);
+        if (d !== 0) flashes[s.key + '|' + p.pid] = {
+          dir: d >= 0 ? 'up' : 'dn',
+          delta: (d > 0 ? '+' : '') + d.toFixed(1)
+        };
+      }
+      PREV_PTS[p.pid] = p.pts;
+    });
+  }));
+  return flashes;
+}
+
+// Short "slate" summary from live/final counts across all games.
+function slateSummary(matchups) {
+  let live = 0,
+    final = 0,
+    pre = 0;
+  matchups.forEach(m => [m.away, m.home].forEach(s => {
+    live += s.playing;
+    final += s.done;
+    pre += s.left;
+  }));
+  const parts = [];
+  if (live) parts.push(live + ' playing');
+  if (pre) parts.push(pre + ' to play');
+  if (final) parts.push(final + ' final');
+  return parts.join(' · ') || 'No games in progress';
+}
+
+// ── Static feeds (cacheable) ──────────────────────────────────────────────────
+const LS_CACHE_KEY = 'cffb_live_scoring_static_v1';
+const LS_CACHE_MS = 5 * 60 * 1000; // projections drift slowly; identity even slower
+function readStaticCache() {
+  try {
+    const rec = JSON.parse(localStorage.getItem(LS_CACHE_KEY) || 'null');
+    if (!rec || typeof rec.ts !== 'number') return null;
+    if (rec.week !== WEEK || rec.year !== MFL_CTX.year) return null;
+    if (Date.now() - rec.ts > LS_CACHE_MS) return null;
+    return rec.payload;
+  } catch (e) {
+    return null;
+  }
+}
+function writeStaticCache(payload) {
+  try {
+    localStorage.setItem(LS_CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      week: WEEK,
+      year: MFL_CTX.year,
+      payload
+    }));
+  } catch (e) {/* ignore */}
+}
+async function fetchStatic() {
+  const cached = readStaticCache();
+  if (cached) {
+    PLAYERS_BY_ID = cached.players || {};
+    PROJ_BY_ID = cached.proj || {};
+    return;
+  }
+  const [playersD, projD] = await Promise.all([fetchJSON('players', '&DETAILS=1'), fetchJSON('projectedScores', '&W=' + WEEK).catch(e => {
+    console.warn('[CFFB Live Scoring] projectedScores failed:', e && e.message);
+    return null;
+  })]);
+  const players = {};
+  asArray(playersD && playersD.players && playersD.players.player).forEach(p => {
+    players[String(p.id)] = {
+      name: p.name || String(p.id),
+      pos: p.position || 'WR',
+      team: (p.team || '').toUpperCase(),
+      playerId: String(p.id)
+    };
+  });
+  const proj = {};
+  asArray(projD && projD.projectedScores && projD.projectedScores.playerScore).forEach(s => {
+    const v = parseFloat(s.score);
+    if (isFinite(v)) proj[String(s.id)] = v;
+  });
+  PLAYERS_BY_ID = players;
+  PROJ_BY_ID = proj;
+  console.log('[CFFB Live Scoring] identity ' + Object.keys(players).length + ' players, projections ' + Object.keys(proj).length);
+  writeStaticCache({
+    players,
+    proj
+  });
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+// Fresh liveScoring fetch → matchups → deltas → payload. Never cached.
+async function refreshLiveScoring() {
+  const ld = await fetchJSON('liveScoring', '&W=' + WEEK);
+  const matchups = buildMatchups(ld);
+  const flashes = computeDeltas(matchups);
+  SLATE = slateSummary(matchups);
+  LS_PAYLOAD = {
+    week: WEEK,
+    slate: SLATE,
+    matchups,
+    flashes,
+    myFid: MY_FID,
+    ts: Date.now()
+  };
+  return LS_PAYLOAD;
+}
+
+// Awaited by the boot wrapper before first mount.
+async function loadLiveScoring() {
+  resolveCtx();
+  buildTeams();
+  WEEK = parseInt(window.currentWeek, 10) || parseInt(window.liveScoringWeek, 10) || guessNflWeek(SEASON);
+  console.log('[CFFB Live Scoring] context', MFL_CTX, 'week', WEEK);
+  await fetchStatic();
+  await refreshLiveScoring(); // seeds PREV_PTS; no flashes on first paint
+}
+window.__loadLiveScoring = loadLiveScoring;
+window.__refreshLiveScoring = refreshLiveScoring;
+
+// The build concatenates this file and ls-app.jsx into one function scope, so
+// ls-app reads TEAMS / MY_FID / POS_COLORS / CONF_ACCENT / MFL_PLAYER_LINK /
+// LS_PAYLOAD lexically. Only the loader needs to be reachable by name.
+
+/* ---- ls-app.jsx ---- */
+// CFFB · Live Scoring — app
+// Ports Live Scoring/live-scoring/LiveScoring.dc.html into React, fed by the live
+// MFL data layer (ls-data-live.jsx). Keeps the mock's inline-style + cffb-token
+// look; swaps the mock's random simulator for a real ~40s poll of MFL liveScoring.
+const {
+  useState,
+  useEffect,
+  useRef
+} = React;
+
+// ── Small atoms ───────────────────────────────────────────────────────────────
+
+// Franchise pill: icon image → logo image → colored initials circle. Mirrors the
+// Roster Board's TeamChip fallback chain (franchiseDatabase icons can 404).
+const Pill = ({
+  side,
+  size
+}) => {
+  const srcs = [side.pill, side.pill2].filter(Boolean);
+  const [step, setStep] = useState(0);
+  const src = srcs[step];
+  if (src) {
+    return React.createElement('img', {
+      src,
+      alt: side.abbr,
+      onError: () => setStep(s => s + 1),
+      style: {
+        height: size + 'px',
+        width: 'auto',
+        flex: 'none',
+        display: 'block',
+        objectFit: 'contain',
+        maxWidth: size * 2.4 + 'px'
+      }
+    });
+  }
+  const fs = Math.max(7, Math.round(size * 0.32));
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: size + 'px',
+      height: size + 'px',
+      borderRadius: '50%',
+      flex: 'none',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: fs + 'px',
+      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.1)',
+      background: side.color || 'var(--border-strong)',
+      color: side.txt || 'var(--fg-primary)'
+    }
+  }, side.abbr);
+};
+
+// Player avatar: colored position bar + initials, with the MFL headshot on top
+// (removed on error so the initials show through).
+const Avatar = ({
+  p,
+  size
+}) => {
+  const [err, setErr] = useState(false);
+  const sz = size || 34;
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'relative',
+      width: sz + 'px',
+      height: sz + 'px',
+      borderRadius: '5px',
+      background: 'var(--bg-surface-elev)',
+      overflow: 'hidden',
+      outline: '1px dashed rgba(201,162,39,.28)',
+      outlineOffset: '-4px',
+      flex: 'none',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '3px',
+      background: POS_COLORS[p.pos] || 'var(--border-strong)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: Math.round(sz * 0.38) + 'px',
+      letterSpacing: '.04em',
+      color: '#5A5A5A'
+    }
+  }, p.initials), p.photo && !err && React.createElement('img', {
+    src: p.photo,
+    alt: '',
+    loading: 'lazy',
+    onError: () => setErr(true),
+    style: {
+      position: 'absolute',
+      inset: 0,
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    }
+  }));
+};
+const stColor = st => st === 'LIVE' ? '#57B87F' : st === 'PRE' ? 'var(--fg-secondary)' : 'var(--fg-tertiary)';
+const fmt = n => typeof n === 'number' ? n.toFixed(2) : '—';
+
+// ── Player row (starters + bench share the same 6-column grid) ────────────────
+const GRID = '36px 34px minmax(0,1fr) 118px 52px 44px';
+const PlayerRow = ({
+  p,
+  flash,
+  bench
+}) => {
+  const fxColor = flash ? flash.dir === 'up' ? '#57B87F' : '#D66A6A' : '';
+  const dim = p.st === 'FINAL' && !flash;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "ls-row",
+    style: {
+      display: 'grid',
+      gridTemplateColumns: GRID,
+      gap: '10px',
+      alignItems: 'center',
+      padding: bench ? '8px 18px' : '9px 18px',
+      borderBottom: '1px solid rgba(42,42,42,' + (bench ? '.4' : '.55') + ')',
+      opacity: bench ? 0.72 : 1,
+      animation: flash ? 'cffb-ls-flash' + flash.dir + ' 2.4s ease-out' : 'none'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: (bench ? 11 : 12) + 'px',
+      color: 'var(--fg-tertiary)',
+      letterSpacing: '.04em'
+    }
+  }, p.pos), /*#__PURE__*/React.createElement(Avatar, {
+    p: p,
+    size: 34
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '7px',
+      minWidth: 0
+    }
+  }, p.playerId && typeof MFL_PLAYER_LINK === 'function' ? /*#__PURE__*/React.createElement("a", {
+    className: "ls-plink",
+    href: MFL_PLAYER_LINK(p.playerId),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: (bench ? 15 : 16) + 'px',
+      lineHeight: 1.05,
+      textTransform: 'uppercase',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, p.name) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: (bench ? 15 : 16) + 'px',
+      lineHeight: 1.05,
+      textTransform: 'uppercase',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, p.name))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'block',
+      font: '600 10px/1.2 var(--font-body)',
+      color: 'var(--fg-secondary)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }
+  }, p.team || '—'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '5px',
+      font: '600 10px/1.2 var(--font-body)',
+      marginTop: '2px',
+      color: stColor(p.st)
+    }
+  }, p.isLive && /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '5px',
+      height: '5px',
+      borderRadius: '50%',
+      background: '#57B87F',
+      flex: 'none',
+      animation: 'cffb-ls-pulse 1.6s ease-in-out infinite'
+    }
+  }), p.gameDetail)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      textAlign: 'right'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      display: 'inline-block',
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: (bench ? 16 : 18) + 'px',
+      color: p.st === 'PRE' ? 'var(--fg-tertiary)' : 'var(--fg-primary)',
+      animation: flash ? 'cffb-ls-pop .6s ease-out' : 'none',
+      ...(flash ? {
+        color: fxColor
+      } : {})
+    }
+  }, fmt(p.pts)), flash && /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      display: 'block',
+      font: '700 10px/1 var(--font-body)',
+      marginTop: '2px',
+      color: fxColor
+    }
+  }, flash.delta)), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      textAlign: 'right',
+      fontSize: '12px',
+      color: 'var(--fg-secondary)'
+    }
+  }, p.proj != null ? fmt(p.proj) : '—'));
+};
+
+// ── Lineup column (starters + collapsible bench) ──────────────────────────────
+const LineupColumn = ({
+  side,
+  flashes
+}) => {
+  const [openBench, setOpenBench] = useState(true);
+  const benchPts = side.bench.reduce((a, p) => a + p.pts, 0);
+  const fl = p => flashes[side.key + '|' + p.pid];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: '1 1 460px',
+      minWidth: 0,
+      background: 'var(--bg-surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      overflowX: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: '520px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '14px 18px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '19px',
+      textTransform: 'uppercase'
+    }
+  }, side.name), /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 'auto',
+      font: '600 9px/1 var(--font-body)',
+      letterSpacing: '.12em',
+      textTransform: 'uppercase',
+      color: 'var(--fg-tertiary)'
+    }
+  }, "Starters"), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '19px',
+      color: 'var(--gold)'
+    }
+  }, fmt(side.pts))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: GRID,
+      gap: '10px',
+      alignItems: 'center',
+      padding: '9px 18px',
+      borderBottom: '1px solid var(--border)',
+      font: '600 9px/1 var(--font-body)',
+      letterSpacing: '.14em',
+      textTransform: 'uppercase',
+      color: 'var(--fg-tertiary)'
+    }
+  }, /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("span", null, "Player"), /*#__PURE__*/React.createElement("span", null, "Game"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      textAlign: 'right',
+      color: 'var(--gold)'
+    }
+  }, "Pts"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      textAlign: 'right'
+    }
+  }, "Proj")), side.starters.map(p => /*#__PURE__*/React.createElement(PlayerRow, {
+    key: p.pid,
+    p: p,
+    flash: fl(p)
+  })), side.bench.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOpenBench(o => !o),
+    style: {
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '10px 18px',
+      background: 'var(--bg-surface-elev)',
+      border: 'none',
+      borderBottom: '1px solid var(--border)',
+      cursor: 'pointer',
+      textAlign: 'left'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: '700 9px/1 var(--font-body)',
+      letterSpacing: '.18em',
+      textTransform: 'uppercase',
+      color: 'var(--fg-tertiary)'
+    }
+  }, openBench ? '▾' : '▸', " Bench"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      height: '1px',
+      background: 'var(--border)'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      font: '600 10px/1 var(--font-body)',
+      color: 'var(--fg-tertiary)'
+    }
+  }, fmt(benchPts), " pts")), openBench && side.bench.map(p => /*#__PURE__*/React.createElement(PlayerRow, {
+    key: p.pid,
+    p: p,
+    flash: fl(p),
+    bench: true
+  })))));
+};
+
+// ── Featured scoreboard ───────────────────────────────────────────────────────
+const SideBlock = ({
+  side,
+  prob,
+  home,
+  leading
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: '1 1 300px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    minWidth: 0,
+    flexWrap: 'wrap',
+    flexDirection: home ? 'row-reverse' : 'row'
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    flex: 'none',
+    display: 'flex',
+    alignItems: 'center'
+  }
+}, /*#__PURE__*/React.createElement(Pill, {
+  side: side,
+  size: 64
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    minWidth: 0,
+    textAlign: home ? 'right' : 'left'
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontFamily: 'var(--font-display)',
+    fontWeight: 700,
+    fontSize: '26px',
+    lineHeight: 1,
+    textTransform: 'uppercase'
+  }
+}, side.name), /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: '600 9px/1 var(--font-body)',
+    letterSpacing: '.12em',
+    textTransform: 'uppercase',
+    color: 'var(--fg-tertiary)',
+    marginTop: '9px'
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    color: '#57B87F'
+  }
+}, side.playing, " playing"), " \xB7 ", side.left, " to play \xB7 ", side.done, " final")), /*#__PURE__*/React.createElement("div", {
+  style: {
+    [home ? 'marginRight' : 'marginLeft']: 'auto',
+    textAlign: home ? 'left' : 'right'
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  className: "cffb-num",
+  style: {
+    fontFamily: 'var(--font-display)',
+    fontWeight: 700,
+    fontSize: '58px',
+    lineHeight: 0.9,
+    color: leading ? 'var(--fg-primary)' : 'var(--fg-secondary)'
+  }
+}, fmt(side.pts)), /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: '600 10px/1 var(--font-body)',
+    letterSpacing: '.12em',
+    textTransform: 'uppercase',
+    color: 'var(--fg-tertiary)',
+    marginTop: '7px'
+  }
+}, "Proj ", /*#__PURE__*/React.createElement("span", {
+  className: "cffb-num",
+  style: {
+    color: 'var(--fg-secondary)'
+  }
+}, fmt(side.proj)))));
+const Scoreboard = ({
+  m
+}) => {
+  const awayProb = 100 - m.homeProb;
+  const awayLead = m.away.pts >= m.home.pts;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      background: 'var(--bg-surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '8px',
+      padding: '28px 28px 24px',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '3px',
+      background: 'var(--gold-gradient)'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '16px 24px',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement(SideBlock, {
+    side: m.away,
+    prob: awayProb,
+    leading: awayLead
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: '0 0 auto',
+      textAlign: 'center',
+      padding: '0 6px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '15px',
+      color: 'var(--fg-tertiary)',
+      letterSpacing: '.08em'
+    }
+  }, "VS")), /*#__PURE__*/React.createElement(SideBlock, {
+    side: m.home,
+    prob: m.homeProb,
+    home: true,
+    leading: !awayLead
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '24px',
+      paddingTop: '18px',
+      borderTop: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: '12px',
+      marginBottom: '8px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '16px'
+    }
+  }, awayProb, "%"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: '600 9px/1 var(--font-body)',
+      letterSpacing: '.16em',
+      textTransform: 'uppercase',
+      color: 'var(--fg-tertiary)'
+    },
+    title: "Estimated from projected margin \u2014 not MFL's official win probability"
+  }, "Win Probability", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--fg-tertiary)',
+      opacity: 0.7
+    }
+  }, " \xB7 est")), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '16px'
+    }
+  }, m.homeProb, "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      height: '8px',
+      borderRadius: 'var(--r-pill)',
+      overflow: 'hidden',
+      background: 'var(--bg-surface-elev)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      height: '100%',
+      transition: 'width var(--dur-fast) var(--ease-out)',
+      width: awayProb + '%',
+      background: m.away.color
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      height: '100%',
+      background: m.home.color
+    }
+  }))));
+};
+
+// ── Around-the-league strip ───────────────────────────────────────────────────
+const StripCard = ({
+  m,
+  i,
+  active,
+  onSelect
+}) => {
+  const live = m.away.playing + m.home.playing;
+  const left = m.away.left + m.home.left;
+  const status = live > 0 ? 'Live' : left > 0 ? 'In progress' : 'Final';
+  const statusColor = live > 0 ? '#57B87F' : 'var(--fg-tertiary)';
+  const awayLead = m.away.pts >= m.home.pts;
+  const teamLine = (side, lead) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0,1fr) auto',
+      gap: '8px',
+      alignItems: 'center',
+      marginBottom: '4px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement(Pill, {
+    side: side,
+    size: 18
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "cffb-num",
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '13px',
+      color: lead ? 'var(--fg-primary)' : 'var(--fg-secondary)'
+    }
+  }, fmt(side.pts)));
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onSelect,
+    className: "ls-strip-card",
+    style: {
+      cursor: 'pointer',
+      textAlign: 'left',
+      padding: '8px 10px',
+      borderRadius: 'var(--r-3)',
+      fontFamily: 'var(--font-body)',
+      background: active ? 'var(--bg-surface-elev)' : 'var(--bg-surface)',
+      border: '1px solid ' + (active ? 'var(--gold)' : 'var(--border)'),
+      transition: 'filter var(--dur-fast) var(--ease-out)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '8px',
+      marginBottom: '6px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: '700 8px/1 var(--font-body)',
+      letterSpacing: '.14em',
+      textTransform: 'uppercase',
+      color: statusColor
+    }
+  }, status), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: '600 8px/1 var(--font-body)',
+      letterSpacing: '.1em',
+      color: 'var(--fg-tertiary)'
+    }
+  }, "M", i + 1)), teamLine(m.away, awayLead), teamLine(m.home, !awayLead));
+};
+
+// ── App ───────────────────────────────────────────────────────────────────────
+const POLL_MS = 40000; // MFL live feed refreshes ~every 40s
+
+const defaultMatchupIdx = matchups => {
+  const mine = typeof MY_FID !== 'undefined' ? MY_FID : '';
+  const i = matchups.findIndex(m => m.away.fid === mine || m.home.fid === mine);
+  return i >= 0 ? i : 0;
+};
+const App = () => {
+  const seed = typeof LS_PAYLOAD !== 'undefined' && LS_PAYLOAD ? LS_PAYLOAD : {
+    week: '',
+    slate: '',
+    matchups: [],
+    flashes: {}
+  };
+  const [data, setData] = useState(seed);
+  const [idx, setIdx] = useState(() => defaultMatchupIdx(seed.matchups));
+  const [flashes, setFlashes] = useState({});
+  const pickedRef = useRef(false); // once the user taps a matchup, stop auto-defaulting
+
+  useEffect(() => {
+    let alive = true;
+    const timers = [];
+    const tick = async () => {
+      try {
+        const pd = await window.__refreshLiveScoring();
+        if (!alive) return;
+        setData(pd);
+        if (pd.flashes && Object.keys(pd.flashes).length) {
+          setFlashes(f => ({
+            ...f,
+            ...pd.flashes
+          }));
+          timers.push(setTimeout(() => {
+            setFlashes(f => {
+              const n = {
+                ...f
+              };
+              Object.keys(pd.flashes).forEach(k => delete n[k]);
+              return n;
+            });
+          }, 2400));
+        }
+      } catch (e) {/* keep last good data; retry next tick */}
+    };
+    const iv = setInterval(tick, POLL_MS);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      alive = false;
+      clearInterval(iv);
+      timers.forEach(clearTimeout);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
+  const matchups = data.matchups || [];
+  if (!matchups.length) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "cffb-boot"
+    }, "No live matchups for week ", data.week || '—', " yet.");
+  }
+  const sel = Math.min(idx, matchups.length - 1);
+  const m = matchups[sel];
+  const anyLive = matchups.some(g => g.away.playing + g.home.playing > 0);
+  const pick = i => {
+    pickedRef.current = true;
+    setIdx(i);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '1280px',
+      margin: '0 auto',
+      padding: '0 24px 72px',
+      fontFamily: 'var(--font-body)',
+      color: 'var(--fg-primary)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      padding: '32px 0 26px',
+      borderBottom: '1px solid var(--border)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: '16px 24px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '8px',
+      height: '26px',
+      background: 'var(--gold-gradient)',
+      borderRadius: '1px',
+      alignSelf: 'center'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: '30px',
+      lineHeight: 1,
+      textTransform: 'uppercase'
+    }
+  }, "Live Scoring"), anyLive && /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '7px',
+      padding: '4px 10px',
+      borderRadius: '2px',
+      background: 'rgba(45,122,78,.14)',
+      border: '1px solid rgba(45,122,78,.4)',
+      font: '700 10px/1 var(--font-body)',
+      letterSpacing: '.16em',
+      textTransform: 'uppercase',
+      color: '#57B87F'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '6px',
+      height: '6px',
+      borderRadius: '50%',
+      background: '#57B87F',
+      animation: 'cffb-ls-pulse 1.6s ease-in-out infinite'
+    }
+  }), "Live")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: '600 var(--tx-2xs)/1 var(--font-body)',
+      letterSpacing: '.14em',
+      textTransform: 'uppercase',
+      color: 'var(--fg-tertiary)'
+    }
+  }, "Week ", data.week, " \xB7 ", data.slate))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridAutoFlow: 'column',
+      gridTemplateRows: 'repeat(2,auto)',
+      gridAutoColumns: '150px',
+      gap: '6px',
+      margin: '20px 0 24px',
+      overflowX: 'auto',
+      paddingBottom: '6px'
+    },
+    className: "ls-strip"
+  }, matchups.map((g, i) => /*#__PURE__*/React.createElement(StripCard, {
+    key: i,
+    m: g,
+    i: i,
+    active: i === sel,
+    onSelect: () => pick(i)
+  }))), /*#__PURE__*/React.createElement(Scoreboard, {
+    m: m
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '16px',
+      alignItems: 'flex-start',
+      marginTop: '16px'
+    }
+  }, /*#__PURE__*/React.createElement(LineupColumn, {
+    side: m.away,
+    flashes: flashes
+  }), /*#__PURE__*/React.createElement(LineupColumn, {
+    side: m.home,
+    flashes: flashes
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '18px',
+      font: '500 10px/1.5 var(--font-body)',
+      letterSpacing: '.06em',
+      color: 'var(--fg-tertiary)',
+      textTransform: 'uppercase'
+    }
+  }, "Scores update live (~40s) \xB7 Proj & win probability are estimates \xB7 Tap any matchup above to open its scoreboard"));
+};
+const CFFBLiveScoringBoot = () => {
+  const [ready, setReady] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+  React.useEffect(() => {
+    window.__loadLiveScoring().then(() => setReady(true)).catch(e => setErr(e && e.message ? e.message : String(e)));
+  }, []);
+  if (err) return /*#__PURE__*/React.createElement("div", {
+    className: "cffb-boot cffb-boot--err"
+  }, "Couldn't load live scoring: ", err);
+  if (!ready) return /*#__PURE__*/React.createElement("div", {
+    className: "cffb-boot"
+  }, "Loading live scoring\u2026");
+  return /*#__PURE__*/React.createElement(App, null);
+};
+ReactDOM.createRoot(document.getElementById('cffb-ls-root')).render(/*#__PURE__*/React.createElement(CFFBLiveScoringBoot, null));
+  }
+  var RV = "18.3.1";
+  function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }
+  if (ready()) { __cffbApp(); return; }
+  window.__cffbReactPromise = window.__cffbReactPromise || new Promise(function (resolve) {
+    function load(src, cb) { var s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous"; s.onload = cb; s.onerror = cb; document.head.appendChild(s); }
+    load("https://unpkg.com/react@" + RV + "/umd/react.production.min.js", function () {
+      load("https://unpkg.com/react-dom@" + RV + "/umd/react-dom.production.min.js", resolve);
+    });
+  });
+  window.__cffbReactPromise.then(__cffbApp);
+})();
+</script>

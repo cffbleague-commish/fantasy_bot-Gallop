@@ -197,11 +197,15 @@ const extraCss = [
   // separate lines). align-items:flex-end keeps the button baseline-aligned with the KPI values.
   '#' + ROOT_ID + ' .rb-team__aside{margin-left:auto;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;justify-content:flex-end}',
   '#' + ROOT_ID + ' .rb-team__aside .rb-team__kpis{margin-left:0}',
+  '.rb-team__btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}',
   '#' + ROOT_ID + ' .rb-manage-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:700 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#0A0A0A;background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));border:none;border-radius:4px;padding:9px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}',
   '#' + ROOT_ID + ' .rb-manage-btn:hover{filter:brightness(1.07)}',
-  // Mobile (container ≤720px): the aside spans full width; the button drops below the
-  // KPI row full-width so nothing is cramped.
-  '@container (max-width:720px){#' + ROOT_ID + ' .rb-team__aside{width:100%;margin-left:0;gap:12px}#' + ROOT_ID + ' .rb-manage-btn{width:100%;justify-content:center;padding:11px 14px}}',
+  // Set Lineup — secondary (outlined) so Manage Roster stays the primary gold action.
+  '#' + ROOT_ID + ' .rb-manage-btn--alt{background:transparent;color:var(--gold-light,#E8C547);border:1px solid rgba(201,162,39,.55);box-shadow:none}',
+  '#' + ROOT_ID + ' .rb-manage-btn--alt:hover{background:rgba(201,162,39,.1);filter:none}',
+  // Mobile (container ≤720px): the aside + button row span full width; the two
+  // buttons share the row so nothing is cramped.
+  '@container (max-width:720px){#' + ROOT_ID + ' .rb-team__aside{width:100%;margin-left:0;gap:12px}#' + ROOT_ID + ' .rb-team__btns{width:100%}#' + ROOT_ID + ' .rb-manage-btn{flex:1;justify-content:center;padding:11px 14px}}',
   '.rb-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;background:rgba(0,0,0,.66);overflow-y:auto}',
   '.rb-modal__box{width:100%;max-width:560px;background:var(--bg-surface,#141414);border:1px solid var(--border,#2A2A2A);border-top:3px solid var(--gold,#C9A227);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.7)}',
   '.rb-modal__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 8px}',
@@ -235,10 +239,41 @@ const extraCss = [
   '#' + ROOT_ID + ' .rb-mbtn--taxi{border-color:rgba(201,162,39,.55);color:var(--gold-light,#E8C547)}',
   '#' + ROOT_ID + ' .rb-mbtn--ir{border-color:rgba(184,69,69,.55);color:#D88787}',
   '#' + ROOT_ID + ' .rb-mbtn--go{background:var(--gold-gradient,linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F));color:#0A0A0A;border-color:transparent}',
+  // Drop — danger tone (red), for the irreversible release action
+  '#' + ROOT_ID + ' .rb-mbtn--drop{border-color:rgba(184,69,69,.6);color:#E4A6A6;background:rgba(184,69,69,.08)}',
+  '#' + ROOT_ID + ' .rb-mbtn--drop:hover{background:rgba(184,69,69,.18)}',
   // "no new redshirt" flag on IR actions for players who already used a medical RS
   '.rb-mng__nors{font:700 8px/1 var(--font-body,sans-serif);letter-spacing:.08em;text-transform:uppercase;color:#D88787;border:1px solid rgba(184,69,69,.5);border-radius:2px;padding:3px 5px;white-space:nowrap;cursor:help}',
   // season-retention note in the Manage modal (amber, tighter to the note above)
   '.rb-modal__note--rs{padding-top:0;color:var(--gold-light,#E8C547)}',
+  // ── Set Lineup modal ──────────────────────────────────────────────────────
+  '.rb-modal__box--wide{max-width:680px}',
+  '.rb-lu__bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:0 20px 12px}',
+  '.rb-lu__wk{font:600 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-secondary,#9A9A9A);display:inline-flex;align-items:center}',
+  '#' + ROOT_ID + ' .rb-lu__wk select,#' + ROOT_ID + ' .rb-lu__tb select{font:600 12px/1 var(--font-body,sans-serif);color:var(--fg-primary,#F5F5F5);background:var(--bg-surface-elev,#1C1C1C);border:1px solid var(--border-strong,#3A3A3A);border-radius:4px;padding:6px 8px;cursor:pointer}',
+  '.rb-lu__lock{font:600 10.5px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:var(--gold-light,#E8C547)}',
+  '.rb-lu__lock.is-locked{color:#E4A6A6}',
+  '.rb-lu__count{margin-left:auto;font-family:var(--font-display,sans-serif);font-weight:700;font-size:15px;color:#E4A6A6;font-variant-numeric:tabular-nums}',
+  '.rb-lu__count.is-ok{color:#8FCBA4}',
+  '.rb-lu__slotn{margin-left:auto;font:600 10px/1 var(--font-body,sans-serif);letter-spacing:.06em;color:#D88787}',
+  '.rb-lu__slotn.is-ok{color:#8FCBA4}',
+  '#' + ROOT_ID + ' .rb-lu__row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;padding:8px 8px;border:1px solid transparent;border-radius:6px;background:transparent;transition:background 120ms,border-color 120ms}',
+  '#' + ROOT_ID + ' .rb-lu__row:hover{background:var(--bg-surface-hover,#1F1F1F)}',
+  '#' + ROOT_ID + ' .rb-lu__row.is-on{background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.4)}',
+  '#' + ROOT_ID + ' .rb-lu__row:disabled{opacity:.55;cursor:default}',
+  '.rb-lu__check{flex:none;width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-strong,#3A3A3A);display:inline-flex;align-items:center;justify-content:center;font:700 12px/1 var(--font-body,sans-serif);color:#0A0A0A}',
+  '.rb-lu__check.is-on{background:var(--gold,#C9A227);border-color:var(--gold,#C9A227)}',
+  '.rb-lu__pname{flex:1;min-width:0;font-family:var(--font-display,sans-serif);font-weight:700;font-size:14px;line-height:1.15;text-transform:uppercase;color:var(--fg-primary,#F5F5F5);display:flex;flex-direction:column;gap:2px}',
+  '.rb-lu__pmeta{font:500 10px/1.3 var(--font-body,sans-serif);letter-spacing:0;text-transform:none;color:var(--fg-tertiary,#6A6A66);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+  '.rb-lu__inj{flex:none;font:700 9px/1 var(--font-body,sans-serif);letter-spacing:.08em;border-radius:2px;padding:3px 5px}',
+  '.rb-lu__inj--o{color:#D88787;border:1px solid rgba(184,69,69,.55)}',
+  '.rb-lu__inj--q{color:var(--gold,#C9A227);border:1px solid rgba(201,162,39,.5)}',
+  '.rb-lu__inj--p{color:#8FCBA4;border:1px solid rgba(45,122,78,.5)}',
+  '.rb-lu__proj{flex:none;min-width:44px;text-align:right;font-family:var(--font-display,sans-serif);font-weight:700;font-size:15px;color:var(--fg-secondary,#9A9A9A);font-variant-numeric:tabular-nums}',
+  '.rb-lu__foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--border,#2A2A2A)}',
+  '.rb-lu__tb{font:600 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-secondary,#9A9A9A);display:inline-flex;align-items:center}',
+  '#' + ROOT_ID + ' .rb-lu__foot .rb-mbtn{margin-left:auto;padding:11px 20px;font-size:11px}',
+  '.rb-lu__hint{margin-top:8px;font:500 11px/1.4 var(--font-body,sans-serif);color:var(--fg-tertiary,#6A6A66)}',
 ].join('\n');
 
 // ---------------------------------------------------------------------------

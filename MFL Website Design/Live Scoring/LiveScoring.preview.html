@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CFFB · Live Scoring — local preview</title>
+<style>
+  html,body{margin:0;background:#0A0A0A}
+  .note{font:600 12px/1.5 system-ui,sans-serif;color:#9A9A9A;padding:14px 24px;border-bottom:1px solid #2A2A2A;background:#141414}
+  .note b{color:#E8C547}
+  .note code{color:#7BA4C9;font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="note">
+  <b>LOCAL PREVIEW — fictional sample data.</b> Serve this folder over http (e.g.
+  <code>npx serve "Live Scoring"</code> or <code>python -m http.server</code>) and open this file —
+  it stubs the MFL page globals + <code>fetch</code> with sample export-shaped JSON and injects the
+  real built <code>../home-message-live-scoring.html</code> fragment, so it exercises the actual data
+  layer + UI. Needs internet (React loads from unpkg). Player photos/logos 404 → initials fallback.
+</div>
+<div id="mount"></div>
+
+<script>
+// ── Stub the MFL page globals the data layer reads ───────────────────────────
+window.league_id   = '12011';
+window.franchise_id = '0001';   // "you" — the featured matchup defaults to this franchise
+window.currentWeek = '2';
+
+// Four fictional franchises (2 matchups). Plain objects with the fields buildTeams reads.
+window.franchiseDatabase = {
+  fid_0001: { id: '0001', name: 'Georgia',       division: '04', abbrev: 'UGA',  icon: '', logo: '' },
+  fid_0002: { id: '0002', name: 'Clemson',       division: '00', abbrev: 'CLEM', icon: '', logo: '' },
+  fid_0003: { id: '0003', name: 'Michigan',      division: '01', abbrev: 'MICH', icon: '', logo: '' },
+  fid_0004: { id: '0004', name: 'Tennessee',     division: '04', abbrev: 'TENN', icon: '', logo: '' },
+};
+
+// ── Build sample export-shaped feeds ──────────────────────────────────────────
+// Rosters per franchise: [pos, name, gameState, pts, proj]. B- prefix = bench.
+// gameState LIVE→gsr 1800, PRE→3600, FINAL→0.
+const ROSTERS = {
+  '0001': [
+    ['QB','Marek Sulligan','LIVE',17.8,26.4],['RB','Booker Lafitte','LIVE',12.4,16.0],
+    ['RB','Junior Okwuosa','LIVE',15.1,19.4],['WR','Ryland Vause','FINAL',9.8,9.8],
+    ['WR','Cortez Mabry','PRE',0.0,21.5],['TE','Amos Trelayne','LIVE',14.2,18.6],
+    ['WR','Dontae Whitfield','FINAL',10.9,10.9],['K','Miles Overton','PRE',0.0,8.5],
+    ['B-QB','Cash Delhomme','PRE',0.0,14.8],['B-RB','Tre Simms','PRE',0.0,13.5],
+  ],
+  '0002': [
+    ['QB','Kip Lorentzen','LIVE',21.4,30.2],['RB','Ike Fontenette','FINAL',24.7,24.7],
+    ['RB','Amari Delacroix','LIVE',8.2,15.8],['WR','Deion Cassar','LIVE',14.9,18.5],
+    ['WR','Tavien Rhoads','LIVE',11.3,16.5],['TE','Marcell Vanterpool','PRE',0.0,11.2],
+    ['WR','Quincy Aldana','LIVE',13.6,17.9],['K','Rowan Kessler','FINAL',7.0,7.0],
+    ['B-QB','Rowan Tessier','PRE',0.0,16.4],['B-WR','Sonny Malbrough','LIVE',6.4,10.8],
+  ],
+  '0003': [
+    ['QB','Dax Whitlow','LIVE',14.9,24.1],['RB','Cyrus Ostergaard','FINAL',17.2,17.2],
+    ['RB','Deuce Manigault','PRE',0.0,13.8],['WR','Kellan Broadnax','LIVE',7.4,13.2],
+    ['WR','Ty Renfroe','FINAL',12.1,12.1],['TE','Hollis Beacham','PRE',0.0,9.8],
+    ['WR','Marquez Odom','LIVE',9.3,8.0],['K','Bode Lindqvist','PRE',0.0,7.5],
+    ['B-RB','Zavier Culbreath','FINAL',4.4,4.4],['B-WR','Denzel Marsalis','LIVE',4.8,8.2],
+  ],
+  '0004': [
+    ['QB','Tobias Renderos','LIVE',26.8,31.0],['RB','Ronnie Peraza','LIVE',14.6,21.2],
+    ['RB','Judah Castellanos','FINAL',7.7,7.7],['WR','Micah Vanlandingham','LIVE',15.3,18.9],
+    ['WR','Cole Abernathy','PRE',0.0,14.6],['TE','Dez Whitcomb','FINAL',7.0,7.0],
+    ['WR','Jaylen Okoro','LIVE',7.9,12.4],['K','Wes Portnoy','FINAL',6.4,6.4],
+    ['B-QB','Miles Ferrucci','LIVE',4.9,11.0],['B-WR','Ade Ogunleye','PRE',0.0,12.6],
+  ],
+};
+const GSR = { LIVE: 1800, PRE: 3600, FINAL: 0 };
+const NFL = ['UGA','LSU','TEX','UNC','TENN','ND','OU','OSU','MIA','ISU','ALA','USC'];
+
+const playersOut = [];   // players export
+const projOut = [];      // projectedScores export
+const franchiseNodes = {}; // fid -> liveScoring franchise node
+let pidSeq = 20000;
+
+Object.keys(ROSTERS).forEach((fid) => {
+  const players = [];
+  let teamPts = 0;
+  ROSTERS[fid].forEach((row, i) => {
+    const [rawPos, name, st, pts, proj] = row;
+    const bench = rawPos.indexOf('B-') === 0;
+    const pos = rawPos.replace('B-', '');
+    const pid = String(pidSeq++);
+    // "Last, First" like MFL
+    const parts = name.split(' '); const last = parts.pop(); const mflName = last + ', ' + parts.join(' ');
+    playersOut.push({ id: pid, name: mflName, position: pos, team: NFL[(pidSeq + i) % NFL.length] });
+    projOut.push({ id: pid, score: String(proj) });
+    players.push({ id: pid, score: String(pts), gameSecondsRemaining: String(GSR[st]), status: bench ? 'nonstarter' : 'starter' });
+    if (!bench) teamPts += pts;
+  });
+  franchiseNodes[fid] = { id: fid, score: teamPts.toFixed(2), players: { player: players } };
+});
+
+const SAMPLE = {
+  players: { players: { player: playersOut } },
+  projectedScores: { projectedScores: { playerScore: projOut } },
+  liveScoring: { liveScoring: { matchup: [
+    { franchise: [ franchiseNodes['0001'], franchiseNodes['0002'] ] },
+    { franchise: [ franchiseNodes['0003'], franchiseNodes['0004'] ] },
+  ] } },
+};
+
+// ── Stub fetch: serve the sample feed matching the export TYPE ────────────────
+const _fetch = window.fetch ? window.fetch.bind(window) : null;
+window.fetch = function (url, opts) {
+  const type = (String(url).match(/[?&]TYPE=(\w+)/) || [])[1];
+  if (type && SAMPLE[type]) {
+    return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(SAMPLE[type]) });
+  }
+  if (_fetch) return _fetch(url, opts);
+  return Promise.reject(new Error('preview: no stub for ' + url));
+};
+
+// ── Inject the real built fragment (executing its <script>) ───────────────────
+fetch('../home-message-live-scoring.html')
+  .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+  .then((html) => {
+    const mount = document.getElementById('mount');
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    // innerHTML-inserted <script> tags do NOT execute — re-create them so they run.
+    Array.prototype.forEach.call(tpl.content.childNodes, (node) => {
+      if (node.tagName === 'SCRIPT') {
+        const s = document.createElement('script');
+        if (node.src) s.src = node.src; else s.textContent = node.textContent;
+        mount.appendChild(s);
+      } else {
+        mount.appendChild(node.cloneNode(true));
+      }
+    });
+  })
+  .catch((e) => {
+    document.getElementById('mount').innerHTML =
+      '<div style="padding:40px;color:#D88787;font:600 13px system-ui">Preview could not load ../home-message-live-scoring.html (' +
+      e.message + '). Run the build first (npm run build:live-scoring) and serve over http, not file://.</div>';
+  });
+</script>
+</body>
+</html>

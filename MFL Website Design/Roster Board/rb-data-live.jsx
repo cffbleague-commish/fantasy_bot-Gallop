@@ -591,11 +591,17 @@ async function rbFetchForm(kind, targetFid, forceFid) {
 // action URL, hidden fields, the franchise the form is scoped to (.fid), and a
 // { pid -> {name,dir} } map of legal moves.
 async function rbLoadActions(targetFid, forceFid) {
-  const out = { taxi: null, ir: null };
-  await Promise.all(['taxi', 'ir'].map(async (k) => {
-    try { out[k] = await rbFetchForm(k, targetFid, forceFid); }
-    catch (e) { console.warn('[CFFB Roster Board] ' + k + ' form load failed:', e && e.message); }
-  }));
+  const out = { taxi: null, ir: null, drop: null };
+  await Promise.all([
+    ...['taxi', 'ir'].map(async (k) => {
+      try { out[k] = await rbFetchForm(k, targetFid, forceFid); }
+      catch (e) { console.warn('[CFFB Roster Board] ' + k + ' form load failed:', e && e.message); }
+    }),
+    (async () => {
+      try { out.drop = await rbFetchDropForm(targetFid, forceFid); }
+      catch (e) { console.warn('[CFFB Roster Board] drop form load failed:', e && e.message); }
+    })(),
+  ]);
   return out;
 }
 
@@ -623,6 +629,131 @@ async function rbReloadRosters() {
 function rbStatusOf(teamAbbr, pid) {
   const m = (ROSTER_MEMBERS[teamAbbr] || []).find((x) => x.pid === pid);
   return m ? m.status : null;
+}
+
+// ── Drop a player (irreversible) via MFL's add_drop form ──────────────────────
+// The drop form (OPTION=257 → /add_drop) uses an AJAX player picker, so there are
+// no per-player checkboxes to read for eligibility; instead we replay its hidden
+// fields (LEAGUE_ID, FRANCHISE, OPTION) and POST a single drop_pid. MFL enforces
+// locks/eligibility server-side, and the roster re-read confirms the drop landed.
+function rbParseDropForm(html) {
+  const open = /<form[^>]*action="([^"]+\/add_drop)"[^>]*>/i.exec(html);
+  if (!open) return null;
+  const end = html.indexOf('</form>', open.index);
+  const inner = html.slice(open.index, end < 0 ? html.length : end);
+  const hidden = {};
+  let m;
+  const hidRe = /<input[^>]*type="hidden"[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/gi;
+  while ((m = hidRe.exec(inner))) hidden[m[1]] = m[2];
+  return { actionUrl: open[1], hidden, fid: hidden.FRANCHISE || hidden.FRANCHISE_ID || null };
+}
+async function rbFetchDropForm(targetFid, forceFid) {
+  const fidParam = (forceFid && targetFid) ? '&FRANCHISE_ID=' + targetFid : '';
+  const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/add_drop?L=${MFL_CTX.league}${fidParam}`;
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return rbParseDropForm(await res.text());
+}
+// POST a single drop. The form's own hidden fields (incl. OPTION=257) are replayed;
+// drop_pid carries the one player to release; SUBMIT matches the real button.
+async function rbSubmitDrop(form, pid) {
+  const fields = Object.assign({}, form.hidden, { drop_pid: pid, SUBMIT: 'Drop Players' });
+  const body = Object.keys(fields).map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(fields[k])).join('&');
+  const res = await fetch(form.actionUrl, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
+  });
+  return { ok: res.ok, status: res.status };
+}
+
+// ── Submit Lineup via MFL's /lineup form-replay ───────────────────────────────
+// The lineup page renders one checkbox group per starter slot, named <SLOT><fid>
+// (e.g. "QB0032", "WR+TE0032"), with the current starters pre-checked. Section
+// headers ("Select 1 QB:", "Select 1-5 RB:", "Select 2-6 WR+TE:") give each
+// slot's min/max, and MinStarters/MaxStarters bound the total. Each row's anchor
+// title carries the weekly matchup ("Week 1: at Bengals Sun 1:00 p.m. ET") and a
+// projection cell follows — surfaced as per-player weekly detail. A per-fid
+// TIEBREAKER <select> and a PROJSRC <select> are replayed on save.
+function rbParseLineupForm(html, fid) {
+  const open = /<form[^>]*action="([^"]+\/lineup)"[^>]*>/i.exec(html);
+  if (!open) return null;
+  const end = html.indexOf('</form>', open.index);
+  const inner = html.slice(open.index, end < 0 ? html.length : end);
+  const hidden = {};
+  let m;
+  const hidRe = /<input[^>]*type="hidden"[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/gi;
+  while ((m = hidRe.exec(inner))) hidden[m[1]] = m[2];
+
+  // Per-slot required counts from the section headers ("Select 1 QB:" / "Select 1-5 RB:").
+  const req = {};                        // slot -> { min, max }
+  const order = [];                      // slot order as rendered
+  const reqRe = /Select\s+(\d+)(?:-(\d+))?\s+([A-Z+/]+)\s*:/gi;
+  while ((m = reqRe.exec(inner))) {
+    const slot = m[3];
+    if (!(slot in req)) order.push(slot);
+    req[slot] = { min: parseInt(m[1], 10), max: m[2] ? parseInt(m[2], 10) : parseInt(m[1], 10) };
+  }
+
+  // Starter checkboxes: name = <slot><fid>. Capture pid + checked + the anchor's
+  // title (weekly matchup) and the first projection cell that follows.
+  const slots = {};                      // slot -> [ { pid, checked, opp, proj } ]
+  const cbRe = new RegExp(
+    '<input[^>]*type="checkbox"[^>]*name="([A-Za-z+/]+)' + fid + '"[^>]*value="(\\d+)"([^>]*?)>' +
+    '\\s*<a[^>]*?title="([^"]*)"[^>]*>[\\s\\S]{0,400}?class="points">([\\d.]*)<', 'gi');
+  while ((m = cbRe.exec(inner))) {
+    const slot = m[1], pid = m[2], checked = /checked/i.test(m[3] || ''), title = m[4] || '';
+    const wk = title.match(/Week\s+\d+:\s*(.+)$/);
+    (slots[slot] = slots[slot] || []).push({
+      pid, checked,
+      opp: wk ? wk[1].trim() : '',
+      proj: m[5] ? parseFloat(m[5]) : null,
+    });
+    if (order.indexOf(slot) < 0) order.push(slot);
+  }
+
+  // Tiebreaker <select> — the pre-selected roster player.
+  let tiebreaker = null;
+  const tbSel = new RegExp('<select[^>]*name="TIEBREAKER' + fid + '"[\\s\\S]*?</select>', 'i').exec(inner);
+  if (tbSel) { const s = /<option[^>]*value="([^"]*)"[^>]*selected/i.exec(tbSel[0]); tiebreaker = s ? s[1] : null; }
+
+  // Projection source <select> — replay whatever is selected (fallback INITPROJSRC/mfl).
+  let projsrc = hidden.INITPROJSRC || 'mfl';
+  const psSel = /<select[^>]*name="PROJSRC"[\s\S]*?<\/select>/i.exec(inner);
+  if (psSel) { const s = /<option[^>]*value="([^"]*)"[^>]*selected/i.exec(psSel[0]); if (s) projsrc = s[1]; }
+
+  return {
+    actionUrl: open[1], hidden,
+    fid: hidden.FRANCHISE || hidden.FRANCHISE_ID || null,
+    week: parseInt(hidden.WEEK, 10) || null,
+    expires: parseInt(hidden.lineup_expires, 10) || null,   // unix seconds; past = locked
+    minStarters: parseInt((html.match(/MinStarters'\]\s*=\s*(\d+)/) || [])[1], 10) || null,
+    maxStarters: parseInt((html.match(/MaxStarters'\]\s*=\s*(\d+)/) || [])[1], 10) || null,
+    req, slots, order, tiebreaker, projsrc,
+  };
+}
+async function rbFetchLineup(week, targetFid, forceFid) {
+  const wkParam = week ? '&W=' + week : '';
+  const fidParam = (forceFid && targetFid) ? '&FRANCHISE_ID=' + targetFid : '';
+  const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/lineup?L=${MFL_CTX.league}${wkParam}${fidParam}`;
+  const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return rbParseLineupForm(await res.text(), targetFid);
+}
+// POST the chosen starters. selections: { slot: [pid,...] }. Only checked starters
+// are sent (unchecked = benched), exactly as MFL's own checkbox form would.
+async function rbSubmitLineup(form, selections, tiebreakerPid) {
+  const parts = [];
+  const add = (k, v) => parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+  Object.keys(form.hidden).forEach((k) => add(k, form.hidden[k]));
+  if (form.projsrc) add('PROJSRC', form.projsrc);
+  Object.keys(selections).forEach((slot) => (selections[slot] || []).forEach((pid) => add(slot + form.fid, pid)));
+  if (tiebreakerPid) add('TIEBREAKER' + form.fid, tiebreakerPid);
+  add('SUBMIT', 'Submit Lineup');
+  const res = await fetch(form.actionUrl, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: parts.join('&'),
+  });
+  return { ok: res.ok, status: res.status };
 }
 
 // The build concatenates this file and rb-app.jsx into one function scope, so

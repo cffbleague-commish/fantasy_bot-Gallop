@@ -1,0 +1,23 @@
+/* CFFB · Live Scoring — module styles (extends cffb.css) */
+/* Responsive by CONTAINER width — adapts to the space MFL gives it, not the
+   browser window, so it works in any page column or phone. The build rewrites
+   #root -> #cffb-ls-root. */
+#root{container-type:inline-size}
+
+/* Live-scoring animations (ported from the design mock's <helmet> block). */
+@keyframes cffb-ls-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes cffb-ls-flashup{0%{background:rgba(87,184,127,.30)}100%{background:transparent}}
+@keyframes cffb-ls-flashdn{0%{background:rgba(184,69,69,.32)}100%{background:transparent}}
+@keyframes cffb-ls-pop{0%{transform:scale(1)}30%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* Row + card hover accents */
+.ls-row{transition:background 140ms cubic-bezier(.2,.8,.2,1)}
+.ls-row:hover{background:var(--bg-surface-hover)}
+.ls-strip-card:hover{filter:brightness(1.15)}
+
+/* Thin scrollbar on the around-the-league strip */
+.ls-strip{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.ls-strip::-webkit-scrollbar{height:8px}
+.ls-strip::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.ls-strip::-webkit-scrollbar-track{background:transparent}
+/* The two lineup columns wrap on a narrow container on their own (flex 1 1 460px). */
