@@ -47,6 +47,7 @@
 .ls-conftab.is-active{background:var(--bg-surface-elev)}
 .ls-conftab__n{font:700 10px/1 var(--font-body);color:var(--fg-tertiary);background:var(--bg-canvas);border:1px solid var(--border);border-radius:2px;padding:2px 5px;font-variant-numeric:tabular-nums}
 .ls-conftab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
+.ls-strip-empty{margin:14px 0 24px;padding:18px;text-align:center;background:var(--bg-surface);border:1px dashed var(--border-strong);border-radius:8px;font:600 11px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-tertiary)}
 
 /* Row + card hover accents */
 .ls-row{transition:background 140ms cubic-bezier(.2,.8,.2,1)}

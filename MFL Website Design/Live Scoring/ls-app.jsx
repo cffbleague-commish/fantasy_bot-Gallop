@@ -76,25 +76,34 @@ function extractLogoColor(url) {
     img.onerror = () => resolve(null);
     img.onload = () => {
       try {
-        const n = 32, cv = document.createElement('canvas');
+        const n = 40, cv = document.createElement('canvas');
         cv.width = n; cv.height = n;
         const ctx = cv.getContext('2d');
         ctx.drawImage(img, 0, 0, n, n);
         const d = ctx.getImageData(0, 0, n, n).data;
-        let sr = 0, sg = 0, sb = 0, sw = 0;
+        // Histogram the VIBRANT pixels into coarse color buckets, then pick the
+        // most prominent bucket. Averaging every pixel (the old approach) blended
+        // a team's colors into mud; picking the dominant saturated bucket returns
+        // the actual primary color. Grays / near-white / near-black are dropped.
+        const bins = {};
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
-          if (a < 200) continue;
+          if (a < 160) continue;
           const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
           const lum = (mx + mn) / 2;
-          if (lum < 26 || lum > 232) continue;      // skip near-black / near-white
           const sat = mx === 0 ? 0 : (mx - mn) / mx;
-          const w = sat * sat + 0.04;               // weight vibrant pixels
-          sr += r * w; sg += g * w; sb += b * w; sw += w;
+          if (lum < 30 || lum > 228) continue;      // skip near-black / near-white
+          if (sat < 0.28) continue;                 // skip grays — the muddy culprit
+          const key = (r >> 5) + ',' + (g >> 5) + ',' + (b >> 5); // 8 levels/channel
+          const bin = bins[key] || (bins[key] = { r: 0, g: 0, b: 0, w: 0 });
+          const w = 0.4 + sat;                      // favor the most saturated pixels
+          bin.r += r * w; bin.g += g * w; bin.b += b * w; bin.w += w;
         }
-        if (sw <= 0) return resolve(null);
-        const to = (x) => Math.round(x / sw).toString(16).padStart(2, '0');
-        resolve('#' + to(sr) + to(sg) + to(sb));
+        let best = null;
+        for (const k in bins) { if (!best || bins[k].w > best.w) best = bins[k]; }
+        if (!best) return resolve(null);            // no vibrant color → hash fallback
+        const to = (x) => Math.round(x / best.w).toString(16).padStart(2, '0');
+        resolve('#' + to(best.r) + to(best.g) + to(best.b));
       } catch (e) { resolve(null); }              // tainted canvas → fall back
     };
     img.src = url;
@@ -349,10 +358,15 @@ const App = () => {
   const myFid = data.myFid;
   const myConf = (typeof TEAMS !== 'undefined' && TEAMS[myFid]) ? TEAMS[myFid].conf : null;
 
-  // Conferences present this week (canonical order) with game counts.
+  // A game belongs to a conference if EITHER team is in it (so cross-conference
+  // games surface under both). Count games per conference for the tab badges.
+  const inConf = (g, c) => g.away.conf === c || g.home.conf === c;
   const counts = {};
-  matchups.forEach((g) => { if (g.conf) counts[g.conf] = (counts[g.conf] || 0) + 1; });
-  const confsPresent = CONF_ORDER.filter((c) => counts[c]);
+  CONF_ORDER.forEach((c) => { counts[c] = matchups.filter((g) => inConf(g, c)).length; });
+  // Always show a tab for every conference that exists in the LEAGUE (from the
+  // franchise directory), not just those playing this week — so the strip never
+  // disappears and a conference on a bye still gets a tab (its filter shows none).
+  const confsPresent = CONF_ORDER.filter((c) => (typeof TEAMS !== 'undefined') && Object.keys(TEAMS).some((fid) => TEAMS[fid].conf === c));
   const showConfTabs = confsPresent.length > 1;
 
   // Effective conference: explicit pick, else the user's conference if it has
@@ -360,7 +374,7 @@ const App = () => {
   const effConf = conf != null ? conf
     : (myConf && counts[myConf]) ? myConf
       : 'ALL';
-  const filtered = effConf === 'ALL' ? matchups : matchups.filter((g) => g.conf === effConf);
+  const filtered = effConf === 'ALL' ? matchups : matchups.filter((g) => inConf(g, effConf));
 
   // Effective featured matchup: an explicit pick that is still in view, else the
   // user's own matchup within the filter, else the first game of the filter.
@@ -399,9 +413,13 @@ const App = () => {
       )}
 
       {/* Around the league (filtered to the selected conference) */}
-      <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2,auto)', gridAutoColumns: '150px', gap: '6px', margin: '14px 0 24px', overflowX: 'auto', paddingBottom: '6px' }} className="ls-strip">
-        {filtered.map((g, i) => <StripCard key={g.id} m={g} i={i} active={g.id === m.id} onSelect={() => pickMatchup(g.id)} />)}
-      </div>
+      {filtered.length ? (
+        <div style={{ display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2,auto)', gridAutoColumns: '150px', gap: '6px', margin: '14px 0 24px', overflowX: 'auto', paddingBottom: '6px' }} className="ls-strip">
+          {filtered.map((g, i) => <StripCard key={g.id} m={g} i={i} active={g.id === m.id} onSelect={() => pickMatchup(g.id)} />)}
+        </div>
+      ) : (
+        <div className="ls-strip-empty">No {CONF_LABEL[effConf] || String(effConf).toUpperCase()} games this week.</div>
+      )}
 
       {/* Featured scoreboard */}
       <Scoreboard m={m} />
