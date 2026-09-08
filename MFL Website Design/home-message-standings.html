@@ -1232,24 +1232,11 @@
   if (window.__cffbStandingsBooted) return;
   window.__cffbStandingsBooted = true;
   function __cffbApp() {
-/* ---- st-data-live.jsx ---- */
-// CFFB · Standings — LIVE data loader
-// Replaces the demo's st-data.jsx (sample CSV + PRNG) at build time.
-// Fetches JSON from the same Apps Script Web App that powers Power Rankings,
-// reshapes teams[] into the model st-app.jsx consumes, and derives the
-// conference ranks / tiebreakers / league-leader flags client-side (the same
-// logic st-data.jsx's buildModel uses).
-//
-// The build script substitutes the real /exec URL for https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec.
 const CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
-
-// ── helpers (ported from st-data.jsx) ────────────────────────────────────────
 const num = v => {
   const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
   return isNaN(n) ? 0 : n;
 };
-
-// Conference slug for cffb-conf-- classes. Falls back to a hashed neutral.
 const CONF_SLUGS = {
   sec: 'sec',
   bigten: 'b1g',
@@ -1272,9 +1259,6 @@ function confSlug(name) {
   const k = String(name || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
   return CONF_SLUGS[k] || CONF_SLUGS[k.replace(/\s/g, '')] || 'ind';
 }
-
-// ── Conference tiebreaker (per league bylaws) ────────────────────────────────
-// A team's head-to-head record vs one opponent (regular season only, weeks 1-12).
 function h2hVersus(team, oppId) {
   let w = 0,
     l = 0;
@@ -1288,9 +1272,6 @@ function h2hVersus(team, oppId) {
     l
   };
 }
-
-// Bylaws "clear leader": a team must have BEATEN (winning H2H record vs) every
-// other tied team. At most one team in a group can satisfy this, so it's unique.
 function sweeps(team, group) {
   return group.every(o => {
     if (o.id === team.id) return true;
@@ -1298,20 +1279,11 @@ function sweeps(team, group) {
     return r.w > r.l;
   });
 }
-
-// First of all-play % → total points → national rank that separates two teams.
 function metricSeparating(a, b) {
   if (Math.abs(a.allPlayPct - b.allPlayPct) > 1e-6) return 'All-play %';
   if (Math.abs(a.pointsFor - b.pointsFor) > 1e-6) return 'Total points';
   return 'National ranking';
 }
-
-// Seed a set of teams tied on conference record, per the bylaws:
-//   • H2H step: a single school must beat every other tied school (sweep) to
-//     break the tie — it takes the next seed and the remaining schools restart
-//     the H2H step. If no school swept, the whole remaining group moves on.
-//   • Next steps, in order: all-play % → total points → national ranking.
-// Returns the group ordered by seed; sets each team's ._decidedBy.
 function seedTiedGroup(group) {
   const ordered = [];
   let remaining = group.slice();
@@ -1323,7 +1295,6 @@ function seedTiedGroup(group) {
       remaining = remaining.filter(t => t.id !== sweeper.id);
       continue;
     }
-    // No clean sweeper → the whole remaining group drops to the next steps.
     remaining.sort((a, b) => b.allPlayPct - a.allPlayPct || b.pointsFor - a.pointsFor || a.natRank - b.natRank);
     remaining.forEach((t, i) => {
       const neighbor = remaining[i + 1] || remaining[i - 1];
@@ -1338,12 +1309,7 @@ function seedTiedGroup(group) {
   }
   return ordered;
 }
-
-// ── Derivation: conference ranks + tiebreakers + leaders ─────────────────────
-// Operates on an already-constructed teams array (each team carries the season
-// fields + a games[] list). Mirrors st-data.jsx buildModel lines 127-192.
 function deriveRanks(teams) {
-  // National rank: prefer the sheet's rank; if absent/zero, derive from rankScore.
   const haveNat = teams.some(t => t.natRankRaw > 0);
   if (haveNat) {
     teams.forEach(t => {
@@ -1354,8 +1320,6 @@ function deriveRanks(teams) {
       t.natRank = i + 1;
     });
   }
-
-  // Conference rank: conf record → HEAD-TO-HEAD (sweep) → all-play% → points → national rank.
   const confPct = t => {
     const g = t.confWins + t.confLosses;
     return g ? t.confWins / g : 0;
@@ -1376,7 +1340,6 @@ function deriveRanks(teams) {
     keys.forEach(k => {
       let grp = groups[k];
       if (grp.length > 1) {
-        // H2H record vs the FULL tied cluster — for the explanation note only.
         const fullH2H = {};
         grp.forEach(t => {
           let w = 0,
@@ -1393,7 +1356,6 @@ function deriveRanks(teams) {
             l
           };
         });
-        // Seed per the bylaws (sweep-or-move-on, recursive).
         grp = seedTiedGroup(grp);
         grp.forEach(t => {
           const fh = fullH2H[t.id];
@@ -1412,8 +1374,6 @@ function deriveRanks(teams) {
       });
     });
   });
-
-  // League leaders (flags)
   const ptsLeader = teams.reduce((m, t) => t.pointsFor > (m ? m.pointsFor : -1) ? t : m, null);
   const apLeader = teams.reduce((m, t) => t.allPlayPct > (m ? m.allPlayPct : -1) ? t : m, null);
   teams.forEach(t => {
@@ -1422,18 +1382,9 @@ function deriveRanks(teams) {
   });
   teams.sort((a, b) => a.natRank - b.natRank);
 }
-
-// ── Per-browser cache (stale-while-revalidate) ───────────────────────────────
-// The web-app payload only changes ~weekly, so a recent copy from localStorage
-// is safe to render instantly instead of blocking on a live fetch every load.
-// Shared with the Power Rankings widget via the SAME key — both fetch the
-// identical JSON from the same endpoint, so one cache serves both. Every
-// storage/JSON op is wrapped in try/catch: any failure falls through to a normal
-// live fetch, so the worst case is exactly today's behavior.
 const CFFB_CACHE_KEY = 'cffb_webapp_payload_v1';
-const CFFB_FRESH_MS = 6 * 60 * 60 * 1000; // serve cache without refetch
-const CFFB_MAX_MS = 7 * 24 * 60 * 60 * 1000; // hard cap; older = ignore
-
+const CFFB_FRESH_MS = 6 * 60 * 60 * 1000;
+const CFFB_MAX_MS = 7 * 24 * 60 * 60 * 1000;
 function cffbReadCache() {
   try {
     const raw = localStorage.getItem(CFFB_CACHE_KEY);
@@ -1456,7 +1407,7 @@ function cffbWriteCache(payload) {
       ts: Date.now(),
       payload
     }));
-  } catch (e) {/* quota / disabled / private mode — ignore; live fetch still works */}
+  } catch (e) {}
 }
 async function cffbFetchPayload() {
   const res = await fetch(CFFB_WEBAPP_URL, {
@@ -1467,15 +1418,11 @@ async function cffbFetchPayload() {
   if (d.error) throw new Error(d.error);
   return d;
 }
-
-// ── Loader: fetch the web app JSON (or reuse cache) and build the model ───────
 async function loadStandings() {
   const cached = cffbReadCache();
   if (cached) {
-    // Past the fresh window → refresh in the background so the NEXT load is
-    // current, without blocking this render.
     if (cached.age > CFFB_FRESH_MS) {
-      cffbFetchPayload().then(d => cffbWriteCache(d)).catch(() => {/* keep serving the cached copy */});
+      cffbFetchPayload().then(d => cffbWriteCache(d)).catch(() => {});
     }
     return buildStandingsModel(cached.payload);
   }
@@ -1483,16 +1430,11 @@ async function loadStandings() {
   cffbWriteCache(d);
   return buildStandingsModel(d);
 }
-
-// Reshape a raw web-app payload into the model st-app.jsx consumes.
 function buildStandingsModel(d) {
-  // Conference id -> { name, logo } (drop the synthetic 'all' entry).
   const confMap = {};
   (d.conferences || []).forEach(c => {
     if (c.id !== 'all') confMap[c.id] = c;
   });
-
-  // Per-franchise lookups used to resolve opponents inside each schedule.
   const idName = {},
     idConf = {},
     idPill = {},
@@ -1512,9 +1454,6 @@ function buildStandingsModel(d) {
     const mkGame = (g, played) => {
       const oppId = String(g.opp != null ? g.opp : '');
       const wk = num(g.week);
-      // Conference games only count in the regular season (weeks 1-12).
-      // Week 13 = conference championship; weeks 14+ = bowls / playoffs — none
-      // of those feed the conference record or the CONF tag.
       const rawConf = g.conf != null ? !!g.conf : oppId && idConf[oppId] ? idConf[oppId] === confName : false;
       const isConf = rawConf && wk <= 12;
       const result = played ? String(g.result || (g.win ? 'W' : 'L')).toUpperCase() : '';
@@ -1536,10 +1475,6 @@ function buildStandingsModel(d) {
       };
     };
     const games = (t.games || []).filter(g => !g.bye && g.opp != null).map(g => mkGame(g, true)).concat((t.upcoming || []).filter(g => g.opp != null).map(g => mkGame(g, false)));
-
-    // Conference record is derived from regular-season conference games only
-    // (mkGame already limits isConf to weeks 1-12), NOT the payload's cW/cL,
-    // which would otherwise fold in week-13 conference-championship results.
     let confWins = 0,
       confLosses = 0;
     games.forEach(g => {
@@ -1560,7 +1495,6 @@ function buildStandingsModel(d) {
       confWins,
       confLosses,
       pointsFor: num(t.pf),
-      // payload allPlayPct is 0-100 (normalizePct); st-app fmtPct multiplies by 100.
       allPlayPct: num(t.allPlayPct) / 100,
       rankScore: num(t.rankingScore),
       natRankRaw: num(t.rank),
@@ -1582,9 +1516,6 @@ Object.assign(window, {
   loadStandings,
   confSlug
 });
-
-/* ---- st-app.jsx ---- */
-// CFFB · Standings — app
 const {
   useState,
   useEffect,
@@ -1598,8 +1529,6 @@ const fmtPts = n => n.toLocaleString('en-US', {
 });
 const recOverall = t => t.wins + '\u2013' + t.losses + (t.ties ? '\u2013' + t.ties : '');
 const recConf = t => t.confWins + '\u2013' + t.confLosses;
-
-// Short badge code for whichever step actually broke the conference tie.
 const TB_BADGE = {
   'Head-to-head': 'H2H',
   'All-play %': 'AP%',
@@ -1626,10 +1555,6 @@ function tiebreakNote(t) {
   if (tb.decidedBy === 'Head-to-head') how = `Conference seed set by head-to-head \u2014 went ${h2h} against the tied team${tb.tiedWith.length > 1 ? 's' : ''}.`;else if (tb.decidedBy === 'All-play %') how = `Head-to-head ${tb.h2hPlayed ? `was even (${h2h})` : 'did not separate them'}; seed set by all-play % (${fmtPct(t.allPlayPct)}).`;else if (tb.decidedBy === 'Total points') how = `Head-to-head and all-play were even; seed set by total points (${fmtPts(t.pointsFor)}).`;else how = `Separated by national ranking score.`;
   return base + ' ' + how;
 }
-
-// Team mark: franchise logo (FranchiseLookup URL from the payload) when present,
-// else a deterministic circular chip in the team's own colors (falling back to a
-// hashed hue when no colors are supplied — e.g. the standalone sample data).
 const PILL_SIZE = {
   sm: 'cffb-team--sm',
   md: 'cffb-team--sm',
@@ -1646,7 +1571,7 @@ function TeamChip({
   React.useEffect(() => {
     setSrc(pill || null);
   }, [pill]);
-  if (src) return /*#__PURE__*/React.createElement("img", {
+  if (src) return React.createElement("img", {
     className: 'cffb-team ' + (PILL_SIZE[size] || 'cffb-team--sm'),
     src: src,
     alt: name,
@@ -1661,7 +1586,7 @@ function TeamChip({
   }
   const abbr = name.replace(/[^A-Za-z ]/g, '').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const cls = 'cffb-team-chip' + (size === 'lg' ? ' cffb-team-chip--lg' : size === 'sm' ? ' cffb-team-chip--sm' : '');
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: cls,
     style: {
       background,
@@ -1673,17 +1598,15 @@ function RankCell({
   rank
 }) {
   const tier = rank === 1 ? 't1' : rank <= 5 ? 't5' : rank <= 10 ? 't10' : rank <= 25 ? 't25' : 'tout';
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: 'st-natrank ' + tier
   }, "#", rank);
 }
-
-// Rivalry pendant — compact gold flag tag with crossed swords (matches Power Rankings).
 function RivalryTag() {
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: "rivalry-tag",
     title: "Rivalry game"
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, React.createElement("svg", {
     className: "rivalry-icon",
     width: "13",
     height: "13",
@@ -1694,22 +1617,20 @@ function RivalryTag() {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("path", {
+  }, React.createElement("path", {
     d: "M3.5 3.5 L20 20"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M17 20.5 L20.5 17"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M19 22 L22 19"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M20.5 3.5 L4 20"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M3.5 17 L7 20.5"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M2 19 L5 22"
   })), "Rivalry");
 }
-
-// ── Team detail modal — season results + schedule ────────────────────────────
 function TeamModal({
   team,
   onClose
@@ -1733,171 +1654,169 @@ function TeamModal({
     const done = !!g.result;
     const win = g.result === 'W',
       loss = g.result === 'L';
-    return /*#__PURE__*/React.createElement("tr", {
+    return React.createElement("tr", {
       className: done ? '' : 'st-sched__future'
-    }, /*#__PURE__*/React.createElement("td", {
+    }, React.createElement("td", {
       className: "st-sched__wk cffb-num"
-    }, g.week), /*#__PURE__*/React.createElement("td", {
+    }, g.week), React.createElement("td", {
       className: "st-sched__rk cffb-num"
-    }, g.oppRank > 0 && g.oppRank <= 25 ? /*#__PURE__*/React.createElement("span", {
+    }, g.oppRank > 0 && g.oppRank <= 25 ? React.createElement("span", {
       className: 'st-natrank ' + (g.oppRank === 1 ? 't1' : g.oppRank <= 5 ? 't5' : g.oppRank <= 10 ? 't10' : 't25')
-    }, "#", g.oppRank) : ''), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+    }, "#", g.oppRank) : ''), React.createElement("td", null, React.createElement("div", {
       className: "st-sched__opp",
       title: g.oppName
-    }, /*#__PURE__*/React.createElement(TeamChip, {
+    }, React.createElement(TeamChip, {
       name: g.oppName,
       size: "sm",
       pill: g.oppPill,
       bg: g.oppBg,
       fg: g.oppFg
-    }), g.isRivalry && /*#__PURE__*/React.createElement(RivalryTag, null), g.isConf && /*#__PURE__*/React.createElement("span", {
+    }), g.isRivalry && React.createElement(RivalryTag, null), g.isConf && React.createElement("span", {
       className: "st-sched__tag",
       title: "Conference game"
-    }, "CONF"))), /*#__PURE__*/React.createElement("td", {
+    }, "CONF"))), React.createElement("td", {
       className: "st-sched__res"
-    }, done ? /*#__PURE__*/React.createElement("span", {
+    }, done ? React.createElement("span", {
       className: 'st-wl ' + (win ? 'st-wl--w' : loss ? 'st-wl--l' : 'st-wl--t')
-    }, g.result) : /*#__PURE__*/React.createElement("span", {
+    }, g.result) : React.createElement("span", {
       className: "st-wl st-wl--upc"
-    }, g.week === nextUp ? 'NEXT' : '—')), /*#__PURE__*/React.createElement("td", {
+    }, g.week === nextUp ? 'NEXT' : '—')), React.createElement("td", {
       className: "st-sched__score cffb-num"
-    }, done ? /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", {
+    }, done ? React.createElement("span", null, React.createElement("b", {
       className: win ? 'st-sc--win' : ''
-    }, fmtPts(g.teamScore)), " ", /*#__PURE__*/React.createElement("span", {
+    }, fmtPts(g.teamScore)), " ", React.createElement("span", {
       className: "st-sc--sep"
-    }, '\u2013'), " ", fmtPts(g.oppScore)) : /*#__PURE__*/React.createElement("span", {
+    }, '\u2013'), " ", fmtPts(g.oppScore)) : React.createElement("span", {
       className: "cffb-tertiary"
     }, "\u2014")));
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "st-modal",
     onMouseDown: e => {
       if (e.target === e.currentTarget) onClose();
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "st-modal__panel",
     ref: ref
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "st-modal__x",
     onClick: onClose,
     "aria-label": "Close"
-  }, "\xD7"), /*#__PURE__*/React.createElement("div", {
+  }, "\xD7"), React.createElement("div", {
     className: "st-modal__head"
-  }, /*#__PURE__*/React.createElement(TeamChip, {
+  }, React.createElement(TeamChip, {
     name: team.name,
     size: "lg",
     pill: team.pill,
     bg: team.bg,
     fg: team.fg
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "st-modal__id"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "st-modal__conf"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "cffb-label"
-  }, "Nat #", team.natRank, " \xB7 Conf #", team.confRank)), /*#__PURE__*/React.createElement("h2", {
+  }, "Nat #", team.natRank, " \xB7 Conf #", team.confRank)), React.createElement("h2", {
     className: "st-modal__name"
-  }, team.name))), /*#__PURE__*/React.createElement("div", {
+  }, team.name))), React.createElement("div", {
     className: "st-modal__kpis"
-  }, [['Overall', recOverall(team)], ['Conf', recConf(team)], ['All-Play', fmtPct(team.allPlayPct)], ['Points For', fmtPts(team.pointsFor)]].map(([l, v]) => /*#__PURE__*/React.createElement("div", {
+  }, [['Overall', recOverall(team)], ['Conf', recConf(team)], ['All-Play', fmtPct(team.allPlayPct)], ['Points For', fmtPts(team.pointsFor)]].map(([l, v]) => React.createElement("div", {
     className: "st-mk",
     key: l
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "cffb-label"
-  }, l), /*#__PURE__*/React.createElement("span", {
+  }, l), React.createElement("span", {
     className: "st-mk__v cffb-num"
-  }, v)))), team.tiebreak && /*#__PURE__*/React.createElement("div", {
+  }, v)))), team.tiebreak && React.createElement("div", {
     className: "st-tie"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "st-tie__badge"
-  }, tbBadge(team.tiebreak.decidedBy)), /*#__PURE__*/React.createElement("div", {
+  }, tbBadge(team.tiebreak.decidedBy)), React.createElement("div", {
     className: "st-tie__txt"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "st-tie__lead"
-  }, "Conference Tiebreaker \u2020"), /*#__PURE__*/React.createElement("span", null, tiebreakNote(team)))), /*#__PURE__*/React.createElement("div", {
+  }, "Conference Tiebreaker \u2020"), React.createElement("span", null, tiebreakNote(team)))), React.createElement("div", {
     className: "st-modal__section"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "cffb-eyebrow"
-  }, "Season Results & Schedule")), /*#__PURE__*/React.createElement("div", {
+  }, "Season Results & Schedule")), React.createElement("div", {
     className: "cffb-table-wrap st-sched-wrap"
-  }, /*#__PURE__*/React.createElement("table", {
+  }, React.createElement("table", {
     className: "cffb-table st-sched"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+  }, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", {
     style: {
       width: 44
     }
-  }, "Wk"), /*#__PURE__*/React.createElement("th", {
+  }, "Wk"), React.createElement("th", {
     style: {
       width: 48
     },
     title: "Opponent national rank (top 25)"
-  }, "Rk"), /*#__PURE__*/React.createElement("th", null, "Opponent"), /*#__PURE__*/React.createElement("th", {
+  }, "Rk"), React.createElement("th", null, "Opponent"), React.createElement("th", {
     style: {
       width: 70
     }
-  }, "Result"), /*#__PURE__*/React.createElement("th", {
+  }, "Result"), React.createElement("th", {
     className: "cffb-table__num",
     style: {
       width: 140
     }
-  }, "Score"))), /*#__PURE__*/React.createElement("tbody", null, team.games.slice().sort((a, b) => a.week - b.week).map(g => /*#__PURE__*/React.createElement(GameRow, {
+  }, "Score"))), React.createElement("tbody", null, team.games.slice().sort((a, b) => a.week - b.week).map(g => React.createElement(GameRow, {
     key: g.week,
     g: g
   })))))));
 }
-
-// ── Standings table ──────────────────────────────────────────────────────────
 function StandingsTable({
   rows,
   view,
   onPick
 }) {
   const confView = view !== 'national';
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "cffb-table-wrap"
-  }, /*#__PURE__*/React.createElement("table", {
+  }, React.createElement("table", {
     className: "cffb-table st-table"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, confView && /*#__PURE__*/React.createElement("th", {
+  }, React.createElement("thead", null, React.createElement("tr", null, confView && React.createElement("th", {
     style: {
       width: 58
     },
     title: "Conference Rank"
-  }, "Conf"), /*#__PURE__*/React.createElement("th", {
+  }, "Conf"), React.createElement("th", {
     style: {
       width: 64
     },
     title: "National Rank"
-  }, "Nat"), /*#__PURE__*/React.createElement("th", null, "Team"), !confView && /*#__PURE__*/React.createElement("th", {
+  }, "Nat"), React.createElement("th", null, "Team"), !confView && React.createElement("th", {
     style: {
       width: 96
     }
-  }, "Conf"), /*#__PURE__*/React.createElement("th", {
+  }, "Conf"), React.createElement("th", {
     className: "cffb-table__num",
     style: {
       width: 92
     },
     title: "Overall Record"
-  }, "Overall"), /*#__PURE__*/React.createElement("th", {
+  }, "Overall"), React.createElement("th", {
     className: "cffb-table__num",
     style: {
       width: 92
     },
     title: "Conference Record"
-  }, "Conf Rec"), /*#__PURE__*/React.createElement("th", {
+  }, "Conf Rec"), React.createElement("th", {
     className: "cffb-table__num",
     style: {
       width: 108
     },
     title: "All-Play Percentage"
-  }, "All-Play%"), /*#__PURE__*/React.createElement("th", {
+  }, "All-Play%"), React.createElement("th", {
     className: "cffb-table__num",
     style: {
       width: 112
     },
     title: "Total Points Scored"
-  }, "Points"))), /*#__PURE__*/React.createElement("tbody", null, rows.map(t => {
+  }, "Points"))), React.createElement("tbody", null, rows.map(t => {
     const hero = t.natRank === 1;
-    return /*#__PURE__*/React.createElement("tr", {
+    return React.createElement("tr", {
       key: t.id,
       className: 'st-row' + (hero ? ' st-row--hero' : '') + (t.confRank <= 2 ? ' st-row--ccg' : '') + (t.confRank === 2 ? ' st-row--ccgline' : ''),
       onClick: () => onPick(t),
@@ -1905,100 +1824,96 @@ function StandingsTable({
       onKeyDown: e => {
         if (e.key === 'Enter') onPick(t);
       }
-    }, confView && /*#__PURE__*/React.createElement("td", {
+    }, confView && React.createElement("td", {
       className: 'st-confrank cffb-num' + (t.confRank <= 2 ? ' st-confrank--ccg' : '')
-    }, t.tiebreak && /*#__PURE__*/React.createElement("sup", {
+    }, t.tiebreak && React.createElement("sup", {
       className: "st-confrank__tb",
       title: 'Conference tiebreaker vs ' + t.tiebreak.tiedWith.join(', ') + ' \u2014 decided by ' + t.tiebreak.decidedBy.toLowerCase()
-    }, "\u2020"), t.confRank, t.confRank <= 2 && /*#__PURE__*/React.createElement("span", {
+    }, "\u2020"), t.confRank, t.confRank <= 2 && React.createElement("span", {
       className: "st-ccg",
       title: "Projected conference championship"
-    }, "CCG")), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(RankCell, {
+    }, "CCG")), React.createElement("td", null, React.createElement(RankCell, {
       rank: t.natRank
-    })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+    })), React.createElement("td", null, React.createElement("div", {
       className: "st-team"
-    }, /*#__PURE__*/React.createElement(TeamChip, {
+    }, React.createElement(TeamChip, {
       name: t.name,
       size: "md",
       pill: t.pill,
       bg: t.bg,
       fg: t.fg
-    }), /*#__PURE__*/React.createElement("span", {
+    }), React.createElement("span", {
       className: "st-team__name"
-    }, t.name))), !confView && /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    }, t.name))), !confView && React.createElement("td", null, React.createElement("span", {
       className: 'cffb-conf cffb-conf--' + t.confSlug
-    }, t.conf)), /*#__PURE__*/React.createElement("td", {
+    }, t.conf)), React.createElement("td", {
       className: "cffb-table__num st-rec"
-    }, recOverall(t)), /*#__PURE__*/React.createElement("td", {
+    }, recOverall(t)), React.createElement("td", {
       className: "cffb-table__num st-rec cffb-muted"
-    }, recConf(t)), /*#__PURE__*/React.createElement("td", {
+    }, recConf(t)), React.createElement("td", {
       className: "cffb-table__num"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: t.isApLeader ? 'st-leader' : ''
-    }, t.isApLeader && /*#__PURE__*/React.createElement("span", {
+    }, t.isApLeader && React.createElement("span", {
       className: "st-leader__star",
       title: "All-Play leader"
-    }, "\u2605"), fmtPct(t.allPlayPct))), /*#__PURE__*/React.createElement("td", {
+    }, "\u2605"), fmtPct(t.allPlayPct))), React.createElement("td", {
       className: "cffb-table__num"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: t.isPtsLeader ? 'st-leader' : ''
-    }, t.isPtsLeader && /*#__PURE__*/React.createElement("span", {
+    }, t.isPtsLeader && React.createElement("span", {
       className: "st-leader__star",
       title: "Points leader"
     }, "\u2605"), fmtPts(t.pointsFor))));
   }))));
 }
-
-// ── Mobile card list ─────────────────────────────────────────────────────────
 function MobileList({
   rows,
   onPick
 }) {
   const tierOf = r => r === 1 ? 't1' : r <= 5 ? 't5' : r <= 10 ? 't10' : r <= 25 ? 't25' : 'tout';
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "st-mlist"
   }, rows.map(t => {
     const hero = t.natRank === 1;
-    return /*#__PURE__*/React.createElement("button", {
+    return React.createElement("button", {
       key: t.id,
       className: 'st-mcard' + (hero ? ' st-mcard--hero' : '') + (t.confRank <= 2 ? ' st-mcard--ccg' : ''),
       onClick: () => onPick(t)
-    }, /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("div", {
       className: 'st-mcard__confrank cffb-num' + (t.confRank <= 2 ? ' st-confrank--ccg' : '')
-    }, t.tiebreak && /*#__PURE__*/React.createElement("sup", {
+    }, t.tiebreak && React.createElement("sup", {
       className: "st-confrank__tb",
       title: 'Tiebreaker \u2014 ' + t.tiebreak.decidedBy.toLowerCase()
-    }, "\u2020"), t.confRank, t.confRank <= 2 && /*#__PURE__*/React.createElement("span", {
+    }, "\u2020"), t.confRank, t.confRank <= 2 && React.createElement("span", {
       className: "st-ccg"
-    }, "CCG")), /*#__PURE__*/React.createElement(TeamChip, {
+    }, "CCG")), React.createElement(TeamChip, {
       name: t.name,
       size: "md",
       pill: t.pill,
       bg: t.bg,
       fg: t.fg
-    }), /*#__PURE__*/React.createElement("div", {
+    }), React.createElement("div", {
       className: "st-mcard__main"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("div", {
       className: "st-mcard__top"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: "st-mcard__name"
-    }, t.name), /*#__PURE__*/React.createElement("span", {
+    }, t.name), React.createElement("span", {
       className: 'st-natrank ' + tierOf(t.natRank)
-    }, "#", t.natRank)), /*#__PURE__*/React.createElement("div", {
+    }, "#", t.natRank)), React.createElement("div", {
       className: "st-mcard__stats cffb-num"
-    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, recOverall(t)), " OVR"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, recConf(t)), " CONF"), /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", null, React.createElement("b", null, recOverall(t)), " OVR"), React.createElement("span", null, React.createElement("b", null, recConf(t)), " CONF"), React.createElement("span", {
       className: t.isApLeader ? 'st-leader' : ''
-    }, t.isApLeader && /*#__PURE__*/React.createElement("span", {
+    }, t.isApLeader && React.createElement("span", {
       className: "st-leader__star"
-    }, "\u2605"), /*#__PURE__*/React.createElement("b", null, fmtPct(t.allPlayPct)), " AP"), /*#__PURE__*/React.createElement("span", {
+    }, "\u2605"), React.createElement("b", null, fmtPct(t.allPlayPct)), " AP"), React.createElement("span", {
       className: t.isPtsLeader ? 'st-leader' : ''
-    }, t.isPtsLeader && /*#__PURE__*/React.createElement("span", {
+    }, t.isPtsLeader && React.createElement("span", {
       className: "st-leader__star"
-    }, "\u2605"), /*#__PURE__*/React.createElement("b", null, fmtPts(t.pointsFor)), " PF"))));
+    }, "\u2605"), React.createElement("b", null, fmtPts(t.pointsFor)), " PF"))));
   }));
 }
-
-// ── App ──────────────────────────────────────────────────────────────────────
 const CONF_LOGO_FILE = {
   b1g: 'b1g',
   pac: 'pac12'
@@ -2009,7 +1924,7 @@ const confLogo = name => {
 };
 function App() {
   const [model, setModel] = useState(null);
-  const [view, setView] = useState(null); // active conference name
+  const [view, setView] = useState(null);
   const [sel, setSel] = useState(null);
   const [err, setErr] = useState(false);
   const isMobile = useIsMobile();
@@ -2030,74 +1945,74 @@ function App() {
     if (!model || !view) return [];
     return model.teams.filter(t => t.conf === view).slice().sort((a, b) => a.confRank - b.confRank);
   }, [model, view]);
-  if (err) return /*#__PURE__*/React.createElement("div", {
+  if (err) return React.createElement("div", {
     className: "st-page"
-  }, /*#__PURE__*/React.createElement("p", {
+  }, React.createElement("p", {
     className: "cffb-muted"
   }, "Couldn\u2019t load standings."));
-  if (!model) return /*#__PURE__*/React.createElement("div", {
+  if (!model) return React.createElement("div", {
     className: "st-page"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "st-loading"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "cffb-live__dot"
   }), " Loading standings\u2026"));
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "st-page"
-  }, /*#__PURE__*/React.createElement("header", {
+  }, React.createElement("header", {
     className: "st-head"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "st-head__title"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "cffb-eyebrow"
-  }, model.year || '2025', " Season \xB7 Through Week ", model.weeksPlayed), /*#__PURE__*/React.createElement("h1", {
+  }, model.year || '2025', " Season \xB7 Through Week ", model.weeksPlayed), React.createElement("h1", {
     className: "st-head__h1"
-  }, "League Standings")), /*#__PURE__*/React.createElement("div", {
+  }, "League Standings")), React.createElement("div", {
     className: "st-head__meta cffb-label"
-  }, model.teams.length, " teams \xB7 ", model.conferences.length, " conferences")), /*#__PURE__*/React.createElement("nav", {
+  }, model.teams.length, " teams \xB7 ", model.conferences.length, " conferences")), React.createElement("nav", {
     className: "st-conffilter",
     role: "tablist",
     "aria-label": "Conference"
-  }, model.conferences.map(c => /*#__PURE__*/React.createElement("button", {
+  }, model.conferences.map(c => React.createElement("button", {
     key: c,
     role: "tab",
     "aria-selected": view === c,
     className: 'st-conftab' + (view === c ? ' is-active' : ''),
     onClick: () => setView(c)
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     className: "st-conftab__logo",
     src: model.confLogos && model.confLogos[c] || confLogo(c),
     alt: "",
     onError: e => {
       e.target.style.display = 'none';
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "st-conftab__name"
-  }, c), /*#__PURE__*/React.createElement("span", {
+  }, c), React.createElement("span", {
     className: "st-conftab__count cffb-num"
-  }, counts[c] || 0)))), isMobile ? /*#__PURE__*/React.createElement(MobileList, {
+  }, counts[c] || 0)))), isMobile ? React.createElement(MobileList, {
     rows: rows,
     onPick: setSel
-  }) : /*#__PURE__*/React.createElement(StandingsTable, {
+  }) : React.createElement(StandingsTable, {
     rows: rows,
     view: view,
     onPick: setSel
-  }), /*#__PURE__*/React.createElement("p", {
+  }), React.createElement("p", {
     className: "st-legend cffb-body-sm"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "st-leader__star"
-  }, "\u2605"), " league leader \xB7 ", /*#__PURE__*/React.createElement("span", {
+  }, "\u2605"), " league leader \xB7 ", React.createElement("span", {
     className: "st-ccg st-ccg--inline"
-  }, "CCG"), " projected conference championship (top 2) \xB7 ", /*#__PURE__*/React.createElement("span", {
+  }, "CCG"), " projected conference championship (top 2) \xB7 ", React.createElement("span", {
     className: "st-confrank__tb"
-  }, "\u2020"), " conference tiebreaker \xB7 click any team for season results & schedule", model.source && model.source !== 'live' && /*#__PURE__*/React.createElement("span", {
+  }, "\u2020"), " conference tiebreaker \xB7 click any team for season results & schedule", model.source && model.source !== 'live' && React.createElement("span", {
     className: "st-legend__src"
-  }, " \xB7 showing sample data \u2014 paste your sheet URL in ", /*#__PURE__*/React.createElement("code", null, "st-data.jsx"))), sel && /*#__PURE__*/React.createElement(TeamModal, {
+  }, " \xB7 showing sample data \u2014 paste your sheet URL in ", React.createElement("code", null, "st-data.jsx"))), sel && React.createElement(TeamModal, {
     team: sel,
     onClose: () => setSel(null)
   }));
 }
-ReactDOM.createRoot(document.getElementById('cffb-st-root')).render(/*#__PURE__*/React.createElement(App, null));
+ReactDOM.createRoot(document.getElementById('cffb-st-root')).render(React.createElement(App, null));
   }
   var RV = "18.3.1";
   function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }

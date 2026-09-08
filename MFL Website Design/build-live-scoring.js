@@ -142,7 +142,9 @@ ReactDOM.createRoot(document.getElementById('${ROOT_ID}')).render(<CFFBLiveScori
 }).join('\n');
 
 // Precompile JSX -> plain JS at build time (drops the runtime Babel dependency).
-let compiledApp = Babel.transform(jsxBundle, { presets: ['react'] }).code;
+// comments:false strips source comments so a tag like <body> in a comment can't
+// ride into the bundle and trip MFL's banned-tag check on paste.
+let compiledApp = Babel.transform(jsxBundle, { presets: ['react'], comments: false }).code;
 // Substitute the live web-app /exec URL (used only to reuse the league's official
 // team colors, shared with Power Rankings + Standings).
 compiledApp = compiledApp.replace(/__WEBAPP_URL__/g, WEBAPP_URL);
@@ -222,8 +224,12 @@ let out = [
 // Sanity check: never ship a tag MFL rejects.
 const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
 if (banned.test(out)) {
-  console.warn('warn: output contains a banned MFL tag — MFL will reject it');
-  console.warn('       first match: ' + out.match(banned)[0]);
+  const m = out.match(banned)[0];
+  const idx = out.search(banned);
+  console.error('ERROR: output contains a banned MFL tag: ' + m);
+  console.error('       …' + out.slice(Math.max(0, idx - 60), idx + 60).replace(/\n/g, ' ') + '…');
+  console.error('       MFL will refuse to save this message. Fix the source (often a tag inside a comment/string) and rebuild.');
+  process.exit(1);
 }
 
 // Strip HTML comments to save bytes.

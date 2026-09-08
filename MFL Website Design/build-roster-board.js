@@ -152,7 +152,11 @@ ReactDOM.createRoot(document.getElementById('${ROOT_ID}')).render(<CFFBRosterBoo
 }).join('\n');
 
 // Precompile JSX -> plain JS at build time (drops the runtime Babel dependency).
-const compiledApp = Babel.transform(jsxBundle, { presets: ['react'] }).code;
+// comments:false strips ALL source comments from the output — MFL rejects any
+// message containing <body>/<html>/<textarea> tags, and those can legitimately
+// appear in a source comment (e.g. "rendered into <body> via a portal"), which
+// would otherwise ride into the bundle verbatim and MFL would refuse the paste.
+const compiledApp = Babel.transform(jsxBundle, { presets: ['react'], comments: false }).code;
 
 // Boot wrapper. Guarded IIFE (function-scoped — no cross-widget const collisions,
 // idempotent). Loads React ONCE, shared across every CFFB widget on the page via
@@ -321,11 +325,16 @@ let out = [
   '</script>'
 ].join('\n');
 
-// Sanity check: never ship a tag MFL rejects.
+// Hard stop: never ship a tag MFL rejects (it refuses the whole message paste
+// with "Message Cannot Contain These Tags: <textarea>, <body>, <html>, ...").
 const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
 if (banned.test(out)) {
-  console.warn('warn: output contains a banned MFL tag — MFL will reject it');
-  console.warn('       first match: ' + out.match(banned)[0]);
+  const m = out.match(banned)[0];
+  const idx = out.search(banned);
+  console.error('ERROR: output contains a banned MFL tag: ' + m);
+  console.error('       …' + out.slice(Math.max(0, idx - 60), idx + 60).replace(/\n/g, ' ') + '…');
+  console.error('       MFL will refuse to save this message. Fix the source (often a tag inside a comment/string) and rebuild.');
+  process.exit(1);
 }
 
 // Strip HTML comments to save bytes.

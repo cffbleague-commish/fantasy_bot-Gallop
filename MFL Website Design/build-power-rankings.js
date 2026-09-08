@@ -89,7 +89,9 @@ ReactDOM.createRoot(document.getElementById('cffb-pr-root')).render(<CFFBBoot />
 }).join('\n');
 
 // Precompile JSX → plain JS at build time (drops the runtime Babel dependency).
-const compiledApp = Babel.transform(jsxBundle, { presets: ['react'] }).code;
+// comments:false strips source comments so a tag like <body> in a comment can't
+// ride into the bundle and trip MFL's banned-tag check on paste.
+const compiledApp = Babel.transform(jsxBundle, { presets: ['react'], comments: false }).code;
 
 // Boot wrapper. Runs inside a guarded IIFE (function-scoped — no cross-widget
 // const collisions, and idempotent). It boots the app only once React +
@@ -156,8 +158,12 @@ let out = [
 // Sanity check: make sure we don't accidentally ship any of the tags MFL rejects.
 const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
 if (banned.test(out)) {
-  console.warn('warn: output contains a banned MFL tag — MFL will reject it');
-  console.warn('       first match: ' + out.match(banned)[0]);
+  const m = out.match(banned)[0];
+  const idx = out.search(banned);
+  console.error('ERROR: output contains a banned MFL tag: ' + m);
+  console.error('       …' + out.slice(Math.max(0, idx - 60), idx + 60).replace(/\n/g, ' ') + '…');
+  console.error('       MFL will refuse to save this message. Fix the source (often a tag inside a comment/string) and rebuild.');
+  process.exit(1);
 }
 
 // Strip HTML comments to save bytes

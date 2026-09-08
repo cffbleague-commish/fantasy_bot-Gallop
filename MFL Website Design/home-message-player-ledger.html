@@ -1558,29 +1558,8 @@
   if (window.__cffbPlayerLedgerBooted) return;
   window.__cffbPlayerLedgerBooted = true;
   function __cffbApp() {
-/* ---- pl-data-live.jsx ---- */
-// CFFB · Player Ledger — LIVE data loader
-// ---------------------------------------------------------------------------
-// Replaces the demo's pl-data.jsx (hardcoded RAW_COPIES / PLAYER_AUG) AND the
-// ../Auction Board/data.jsx dependency (TEAMS / CONFERENCES / POS_COLORS / …)
-// at build time. Fetches JSON from the shared Apps Script Web App:
-//
-//   {EXEC}?feed=ledger                → index (search list + branding)
-//   {EXEC}?feed=ledger&player={MFLID} → one player's copies + event ledger
-//
-// The per-copy transaction reconstruction (auction / redshirt / drop + award
-// injection + eligibility clock) is done by the SAME deriveElig()/makeCopy()
-// the demo used — the server hands back the compact event tuples those expect,
-// so the rendered shape is byte-for-byte the demo's.
-//
-// The build script substitutes the real /exec URL for https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec.
 const CFFB_LEDGER_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
 const ledgerUrl = params => CFFB_LEDGER_URL + (CFFB_LEDGER_URL.indexOf('?') < 0 ? '?' : '&') + params;
-
-// ---------------------------------------------------------------------------
-// Design-system constants (were in ../Auction Board/data.jsx). Static — safe to
-// inline; keeps the fragment self-contained with zero extra requests.
-// ---------------------------------------------------------------------------
 const POS_COLORS = {
   QB: '#C9A227',
   RB: '#3B82C4',
@@ -1652,35 +1631,17 @@ const TXN_META = {
     color: '#B8902F'
   }
 };
-
-// MFL player headshot (confirmed live: /player_photos_2014/{id}_thumb.jpg, 80×107).
-// Computed client-side from the id so it's correct regardless of the cached
-// payload; NO_PHOTO is MFL's own "no photo" placeholder (from the page's onerror).
 const plPhoto = id => 'https://www46.myfantasyleague.com/player_photos_2014/' + id + '_thumb.jpg';
 const NO_PHOTO = 'https://www46.myfantasyleague.com/player_photos_2010/no_photo_available.jpg';
-
-// The league's data season (getLeagueYear on the server) — NOT the calendar year.
-// Drives the eligibility clock + "redshirting now" detection; the index feed's
-// `season` overwrites this on load so the math matches the ledger's event years.
 let CURRENT_SEASON = new Date().getFullYear();
 const CLASS_SEQ = ['FR', 'SO', 'JR', 'SR', 'GR'];
-
-// ---------------------------------------------------------------------------
-// Stable containers the components read by identifier. Populated in place (never
-// reassigned) so React re-renders pick up the live data.
-// ---------------------------------------------------------------------------
-const TEAMS = {}; // franchise id -> { name, abbr, owner, conf, bg, fg, pill }
-const CONFERENCES = []; // [{ id, name, logo }]
+const TEAMS = {};
+const CONFERENCES = [];
 const CONF_NAME = {};
 const CONF_LOGO = {};
-const LEDGER = {}; // pid -> { confs, copies, roll }
-const ROSTER = []; // index rows (search list)
-const PLAYER_AUG = {}; // pid -> bio augmentation (college, awards, draft, …)
-
-// ===========================================================================
-// deriveElig + makeCopy — ported verbatim from pl-data.jsx (they depend only on
-// TEAMS, CURRENT_SEASON, CLASS_SEQ). See pl-data.jsx for the full commentary.
-// ===========================================================================
+const LEDGER = {};
+const ROSTER = [];
+const PLAYER_AUG = {};
 const deriveElig = (ledger, entered, realRS) => {
   const real = new Set(realRS || []);
   const copyRS = {};
@@ -1820,7 +1781,6 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS, opts) => {
       note: `${a.name} ${a.year} — earned while rostered by ${tm.name || iv.team} (${tm.owner || '@—'}).`
     });
   });
-  // Retention decisions (RetentionHistory) — retain / release / auto-retain.
   const RET_TAG = {
     RETAIN: 'retain',
     AUTO_RETAIN: 'retain',
@@ -1842,8 +1802,6 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS, opts) => {
       note: tag === 'retain' ? `Retained${pathTxt ? ' (' + pathTxt + ')' : ''}${r.cost ? ' for $' + r.cost : ''}.` : 'Released — not retained.'
     });
   });
-
-  // Early declaration for the NFL draft (real DeclaredEarly flag, not a guess).
   if (opts.declaredEarly) {
     const tm = TEAMS[holder] || {};
     ledger.push({
@@ -1856,18 +1814,10 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS, opts) => {
       note: 'Declared early for the NFL draft.'
     });
   }
-
-  // Transaction events arrive from the server already in timestamp order, so a
-  // STABLE sort by season alone preserves that order within a season (e.g. a
-  // same-year drop-then-reacquire stays in the right order). Injected award /
-  // retention / declare events were pushed last, so the stable sort slots each
-  // into its season after that year's transactions.
   ledger.sort((x, y) => x.season - y.season);
   const elig = deriveElig(ledger, entered, realRS);
   const honors = ledger.filter(e => e.type === 'award').length;
   const base = holder == null ? 'fa' : redshirtingNow ? 'redshirting' : 'rostered';
-  // 'Declared' now comes from the real DeclaredEarly flag; eligibility exhaustion
-  // still graduates a copy.
   const status = elig.remaining <= 0 ? 'graduated' : opts.declaredEarly ? 'declared' : base;
   const terminal = status === 'graduated' || status === 'declared';
   return {
@@ -1885,9 +1835,6 @@ const makeCopy = (pid, conf, n, events, awards, entered, realRS, opts) => {
     ledger
   };
 };
-
-// Assemble one player's LEDGER entry from the server's copies[] (mirrors the
-// per-player roll-up in pl-data.jsx lines 399-423).
 const buildLedgerEntry = (pid, serverCopies, entered) => {
   const byConf = {};
   serverCopies.forEach(c => {
@@ -1933,11 +1880,6 @@ const buildLedgerEntry = (pid, serverCopies, entered) => {
     }
   };
 };
-
-// ===========================================================================
-// Per-browser cache (stale-while-revalidate) — same shape as st-data-live.jsx,
-// separate keys so it never collides with the Standings/Power Rankings payload.
-// ===========================================================================
 const PL_FRESH_MS = 6 * 60 * 60 * 1000;
 const PL_MAX_MS = 7 * 24 * 60 * 60 * 1000;
 function plCacheRead(key) {
@@ -1962,7 +1904,7 @@ function plCacheWrite(key, payload) {
       ts: Date.now(),
       payload
     }));
-  } catch (e) {/* quota / private mode — live fetch still works */}
+  } catch (e) {}
 }
 async function plFetch(url) {
   const res = await fetch(url, {
@@ -1973,10 +1915,6 @@ async function plFetch(url) {
   if (d && d.error) throw new Error(d.error);
   return d;
 }
-// SWR: serve cache instantly (refresh in background when stale); else fetch live.
-// `valid` guards against caching/serving a wrong-shaped payload (e.g. the Power
-// Rankings feed fetched before the ledger route was deployed) — such a payload is
-// never written to cache and a previously-poisoned cache entry is ignored.
 async function plLoad(key, url, valid) {
   const ok = p => !valid || valid(p);
   const cached = plCacheRead(key);
@@ -1990,14 +1928,8 @@ async function plLoad(key, url, valid) {
   if (ok(d)) plCacheWrite(key, d);
   return d;
 }
-
-// ===========================================================================
-// Public loaders (called from pl-app.jsx)
-// ===========================================================================
 const PL_INDEX_KEY = 'cffb_ledger_index_v2';
 const PL_PLAYER_KEY = id => 'cffb_ledger_p2_' + id;
-
-// Load the index → populate TEAMS/CONFERENCES/ROSTER. Returns the ROSTER array.
 async function loadLedgerIndex() {
   const d = await plLoad(PL_INDEX_KEY, ledgerUrl('feed=ledger'), p => p && Array.isArray(p.players) && p.players.length > 0);
   if (d.season) CURRENT_SEASON = Number(d.season);
@@ -2035,9 +1967,6 @@ async function loadLedgerIndex() {
   });
   return ROSTER;
 }
-
-// Load one player's full ledger → populate LEDGER[pid] and enrich the ROSTER row
-// with bio/awards/draft. Returns LEDGER[pid].
 async function loadPlayerLedger(pid) {
   if (LEDGER[pid]) return LEDGER[pid];
   const d = await plLoad(PL_PLAYER_KEY(pid), ledgerUrl('feed=ledger&player=' + encodeURIComponent(pid)), p => p && Array.isArray(p.copies));
@@ -2052,7 +1981,6 @@ async function loadPlayerLedger(pid) {
     profileUrl: d.profileUrl,
     photo: plPhoto(pid)
   };
-  // Merge bio + recomputed roll onto the in-place ROSTER row so the hero updates.
   const row = ROSTER.find(r => r.id === pid);
   if (row) {
     Object.assign(row, PLAYER_AUG[pid], {
@@ -2063,12 +1991,6 @@ async function loadPlayerLedger(pid) {
   }
   return entry;
 }
-
-// ===========================================================================
-// Tweaks shims — the MFL build omits tweaks-panel.jsx (authoring scaffolding),
-// so provide no-op stand-ins that keep the fixed default config. pl-app.jsx uses
-// these identifiers; when the real panel is bundled (demo), it wins by shadowing.
-// ===========================================================================
 const useTweaks = defaults => [defaults, () => {}];
 const TweaksPanel = () => null;
 const TweakSection = () => null;
@@ -2099,13 +2021,6 @@ Object.assign(window, {
   TweakRadio,
   TweakToggle
 });
-
-/* ---- pl-components.jsx ---- */
-// CFFB · Player Ledger — React atoms.
-// Thin wrappers over the cffb.css vocabulary (redshirt chips, eligibility dots,
-// award badges, position + team chips) so the ledger app can compose them.
-
-// ---- Position chip --------------------------------------------------------
 const KNOWN_POS = {
   qb: 1,
   rb: 1,
@@ -2121,7 +2036,7 @@ const PosChip = ({
 }) => {
   const lc = String(pos).toLowerCase();
   const known = KNOWN_POS[lc];
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: 'cffb-pos' + (known ? ' cffb-pos--' + lc : ''),
     style: known ? null : {
       background: POS_COLORS[pos] || '#5A5A5A',
@@ -2129,19 +2044,14 @@ const PosChip = ({
     }
   }, pos);
 };
-
-// ---- Recruiting stars -----------------------------------------------------
 const Stars = ({
   n
-}) => /*#__PURE__*/React.createElement("span", {
+}) => React.createElement("span", {
   className: 'cffb-stars cffb-stars--t' + n
-}, [1, 2, 3, 4, 5].map(i => /*#__PURE__*/React.createElement("span", {
+}, [1, 2, 3, 4, 5].map(i => React.createElement("span", {
   key: i,
   className: 'cffb-star' + (i <= n ? '' : ' cffb-star--off')
 }, "\u2605")));
-
-// ---- Redshirt shield chip (cffb-rs) ---------------------------------------
-// rsType: 'trad' | 'med'. solo = icon only (tight rows).
 const RedshirtChip = ({
   rsType = 'trad',
   size = 'sm',
@@ -2150,45 +2060,40 @@ const RedshirtChip = ({
 }) => {
   const med = rsType === 'med';
   const cls = ['cffb-rs', med ? 'cffb-rs--med' : 'cffb-rs--trad', 'cffb-rs--' + size, solo ? 'cffb-rs--solo' : ''].filter(Boolean).join(' ');
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: cls,
     title: title || (med ? 'Medical Redshirt' : 'Traditional Redshirt')
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, React.createElement("svg", {
     className: "cffb-rs__icon"
-  }, /*#__PURE__*/React.createElement("use", {
+  }, React.createElement("use", {
     href: med ? '#cffb-icon-rs-med' : '#cffb-icon-rs-trad'
-  })), !solo && /*#__PURE__*/React.createElement("span", {
+  })), !solo && React.createElement("span", {
     className: "cffb-rs__txt"
   }, med ? 'MRS' : 'RS'));
 };
-
-// ---- Compact per-copy eligibility: class chip + dots + RS shield ----------
-// Each COPY carries its own eligibility clock, so this renders inline on copies.
 const CopyEligInline = ({
   elig,
   showClass = true
 }) => {
   if (!elig) return null;
   const title = `${elig.cls} · ${elig.remain}` + (elig.hasRS ? ` · ${elig.rsType === 'med' ? 'medical ' : ''}redshirt ${elig.rsYear || ''}`.trim() : '');
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: "pl-celig",
     title: title
-  }, showClass && /*#__PURE__*/React.createElement("span", {
+  }, showClass && React.createElement("span", {
     className: 'cffb-elig__class cffb-elig__class--' + String(elig.cls).toLowerCase()
-  }, elig.cls), /*#__PURE__*/React.createElement("span", {
+  }, elig.cls), React.createElement("span", {
     className: "cffb-elig__dots"
-  }, elig.dots.map((d, i) => /*#__PURE__*/React.createElement("span", {
+  }, elig.dots.map((d, i) => React.createElement("span", {
     key: i,
     className: 'cffb-elig__dot ' + ELIG_DOT_CLASS[d]
-  }))), elig.hasRS && /*#__PURE__*/React.createElement(RedshirtChip, {
+  }))), elig.hasRS && React.createElement(RedshirtChip, {
     rsType: elig.rsType === 'med' ? 'med' : 'trad',
     size: "xs",
     solo: true,
     title: `${elig.rsType === 'med' ? 'Medical ' : 'Traditional '}Redshirt ${elig.rsYear || ''}`.trim()
   }));
 };
-
-// ---- Eligibility dots (cffb-elig) -----------------------------------------
 const ELIG_DOT_CLASS = {
   used: 'is-used',
   rs: 'is-rs',
@@ -2201,22 +2106,20 @@ const EligDots = ({
 }) => {
   if (!elig) return null;
   const clsLc = String(elig.cls).toLowerCase();
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: 'cffb-elig' + (compact ? ' cffb-elig--compact' : '')
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: 'cffb-elig__class cffb-elig__class--' + clsLc
-  }, elig.cls), /*#__PURE__*/React.createElement("span", {
+  }, elig.cls), React.createElement("span", {
     className: "cffb-elig__dots",
     "aria-label": elig.remain + ' eligibility'
-  }, elig.dots.map((d, i) => /*#__PURE__*/React.createElement("span", {
+  }, elig.dots.map((d, i) => React.createElement("span", {
     key: i,
     className: 'cffb-elig__dot ' + ELIG_DOT_CLASS[d]
-  }))), elig.remain && /*#__PURE__*/React.createElement("span", {
+  }))), elig.remain && React.createElement("span", {
     className: "cffb-elig__remain"
   }, elig.remain));
 };
-
-// ---- Award badges (cffb-award) --------------------------------------------
 const AWARD_GLYPH = {
   heisman: '#cffb-icon-award-heisman',
   obrien: '#cffb-icon-award-obrien',
@@ -2229,33 +2132,31 @@ const Awards = ({
   size
 }) => {
   if (!awards || !awards.length) return null;
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: 'cffb-awards' + (size === 'sm' ? ' cffb-awards--sm' : '')
   }, awards.map((a, i) => {
     const cls = ['cffb-award', 'cffb-award--' + a.kind, a.kind === 'allamerican' && a.conf ? 'is-' + a.conf : ''].filter(Boolean).join(' ');
-    return /*#__PURE__*/React.createElement("span", {
+    return React.createElement("span", {
       key: i,
       className: cls
-    }, /*#__PURE__*/React.createElement("svg", {
+    }, React.createElement("svg", {
       className: "cffb-award__glyph"
-    }, /*#__PURE__*/React.createElement("use", {
+    }, React.createElement("use", {
       href: AWARD_GLYPH[a.kind]
-    })), /*#__PURE__*/React.createElement("span", {
+    })), React.createElement("span", {
       className: "cffb-award__name"
-    }, a.name), a.year && /*#__PURE__*/React.createElement("span", {
+    }, a.name), a.year && React.createElement("span", {
       className: "cffb-award__year"
     }, a.year));
   }));
 };
-
-// ---- Conference badge (logo + name) ---------------------------------------
 const ConfBadge = ({
   id,
   size = 22,
   showName = true
-}) => /*#__PURE__*/React.createElement("span", {
+}) => React.createElement("span", {
   className: "pl-conf"
-}, CONF_LOGO[id] && /*#__PURE__*/React.createElement("img", {
+}, CONF_LOGO[id] && React.createElement("img", {
   className: "pl-conf__logo",
   src: CONF_LOGO[id],
   alt: CONF_NAME[id] || id,
@@ -2263,12 +2164,9 @@ const ConfBadge = ({
     width: size,
     height: size
   }
-}), showName && /*#__PURE__*/React.createElement("span", {
+}), showName && React.createElement("span", {
   className: "pl-conf__name"
 }, CONF_NAME[id] || id));
-
-// ---- Team ownership mark ---------------------------------------------------
-// Ripped-paper banner PNG when available, else the circular abbr fallback.
 const plAbbr = id => {
   const t = TEAMS[id] || {};
   const a = t.abbr || id || '??';
@@ -2283,14 +2181,14 @@ const TeamMark = ({
     fg: '#9A9A9A'
   };
   if (t.pill) {
-    return /*#__PURE__*/React.createElement("img", {
+    return React.createElement("img", {
       className: 'cffb-team cffb-team--' + size,
       src: t.pill,
       alt: t.name || id
     });
   }
   const chipSize = size === 'lg' ? '' : size === 'md' ? '' : ' cffb-team-chip--sm';
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: 'cffb-team-chip' + chipSize,
     style: {
       background: t.bg,
@@ -2299,8 +2197,6 @@ const TeamMark = ({
     title: t.name || id
   }, plAbbr(id));
 };
-
-// Owner = team mark + manager handle. The unit that says "who holds this copy".
 const TeamOwner = ({
   id,
   showOwner = true,
@@ -2309,50 +2205,46 @@ const TeamOwner = ({
   emptyLabel = 'Free agent'
 }) => {
   if (!id) {
-    return /*#__PURE__*/React.createElement("span", {
+    return React.createElement("span", {
       className: "pl-owner pl-owner--fa"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: "pl-owner__fa"
     }, emptyLabel));
   }
   const t = TEAMS[id] || {};
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: 'pl-owner' + (stacked ? ' pl-owner--stacked' : '')
-  }, /*#__PURE__*/React.createElement(TeamMark, {
+  }, React.createElement(TeamMark, {
     id: id,
     size: mark
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-owner__id"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-owner__team"
-  }, t.name || id), showOwner && t.owner && /*#__PURE__*/React.createElement("span", {
+  }, t.name || id), showOwner && t.owner && React.createElement("span", {
     className: "pl-owner__handle"
   }, t.owner)));
 };
-
-// ---- Status chip (Rostered / Redshirting / Free Agent) --------------------
 const StatusChip = ({
   status,
   size = 'md'
 }) => {
   const m = STATUS_META[status] || STATUS_META.fa;
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: 'pl-status pl-status--' + status + ' pl-status--' + size
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-status__dot",
     style: {
       background: m.color
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-status__label"
   }, m.label));
 };
-
-// ---- Money ----------------------------------------------------------------
 const Money = ({
   n,
   hero = false
-}) => /*#__PURE__*/React.createElement("span", {
+}) => React.createElement("span", {
   className: 'pl-money cffb-num' + (hero ? ' pl-money--hero' : '')
 }, "$", n);
 Object.assign(window, {
@@ -2368,26 +2260,19 @@ Object.assign(window, {
   StatusChip,
   Money
 });
-
-/* ---- pl-app.jsx ---- */
-// CFFB · Player Ledger — main component.
-// Search a player → profile (eligibility + redshirt + awards) → every copy's
-// owner and the full multi-year transaction ledger. Layout / accent / profile
-// prominence / density are Tweakable. Responsive desktop ↔ mobile.
-
 const {
   useState,
   useMemo,
   useRef,
   useEffect
 } = React;
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+const TWEAK_DEFAULTS = {
   "layout": "rows",
   "profile": "hero",
   "accent": "conf",
   "showOwners": true,
   "density": "spacious"
-} /*EDITMODE-END*/;
+};
 const accentFor = (confId, accent) => accent === 'gold' ? '#C9A227' : CONF_ACCENT[confId] || '#C9A227';
 const plInitials = name => {
   const p = String(name).trim().split(/\s+/);
@@ -2400,8 +2285,6 @@ const CLASS_LONG = {
   SR: 'Senior',
   GR: 'Graduate'
 };
-
-// ============================================================ SEARCH
 const SearchBar = ({
   value,
   onPick
@@ -2439,14 +2322,14 @@ const SearchBar = ({
       pick(results[hi]);
     } else if (e.key === 'Escape') setOpen(false);
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "pl-search",
     ref: wrap
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: 'pl-search__field' + (open ? ' is-open' : '')
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-search__ic"
-  }, "\u2315"), /*#__PURE__*/React.createElement("input", {
+  }, "\u2315"), React.createElement("input", {
     value: q,
     onChange: e => {
       setQ(e.target.value);
@@ -2456,74 +2339,69 @@ const SearchBar = ({
     onFocus: () => setOpen(true),
     onKeyDown: onKey,
     placeholder: "Search a player to trace ownership\u2026"
-  }), q && /*#__PURE__*/React.createElement("button", {
+  }), q && React.createElement("button", {
     className: "pl-search__clear",
     onClick: () => setQ('')
-  }, "\xD7")), open && /*#__PURE__*/React.createElement("div", {
+  }, "\xD7")), open && React.createElement("div", {
     className: "pl-search__menu",
     role: "listbox"
-  }, results.length ? results.map((p, i) => /*#__PURE__*/React.createElement("button", {
+  }, results.length ? results.map((p, i) => React.createElement("button", {
     key: p.id,
     role: "option",
     "aria-selected": i === hi,
     className: 'pl-opt' + (i === hi ? ' is-hi' : '') + (p.id === value ? ' is-cur' : ''),
     onMouseEnter: () => setHi(i),
     onClick: () => pick(p)
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-opt__shot",
     style: {
       '--accent': POS_COLORS[p.pos] || '#5A5A5A'
     }
-  }, plInitials(p.name)), /*#__PURE__*/React.createElement("span", {
+  }, plInitials(p.name)), React.createElement("span", {
     className: "pl-opt__id"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-opt__name"
-  }, p.name), /*#__PURE__*/React.createElement("span", {
+  }, p.name), React.createElement("span", {
     className: "pl-opt__meta"
-  }, /*#__PURE__*/React.createElement(PosChip, {
+  }, React.createElement(PosChip, {
     pos: p.pos
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-opt__sub"
-  }, p.college, " \xB7 ", p.pos, p.posRank))), /*#__PURE__*/React.createElement("span", {
+  }, p.college, " \xB7 ", p.pos, p.posRank))), React.createElement("span", {
     className: "pl-opt__roll"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-opt__roll-n"
-  }, /*#__PURE__*/React.createElement("b", null, p.roll.rostered + p.roll.redshirting), /*#__PURE__*/React.createElement("span", null, "held")), /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("b", null, p.roll.rostered + p.roll.redshirting), React.createElement("span", null, "held")), React.createElement("span", {
     className: "pl-opt__roll-n"
-  }, /*#__PURE__*/React.createElement("b", null, p.roll.total), /*#__PURE__*/React.createElement("span", null, "copies"))))) : /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("b", null, p.roll.total), React.createElement("span", null, "copies"))))) : React.createElement("div", {
     className: "pl-opt-empty"
   }, "No players match \u201C", q, "\u201D.")));
 };
-
-// ============================================================ PROFILE bits
-// The initials/silhouette placeholder always renders; the MFL headshot (when a
-// photo URL is present) lays over it and, on error, falls back to MFL's
-// "no photo" asset, then hides itself so the placeholder shows through.
 const Portrait = ({
   p,
   size = 'lg'
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: 'pl-portrait pl-portrait--' + size
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-portrait__bar",
   style: {
     background: POS_COLORS[p.pos] || '#5A5A5A'
   }
-}), /*#__PURE__*/React.createElement("svg", {
+}), React.createElement("svg", {
   className: "pl-portrait__sil",
   viewBox: "0 0 56 56",
   fill: "none",
   stroke: "currentColor",
   strokeWidth: "1.5"
-}, /*#__PURE__*/React.createElement("circle", {
+}, React.createElement("circle", {
   cx: "28",
   cy: "20",
   r: "9"
-}), /*#__PURE__*/React.createElement("path", {
+}), React.createElement("path", {
   d: "M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-portrait__initials"
-}, plInitials(p.name)), p.photo && /*#__PURE__*/React.createElement("img", {
+}, plInitials(p.name)), p.photo && React.createElement("img", {
   className: "pl-portrait__photo",
   loading: "lazy",
   src: p.photo,
@@ -2546,52 +2424,52 @@ const CopiesMeter = ({
   const grad = roll.graduated || 0;
   const decl = roll.declared || 0;
   const out = grad + decl;
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "pl-meter"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-meter__head"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-meter__title"
-  }, "Copies In Play"), /*#__PURE__*/React.createElement("span", {
+  }, "Copies In Play"), React.createElement("span", {
     className: "pl-meter__count"
-  }, out > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, roll.rostered + roll.redshirting), " active \xB7 ", out, " retired \xB7 ", roll.fa, " free") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", null, roll.rostered), " rostered \xB7 ", roll.redshirting, " RS \xB7 ", roll.fa, " free"))), /*#__PURE__*/React.createElement("div", {
+  }, out > 0 ? React.createElement(React.Fragment, null, React.createElement("b", null, roll.rostered + roll.redshirting), " active \xB7 ", out, " retired \xB7 ", roll.fa, " free") : React.createElement(React.Fragment, null, React.createElement("b", null, roll.rostered), " rostered \xB7 ", roll.redshirting, " RS \xB7 ", roll.fa, " free"))), React.createElement("div", {
     className: "pl-meter__bar"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-meter__seg is-rostered",
     style: {
       width: seg(roll.rostered) + '%'
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-meter__seg is-redshirting",
     style: {
       width: seg(roll.redshirting) + '%'
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-meter__seg is-declared",
     style: {
       width: seg(decl) + '%'
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-meter__seg is-graduated",
     style: {
       width: seg(grad) + '%'
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-meter__seg is-fa",
     style: {
       width: seg(roll.fa) + '%'
     }
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "pl-meter__legend"
-  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+  }, React.createElement("span", null, React.createElement("i", {
     className: "is-rostered"
-  }), "Rostered"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+  }), "Rostered"), React.createElement("span", null, React.createElement("i", {
     className: "is-redshirting"
-  }), "Redshirting"), decl > 0 && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+  }), "Redshirting"), decl > 0 && React.createElement("span", null, React.createElement("i", {
     className: "is-declared"
-  }), "Declared"), grad > 0 && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+  }), "Declared"), grad > 0 && React.createElement("span", null, React.createElement("i", {
     className: "is-graduated"
-  }), "Graduated"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", {
+  }), "Graduated"), React.createElement("span", null, React.createElement("i", {
     className: "is-fa"
   }), "Free agent")));
 };
@@ -2599,112 +2477,101 @@ const Stat = ({
   label,
   children,
   hero
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-stat"
-}, /*#__PURE__*/React.createElement("div", {
+}, React.createElement("div", {
   className: "pl-stat__label"
-}, label), /*#__PURE__*/React.createElement("div", {
+}, label), React.createElement("div", {
   className: 'pl-stat__val' + (hero ? ' is-hero' : '')
 }, children));
-
-// One devy-draft selection line (year · conference · round/pick · drafting team).
 const DraftLine = ({
   d
-}) => /*#__PURE__*/React.createElement("span", {
+}) => React.createElement("span", {
   className: "pl-draftline"
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-draftline__pick cffb-num"
-}, "R", d.round, "\xB7P", d.pick), /*#__PURE__*/React.createElement("span", {
+}, "R", d.round, "\xB7P", d.pick), React.createElement("span", {
   className: "pl-draftline__yr"
-}, d.year, " ", CONF_NAME[d.conf] || d.conf, " devy draft"), /*#__PURE__*/React.createElement(TeamOwner, {
+}, d.year, " ", CONF_NAME[d.conf] || d.conf, " devy draft"), React.createElement(TeamOwner, {
   id: d.fid,
   showOwner: false,
   mark: "sm"
 }));
-
-// --- Hero profile (player-level: bio + awards + devy draft. Eligibility is per-copy.) ---
-// Bio fields (ht/wt/home) exist only in the demo's mock data; live rows carry
-// nflTeam / rookie class / awards / draft / an MFL profile deep link instead —
-// every extra is rendered conditionally so both data shapes look right.
 const ProfileHero = ({
   p,
   roll,
   accentColor
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-hero",
   style: {
     '--accent': accentColor
   }
-}, /*#__PURE__*/React.createElement(Portrait, {
+}, React.createElement(Portrait, {
   p: p,
   size: "lg"
-}), /*#__PURE__*/React.createElement("div", {
+}), React.createElement("div", {
   className: "pl-hero__id"
-}, /*#__PURE__*/React.createElement("div", {
+}, React.createElement("div", {
   className: "pl-hero__tags"
-}, /*#__PURE__*/React.createElement(PosChip, {
+}, React.createElement(PosChip, {
   pos: p.pos
-}), (p.nflTeam || p.college) && /*#__PURE__*/React.createElement("span", {
+}), (p.nflTeam || p.college) && React.createElement("span", {
   className: "pl-hero__college"
-}, p.nflTeam || p.college), p.entered && /*#__PURE__*/React.createElement("span", {
+}, p.nflTeam || p.college), p.entered && React.createElement("span", {
   className: "pl-hero__year"
-}, "Rookie class ", p.entered)), /*#__PURE__*/React.createElement("div", {
+}, "Rookie class ", p.entered)), React.createElement("div", {
   className: "pl-hero__namerow"
-}, /*#__PURE__*/React.createElement("h2", {
+}, React.createElement("h2", {
   className: "pl-hero__name"
-}, p.name), p.profileUrl && /*#__PURE__*/React.createElement("a", {
+}, p.name), p.profileUrl && React.createElement("a", {
   className: "pl-hero__mfl",
   href: p.profileUrl,
   target: "_blank",
   rel: "noopener noreferrer"
-}, "MFL profile \u2197")), (p.ht || p.home) && /*#__PURE__*/React.createElement("div", {
+}, "MFL profile \u2197")), (p.ht || p.home) && React.createElement("div", {
   className: "pl-hero__meta"
-}, p.ht, " ", p.wt, " ", p.home ? '· ' + p.home : ''), p.draft && p.draft.length > 0 && /*#__PURE__*/React.createElement("div", {
+}, p.ht, " ", p.wt, " ", p.home ? '· ' + p.home : ''), p.draft && p.draft.length > 0 && React.createElement("div", {
   className: "pl-hero__draft"
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-hero__draftlbl"
-}, "Devy Draft"), p.draft.map((d, i) => /*#__PURE__*/React.createElement(DraftLine, {
+}, "Devy Draft"), p.draft.map((d, i) => React.createElement(DraftLine, {
   key: i,
   d: d
-})))), /*#__PURE__*/React.createElement("div", {
+})))), React.createElement("div", {
   className: "pl-hero__rail"
-}, /*#__PURE__*/React.createElement(CopiesMeter, {
+}, React.createElement(CopiesMeter, {
   roll: roll
 })));
-
-// --- Compact profile ---
 const ProfileCompact = ({
   p,
   roll,
   accentColor
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-compact",
   style: {
     '--accent': accentColor
   }
-}, /*#__PURE__*/React.createElement(Portrait, {
+}, React.createElement(Portrait, {
   p: p,
   size: "sm"
-}), /*#__PURE__*/React.createElement("div", {
+}), React.createElement("div", {
   className: "pl-compact__id"
-}, /*#__PURE__*/React.createElement("div", {
+}, React.createElement("div", {
   className: "pl-compact__namerow"
-}, /*#__PURE__*/React.createElement(PosChip, {
+}, React.createElement(PosChip, {
   pos: p.pos
-}), /*#__PURE__*/React.createElement("span", {
+}), React.createElement("span", {
   className: "pl-compact__name"
-}, p.name), /*#__PURE__*/React.createElement("span", {
+}, p.name), React.createElement("span", {
   className: "pl-compact__college"
-}, p.college))), /*#__PURE__*/React.createElement("div", {
+}, p.college))), React.createElement("div", {
   className: "pl-compact__roll"
-}, /*#__PURE__*/React.createElement(Stat, {
+}, React.createElement(Stat, {
   label: "Rostered",
   hero: true
-}, roll.rostered), /*#__PURE__*/React.createElement(Stat, {
+}, roll.rostered), React.createElement(Stat, {
   label: "Moves"
 }, roll.txns)));
-
-// ============================================================ TRANSACTION TIMELINE
 const TXN_LABEL = {
   won: 'WON',
   rs: 'REDSHIRT',
@@ -2716,10 +2583,9 @@ const TXN_LABEL = {
   release: 'NOT RETAINED',
   declare: 'DECLARED'
 };
-// Small gold marker shown on a copy that earned a player award while held.
 const HonorsStar = ({
   n
-}) => /*#__PURE__*/React.createElement("span", {
+}) => React.createElement("span", {
   className: "pl-honors",
   title: `${n} player ${n === 1 ? 'award' : 'awards'} earned while held`
 }, "\u2605", n > 1 ? n : '');
@@ -2727,115 +2593,111 @@ const TransactionTimeline = ({
   copy,
   accentColor,
   showOwners
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-tl"
-}, /*#__PURE__*/React.createElement("div", {
+}, React.createElement("div", {
   className: "pl-tl__head"
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-tl__title"
-}, "Transaction Ledger"), /*#__PURE__*/React.createElement("span", {
+}, "Transaction Ledger"), React.createElement("span", {
   className: "pl-tl__sub"
-}, copy.ledger.length, " events \xB7 earliest first")), /*#__PURE__*/React.createElement("ol", {
+}, copy.ledger.length, " events \xB7 earliest first")), React.createElement("ol", {
   className: "pl-tl__list",
   style: {
     '--rail': accentColor
   }
 }, copy.ledger.map((e, i) => {
   const last = i === copy.ledger.length - 1;
-  return /*#__PURE__*/React.createElement("li", {
+  return React.createElement("li", {
     key: i,
     className: 'pl-tlitem pl-tlitem--' + e.tag + (last ? ' is-last' : '')
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-tlitem__rail"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-tlitem__dot",
     style: {
       background: TXN_META[e.tag].color,
       borderColor: TXN_META[e.tag].color
     }
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "pl-tlitem__body"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-tlitem__main"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-tlitem__season cffb-num"
-  }, e.season), /*#__PURE__*/React.createElement("span", {
+  }, e.season), React.createElement("span", {
     className: "pl-tlitem__owner"
-  }, e.type === 'graduate' && !e.team ? /*#__PURE__*/React.createElement("span", {
+  }, e.type === 'graduate' && !e.team ? React.createElement("span", {
     className: "pl-tlitem__retired"
-  }, "Class of ", e.season, " \xB7 unrostered") : /*#__PURE__*/React.createElement(TeamOwner, {
+  }, "Class of ", e.season, " \xB7 unrostered") : React.createElement(TeamOwner, {
     id: e.team,
     showOwner: showOwners,
     mark: "sm"
-  })), /*#__PURE__*/React.createElement("span", {
+  })), React.createElement("span", {
     className: "pl-tlitem__detail"
-  }, e.type === 'auction' && /*#__PURE__*/React.createElement(Money, {
+  }, e.type === 'auction' && React.createElement(Money, {
     n: e.price
-  }), e.type === 'retain' && e.cost > 0 && /*#__PURE__*/React.createElement(Money, {
+  }), e.type === 'retain' && e.cost > 0 && React.createElement(Money, {
     n: e.cost
-  }), e.type === 'redshirt' && /*#__PURE__*/React.createElement(RedshirtChip, {
+  }), e.type === 'redshirt' && React.createElement(RedshirtChip, {
     rsType: e.rsType,
     size: "sm"
-  }), e.type === 'award' && /*#__PURE__*/React.createElement(Awards, {
+  }), e.type === 'award' && React.createElement(Awards, {
     awards: [e.award],
     size: "sm"
-  })), e.type !== 'award' && /*#__PURE__*/React.createElement("span", {
+  })), e.type !== 'award' && React.createElement("span", {
     className: 'pl-tag pl-tag--' + e.tag
-  }, TXN_LABEL[e.tag])), e.note && /*#__PURE__*/React.createElement("div", {
+  }, TXN_LABEL[e.tag])), e.note && React.createElement("div", {
     className: "pl-tlitem__note"
   }, e.note)));
 })));
-
-// ============================================================ ROWS LAYOUT
 const CopyRow = ({
   copy,
   accentColor,
   open,
   onToggle,
   showOwners
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: 'pl-row' + (open ? ' is-open' : ''),
   style: {
     '--accent': accentColor
   }
-}, /*#__PURE__*/React.createElement("button", {
+}, React.createElement("button", {
   className: "pl-row__head",
   onClick: onToggle,
   "aria-expanded": open
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-row__n"
-}, "Copy ", copy.n, copy.honors > 0 && /*#__PURE__*/React.createElement(HonorsStar, {
+}, "Copy ", copy.n, copy.honors > 0 && React.createElement(HonorsStar, {
   n: copy.honors
-})), /*#__PURE__*/React.createElement(StatusChip, {
+})), React.createElement(StatusChip, {
   status: copy.status
-}), /*#__PURE__*/React.createElement("span", {
+}), React.createElement("span", {
   className: "pl-row__owner"
-}, /*#__PURE__*/React.createElement(TeamOwner, {
+}, React.createElement(TeamOwner, {
   id: copy.owner,
   showOwner: showOwners,
   mark: "sm",
   emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-row__elig"
-}, /*#__PURE__*/React.createElement(CopyEligInline, {
+}, React.createElement(CopyEligInline, {
   elig: copy.elig
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-row__acq"
-}, copy.acquired ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Money, {
+}, copy.acquired ? React.createElement(React.Fragment, null, React.createElement(Money, {
   n: copy.acquired.price
-}), /*#__PURE__*/React.createElement("span", {
+}), React.createElement("span", {
   className: "pl-row__since"
-}, "since ", copy.acquired.season)) : /*#__PURE__*/React.createElement("span", {
+}, "since ", copy.acquired.season)) : React.createElement("span", {
   className: "pl-row__dash"
-}, "on the wire")), /*#__PURE__*/React.createElement("span", {
+}, "on the wire")), React.createElement("span", {
   className: "pl-row__chev"
-}, open ? '▾' : '▸')), open && /*#__PURE__*/React.createElement(TransactionTimeline, {
+}, open ? '▾' : '▸')), open && React.createElement(TransactionTimeline, {
   copy: copy,
   accentColor: accentColor,
   showOwners: showOwners
 }));
-
-// Per-conference status summary chips.
 const ConfRollChips = ({
   copies
 }) => {
@@ -2847,13 +2709,13 @@ const ConfRollChips = ({
   copies.forEach(cp => {
     if (cp.status === 'graduated' || cp.status === 'declared') c.retired += 1;else if (cp.status === 'fa') c.fa += 1;else c.active += 1;
   });
-  return /*#__PURE__*/React.createElement("span", {
+  return React.createElement("span", {
     className: "pl-confroll"
-  }, c.active > 0 && /*#__PURE__*/React.createElement("span", {
+  }, c.active > 0 && React.createElement("span", {
     className: "pl-confroll__chip is-active"
-  }, c.active, " active"), c.retired > 0 && /*#__PURE__*/React.createElement("span", {
+  }, c.active, " active"), c.retired > 0 && React.createElement("span", {
     className: "pl-confroll__chip is-retired"
-  }, c.retired, " retired"), c.fa > 0 && /*#__PURE__*/React.createElement("span", {
+  }, c.retired, " retired"), c.fa > 0 && React.createElement("span", {
     className: "pl-confroll__chip is-fa"
   }, c.fa, " free"));
 };
@@ -2863,33 +2725,33 @@ const RowsLayout = ({
   setExpanded,
   accent,
   showOwners
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-rows"
 }, confs.map(({
   conf,
   copies
 }) => {
   const ac = accentFor(conf, accent);
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "pl-confgroup",
     key: conf,
     style: {
       '--accent': ac
     }
-  }, /*#__PURE__*/React.createElement("header", {
+  }, React.createElement("header", {
     className: "pl-confgroup__head"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-confgroup__edge"
-  }), /*#__PURE__*/React.createElement(ConfBadge, {
+  }), React.createElement(ConfBadge, {
     id: conf,
     size: 22
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-confgroup__count"
-  }, copies.length, " copies reserved"), /*#__PURE__*/React.createElement(ConfRollChips, {
+  }, copies.length, " copies reserved"), React.createElement(ConfRollChips, {
     copies: copies
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "pl-confgroup__body"
-  }, copies.map(c => /*#__PURE__*/React.createElement(CopyRow, {
+  }, copies.map(c => React.createElement(CopyRow, {
     key: c.id,
     copy: c,
     accentColor: ac,
@@ -2898,87 +2760,83 @@ const RowsLayout = ({
     onToggle: () => setExpanded(expanded === c.id ? null : c.id)
   }))));
 }));
-
-// ============================================================ SHARED DETAIL
 const CopyDetail = ({
   copy,
   accentColor,
   showOwners,
   onClose
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-detail",
   style: {
     '--accent': accentColor
   }
-}, /*#__PURE__*/React.createElement("div", {
+}, React.createElement("div", {
   className: "pl-detail__head"
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-detail__copy"
-}, "Copy ", copy.n), /*#__PURE__*/React.createElement(StatusChip, {
+}, "Copy ", copy.n), React.createElement(StatusChip, {
   status: copy.status
-}), /*#__PURE__*/React.createElement("span", {
+}), React.createElement("span", {
   className: "pl-detail__elig"
-}, /*#__PURE__*/React.createElement(EligDots, {
+}, React.createElement(EligDots, {
   elig: copy.elig
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-detail__owner"
-}, /*#__PURE__*/React.createElement(TeamOwner, {
+}, React.createElement(TeamOwner, {
   id: copy.owner,
   showOwner: showOwners,
   mark: "sm",
   emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
-})), /*#__PURE__*/React.createElement("button", {
+})), React.createElement("button", {
   className: "pl-detail__close",
   onClick: onClose
-}, "\xD7")), /*#__PURE__*/React.createElement(TransactionTimeline, {
+}, "\xD7")), React.createElement(TransactionTimeline, {
   copy: copy,
   accentColor: accentColor,
   showOwners: showOwners
 }));
-
-// ============================================================ CARDS LAYOUT
 const CopyCard = ({
   copy,
   accentColor,
   active,
   onClick,
   showOwners
-}) => /*#__PURE__*/React.createElement("button", {
+}) => React.createElement("button", {
   className: 'pl-card pl-card--' + copy.status + (active ? ' is-active' : ''),
   style: {
     '--accent': accentColor
   },
   onClick: onClick
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-card__top"
-}, /*#__PURE__*/React.createElement("span", {
+}, React.createElement("span", {
   className: "pl-card__n"
-}, "Copy ", copy.n, copy.honors > 0 && /*#__PURE__*/React.createElement(HonorsStar, {
+}, "Copy ", copy.n, copy.honors > 0 && React.createElement(HonorsStar, {
   n: copy.honors
-})), /*#__PURE__*/React.createElement(StatusChip, {
+})), React.createElement(StatusChip, {
   status: copy.status,
   size: "sm"
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-card__owner"
-}, /*#__PURE__*/React.createElement(TeamOwner, {
+}, React.createElement(TeamOwner, {
   id: copy.owner,
   showOwner: showOwners,
   mark: "md",
   stacked: true,
   emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-card__elig"
-}, /*#__PURE__*/React.createElement(CopyEligInline, {
+}, React.createElement(CopyEligInline, {
   elig: copy.elig
-})), /*#__PURE__*/React.createElement("span", {
+})), React.createElement("span", {
   className: "pl-card__foot"
-}, copy.acquired ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Money, {
+}, copy.acquired ? React.createElement(React.Fragment, null, React.createElement(Money, {
   n: copy.acquired.price
-}), /*#__PURE__*/React.createElement("span", {
+}), React.createElement("span", {
   className: "pl-card__since"
-}, "since ", copy.acquired.season)) : /*#__PURE__*/React.createElement("span", {
+}, "since ", copy.acquired.season)) : React.createElement("span", {
   className: "pl-card__dash"
-}, "on the wire"), /*#__PURE__*/React.createElement("span", {
+}, "on the wire"), React.createElement("span", {
   className: "pl-card__moves"
 }, copy.ledger.length, " ", copy.ledger.length === 1 ? 'move' : 'moves')));
 const CardsLayout = ({
@@ -2995,33 +2853,33 @@ const CardsLayout = ({
     };
     return null;
   }, [confs, expanded]);
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "pl-cards-wrap"
   }, confs.map(({
     conf,
     copies
   }) => {
     const ac = accentFor(conf, accent);
-    return /*#__PURE__*/React.createElement("section", {
+    return React.createElement("section", {
       className: "pl-confgroup",
       key: conf,
       style: {
         '--accent': ac
       }
-    }, /*#__PURE__*/React.createElement("header", {
+    }, React.createElement("header", {
       className: "pl-confgroup__head"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: "pl-confgroup__edge"
-    }), /*#__PURE__*/React.createElement(ConfBadge, {
+    }), React.createElement(ConfBadge, {
       id: conf,
       size: 22
-    }), /*#__PURE__*/React.createElement("span", {
+    }), React.createElement("span", {
       className: "pl-confgroup__count"
-    }, copies.length, " copies reserved"), /*#__PURE__*/React.createElement(ConfRollChips, {
+    }, copies.length, " copies reserved"), React.createElement(ConfRollChips, {
       copies: copies
-    })), /*#__PURE__*/React.createElement("div", {
+    })), React.createElement("div", {
       className: "pl-cards"
-    }, copies.map(c => /*#__PURE__*/React.createElement(CopyCard, {
+    }, copies.map(c => React.createElement(CopyCard, {
       key: c.id,
       copy: c,
       accentColor: ac,
@@ -3029,17 +2887,13 @@ const CardsLayout = ({
       active: expanded === c.id,
       onClick: () => setExpanded(expanded === c.id ? null : c.id)
     }))));
-  }), selEntry && /*#__PURE__*/React.createElement(CopyDetail, {
+  }), selEntry && React.createElement(CopyDetail, {
     copy: selEntry.c,
     accentColor: accentFor(selEntry.conf, accent),
     showOwners: showOwners,
     onClose: () => setExpanded(null)
   }));
 };
-
-// ============================================================ TIMELINE (SWIMLANE) LAYOUT
-// Each copy is a horizontal lane across the season axis. Ownership renders as a
-// team-colored bar; transactions render as nodes. Click a lane to expand its ledger.
 const buildAxis = copies => {
   let min = CURRENT_SEASON,
     max = CURRENT_SEASON;
@@ -3051,7 +2905,6 @@ const buildAxis = copies => {
   for (let y = min; y <= max; y++) years.push(y);
   return years;
 };
-// Ownership segments per copy: [{team, startIdx, endFrac(left edge of end)}].
 const ownershipSegments = (copy, years) => {
   const N = years.length,
     idxOf = y => years.indexOf(y);
@@ -3114,47 +2967,46 @@ const Swimlane = ({
 }) => {
   const N = years.length;
   const segs = ownershipSegments(copy, years);
-  // group events by season index for collision spreading
   const byIdx = {};
   copy.ledger.forEach(e => {
     const k = years.indexOf(e.season);
     (byIdx[k] = byIdx[k] || []).push(e);
   });
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: 'pl-lane' + (active ? ' is-active' : ''),
     style: {
       '--accent': accentColor
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "pl-lane__head",
     onClick: onClick
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-lane__n"
-  }, "Copy ", copy.n, copy.honors > 0 && /*#__PURE__*/React.createElement(HonorsStar, {
+  }, "Copy ", copy.n, copy.honors > 0 && React.createElement(HonorsStar, {
     n: copy.honors
-  })), /*#__PURE__*/React.createElement(StatusChip, {
+  })), React.createElement(StatusChip, {
     status: copy.status,
     size: "sm"
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "pl-lane__elig"
-  }, /*#__PURE__*/React.createElement(CopyEligInline, {
+  }, React.createElement(CopyEligInline, {
     elig: copy.elig,
     showClass: false
-  })), /*#__PURE__*/React.createElement("span", {
+  })), React.createElement("span", {
     className: "pl-lane__owner"
-  }, /*#__PURE__*/React.createElement(TeamOwner, {
+  }, React.createElement(TeamOwner, {
     id: copy.owner,
     showOwner: showOwners,
     mark: "sm",
     emptyLabel: copy.status === 'declared' ? 'Declared' : copy.graduated ? 'Graduated' : 'Free agent'
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), React.createElement("div", {
     className: "pl-lane__track"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-lane__grid"
-  }, years.map(y => /*#__PURE__*/React.createElement("span", {
+  }, years.map(y => React.createElement("span", {
     key: y,
     className: "pl-lane__col"
-  }))), segs.map((s, i) => /*#__PURE__*/React.createElement("span", {
+  }))), segs.map((s, i) => React.createElement("span", {
     key: i,
     className: 'pl-lane__bar' + (s.held ? ' is-held' : ''),
     style: {
@@ -3168,7 +3020,7 @@ const Swimlane = ({
     const group = byIdx[k];
     const j = group.indexOf(e);
     const frac = (k + (j + 1) / (group.length + 1)) / N * 100;
-    return /*#__PURE__*/React.createElement("span", {
+    return React.createElement("span", {
       key: i,
       className: 'pl-node pl-node--' + e.tag,
       style: {
@@ -3176,11 +3028,11 @@ const Swimlane = ({
         '--c': TXN_META[e.tag].color
       },
       title: `${e.season} · ${TXN_LABEL[e.tag]}${e.price ? ' $' + e.price : ''}${e.award ? ' · ' + e.award.name : ''}`
-    }, e.tag === 'award' ? /*#__PURE__*/React.createElement("span", {
+    }, e.tag === 'award' ? React.createElement("span", {
       className: "pl-node__star"
-    }, "\u2605") : e.tag === 'graduate' ? /*#__PURE__*/React.createElement("span", {
+    }, "\u2605") : e.tag === 'graduate' ? React.createElement("span", {
       className: "pl-node__cap"
-    }) : /*#__PURE__*/React.createElement("span", {
+    }) : React.createElement("span", {
       className: "pl-node__dot"
     }));
   })));
@@ -3201,16 +3053,16 @@ const TimelineLayout = ({
     };
     return null;
   }, [confs, expanded]);
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "pl-timeline"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-axis",
     style: {
       gridTemplateColumns: `var(--lane-label) 1fr`
     }
-  }, /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("span", null), React.createElement("div", {
     className: "pl-axis__years"
-  }, years.map(y => /*#__PURE__*/React.createElement("span", {
+  }, years.map(y => React.createElement("span", {
     key: y,
     className: 'pl-axis__yr cffb-num' + (y === CURRENT_SEASON ? ' is-now' : '')
   }, y)))), confs.map(({
@@ -3218,22 +3070,22 @@ const TimelineLayout = ({
     copies
   }) => {
     const ac = accentFor(conf, accent);
-    return /*#__PURE__*/React.createElement("section", {
+    return React.createElement("section", {
       className: "pl-lanegroup",
       key: conf,
       style: {
         '--accent': ac
       }
-    }, /*#__PURE__*/React.createElement("header", {
+    }, React.createElement("header", {
       className: "pl-lanegroup__head"
-    }, /*#__PURE__*/React.createElement(ConfBadge, {
+    }, React.createElement(ConfBadge, {
       id: conf,
       size: 20
-    }), /*#__PURE__*/React.createElement(ConfRollChips, {
+    }), React.createElement(ConfRollChips, {
       copies: copies
-    })), /*#__PURE__*/React.createElement("div", {
+    })), React.createElement("div", {
       className: "pl-lanes"
-    }, copies.map(c => /*#__PURE__*/React.createElement(Swimlane, {
+    }, copies.map(c => React.createElement(Swimlane, {
       key: c.id,
       copy: c,
       years: years,
@@ -3242,75 +3094,66 @@ const TimelineLayout = ({
       active: expanded === c.id,
       onClick: () => setExpanded(expanded === c.id ? null : c.id)
     }))));
-  }), selEntry && /*#__PURE__*/React.createElement(CopyDetail, {
+  }), selEntry && React.createElement(CopyDetail, {
     copy: selEntry.c,
     accentColor: accentFor(selEntry.conf, accent),
     showOwners: showOwners,
     onClose: () => setExpanded(null)
   }));
 };
-
-// ============================================================ VIEW TOGGLE
 const ViewToggle = ({
   view,
   setView
-}) => /*#__PURE__*/React.createElement("div", {
+}) => React.createElement("div", {
   className: "pl-viewtoggle",
   role: "group",
   "aria-label": "Preview size"
-}, /*#__PURE__*/React.createElement("button", {
+}, React.createElement("button", {
   className: 'pl-viewtoggle__btn' + (view === 'desktop' ? ' is-on' : ''),
   onClick: () => setView('desktop')
-}, /*#__PURE__*/React.createElement("svg", {
+}, React.createElement("svg", {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
   strokeWidth: "2"
-}, /*#__PURE__*/React.createElement("rect", {
+}, React.createElement("rect", {
   x: "2",
   y: "4",
   width: "20",
   height: "13",
   rx: "1.5"
-}), /*#__PURE__*/React.createElement("path", {
+}), React.createElement("path", {
   d: "M8 21h8M12 17v4"
-})), "Desktop"), /*#__PURE__*/React.createElement("button", {
+})), "Desktop"), React.createElement("button", {
   className: 'pl-viewtoggle__btn' + (view === 'mobile' ? ' is-on' : ''),
   onClick: () => setView('mobile')
-}, /*#__PURE__*/React.createElement("svg", {
+}, React.createElement("svg", {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
   strokeWidth: "2"
-}, /*#__PURE__*/React.createElement("rect", {
+}, React.createElement("rect", {
   x: "6",
   y: "2",
   width: "12",
   height: "20",
   rx: "2.5"
-}), /*#__PURE__*/React.createElement("path", {
+}), React.createElement("path", {
   d: "M11 18h2"
 })), "Mobile"));
-
-// ============================================================ APP
 const firstHeld = entry => {
   const copies = entry && entry.copies || [];
   return (copies.find(c => c.status !== 'fa') || copies[0] || {}).id || null;
 };
-
-// Live build ships pl-data-live.jsx (async loaders); the demo ships the mock
-// pl-data.jsx (synchronous LEDGER/ROSTER). Detect which and drive both.
 const HAS_LIVE = typeof loadLedgerIndex === 'function';
 const App = () => {
   const [t] = useTweaks(TWEAK_DEFAULTS);
   const [ready, setReady] = useState(!HAS_LIVE);
   const [err, setErr] = useState(null);
   const [pid, setPid] = useState(() => HAS_LIVE ? null : ROSTER[0] && ROSTER[0].id || null);
-  const [entry, setEntry] = useState(null); // LEDGER[pid] once available
+  const [entry, setEntry] = useState(null);
   const [loadingP, setLoadingP] = useState(false);
   const [expanded, setExpanded] = useState(null);
-
-  // Load the search index once (live only; mock is ready immediately).
   useEffect(() => {
     if (!HAS_LIVE) return;
     let alive = true;
@@ -3325,8 +3168,6 @@ const App = () => {
       alive = false;
     };
   }, []);
-
-  // Load the selected player's ledger.
   useEffect(() => {
     if (!pid) return;
     let alive = true;
@@ -3352,79 +3193,75 @@ const App = () => {
       alive = false;
     };
   }, [pid]);
-
-  // Single responsive stage — the frame is a CSS container (container-type:
-  // inline-size), so the layout adapts to its own rendered width via the
-  // @container queries in ledger.css. No manual desktop/mobile toggle.
-  const shell = children => /*#__PURE__*/React.createElement("div", {
+  const shell = children => React.createElement("div", {
     className: "pl-stage"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-frame"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: 'pl-root pl--' + t.density + ' pl--layout-' + t.layout
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-context"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-context__crumb"
-  }, "League"), /*#__PURE__*/React.createElement("span", {
+  }, "League"), React.createElement("span", {
     className: "pl-context__sep"
-  }, "/"), /*#__PURE__*/React.createElement("span", {
+  }, "/"), React.createElement("span", {
     className: "pl-context__here"
-  }, "Player Ledger")), /*#__PURE__*/React.createElement("div", {
+  }, "Player Ledger")), React.createElement("div", {
     className: "pl-panel"
-  }, /*#__PURE__*/React.createElement("header", {
+  }, React.createElement("header", {
     className: "pl-panel__head"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-panel__title"
-  }, /*#__PURE__*/React.createElement("h1", {
+  }, React.createElement("h1", {
     className: "pl-panel__h1"
-  }, "Player Ledger"), /*#__PURE__*/React.createElement("p", {
+  }, "Player Ledger"), React.createElement("p", {
     className: "pl-panel__desc"
-  }, "Trace every copy of a player \u2014 who owns it now, and how it changed hands.")), ready && /*#__PURE__*/React.createElement(SearchBar, {
+  }, "Trace every copy of a player \u2014 who owns it now, and how it changed hands.")), ready && React.createElement(SearchBar, {
     value: pid,
     onPick: setPid
   })), children))));
-  if (err) return shell(/*#__PURE__*/React.createElement("div", {
+  if (err) return shell(React.createElement("div", {
     className: "pl-note pl-note--err"
   }, "Couldn\u2019t load the Player Ledger. ", err));
-  if (!ready) return shell(/*#__PURE__*/React.createElement("div", {
+  if (!ready) return shell(React.createElement("div", {
     className: "pl-note"
   }, "Loading players\u2026"));
   const p = ROSTER.find(r => r.id === pid);
-  if (!p) return shell(/*#__PURE__*/React.createElement("div", {
+  if (!p) return shell(React.createElement("div", {
     className: "pl-note"
   }, "No players available yet."));
   const roll = entry && entry.roll || p.roll;
   const detailReady = entry && !loadingP;
   const accentColor = accentFor(p.conf, t.accent);
   const Layout = t.layout === 'cards' ? CardsLayout : t.layout === 'timeline' ? TimelineLayout : RowsLayout;
-  return shell(/*#__PURE__*/React.createElement(React.Fragment, null, t.profile === 'hero' ? /*#__PURE__*/React.createElement(ProfileHero, {
+  return shell(React.createElement(React.Fragment, null, t.profile === 'hero' ? React.createElement(ProfileHero, {
     p: p,
     roll: roll,
     accentColor: accentColor
-  }) : /*#__PURE__*/React.createElement(ProfileCompact, {
+  }) : React.createElement(ProfileCompact, {
     p: p,
     roll: roll,
     accentColor: accentColor
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "pl-ledger"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pl-ledger__head"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "pl-ledger__title"
-  }, "Copies & Ownership"), /*#__PURE__*/React.createElement("span", {
+  }, "Copies & Ownership"), React.createElement("span", {
     className: "pl-ledger__hint"
-  }, "Select a copy to open its transaction ledger")), detailReady ? /*#__PURE__*/React.createElement(Layout, {
+  }, "Select a copy to open its transaction ledger")), detailReady ? React.createElement(Layout, {
     confs: entry.confs,
     expanded: expanded,
     setExpanded: setExpanded,
     accent: t.accent,
     showOwners: t.showOwners
-  }) : /*#__PURE__*/React.createElement("div", {
+  }) : React.createElement("div", {
     className: "pl-note"
   }, "Loading ledger\u2026"))));
 };
-ReactDOM.createRoot(document.getElementById('cffb-pl-root')).render(/*#__PURE__*/React.createElement(App, null));
+ReactDOM.createRoot(document.getElementById('cffb-pl-root')).render(React.createElement(App, null));
   }
   var RV = "18.3.1";
   function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }
