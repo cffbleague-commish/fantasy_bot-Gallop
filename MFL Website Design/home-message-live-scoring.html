@@ -2114,32 +2114,45 @@ const StripCard = ({
   const status = live > 0 ? 'Live' : left > 0 ? 'In progress' : 'Final';
   const statusColor = live > 0 ? '#57B87F' : 'var(--fg-tertiary)';
   const awayLead = m.away.pts >= m.home.pts;
-  const teamLine = (side, lead) => React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: 'minmax(0,1fr) auto',
-      gap: '8px',
-      alignItems: 'center',
-      marginBottom: '4px'
-    }
-  }, React.createElement("span", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      minWidth: 0
-    }
-  }, React.createElement(Pill, {
-    side: side,
-    size: 18
-  })), React.createElement("span", {
-    className: "cffb-num",
-    style: {
-      fontFamily: 'var(--font-display)',
-      fontWeight: 700,
-      fontSize: '13px',
-      color: lead ? 'var(--fg-primary)' : 'var(--fg-secondary)'
-    }
-  }, fmt(side.pts)));
+  const teamLine = (side, lead) => {
+    const rk = rankOf(side);
+    return React.createElement("div", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) auto',
+        gap: '8px',
+        alignItems: 'center',
+        marginBottom: '4px'
+      }
+    }, React.createElement("span", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+        minWidth: 0
+      }
+    }, React.createElement(Pill, {
+      side: side,
+      size: 18
+    }), rk != null && rk <= 25 && React.createElement("span", {
+      className: "cffb-num",
+      title: 'CFFB Power Ranking #' + rk,
+      style: {
+        flex: 'none',
+        font: '800 10px/1 var(--font-display)',
+        color: 'var(--gold)',
+        letterSpacing: '.02em'
+      }
+    }, "#", rk)), React.createElement("span", {
+      className: "cffb-num",
+      style: {
+        fontFamily: 'var(--font-display)',
+        fontWeight: 700,
+        fontSize: '13px',
+        color: lead ? 'var(--fg-primary)' : 'var(--fg-secondary)'
+      }
+    }, fmt(side.pts)));
+  };
   return React.createElement("button", {
     onClick: onSelect,
     className: "ls-strip-card",
@@ -2182,6 +2195,7 @@ const ConfTabs = ({
   effConf,
   counts,
   total,
+  top25Count,
   myConf,
   onPick
 }) => React.createElement("div", {
@@ -2198,7 +2212,23 @@ const ConfTabs = ({
   onClick: () => onPick('ALL')
 }, "All", React.createElement("span", {
   className: "ls-conftab__n"
-}, total)), confs.map(c => React.createElement("button", {
+}, total)), top25Count > 0 && React.createElement("button", {
+  role: "tab",
+  "aria-selected": effConf === 'TOP25',
+  className: 'ls-conftab' + (effConf === 'TOP25' ? ' is-active' : ''),
+  style: effConf === 'TOP25' ? {
+    boxShadow: 'inset 0 -2px 0 var(--gold)',
+    color: 'var(--fg-primary)'
+  } : null,
+  onClick: () => onPick('TOP25'),
+  title: "Only games with a team ranked in the CFFB Top 25"
+}, React.createElement("span", {
+  style: effConf === 'TOP25' ? {
+    color: 'var(--gold)'
+  } : null
+}, "Top 25"), React.createElement("span", {
+  className: "ls-conftab__n"
+}, top25Count)), confs.map(c => React.createElement("button", {
   key: c,
   role: "tab",
   "aria-selected": effConf === c,
@@ -2282,10 +2312,16 @@ const App = () => {
   CONF_ORDER.forEach(c => {
     counts[c] = matchups.filter(g => inConf(g, c)).length;
   });
+  const isTop25Game = g => {
+    const ra = rankOf(g.away),
+      rb = rankOf(g.home);
+    return ra != null && ra <= 25 || rb != null && rb <= 25;
+  };
+  const top25Count = matchups.filter(isTop25Game).length;
   const confsPresent = CONF_ORDER.filter(c => typeof TEAMS !== 'undefined' && Object.keys(TEAMS).some(fid => TEAMS[fid].conf === c));
-  const showConfTabs = confsPresent.length > 1;
+  const showConfTabs = confsPresent.length > 1 || top25Count > 0;
   const effConf = conf != null ? conf : myConf && counts[myConf] ? myConf : 'ALL';
-  const filtered = effConf === 'ALL' ? matchups : matchups.filter(g => inConf(g, effConf));
+  const filtered = effConf === 'ALL' ? matchups : effConf === 'TOP25' ? matchups.filter(isTop25Game) : matchups.filter(g => inConf(g, effConf));
   const myMatchup = matchups.find(g => g.away.fid === myFid || g.home.fid === myFid);
   const inView = id => filtered.some(g => g.id === id);
   const effSelId = selId != null && inView(selId) ? selId : myMatchup && inView(myMatchup.id) ? myMatchup.id : filtered[0] ? filtered[0].id : null;
@@ -2374,6 +2410,7 @@ const App = () => {
     effConf: effConf,
     counts: counts,
     total: matchups.length,
+    top25Count: top25Count,
     myConf: myConf,
     onPick: pickConf
   }), filtered.length ? React.createElement("div", {
@@ -2396,7 +2433,7 @@ const App = () => {
     onSelect: () => pickMatchup(g.id)
   }))) : React.createElement("div", {
     className: "ls-strip-empty"
-  }, "No ", CONF_LABEL[effConf] || String(effConf).toUpperCase(), " games this week."), React.createElement(Scoreboard, {
+  }, "No ", effConf === 'TOP25' ? 'Top 25' : CONF_LABEL[effConf] || String(effConf).toUpperCase(), " games this week."), React.createElement(Scoreboard, {
     m: m
   }), React.createElement("div", {
     style: {

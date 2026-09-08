@@ -288,12 +288,20 @@ const StripCard = ({ m, i, active, onSelect }) => {
   const status = live > 0 ? 'Live' : left > 0 ? 'In progress' : 'Final';
   const statusColor = live > 0 ? '#57B87F' : 'var(--fg-tertiary)';
   const awayLead = m.away.pts >= m.home.pts;
-  const teamLine = (side, lead) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-      <span style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}><Pill side={side} size={18} /></span>
-      <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '13px', color: lead ? 'var(--fg-primary)' : 'var(--fg-secondary)' }}>{fmt(side.pts)}</span>
-    </div>
-  );
+  const teamLine = (side, lead) => {
+    const rk = rankOf(side);
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+          <Pill side={side} size={18} />
+          {rk != null && rk <= 25 && (
+            <span className="cffb-num" title={'CFFB Power Ranking #' + rk} style={{ flex: 'none', font: '800 10px/1 var(--font-display)', color: 'var(--gold)', letterSpacing: '.02em' }}>#{rk}</span>
+          )}
+        </span>
+        <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '13px', color: lead ? 'var(--fg-primary)' : 'var(--fg-secondary)' }}>{fmt(side.pts)}</span>
+      </div>
+    );
+  };
   return (
     <button
       onClick={onSelect}
@@ -322,7 +330,7 @@ const POLL_MS = 40000; // MFL live feed refreshes ~every 40s
 // "All" + one tab per conference that has games this week, each with a game count.
 // Active tab picks up its conference accent color; the user's own conference is
 // flagged. Filters the around-the-league strip to that conference's matchups.
-const ConfTabs = ({ confs, effConf, counts, total, myConf, onPick }) => (
+const ConfTabs = ({ confs, effConf, counts, total, top25Count, myConf, onPick }) => (
   <div className="ls-conftabs" role="tablist">
     <button
       role="tab" aria-selected={effConf === 'ALL'}
@@ -330,6 +338,18 @@ const ConfTabs = ({ confs, effConf, counts, total, myConf, onPick }) => (
       style={effConf === 'ALL' ? { boxShadow: 'inset 0 -2px 0 var(--gold)', color: 'var(--fg-primary)' } : null}
       onClick={() => onPick('ALL')}
     >All<span className="ls-conftab__n">{total}</span></button>
+    {top25Count > 0 && (
+      <button
+        role="tab" aria-selected={effConf === 'TOP25'}
+        className={'ls-conftab' + (effConf === 'TOP25' ? ' is-active' : '')}
+        style={effConf === 'TOP25' ? { boxShadow: 'inset 0 -2px 0 var(--gold)', color: 'var(--fg-primary)' } : null}
+        onClick={() => onPick('TOP25')}
+        title="Only games with a team ranked in the CFFB Top 25"
+      >
+        <span style={effConf === 'TOP25' ? { color: 'var(--gold)' } : null}>Top 25</span>
+        <span className="ls-conftab__n">{top25Count}</span>
+      </button>
+    )}
     {confs.map((c) => (
       <button
         key={c} role="tab" aria-selected={effConf === c}
@@ -388,18 +408,27 @@ const App = () => {
   const inConf = (g, c) => g.away.conf === c || g.home.conf === c;
   const counts = {};
   CONF_ORDER.forEach((c) => { counts[c] = matchups.filter((g) => inConf(g, c)).length; });
+  // A "Top 25" game has at least one side ranked 1–25 in the CFFB power rankings.
+  // top25Count is 0 when the rank feed is cold/unreachable, so the tab hides itself.
+  const isTop25Game = (g) => {
+    const ra = rankOf(g.away), rb = rankOf(g.home);
+    return (ra != null && ra <= 25) || (rb != null && rb <= 25);
+  };
+  const top25Count = matchups.filter(isTop25Game).length;
   // Always show a tab for every conference that exists in the LEAGUE (from the
   // franchise directory), not just those playing this week — so the strip never
   // disappears and a conference on a bye still gets a tab (its filter shows none).
   const confsPresent = CONF_ORDER.filter((c) => (typeof TEAMS !== 'undefined') && Object.keys(TEAMS).some((fid) => TEAMS[fid].conf === c));
-  const showConfTabs = confsPresent.length > 1;
+  const showConfTabs = confsPresent.length > 1 || top25Count > 0;
 
   // Effective conference: explicit pick, else the user's conference if it has
   // games, else All.
   const effConf = conf != null ? conf
     : (myConf && counts[myConf]) ? myConf
       : 'ALL';
-  const filtered = effConf === 'ALL' ? matchups : matchups.filter((g) => inConf(g, effConf));
+  const filtered = effConf === 'ALL' ? matchups
+    : effConf === 'TOP25' ? matchups.filter(isTop25Game)
+      : matchups.filter((g) => inConf(g, effConf));
 
   // Effective featured matchup: an explicit pick that is still in view, else the
   // user's own matchup within the filter, else the first game of the filter.
@@ -434,7 +463,7 @@ const App = () => {
 
       {/* Conference filter */}
       {showConfTabs && (
-        <ConfTabs confs={confsPresent} effConf={effConf} counts={counts} total={matchups.length} myConf={myConf} onPick={pickConf} />
+        <ConfTabs confs={confsPresent} effConf={effConf} counts={counts} total={matchups.length} top25Count={top25Count} myConf={myConf} onPick={pickConf} />
       )}
 
       {/* Around the league (filtered to the selected conference) */}
@@ -443,7 +472,7 @@ const App = () => {
           {filtered.map((g, i) => <StripCard key={g.id} m={g} i={i} active={g.id === m.id} onSelect={() => pickMatchup(g.id)} />)}
         </div>
       ) : (
-        <div className="ls-strip-empty">No {CONF_LABEL[effConf] || String(effConf).toUpperCase()} games this week.</div>
+        <div className="ls-strip-empty">No {effConf === 'TOP25' ? 'Top 25' : (CONF_LABEL[effConf] || String(effConf).toUpperCase())} games this week.</div>
       )}
 
       {/* Featured scoreboard */}
