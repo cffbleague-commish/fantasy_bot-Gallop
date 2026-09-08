@@ -30,7 +30,17 @@
   var WEBAPP_URL = '__WEBAPP_URL__';
   var CACHE_KEY  = 'cffb_webapp_payload_v1';          // shared with PR / Standings / Live Scoring
   var MAX_MS     = 7 * 24 * 60 * 60 * 1000;           // ignore cache older than 7 days
-  var byFid      = {};                                // fid (string) -> rank (number)
+  var byFid      = {};                                // normalized fid -> rank (number)
+
+  // Normalize an MFL franchise id to MFL's canonical 4-digit zero-padded form so
+  // matching is padding-agnostic. The Apps Script feed emits ids WITHOUT full
+  // padding (e.g. "039"), while MFL's franchiseDatabase and contract tokens use
+  // 4-digit ids ("0039"). Padding both to 4 digits ("039" and "0039" -> "0039",
+  // "100"/"0100" -> "0100") makes the lookup match and keeps keys as real MFL ids.
+  function normFid(id) {
+    var s = String(id == null ? '' : id).trim();
+    return /^\d+$/.test(s) ? s.padStart(4, '0') : s;
+  }
 
   // Pull every team's rank out of a web-app payload. A team with no positive
   // rank (new franchise, commissioner pseudo-franchise, id mismatch) is skipped
@@ -41,7 +51,7 @@
       if (!teams || !teams.length) return;
       for (var i = 0; i < teams.length; i++) {
         var t = teams[i];
-        if (t && t.id != null && t.rank != null && +t.rank > 0) byFid[String(t.id)] = +t.rank;
+        if (t && t.id != null && t.rank != null && +t.rank > 0) byFid[normFid(t.id)] = +t.rank;
       }
     } catch (e) { /* malformed payload → keep whatever we had */ }
   }
@@ -75,7 +85,7 @@
   refresh();
 
   window.__cffbRankFeed = {
-    rankOf: function (fid) { var r = byFid[String(fid)]; return r || null; },
+    rankOf: function (fid) { var r = byFid[normFid(fid)]; return r || null; },
     all: function () { return byFid; }
   };
 })();

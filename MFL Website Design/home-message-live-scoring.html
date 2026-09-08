@@ -1454,13 +1454,17 @@ async function refreshLiveScoring() {
   };
   return LS_PAYLOAD;
 }
+const cffbNormFid = id => {
+  const s = String(id == null ? '' : id).trim();
+  return /^\d+$/.test(s) ? s.padStart(4, '0') : s;
+};
 function applySheetTeams(teams) {
   asArray(teams).forEach(t => {
     if (t && t.id != null && (t.bg || t.fg)) SHEET_COLOR[String(t.id)] = {
       bg: t.bg || null,
       fg: t.fg || null
     };
-    if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[String(t.id)] = +t.rank;
+    if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[cffbNormFid(t.id)] = +t.rank;
   });
 }
 function loadSheetColors() {
@@ -1546,7 +1550,7 @@ const Pill = ({
     }
   }, side.abbr);
 };
-const rankOf = side => typeof SHEET_RANK !== 'undefined' && side && SHEET_RANK[side.fid] || null;
+const rankOf = side => typeof SHEET_RANK !== 'undefined' && side && SHEET_RANK[cffbNormFid(side.fid)] || null;
 const RankChip = ({
   side,
   style

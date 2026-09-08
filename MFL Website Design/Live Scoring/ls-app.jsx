@@ -34,7 +34,7 @@ const Pill = ({ side, size }) => {
 // Sheet-driven CFFB power rank for a team (same rank the Power Rankings widget
 // shows), from SHEET_RANK in the data layer. null when the shared feed is
 // cold/unreachable or the team has no rank → the badge simply isn't rendered.
-const rankOf = (side) => (typeof SHEET_RANK !== 'undefined' && side && SHEET_RANK[side.fid]) || null;
+const rankOf = (side) => (typeof SHEET_RANK !== 'undefined' && side && SHEET_RANK[cffbNormFid(side.fid)]) || null;
 // Small gold "#N" chip shown beside a team's icon/name. Tabular figures.
 const RankChip = ({ side, style }) => {
   const rk = rankOf(side);

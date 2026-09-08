@@ -411,13 +411,16 @@
     if (window.__cffbRankFeed) return;
     var URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
     var CACHE_KEY = 'cffb_webapp_payload_v1', MAX_MS = 7*24*60*60*1000, byFid = {};
+    // Feed ids are unpadded ("039"); MFL ids are 4-digit ("0039"). Pad both to
+    // MFL's canonical 4 digits so lookups match regardless of zero-padding width.
+    function normFid(id){ var s=String(id==null?'':id).trim(); return /^\d+$/.test(s)?s.padStart(4,'0'):s; }
     function absorb(p){ try{ var ts=p&&p.teams; if(!ts||!ts.length) return;
-      for(var i=0;i<ts.length;i++){ var t=ts[i]; if(t&&t.id!=null&&t.rank!=null&&+t.rank>0) byFid[String(t.id)]=+t.rank; } }catch(e){} }
+      for(var i=0;i<ts.length;i++){ var t=ts[i]; if(t&&t.id!=null&&t.rank!=null&&+t.rank>0) byFid[normFid(t.id)]=+t.rank; } }catch(e){} }
     try{ var rec=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
       if(rec&&typeof rec.ts==='number'&&rec.payload!=null&&(Date.now()-rec.ts)<=MAX_MS) absorb(rec.payload); }catch(e){}
     try{ fetch(URL,{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){ if(!d||!d.teams) return; absorb(d);
       try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),payload:d})); }catch(e){} }).catch(function(){}); }catch(e){}
-    window.__cffbRankFeed = { rankOf:function(fid){ var r=byFid[String(fid)]; return r||null; }, all:function(){ return byFid; } };
+    window.__cffbRankFeed = { rankOf:function(fid){ var r=byFid[normFid(fid)]; return r||null; }, all:function(){ return byFid; } };
   })();
 
   /* ---- small utils ---- */

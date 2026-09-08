@@ -403,13 +403,21 @@ async function refreshLiveScoring() {
   return LS_PAYLOAD;
 }
 
-// Official team colors + power rank, keyed by franchise id, from the shared
-// web-app payload (the same one Power Rankings / Standings cache). Rank is
-// additive: a team with no positive rank is skipped so the UI shows no badge.
+// Normalize an MFL franchise id to MFL's canonical 4-digit zero-padded form. The
+// Apps Script feed emits unpadded ids (e.g. "039") while MFL's franchiseDatabase
+// (side.fid) uses 4-digit ids ("0039"); padding both to 4 makes the lookup match.
+const cffbNormFid = (id) => {
+  const s = String(id == null ? '' : id).trim();
+  return /^\d+$/.test(s) ? s.padStart(4, '0') : s;
+};
+
+// Power rank keyed by franchise id, from the shared web-app payload (the same one
+// Power Rankings / Standings cache). Additive: a team with no positive rank is
+// skipped so the UI shows no badge.
 function applySheetTeams(teams) {
   asArray(teams).forEach((t) => {
     if (t && t.id != null && (t.bg || t.fg)) SHEET_COLOR[String(t.id)] = { bg: t.bg || null, fg: t.fg || null };
-    if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[String(t.id)] = +t.rank;
+    if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[cffbNormFid(t.id)] = +t.rank;
   });
 }
 function loadSheetColors() {
