@@ -276,6 +276,14 @@
   border:1px solid rgba(201,162,39,.4); border-radius:var(--r-1);
   padding:2px 8px; background:rgba(201,162,39,.08); white-space:nowrap;
 }
+/* Solid-gold CFFB power-rank chip beside the outlined seed badge. Distinct fill
+   so the two read as different metrics. Absent when the rank feed has no rank. */
+#cffb-pb-root .pb-detail__rankbadge{
+  font-family:var(--font-display); font-weight:800; font-size:11px;
+  letter-spacing:.06em; text-transform:uppercase; color:#0A0A0A;
+  border-radius:var(--r-1); padding:2px 8px; background:var(--gold);
+  white-space:nowrap; font-variant-numeric:tabular-nums;
+}
 #cffb-pb-root .pb-detail__name{ font-family:var(--font-display); font-weight:700;
   font-size:clamp(24px,3.4vw,32px); line-height:1; text-transform:uppercase;
   letter-spacing:-.01em; }
@@ -391,12 +399,38 @@
   var MFL_CTX = { origin:'', host:'', year:String(SEASON), league:'12011' };
   var BRACKET_META = null;
 
+  /* ---- Shared rank feed (sheet-driven CFFB power rank, keyed by franchise id) ----
+     Reuses the SAME Apps Script /exec payload + localStorage cache
+     (cffb_webapp_payload_v1) the Power Rankings / Standings / Live Scoring widgets
+     populate. Reads the cache synchronously (ready before first paint when any
+     sibling widget or a prior visit warmed it), then refreshes in the background.
+     Purely additive: cold cache / feed down / no rank → rankOf() returns null and
+     the badge simply isn't drawn. Guarded so a co-resident CFFB widget's copy wins
+     (no double fetch). Mirror of shared/cffb-rank-feed.js (this file is hand-authored). */
+  (function(){
+    if (window.__cffbRankFeed) return;
+    var URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+    var CACHE_KEY = 'cffb_webapp_payload_v1', MAX_MS = 7*24*60*60*1000, byFid = {};
+    function absorb(p){ try{ var ts=p&&p.teams; if(!ts||!ts.length) return;
+      for(var i=0;i<ts.length;i++){ var t=ts[i]; if(t&&t.id!=null&&t.rank!=null&&+t.rank>0) byFid[String(t.id)]=+t.rank; } }catch(e){} }
+    try{ var rec=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+      if(rec&&typeof rec.ts==='number'&&rec.payload!=null&&(Date.now()-rec.ts)<=MAX_MS) absorb(rec.payload); }catch(e){}
+    try{ fetch(URL,{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){ if(!d||!d.teams) return; absorb(d);
+      try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),payload:d})); }catch(e){} }).catch(function(){}); }catch(e){}
+    window.__cffbRankFeed = { rankOf:function(fid){ var r=byFid[String(fid)]; return r||null; }, all:function(){ return byFid; } };
+  })();
+
   /* ---- small utils ---- */
   var asArray = function(x){ return Array.isArray(x) ? x : (x!=null ? [x] : []); };
   function fmtNum(v){
     var n = parseFloat(v);
     if(!isFinite(n)) return (v==null ? '—' : String(v));
     return n.toLocaleString('en-US',{maximumFractionDigits:1});
+  }
+  // Game/matchup scores always render to two decimals (MFL points arrive at mixed precision).
+  function fmtScore(v){
+    var n = parseFloat(v);
+    return isFinite(n) ? n.toFixed(2) : (v==null ? '' : String(v));
   }
   var PALETTE = ['#4B9CD3','#B84545','#C9A227','#2C5F8A','#5C7A6A','#6B5C8B',
     '#A23B3B','#B5832E','#3A5680','#BC4B3C','#7A3B4A','#C05A3E','#C77A33',
@@ -505,6 +539,68 @@
     return { id:'g'+g.game_id, a:a, b:b, status:status, winner:winner };
   }
 
+  /* ---- Vertical ordering of each round, from the real bracket tree ----
+     MFL returns games in game_id order, which does NOT match how the bracket
+     actually connects (a later game names its feeder games via winner_of_game).
+     Rendering in game_id order puts games on the wrong side and forces
+     connector lines to double back. We instead walk the tree from the final:
+     games that feed the same matchup end up adjacent, halves stay grouped, and
+     the top seed lands at the very top / the 2-seed at the very bottom — so the
+     connectors never cross. Returns { game_id -> sortKey }. */
+  function computeBracketOrder(rounds){
+    var byId={};
+    rounds.forEach(function(r){ r.games.forEach(function(g){ byId[g.game_id]={ g:g }; }); });
+    function childIds(g){
+      var ids=[];
+      ['home','away'].forEach(function(k){
+        var s=g[k]||{};
+        if(s.winner_of_game && byId[s.winner_of_game]) ids.push(s.winner_of_game);
+      });
+      return ids;
+    }
+    var seedCache={};
+    function minSeed(gid){
+      if(seedCache[gid]!=null) return seedCache[gid];
+      seedCache[gid]=999; // guard against cycles
+      var node=byId[gid]; if(!node) return 999;
+      var kids=childIds(node.g), res;
+      if(!kids.length){
+        var g=node.g, a=parseInt((g.home||{}).seed,10), b=parseInt((g.away||{}).seed,10);
+        var arr=[a,b].filter(function(x){ return isFinite(x); });
+        res=arr.length?Math.min.apply(null,arr):999;
+      } else {
+        res=Math.min.apply(null, kids.map(minSeed));
+      }
+      seedCache[gid]=res; return res;
+    }
+    var order={}, counter={ n:0 };
+    // dir>=0 → better seed toward the top of this subtree; dir<0 → toward the bottom (mirror).
+    function dfs(gid, dir){
+      var node=byId[gid]; if(!node || order[gid]!=null) return;
+      var kids=childIds(node.g);
+      if(!kids.length){ order[gid]=counter.n++; return; }
+      kids.sort(function(a,b){ return minSeed(a)-minSeed(b); }); // [better, worse]
+      if(dir>=0){ dfs(kids[0],dir); if(kids[1]!=null) dfs(kids[1],dir); }
+      else { if(kids[1]!=null) dfs(kids[1],dir); dfs(kids[0],dir); }
+      var ks=kids.map(function(k){ return order[k]; }).filter(function(x){ return x!=null; });
+      order[gid]=ks.length ? ks.reduce(function(a,b){ return a+b; },0)/ks.length : counter.n;
+    }
+    var last=rounds[rounds.length-1];
+    var roots=last.games.map(function(g){ return g.game_id; });
+    if(roots.length===1){
+      var fg=byId[roots[0]].g, fkids=childIds(fg);
+      if(fkids.length===2){
+        fkids.sort(function(a,b){ return minSeed(a)-minSeed(b); });
+        dfs(fkids[0], 1);   // half with the 1-seed on top
+        dfs(fkids[1], -1);  // half with the 2-seed mirrored to the bottom
+        order[roots[0]]=(order[fkids[0]]+order[fkids[1]])/2;
+      } else { dfs(roots[0], 1); }
+    } else {
+      roots.forEach(function(r){ dfs(r, 1); });
+    }
+    return order;
+  }
+
   /* ---- Turn the MFL playoffBracket feed into ROUNDS / PAIRS / F ---- */
   function buildModel(rawRounds){
     var rounds = asArray(rawRounds).map(function(r){ return { week:r.week, games:asArray(r.playoffGame) }; });
@@ -539,6 +635,17 @@
         });
       });
     });
+
+    // Reorder each round vertically to follow the real bracket tree (no crossing lines).
+    try{
+      var ord=computeBracketOrder(rounds);
+      newRounds.forEach(function(rd){
+        rd.matches.sort(function(m1,m2){
+          var k1=ord[m1.id.slice(1)], k2=ord[m2.id.slice(1)];
+          return (k1==null?1e9:k1)-(k2==null?1e9:k2);
+        });
+      });
+    }catch(e){ console.warn('[CFFB Bracket] bracket ordering skipped', e); }
 
     ROUNDS = newRounds;
     PAIRS = newPairs;
@@ -737,7 +844,7 @@
     var isWinner=match.winner===data.team;
     var isLoser=match.winner&&match.winner!==data.team;
     var scoreCls=match.status==='pending'?'pb-slot__score pb-slot__score--tbd':'pb-slot__score';
-    var scoreVal=data.score!=null?data.score:'&mdash;';
+    var scoreVal=data.score!=null?fmtScore(data.score):'&mdash;';
     var nameHtml=SHOW_NAMES?'<span class="pb-slot__name">'+t.name+'</span>':'';
     return '<button class="pb-slot '+(isWinner?'is-winner':'')+' '+(isLoser?'is-loser':'')+'" data-team="'+t.id+'" type="button">' +
       '<span class="pb-seed">'+(t.seed!=null?t.seed:'')+'</span>' +
@@ -835,11 +942,11 @@
       var opp=oppOf(m,id), oppT=opp?TEAMS[opp]:null;
       var my=myScore(m,id), th=theirScore(m,id);
       if(m.status==='final'){
-        if(m.winner===id){ rows.push([r.short,'def. <b>'+oppT.name+'</b> '+my+'&ndash;'+th,'done']); }
-        else { rows.push([r.short,'Lost to <b>'+oppT.name+'</b> '+th+'&ndash;'+my,'out']); break; }
+        if(m.winner===id){ rows.push([r.short,'def. <b>'+oppT.name+'</b> '+fmtScore(my)+'&ndash;'+fmtScore(th),'done']); }
+        else { rows.push([r.short,'Lost to <b>'+oppT.name+'</b> '+fmtScore(th)+'&ndash;'+fmtScore(my),'out']); break; }
       } else if(m.status==='live'){
         var lead=parseFloat(my)>=parseFloat(th);
-        rows.push([r.short,(lead?'Leading':'Trailing')+' <b>'+oppT.name+'</b> '+my+'&ndash;'+th,'live']);
+        rows.push([r.short,(lead?'Leading':'Trailing')+' <b>'+oppT.name+'</b> '+fmtScore(my)+'&ndash;'+fmtScore(th),'live']);
       } else {
         rows.push([r.short,'Awaiting opponent','next']);
       }
@@ -883,6 +990,9 @@
     var streakCls=streak==='—'?'':(streakPos?'is-pos':'is-neg');
     var net=netOf(t);
     var seedTxt=t.seed!=null?('No. '+t.seed+' Seed'):'Playoff Team';
+    // Sheet-driven CFFB power rank (same rank Power Rankings shows). null → no chip.
+    var powerRank=(window.__cffbRankFeed?window.__cffbRankFeed.rankOf(t.id):null);
+    var rankHtml=powerRank!=null?'<span class="pb-detail__rankbadge" title="CFFB Power Ranking">#'+powerRank+' Power</span>':'';
     var mgrHtml=t.mgr?'<span class="pb-detail__mgr">Managed by <b>'+t.mgr+'</b></span>':'';
     var chip = t.logo
       ? '<span class="pb-detail__chip" style="background:'+(t.color||'#1C1C1C')+';padding:0;overflow:hidden"><img src="'+t.logo+'" alt="'+t.abbr+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></span>'
@@ -895,6 +1005,7 @@
         '<span class="pb-detail__id">' +
           '<span class="pb-detail__seedline">' +
             '<span class="pb-detail__seedbadge">'+seedTxt+'</span>' +
+            rankHtml +
             mgrHtml +
           '</span>' +
           '<span class="pb-detail__name">'+t.name+'</span>' +

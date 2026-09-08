@@ -28,6 +28,16 @@ const CSS_PATH  = path.join(SRC_DIR, 'roster.css');
 const CFFB_CSS_PATH = path.join(DIR, '..', 'apps_script_recruiting', 'CFFB Design System', 'cffb.css');
 const OUT_PATH  = path.join(DIR, 'home-message-roster-board.html');
 
+// Shared rank feed — surfaces the sheet-driven team power rank (keyed by
+// franchise id) from the SAME Apps Script /exec payload the Power Rankings /
+// Standings widgets cache. Prepended to the bundle so rb-app can read
+// window.__cffbRankFeed.rankOf(fid). Purely additive; degrades to no badge.
+const RANK_FEED_PATH = path.join(DIR, 'shared', 'cffb-rank-feed.js');
+// Same deployment Power Rankings + Standings use; overridable for staging.
+const WEBAPP_URL = process.env.RB_WEBAPP_URL
+  || process.env.PR_WEBAPP_URL
+  || 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+
 // rb-data-live.jsx (live MFL data) replaces rb-data.jsx (sample data).
 const JSX_FILES = ['rb-data-live.jsx', 'rb-app.jsx'];
 
@@ -47,6 +57,14 @@ if (!cffbCss) {
   console.warn('      The widget will render UNSTYLED (missing cffb-* base component styles).');
 }
 const jsxSources = JSX_FILES.map((name) => ({ name, code: read(path.join(SRC_DIR, name)) }));
+
+// Prepend the shared rank feed (URL substituted) so it initializes before the
+// app mounts. If the file is missing, the widget still builds (no rank badge).
+if (fs.existsSync(RANK_FEED_PATH)) {
+  jsxSources.unshift({ name: 'cffb-rank-feed.js', code: read(RANK_FEED_PATH).replace(/__WEBAPP_URL__/g, WEBAPP_URL) });
+} else {
+  console.warn('warn: shared/cffb-rank-feed.js not found — Roster Board will build without the power-rank badge');
+}
 
 // Conference logos live in the sibling design system. Inline them as base64
 // data URIs (keyed by the conference id rb-data-live uses) so the tab strip is
@@ -183,6 +201,10 @@ const scopedRosterCss = rosterCss.replace(/#root\b/g, '#' + ROOT_ID);
 const extraCss = [
   '.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}',
   '.cffb-boot--err{color:#D88787}',
+  // CFFB power-rank badge shown beside the team identity in the header. Gold chip,
+  // tabular figures. Absent (renders nothing) when the shared rank feed has no rank.
+  '.rb-rank{display:inline-flex;align-items:center;gap:2px;font:800 12px/1 var(--font-display,var(--font-body,sans-serif));letter-spacing:.02em;color:var(--gold,#C9A227);background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.4);border-radius:4px;padding:4px 7px;font-variant-numeric:tabular-nums;white-space:nowrap;vertical-align:middle}',
+  '.rb-rank__hash{opacity:.6;font-size:10px}',
   // Player name: force white over MFL\'s global gold link color; soft-red on hover.
   '#' + ROOT_ID + ' .rb-plink{color:var(--fg-primary,#F5F5F5) !important;text-decoration:none}',
   '#' + ROOT_ID + ' .rb-plink:hover{color:#D88787 !important;text-decoration:underline;text-underline-offset:3px}',

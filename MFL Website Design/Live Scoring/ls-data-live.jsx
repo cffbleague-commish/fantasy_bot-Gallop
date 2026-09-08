@@ -63,6 +63,7 @@ let LIVE_PTS_BY_ID = {};  // pid -> live weekly points (from playerScores; used 
 let PREV_PTS = {};        // pid -> last-seen live points (for delta/flash diffing)
 let BENCH_SOURCE = null;  // 'live' (liveScoring returns nonstarters) | 'roster' (we merge in bench)
 let SHEET_COLOR = {};     // fid -> { bg, fg } — the SAME official team colors Power Rankings uses
+let SHEET_RANK = {};      // fid -> rank (number) — the SAME sheet power rank Power Rankings shows
 let LS_PAYLOAD = null;    // last built payload { week, slate, matchups, flashes, ts }
 
 // The league's official team colors live in the Franchise sheet (Primary/Secondary
@@ -402,10 +403,13 @@ async function refreshLiveScoring() {
   return LS_PAYLOAD;
 }
 
-// Official team colors, keyed by franchise id, from the shared web-app payload.
+// Official team colors + power rank, keyed by franchise id, from the shared
+// web-app payload (the same one Power Rankings / Standings cache). Rank is
+// additive: a team with no positive rank is skipped so the UI shows no badge.
 function applySheetTeams(teams) {
   asArray(teams).forEach((t) => {
     if (t && t.id != null && (t.bg || t.fg)) SHEET_COLOR[String(t.id)] = { bg: t.bg || null, fg: t.fg || null };
+    if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[String(t.id)] = +t.rank;
   });
 }
 function loadSheetColors() {

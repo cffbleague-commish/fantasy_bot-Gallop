@@ -153,60 +153,60 @@ const Row = ({ p, onGo, ir }) => (
 const ConfTabs = ({ team, setTeam }) => {
   const [open, setOpen] = useState(null);
   const [alignRight, setAlignRight] = useState(false);
-  const tabsRef = React.useRef(null);
+  const [rect, setRect] = useState(null); // open tab's viewport rect → positions the portaled menu
   useEffect(() => {
-    const close = (e) => { if (!e.target.closest('.rb-conftab')) setOpen(null); };
+    // Keep clicks inside a tab OR the (portaled) menu; anything else closes it.
+    const close = (e) => { if (!e.target.closest('.rb-conftab') && !e.target.closest('.rb-menu')) setOpen(null); };
+    // The menu is position:fixed, so it would drift from its tab on scroll/resize — dismiss instead.
+    const dismiss = () => setOpen(null);
     document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
+    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('resize', dismiss);
+    return () => { document.removeEventListener('click', close); window.removeEventListener('scroll', dismiss, true); window.removeEventListener('resize', dismiss); };
   }, []);
-  // The widget mount (#cffb-rb-root) has `container-type`, which creates a
-  // containment/stacking context that TRAPS every internal z-index below MFL's
-  // own page chrome (e.g. #homepagetabs) — so the team dropdown can't paint over
-  // it. While a dropdown is open, lift the whole widget root above the page
-  // chrome; restore it on close so the widget never permanently covers MFL's nav.
-  // (closest('[id]') resolves to the mount node — our React tree carries no other id.)
-  useEffect(() => {
-    const root = tabsRef.current && tabsRef.current.closest('[id]');
-    if (!root) return;
-    if (open != null) { root.style.position = 'relative'; root.style.zIndex = '99999'; }
-    else { root.style.zIndex = ''; root.style.position = ''; }
-    return () => { root.style.zIndex = ''; root.style.position = ''; };
-  }, [open]);
-  // Align the menu to whichever tab edge keeps it on-screen (tabs can wrap rows).
   const toggle = (c) => (e) => {
-    const btn = e.currentTarget;
-    const strip = btn.closest('.rb-tabs');
-    setAlignRight(btn.getBoundingClientRect().left + 160 > strip.getBoundingClientRect().right);
+    const r = e.currentTarget.getBoundingClientRect();
+    setAlignRight(r.left + 170 > window.innerWidth); // near the right edge → right-align the menu
+    setRect(r);
     setOpen(open === c ? null : c);
   };
   const activeConf = TEAMS[team].conf;
+
+  // The dropdown is rendered into <body> via a portal and fixed-positioned under
+  // its tab. This escapes the widget's `container-type` stacking context, which
+  // otherwise traps the menu below MFL's own page chrome (#hsubmenu / #homepagetabs)
+  // no matter how high its z-index. A huge z-index + being appended last to <body>
+  // keeps it above the chrome; scroll/resize dismiss it so it never drifts.
+  const menu = (open != null && rect && typeof ReactDOM !== 'undefined' && ReactDOM.createPortal)
+    ? ReactDOM.createPortal(
+        <div className="rb-menu" role="listbox"
+          style={{ position: 'fixed', top: Math.round(rect.bottom + 6), left: alignRight ? 'auto' : Math.round(rect.left), right: alignRight ? Math.round(Math.max(8, window.innerWidth - rect.right)) : 'auto', zIndex: 2147483000, margin: 0 }}>
+          {TEAM_ORDER.filter((id) => TEAMS[id].conf === open).map((id) => (
+            <button key={id} role="option" aria-selected={id === team} className={'rb-menu__item' + (id === team ? ' is-active' : '')} onClick={() => { setTeam(id); setOpen(null); }}>
+              <TeamChip id={id} size="sm" />
+              <span className="rb-menu__abbr">{TEAMS[id].abbr}</span>
+              {id === MY_TEAM && <span className="rb-tab__you">YOU</span>}
+            </button>
+          ))}
+        </div>, document.body)
+    : null;
+
   return (
-    <div className="rb-tabs" role="tablist" ref={tabsRef}>
+    <div className="rb-tabs" role="tablist">
       {CONF_ORDER.map((c) => {
-        const teams = TEAM_ORDER.filter((id) => TEAMS[id].conf === c);
         const isActive = c === activeConf;
         return (
-          <div key={c} className="rb-conftab" style={open === c ? { zIndex: 60 } : null}>
+          <div key={c} className="rb-conftab">
             <button role="tab" aria-selected={isActive} aria-expanded={open === c} className={'rb-tab' + (isActive ? ' is-active' : '')} style={isActive ? { boxShadow: 'inset 0 -2px 0 ' + CONF_ACCENT[c] } : null} onClick={toggle(c)}>
               {CONF_META[c].logo && <img className="rb-conflogo" src={CONF_META[c].logo} alt="" />}
               <span className="rb-tab__abbr">{CONF_META[c].label}</span>
               {isActive && <span className="rb-tab__cur">{TEAMS[team].abbr}</span>}
               <span className="rb-caret">▾</span>
             </button>
-            {open === c && (
-              <div className={'rb-menu' + (alignRight ? ' rb-menu--right' : '')} role="listbox">
-                {teams.map((id) => (
-                  <button key={id} role="option" aria-selected={id === team} className={'rb-menu__item' + (id === team ? ' is-active' : '')} onClick={() => { setTeam(id); setOpen(null); }}>
-                    <TeamChip id={id} size="sm" />
-                    <span className="rb-menu__abbr">{TEAMS[id].abbr}</span>
-                    {id === MY_TEAM && <span className="rb-tab__you">YOU</span>}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         );
       })}
+      {menu}
     </div>
   );
 };
@@ -575,6 +575,11 @@ const App = () => {
   const [, setRev] = useState(0); // bump to re-render after a roster move rewrites module state
   const t = TEAMS[team];
   const r = buildRoster(team);
+  // Sheet-driven CFFB power rank for this franchise, from the shared rank feed
+  // (window.__cffbRankFeed). null when the feed is cold/unreachable or the team
+  // has no rank → the badge simply isn't drawn.
+  const rank = (typeof window !== 'undefined' && window.__cffbRankFeed)
+    ? window.__cffbRankFeed.rankOf(team) : null;
   // Writes: a regular owner may manage only their OWN team; the commissioner
   // ('0000') may manage whichever team is being viewed (MFL lets the commish act
   // on any franchise). Demo builds without MY_FID are excluded.
@@ -594,7 +599,7 @@ const App = () => {
       <div className="rb-team" style={{ borderTopColor: CONF_ACCENT[t.conf] }}>
         <TeamChip id={team} size="lg" />
         <div className="rb-team__id">
-          <div className="rb-team__name">{t.name}{team === MY_TEAM && <span style={{ marginLeft: 10, verticalAlign: 3, font: '700 9px/1 var(--font-body)', letterSpacing: '.16em', color: '#0A0A0A', background: 'var(--gold)', borderRadius: 2, padding: '3px 5px' }}>YOUR TEAM</span>}</div>
+          <div className="rb-team__name">{rank != null && <span className="rb-rank" title="CFFB Power Ranking" style={{ marginRight: 10, verticalAlign: 3 }}><span className="rb-rank__hash">#</span>{rank}</span>}{t.name}{team === MY_TEAM && <span style={{ marginLeft: 10, verticalAlign: 3, font: '700 9px/1 var(--font-body)', letterSpacing: '.16em', color: '#0A0A0A', background: 'var(--gold)', borderRadius: 2, padding: '3px 5px' }}>YOUR TEAM</span>}</div>
           <div className="rb-team__owner">{[t.owner].filter(Boolean).join(' · ') || ' '}</div>
         </div>
         <div className="rb-team__aside">

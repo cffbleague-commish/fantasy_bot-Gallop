@@ -31,6 +31,25 @@ const Pill = ({ side, size }) => {
   );
 };
 
+// Sheet-driven CFFB power rank for a team (same rank the Power Rankings widget
+// shows), from SHEET_RANK in the data layer. null when the shared feed is
+// cold/unreachable or the team has no rank → the badge simply isn't rendered.
+const rankOf = (side) => (typeof SHEET_RANK !== 'undefined' && side && SHEET_RANK[side.fid]) || null;
+// Small gold "#N" chip shown beside a team's icon/name. Tabular figures.
+const RankChip = ({ side, style }) => {
+  const rk = rankOf(side);
+  if (rk == null) return null;
+  return (
+    <span title="CFFB Power Ranking" style={{
+      display: 'inline-flex', alignItems: 'center', flex: 'none',
+      font: '800 12px/1 var(--font-display)', letterSpacing: '.02em',
+      color: 'var(--gold)', background: 'rgba(201,162,39,.1)',
+      border: '1px solid rgba(201,162,39,.4)', borderRadius: '4px', padding: '3px 6px',
+      fontVariantNumeric: 'tabular-nums', ...(style || {}),
+    }}><span style={{ opacity: .6, fontSize: '10px' }}>#</span>{rk}</span>
+  );
+};
+
 // Player avatar: colored position bar + initials, with the MFL headshot on top
 // (removed on error so the initials show through).
 const Avatar = ({ p, size }) => {
@@ -183,6 +202,7 @@ const LineupColumn = ({ side, flashes }) => {
     <div className="ls-lcol">
       <div className="ls-lcol__inner">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+          <RankChip side={side} />
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '19px', textTransform: 'uppercase' }}>{side.name}</span>
           <span style={{ marginLeft: 'auto', font: '600 9px/1 var(--font-body)', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--fg-tertiary)' }}>Starters</span>
           <span className="cffb-num" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '19px', color: 'var(--gold)' }}>{fmt(side.pts)}</span>
@@ -222,7 +242,7 @@ const LineupColumn = ({ side, flashes }) => {
 const SideBlock = ({ side, home, leading }) => (
   <div className={'ls-sb' + (home ? ' ls-sb--home' : '')}>
     <span className="ls-sb__pill"><Pill side={side} size={64} /></span>
-    <div className="ls-sb__name" title={side.name}>{side.name}</div>
+    <div className="ls-sb__name" title={side.name}><RankChip side={side} style={{ marginRight: 8, verticalAlign: 2 }} />{side.name}</div>
     <div className="ls-sb__counts">
       <span style={{ color: '#57B87F' }}>{side.playing} playing</span> · {side.left} to play · {side.done} final
     </div>

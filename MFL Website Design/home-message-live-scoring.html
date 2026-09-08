@@ -1130,6 +1130,7 @@ let LIVE_PTS_BY_ID = {}; // pid -> live weekly points (from playerScores; used f
 let PREV_PTS = {}; // pid -> last-seen live points (for delta/flash diffing)
 let BENCH_SOURCE = null; // 'live' (liveScoring returns nonstarters) | 'roster' (we merge in bench)
 let SHEET_COLOR = {}; // fid -> { bg, fg } — the SAME official team colors Power Rankings uses
+let SHEET_RANK = {}; // fid -> rank (number) — the SAME sheet power rank Power Rankings shows
 let LS_PAYLOAD = null; // last built payload { week, slate, matchups, flashes, ts }
 
 // The league's official team colors live in the Franchise sheet (Primary/Secondary
@@ -1567,13 +1568,16 @@ async function refreshLiveScoring() {
   return LS_PAYLOAD;
 }
 
-// Official team colors, keyed by franchise id, from the shared web-app payload.
+// Official team colors + power rank, keyed by franchise id, from the shared
+// web-app payload (the same one Power Rankings / Standings cache). Rank is
+// additive: a team with no positive rank is skipped so the UI shows no badge.
 function applySheetTeams(teams) {
   asArray(teams).forEach(t => {
     if (t && t.id != null && (t.bg || t.fg)) SHEET_COLOR[String(t.id)] = {
       bg: t.bg || null,
       fg: t.fg || null
     };
+    if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[String(t.id)] = +t.rank;
   });
 }
 function loadSheetColors() {
@@ -1679,6 +1683,41 @@ const Pill = ({
       color: side.txt || 'var(--fg-primary)'
     }
   }, side.abbr);
+};
+
+// Sheet-driven CFFB power rank for a team (same rank the Power Rankings widget
+// shows), from SHEET_RANK in the data layer. null when the shared feed is
+// cold/unreachable or the team has no rank → the badge simply isn't rendered.
+const rankOf = side => typeof SHEET_RANK !== 'undefined' && side && SHEET_RANK[side.fid] || null;
+// Small gold "#N" chip shown beside a team's icon/name. Tabular figures.
+const RankChip = ({
+  side,
+  style
+}) => {
+  const rk = rankOf(side);
+  if (rk == null) return null;
+  return /*#__PURE__*/React.createElement("span", {
+    title: "CFFB Power Ranking",
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      flex: 'none',
+      font: '800 12px/1 var(--font-display)',
+      letterSpacing: '.02em',
+      color: 'var(--gold)',
+      background: 'rgba(201,162,39,.1)',
+      border: '1px solid rgba(201,162,39,.4)',
+      borderRadius: '4px',
+      padding: '3px 6px',
+      fontVariantNumeric: 'tabular-nums',
+      ...(style || {})
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: .6,
+      fontSize: '10px'
+    }
+  }, "#"), rk);
 };
 
 // Player avatar: colored position bar + initials, with the MFL headshot on top
@@ -1982,7 +2021,9 @@ const LineupColumn = ({
       padding: '14px 18px',
       borderBottom: '1px solid var(--border)'
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(RankChip, {
+    side: side
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: 'var(--font-display)',
       fontWeight: 700,
@@ -2098,7 +2139,13 @@ const SideBlock = ({
 })), /*#__PURE__*/React.createElement("div", {
   className: "ls-sb__name",
   title: side.name
-}, side.name), /*#__PURE__*/React.createElement("div", {
+}, /*#__PURE__*/React.createElement(RankChip, {
+  side: side,
+  style: {
+    marginRight: 8,
+    verticalAlign: 2
+  }
+}), side.name), /*#__PURE__*/React.createElement("div", {
   className: "ls-sb__counts"
 }, /*#__PURE__*/React.createElement("span", {
   style: {
