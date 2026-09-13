@@ -284,6 +284,17 @@
   border-radius:var(--r-1); padding:2px 8px; background:var(--gold);
   white-space:nowrap; font-variant-numeric:tabular-nums;
 }
+/* Conference-champ crown in a bracket slot (auto-bid marker). */
+#cffb-pb-root .pb-champ{ display:inline-flex; align-items:center; flex:0 0 auto;
+  color:var(--gold-light); margin-left:1px; filter:drop-shadow(0 0 3px rgba(201,162,39,.5)); }
+#cffb-pb-root .pb-slot.is-loser .pb-champ{ opacity:.5; }
+/* Conference-champ / auto-bid pill in the detail header. */
+#cffb-pb-root .pb-detail__champ{
+  font-family:var(--font-display); font-weight:700; font-size:11px;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--gold-light);
+  border:1px solid rgba(201,162,39,.5); border-radius:var(--r-1);
+  padding:2px 8px; background:rgba(201,162,39,.1); white-space:nowrap;
+}
 #cffb-pb-root .pb-detail__name{ font-family:var(--font-display); font-weight:700;
   font-size:clamp(24px,3.4vw,32px); line-height:1; text-transform:uppercase;
   letter-spacing:-.01em; }
@@ -414,13 +425,26 @@
     // Feed ids are unpadded ("039"); MFL ids are 4-digit ("0039"). Pad both to
     // MFL's canonical 4 digits so lookups match regardless of zero-padding width.
     function normFid(id){ var s=String(id==null?'':id).trim(); return /^\d+$/.test(s)?s.padStart(4,'0'):s; }
+    // Store the full team record (rank + conference + records) — the projected-field
+    // builder needs conf / conference W-L, the detail badge needs rank.
     function absorb(p){ try{ var ts=p&&p.teams; if(!ts||!ts.length) return;
-      for(var i=0;i<ts.length;i++){ var t=ts[i]; if(t&&t.id!=null&&t.rank!=null&&+t.rank>0) byFid[normFid(t.id)]=+t.rank; } }catch(e){} }
+      for(var i=0;i<ts.length;i++){ var t=ts[i]; if(!t||t.id==null) continue; var fid=normFid(t.id);
+        byFid[fid]={ fid:fid, rank:(t.rank!=null&&+t.rank>0?+t.rank:null),
+          conf:String(t.conf||'').toLowerCase(), cW:+t.cW||0, cL:+t.cL||0,
+          W:+t.W||0, L:+t.L||0, pf:+t.pf||0, name:t.name||'', abbr:t.abbr||'',
+          bg:t.bg||'', logo:t.pill||'' }; } }catch(e){} }
     try{ var rec=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
       if(rec&&typeof rec.ts==='number'&&rec.payload!=null&&(Date.now()-rec.ts)<=MAX_MS) absorb(rec.payload); }catch(e){}
     try{ fetch(URL,{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){ if(!d||!d.teams) return; absorb(d);
       try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(),payload:d})); }catch(e){} }).catch(function(){}); }catch(e){}
-    window.__cffbRankFeed = { rankOf:function(fid){ var r=byFid[normFid(fid)]; return r||null; }, all:function(){ return byFid; } };
+    window.__cffbRankFeed = {
+      url: URL,
+      absorb: absorb,
+      rankOf:function(fid){ var r=byFid[normFid(fid)]; return r&&r.rank!=null?r.rank:null; },
+      teamOf:function(fid){ return byFid[normFid(fid)]||null; },
+      teams:function(){ return Object.keys(byFid).map(function(k){ return byFid[k]; }); },
+      all:function(){ return byFid; }
+    };
   })();
 
   /* ---- small utils ---- */
@@ -849,9 +873,11 @@
     var scoreCls=match.status==='pending'?'pb-slot__score pb-slot__score--tbd':'pb-slot__score';
     var scoreVal=data.score!=null?fmtScore(data.score):'&mdash;';
     var nameHtml=SHOW_NAMES?'<span class="pb-slot__name">'+t.name+'</span>':'';
+    var champHtml=t.champ?'<span class="pb-champ" title="'+confPretty(t.champ)+' champion — automatic bid">'+CROWN+'</span>':'';
     return '<button class="pb-slot '+(isWinner?'is-winner':'')+' '+(isLoser?'is-loser':'')+'" data-team="'+t.id+'" type="button">' +
       '<span class="pb-seed">'+(t.seed!=null?t.seed:'')+'</span>' +
       pillIcon(t) +
+      champHtml +
       nameHtml +
       '<span class="'+scoreCls+'">'+scoreVal+'</span>' +
     '</button>';
@@ -881,6 +907,11 @@
     '<path d="M7 4h10v3.2a5 5 0 0 1-10 0V4Z" fill="url(#cffbPbTrg)"/>' +
     '<path d="M7 5H4.2v1.2A2.8 2.8 0 0 0 7 9M17 5h2.8v1.2A2.8 2.8 0 0 1 17 9" stroke="url(#cffbPbTrg)" stroke-width="1.4" fill="none"/>' +
     '<path d="M11 11.8h2V16h2.4a1 1 0 0 1 1 1v1.2H7.6V17a1 1 0 0 1 1-1H11v-4.2Z" fill="url(#cffbPbTrg)"/>' +
+  '</svg>';
+
+  // Small gold crown marking a conference champion (auto-bid) in a slot.
+  var CROWN = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" style="display:block">' +
+    '<path d="M2.5 7.2l4.3 3.3L12 3.2l5.2 7.3 4.3-3.3L20 19.2H4L2.5 7.2z" fill="currentColor"/>' +
   '</svg>';
 
   function col(round){
@@ -996,6 +1027,7 @@
     // Sheet-driven CFFB power rank (same rank Power Rankings shows). null → no chip.
     var powerRank=(window.__cffbRankFeed?window.__cffbRankFeed.rankOf(t.id):null);
     var rankHtml=powerRank!=null?'<span class="pb-detail__rankbadge" title="CFFB Power Ranking">#'+powerRank+' Power</span>':'';
+    var champHtml=t.champ?'<span class="pb-detail__champ" title="Automatic bid">'+confPretty(t.champ)+' Champion &middot; Auto-bid</span>':'';
     var mgrHtml=t.mgr?'<span class="pb-detail__mgr">Managed by <b>'+t.mgr+'</b></span>':'';
     var chip = t.logo
       ? '<span class="pb-detail__chip" style="background:'+(t.color||'#1C1C1C')+';padding:0;overflow:hidden"><img src="'+t.logo+'" alt="'+t.abbr+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></span>'
@@ -1008,6 +1040,7 @@
         '<span class="pb-detail__id">' +
           '<span class="pb-detail__seedline">' +
             '<span class="pb-detail__seedbadge">'+seedTxt+'</span>' +
+            champHtml +
             rankHtml +
             mgrHtml +
           '</span>' +
@@ -1044,9 +1077,128 @@
     });
   }
 
+  /* ============================================================
+     Projected field — used when MFL's bracket exists but has not been
+     seeded yet. Builds the 16-team field from the Power Rankings feed:
+       • Power-5 conference champions (top of each conf by conference
+         record, tiebroken by Power Ranking) get automatic bids (crown).
+       • Remaining spots go to the highest-ranked at-large teams.
+       • All 16 are seeded strictly by overall Power Ranking.
+     Rendered through the same bracket engine, then marked "projected".
+     ============================================================ */
+  var PROJECTED = false;
+  var POWER_CONFS = ['acc','b10','b12','p12','sec'];   // Group-of-5 (aac) champ does not auto-bid
+  var FIELD_SIZE = 16;
+  var CFFB_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec';
+  function confPretty(c){
+    var m={ acc:'ACC', b10:'Big Ten', b12:'Big 12', p12:'Pac-12', sec:'SEC', aac:'AAC' };
+    return m[c] || String(c||'').toUpperCase();
+  }
+  function normFid4(id){ var s=String(id==null?'':id).trim(); return /^\d+$/.test(s)?s.padStart(4,'0'):s; }
+  function confPct(t){ var g=(t.cW||0)+(t.cL||0); return g?((t.cW||0)/g):0; }
+  async function fetchWebappPayload(){
+    var url=(window.__cffbRankFeed && window.__cffbRankFeed.url) || CFFB_WEBAPP_URL;
+    try{
+      var res=await fetch(url,{cache:'no-store'});
+      if(res.ok){ var d=await res.json(); if(d && d.teams && d.teams.length){
+        try{ localStorage.setItem('cffb_webapp_payload_v1', JSON.stringify({ts:Date.now(),payload:d})); }catch(e){}
+        return d; } }
+    }catch(e){}
+    try{ var rec=JSON.parse(localStorage.getItem('cffb_webapp_payload_v1')||'null');
+      if(rec && rec.payload && rec.payload.teams && rec.payload.teams.length) return rec.payload; }catch(e){}
+    throw new Error('Power Rankings feed unavailable');
+  }
+  async function loadProjected(meta){
+    var pr=await fetchWebappPayload();
+    if(window.__cffbRankFeed && window.__cffbRankFeed.absorb) window.__cffbRankFeed.absorb(pr); // warm the detail rank badge
+    var raw=asArray(pr.teams).filter(function(t){ return t && t.id!=null; });
+    if(raw.length<FIELD_SIZE) throw new Error('only '+raw.length+' teams in feed — need '+FIELD_SIZE);
+    raw.forEach(function(t){
+      t._fid=normFid4(t.id);
+      t._rank=(t.rank!=null && +t.rank>0)?+t.rank:9999;
+      t._conf=String(t.conf||'').toLowerCase();
+    });
+
+    // Power-5 conference champions: best conference record, tiebreak Power Ranking.
+    var champSet={}; // fid -> conf id
+    POWER_CONFS.forEach(function(c){
+      var pool=raw.filter(function(t){ return t._conf===c; });
+      if(!pool.length) return;
+      pool.sort(function(a,b){
+        var ap=confPct(a), bp=confPct(b); if(bp!==ap) return bp-ap;
+        var ad=(a.cW||0)-(a.cL||0), bd=(b.cW||0)-(b.cL||0); if(bd!==ad) return bd-ad;
+        return a._rank-b._rank;
+      });
+      champSet[pool[0]._fid]=c;
+    });
+    var champFids=Object.keys(champSet);
+
+    // At-large: highest-ranked remaining teams fill the rest of the field.
+    var atLarge=raw.filter(function(t){ return !champSet[t._fid]; }).sort(function(a,b){ return a._rank-b._rank; });
+    var need=FIELD_SIZE-champFids.length;
+    var fieldRaw=raw.filter(function(t){ return champSet[t._fid]; }).concat(atLarge.slice(0,Math.max(0,need)));
+
+    // Seed strictly by Power Ranking.
+    fieldRaw.sort(function(a,b){ return a._rank-b._rank; });
+    var seedFidMap={};
+    fieldRaw.forEach(function(t,i){
+      var seed=i+1, fid=t._fid, base=TEAMS[fid]||{};
+      seedFidMap[seed]=fid;
+      TEAMS[fid]={
+        id:fid,
+        name: base.name || t.name || fid,
+        abbr: base.abbr || t.abbr || fid,
+        color: base.color || t.bg || colorFor(fid),
+        logo: base.logo || imgurDirect(t.pill) || '',
+        seed: seed, mgr: base.mgr||'',
+        rec: (t.W!=null && t.L!=null) ? ((t.W||0)+'-'+(t.L||0)) : '—',
+        pf: (t.pf!=null && +t.pf) ? fmtNum(t.pf) : '—',
+        pa: (t.pa!=null && +t.pa) ? fmtNum(t.pa) : '—',
+        streak:'—',
+        champ: champSet[fid]||null,
+        powerRank: t._rank<9999?t._rank:null
+      };
+    });
+
+    // Synthesize a standard 16-seed bracket in MFL's playoffBracket shape.
+    var sw=parseInt(meta && meta.startWeek,10)||14;
+    function side(seed){ return { franchise_id:seedFidMap[seed], seed:String(seed) }; }
+    var pairs=[[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]];
+    var r1=pairs.map(function(p,i){ return { game_id:String(i+1), home:side(p[0]), away:side(p[1]) }; });
+    var qf=[[1,2],[3,4],[5,6],[7,8]].map(function(p,i){ return { game_id:String(9+i), home:{winner_of_game:String(p[0])}, away:{winner_of_game:String(p[1])} }; });
+    var sf=[[9,10],[11,12]].map(function(p,i){ return { game_id:String(13+i), home:{winner_of_game:String(p[0])}, away:{winner_of_game:String(p[1])} }; });
+    var fin=[{ game_id:'15', home:{winner_of_game:'13'}, away:{winner_of_game:'14'} }];
+    var rounds=[
+      { week:String(sw),   playoffGame:r1 },
+      { week:String(sw+1), playoffGame:qf },
+      { week:String(sw+2), playoffGame:sf },
+      { week:String(sw+3), playoffGame:fin }
+    ];
+    BRACKET_META = meta || { name:'Projected Field', bracketWinnerTitle:'National Champion', teamsInvolved:String(FIELD_SIZE), startWeek:String(sw) };
+    if(!buildModel(rounds)) throw new Error('could not build projected bracket');
+    // It's a projection — nothing has been played, so every game is a matchup only.
+    ROUNDS.forEach(function(r){ r.matches.forEach(function(m){ m.status='pending'; m.winner=null; m.a.score=null; m.b.score=null; }); });
+    F=ROUNDS[ROUNDS.length-1].matches[0];
+    PROJECTED=true;
+    console.log('[CFFB Bracket] projected field from Power Rankings — champs: '+champFids.map(function(f){ return confPretty(champSet[f])+' '+(TEAMS[f]?TEAMS[f].abbr:f); }).join(', '));
+  }
+
+  // Projected mode changes the framing: relabel the eyebrow, drop the "week"
+  // chip (nothing is live), and explain the crown legend.
+  function applyProjectedChrome(){
+    if(!PROJECTED) return;
+    var eyebrow=document.querySelector('#cffb-pb-root .pb-eyebrow');
+    if(eyebrow) eyebrow.textContent='CFFB Postseason · Projected Field';
+    var wk=document.getElementById('pbWeekTag'); if(wk) wk.style.display='none';
+    var live=document.getElementById('pbLiveTag'); if(live) live.style.display='none';
+    var hint=document.querySelector('#cffb-pb-root .pb-hint');
+    if(hint) hint.innerHTML='Projected from the CFFB Power Rankings &mdash; <b>&#9819; = conference champion (auto-bid)</b>, remaining seeds are highest-ranked at-large teams. Updates as the season plays out; the real bracket takes over once MFL is seeded.';
+  }
+
   /* ---------------- Render + boot ---------------- */
   function finishRender(){
     render();
+    applyProjectedChrome();
     var feat=pickFeatured();
     if(feat) openDetail(feat);
     function redraw(){ drawConnectors(); }
@@ -1056,19 +1208,32 @@
     setTimeout(redraw,600);
   }
 
-  // Pull the league's real playoff bracket from MFL (same-origin).
+  // Does a round have any teams placed (i.e., is the MFL bracket seeded)?
+  function roundHasFranchises(round){
+    return asArray(round && round.playoffGame).some(function(g){
+      return (g.home && g.home.franchise_id) || (g.away && g.away.franchise_id);
+    });
+  }
+
+  // Load the real MFL bracket; if it isn't seeded yet, project the field.
   async function loadLive(){
-    var bl=await fetchJSON('playoffBrackets');
-    var list=asArray(bl.playoffBrackets && bl.playoffBrackets.playoffBracket);
-    var meta=list.filter(function(b){ return BRACKET_NAME_RE.test(b.name||''); })[0] || list[0];
-    if(!meta) throw new Error('no playoff bracket defined for this league');
-    BRACKET_META=meta;
-    var bd=await fetchJSON('playoffBracket','&BRACKET_ID='+meta.id);
-    var rr=asArray(bd.playoffBracket && bd.playoffBracket.playoffRound);
-    if(!rr.length) throw new Error('bracket "'+meta.name+'" has no games yet');
-    try{ await enrichStandings(); }catch(e){ console.warn('[CFFB Bracket] standings enrich skipped', e); }
-    if(!buildModel(rr)) throw new Error('could not build bracket model');
-    console.log('[CFFB Bracket] "'+meta.name+'" — '+ROUNDS.length+' rounds loaded from MFL '+MFL_CTX.year);
+    var bl=await fetchJSON('playoffBrackets').catch(function(){ return null; });
+    var list=asArray(bl && bl.playoffBrackets && bl.playoffBrackets.playoffBracket);
+    var meta=list.filter(function(b){ return BRACKET_NAME_RE.test(b.name||''); })[0] || list[0] || null;
+    var rr=null;
+    if(meta){
+      BRACKET_META=meta;
+      var bd=await fetchJSON('playoffBracket','&BRACKET_ID='+meta.id).catch(function(){ return null; });
+      rr=asArray(bd && bd.playoffBracket && bd.playoffBracket.playoffRound);
+    }
+    if(rr && rr.length && roundHasFranchises(rr[0])){
+      try{ await enrichStandings(); }catch(e){ console.warn('[CFFB Bracket] standings enrich skipped', e); }
+      if(!buildModel(rr)) throw new Error('could not build bracket model');
+      console.log('[CFFB Bracket] "'+((meta&&meta.name)||'bracket')+'" — '+ROUNDS.length+' rounds from MFL '+MFL_CTX.year);
+      return;
+    }
+    console.log('[CFFB Bracket] MFL bracket not seeded — projecting field from Power Rankings.');
+    await loadProjected(meta);
   }
 
   function boot(){
