@@ -286,6 +286,8 @@ function onOpen() {
       .addSeparator()
       .addItem('View Week Schedule & Rankings', 'promptViewWeekSchedule')
       .addItem('View College Gameday', 'promptViewCollegeGameday')
+      .addSeparator()
+      .addItem('Process Preseason Coaches Poll', 'promptProcessPreseasonPoll')
       .addItem('Reset ScheduleResults Sheet', 'promptResetScheduleResults')
       .addSeparator()
       .addItem('Backfill Historical Rankings', 'promptBackfillRankings')
@@ -1213,6 +1215,40 @@ function promptViewWeekSchedule() {
 /**
  * Prompt to reset ScheduleResults sheet with new headers
  */
+function promptProcessPreseasonPoll() {
+  const ui = SpreadsheetApp.getUi();
+  const year = Number(getLeagueYear());
+
+  const confirm = ui.alert(
+    'Process Preseason Coaches Poll',
+    `Year: ${year}\n\n` +
+    `PREREQUISITE: Enter the Week 1 preseason poll in the PowerRankings sheet first ` +
+    `(Year=${year}, Week=1, FranchiseID, Rank).\n\n` +
+    `This will:\n` +
+    `• Build the full-season schedule skeleton in ScheduleResults (all matchups, no results yet)\n` +
+    `• Determine the Week 1 College Gameday + Games of the Week from your poll\n` +
+    `• Stamp those into the Week 1 rows\n\n` +
+    `Your ${year} game results and all other years are left untouched.\n\nContinue?`,
+    ui.ButtonSet.YES_NO
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  try {
+    const result = processPreseasonCoachesPoll(year);
+    ui.alert(
+      'Preseason Poll Processed',
+      `Year: ${year}\n\n` +
+      `• Poll teams read: ${result.teams}\n` +
+      `• Week 1 rows stamped: ${result.week1RowsStamped}\n\n` +
+      `Schedule skeleton built and Week 1 Gameday set.\n` +
+      `View it via Power Rankings → View College Gameday (week 1).`,
+      ui.ButtonSet.OK
+    );
+  } catch (e) {
+    ui.alert('Error', e.message, ui.ButtonSet.OK);
+  }
+}
+
 function promptResetScheduleResults() {
   const ui = SpreadsheetApp.getUi();
 

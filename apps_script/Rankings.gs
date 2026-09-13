@@ -1838,6 +1838,157 @@ function getCollegeGamedayForDiscord(year, upcomingWeek) {
 }
 
 // ============================================================================
+// PRESEASON COACHES POLL
+// ============================================================================
+
+/**
+ * Read the Week 1 preseason coaches poll from the PowerRankings sheet.
+ * @param {Number} year - Season year
+ * @returns {Object} - Map of franchiseId (zero-padded) -> preseason rank
+ */
+function getPreseasonPollRankMap(year) {
+  const sheet = getPowerRankingsSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return {};
+
+  const headers = data[0];
+  const col = {};
+  headers.forEach((h, i) => { col[h] = i; });
+
+  const map = {};
+  data.slice(1).forEach(row => {
+    if (Number(row[col["Year"]]) !== Number(year)) return;
+    if (Number(row[col["Week"]]) !== 1) return;
+    const fId = String(row[col["FranchiseID"]]).padStart(3, "0");
+    const rank = Number(row[col["Rank"]]);
+    if (fId && rank) map[fId] = rank;
+  });
+
+  return map;
+}
+
+/**
+ * Process the preseason coaches poll for a season.
+ *
+ * Prerequisite: the Week 1 poll must already be entered in the PowerRankings
+ * sheet (Year, Week=1, FranchiseID, Rank).
+ *
+ * Does two things in one clean pass:
+ *   1. Lays down the full-season schedule skeleton in ScheduleResults
+ *      (all regular-season weeks, schedule-only — no fabricated results),
+ *      preserving every other year's data.
+ *   2. Determines the Week 1 College Gameday + Games of the Week FROM THE POLL
+ *      (not from empty Week-1 game data) and stamps those into the Week 1 rows.
+ *
+ * @param {Number} year - Season year (defaults to league year)
+ * @returns {Object} - { teams, week1RowsStamped }
+ */
+function processPreseasonCoachesPoll(year) {
+  year = Number(year || getLeagueYear());
+  Logger.log(`=== Processing Preseason Coaches Poll for ${year} ===`);
+
+  // 1. Read the preseason poll (Week 1) from PowerRankings
+  const rankMap = getPreseasonPollRankMap(year);
+  const teamCount = Object.keys(rankMap).length;
+  if (teamCount === 0) {
+    throw new Error(
+      `No Week 1 preseason poll found in PowerRankings for ${year}. ` +
+      `Enter the poll (Year=${year}, Week=1, FranchiseID, Rank) first, then run this again.`
+    );
+  }
+  Logger.log(`Found preseason poll for ${teamCount} teams`);
+
+  // 2. Build the schedule skeleton for all regular-season weeks.
+  //    cumulativeWeek = 0 => every week is written schedule-only (no results).
+  Logger.log(`Building schedule skeleton (all regular-season weeks, schedule-only)...`);
+  populateScheduleResults(year, 1, 0);
+
+  // 3. Stamp Week 1 rows with poll ranks + College Gameday flags
+  const stamped = stampWeek1GamedayFromPoll(year, rankMap);
+  Logger.log(`Stamped ${stamped} Week 1 rows with preseason ranks + Gameday flags`);
+
+  Logger.log(`=== Preseason Coaches Poll processed for ${year} ===`);
+  return { teams: teamCount, week1RowsStamped: stamped };
+}
+
+/**
+ * Overwrite the Week 1 rows of ScheduleResults so their rank/Gameday fields
+ * reflect the preseason poll instead of the (empty) Week-1 game data.
+ *
+ * @param {Number} year - Season year
+ * @param {Object} rankMap - Map of franchiseId -> preseason rank
+ * @returns {Number} - Count of Week 1 rows updated
+ */
+function stampWeek1GamedayFromPoll(year, rankMap) {
+  const sheet = getScheduleResultsSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return 0;
+
+  const headers = data[0];
+  const col = {};
+  headers.forEach((h, i) => { col[h] = i; });
+
+  const need = ["Year", "Week", "FranchiseID", "OpponentID", "OpponentRank",
+    "MatchupAvgRank", "IsCollegeGameday", "IsGameOfTheWeek", "SeasonRank"];
+  for (const n of need) {
+    if (col[n] === undefined) {
+      Logger.log(`stampWeek1GamedayFromPoll: missing column "${n}" - aborting stamp`);
+      return 0;
+    }
+  }
+
+  // Collect this year's Week 1 rows
+  const week1 = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (Number(row[col["Year"]]) !== Number(year)) continue;
+    if (Number(row[col["Week"]]) !== 1) continue;
+    const fId = String(row[col["FranchiseID"]]).padStart(3, "0");
+    const oppRaw = row[col["OpponentID"]];
+    const oppId = (oppRaw !== "" && oppRaw !== null && oppRaw !== undefined)
+      ? String(oppRaw).padStart(3, "0") : "";
+    week1.push({ i, fId, oppId });
+  }
+  if (week1.length === 0) return 0;
+
+  // Average rank per unique matchup; the Gameday game is the lowest average
+  const matchupAvg = {};
+  week1.forEach(r => {
+    if (!r.oppId) return;
+    const key = [r.fId, r.oppId].sort().join("-");
+    if (matchupAvg[key] !== undefined) return;
+    const rk1 = rankMap[r.fId] || 100;
+    const rk2 = rankMap[r.oppId] || 100;
+    matchupAvg[key] = (rk1 + rk2) / 2;
+  });
+
+  let gamedayKey = null;
+  let lowest = Infinity;
+  Object.entries(matchupAvg).forEach(([k, avg]) => {
+    if (avg < lowest) { lowest = avg; gamedayKey = k; }
+  });
+
+  // Write per-row values (rank from poll; Gameday flags derived from it)
+  week1.forEach(r => {
+    const row = data[r.i];
+    const teamRank = rankMap[r.fId] || 100;
+    row[col["SeasonRank"]] = teamRank;
+    if (r.oppId) {
+      const oppRank = rankMap[r.oppId] || 100;
+      const avg = (teamRank + oppRank) / 2;
+      const key = [r.fId, r.oppId].sort().join("-");
+      row[col["OpponentRank"]] = oppRank;
+      row[col["MatchupAvgRank"]] = avg;
+      row[col["IsCollegeGameday"]] = (key === gamedayKey);
+      row[col["IsGameOfTheWeek"]] = avg < 15;
+    }
+  });
+
+  sheet.getRange(1, 1, data.length, headers.length).setValues(data);
+  return week1.length;
+}
+
+// ============================================================================
 // TRIGGERS
 // ============================================================================
 

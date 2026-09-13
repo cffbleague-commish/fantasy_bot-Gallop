@@ -1041,11 +1041,15 @@
 /* Status tag moves up beside the player name */
 .rb-cell-status{display:none}
 .rb-mob-status{display:inline-flex;margin-left:2px}
-/* Condensed conference tabs: logo + caret only (active keeps team abbr chip) */
-.rb-tabs{gap:4px;padding:4px}
-.rb-tab{padding:7px 8px;gap:5px}
-.rb-tab .rb-tab__abbr{display:none}
-.rb-conflogo{width:24px;height:24px}
+/* Conference tabs fill the width; stack the conference name under the logo
+   (matches Power Rankings). Caret + current-team chip drop off to keep it clean —
+   the selected team still shows in the team card below. */
+.rb-tabs{gap:5px;padding:5px;display:grid;grid-template-columns:repeat(3,1fr)}
+.rb-conftab{min-width:0}
+.rb-tab{flex-direction:column;gap:4px;justify-content:center;padding:9px 4px 7px;text-align:center;width:100%}
+.rb-tab .rb-tab__abbr{display:block;font-size:12px;line-height:1}
+.rb-caret,.rb-tab__cur{display:none}
+.rb-conflogo{width:23px;height:23px}
 .rb-team__name{font-size:22px}
 }
 

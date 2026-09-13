@@ -174,6 +174,7 @@ const PlayerRow = ({ p, flash, bench, groupStart }) => {
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: (bench ? 15 : 16) + 'px', lineHeight: 1.05, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
           )}
         </span>
+        {p.stat ? <span className="ls-prow__stat">{p.stat}</span> : null}
       </span>
       <span className="ls-prow__game">
         <span style={{ display: 'block', font: '600 10px/1.2 var(--font-body)', color: 'var(--fg-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.team || '—'}</span>
@@ -372,6 +373,7 @@ const App = () => {
   const [conf, setConf] = useState(null);    // selected conference id | 'ALL' | null (→ default to my conference)
   const [selId, setSelId] = useState(null);  // selected matchup id | null (→ default)
   const [flashes, setFlashes] = useState({});
+  const [detail, setDetail] = useState({});  // pid -> {pts,st,gameDetail,isLive,stat} for the featured matchup
 
   useEffect(() => {
     let alive = true;
@@ -396,10 +398,6 @@ const App = () => {
   }, []);
 
   const matchups = data.matchups || [];
-  if (!matchups.length) {
-    return <div className="cffb-boot">No live matchups for week {data.week || '—'} yet.</div>;
-  }
-
   const myFid = data.myFid;
   const myConf = (typeof TEAMS !== 'undefined' && TEAMS[myFid]) ? TEAMS[myFid].conf : null;
 
@@ -437,11 +435,45 @@ const App = () => {
   const effSelId = (selId != null && inView(selId)) ? selId
     : (myMatchup && inView(myMatchup.id)) ? myMatchup.id
       : (filtered[0] ? filtered[0].id : null);
-  const m = matchups.find((g) => g.id === effSelId) || filtered[0] || matchups[0];
+  const m = matchups.length ? (matchups.find((g) => g.id === effSelId) || filtered[0] || matchups[0]) : null;
+
+  // Stat lines + bench points for the featured matchup (MFL per-player XML feed);
+  // refetched whenever the selection changes or a new poll lands.
+  useEffect(() => {
+    let alive = true;
+    if (m && typeof window.__loadMatchupDetail === 'function') {
+      window.__loadMatchupDetail(m).then((d) => { if (alive) setDetail(d || {}); }).catch(() => {});
+    }
+    return () => { alive = false; };
+  }, [m ? m.id : -1, data.ts]);
+
+  if (!matchups.length) {
+    return <div className="cffb-boot">No live matchups for week {data.week || '—'} yet.</div>;
+  }
 
   const anyLive = matchups.some((g) => (g.away.playing + g.home.playing) > 0);
   const pickConf = (c) => { setConf(c); setSelId(null); };  // reset featured into the new conference
   const pickMatchup = (id) => setSelId(id);
+
+  // Merge per-player detail into the featured matchup: stat lines, bench points,
+  // and XML-accurate live/final status (which also refreshes the playing counts).
+  const applyDet = (p) => {
+    const d = detail[p.pid];
+    if (!d) return p;
+    return { ...p,
+      pts: d.pts != null ? d.pts : p.pts,
+      st: d.st || p.st,
+      gameDetail: d.gameDetail || p.gameDetail,
+      isLive: d.st ? d.isLive : p.isLive,
+      stat: d.stat || '' };
+  };
+  const withDet = (s) => {
+    const starters = s.starters.map(applyDet);
+    const bench = s.bench.map(applyDet);
+    const n = (st) => starters.filter((p) => p.st === st).length;
+    return { ...s, starters, bench, playing: n('LIVE'), left: n('PRE'), done: n('FINAL') };
+  };
+  const mv = Object.keys(detail).length ? { ...m, away: withDet(m.away), home: withDet(m.home) } : m;
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px 72px', fontFamily: 'var(--font-body)', color: 'var(--fg-primary)' }}>
@@ -476,12 +508,12 @@ const App = () => {
       )}
 
       {/* Featured scoreboard */}
-      <Scoreboard m={m} />
+      <Scoreboard m={mv} />
 
       {/* Lineups */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start', marginTop: '16px' }}>
-        <LineupColumn side={m.away} flashes={flashes} />
-        <LineupColumn side={m.home} flashes={flashes} />
+        <LineupColumn side={mv.away} flashes={flashes} />
+        <LineupColumn side={mv.home} flashes={flashes} />
       </div>
 
       <div style={{ marginTop: '18px', font: '500 10px/1.5 var(--font-body)', letterSpacing: '.06em', color: 'var(--fg-tertiary)', textTransform: 'uppercase' }}>

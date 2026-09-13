@@ -954,6 +954,8 @@
 .ls-prow__game{grid-area:game;min-width:0}
 .ls-prow__pts{grid-area:pts;text-align:right}
 .ls-prow__proj{grid-area:proj;text-align:right;font-size:12px;color:var(--fg-secondary)}
+/* Box-score stat line (from MFL's per-player live XML), under the player name. */
+.ls-prow__stat{display:block;margin-top:2px;font:500 10px/1.3 var(--font-body);color:var(--fg-tertiary);text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Narrow WIDGET: stack the two sides, hide the team name, counts under the icon. */
 @container (max-width:640px){
@@ -965,6 +967,11 @@
   .ls-sb__score,.ls-sb--home .ls-sb__score{text-align:right}
   .ls-vs{padding:2px 0}
   .ls-sb__pts{font-size:40px}
+  /* Conference tabs fill the width; stack the name under the logo (matches Power Rankings). */
+  .ls-conftabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .ls-conftab{position:relative;flex-direction:column;gap:4px;justify-content:center;padding:9px 4px 7px;text-align:center;font-size:12px}
+  .ls-conflogo{width:23px;height:23px}
+  .ls-conftab__n{position:absolute;top:3px;right:3px}
 }
 /* Narrow COLUMN: reflow the player row to two lines so all data fits, no scroll. */
 @container (max-width:520px){
@@ -1420,7 +1427,7 @@ async function fetchStatic() {
 }
 async function fetchLivePlayerScores() {
   try {
-    const psD = await fetchJSON('playerScores', '&W=' + WEEK);
+    const psD = await fetchJSON('playerScores', '&W=' + WEEK + '&YEAR=' + MFL_CTX.year);
     const map = {};
     asArray(psD && psD.playerScores && psD.playerScores.playerScore).forEach(s => {
       const v = parseFloat(s.score);
@@ -1502,8 +1509,46 @@ async function loadLiveScoring() {
   await fetchStatic();
   await refreshLiveScoring();
 }
+async function loadMatchupDetail(matchup) {
+  if (!matchup || typeof DOMParser === 'undefined') return {};
+  const pids = [];
+  [matchup.away, matchup.home].forEach(s => {
+    if (!s) return;
+    (s.starters || []).concat(s.bench || []).forEach(p => pids.push(String(p.pid)));
+  });
+  const uniq = Array.from(new Set(pids));
+  const base = (MFL_CTX.host || MFL_CTX.origin) + '/fflnetdynamic' + MFL_CTX.year + '/' + MFL_CTX.league + '_';
+  const out = {};
+  let got = 0;
+  await Promise.all(uniq.map(async pid => {
+    try {
+      const res = await fetch(base + pid + '_' + WEEK + '.xml', {
+        cache: 'no-store'
+      });
+      if (!res.ok) return;
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');
+      const el = doc.getElementsByTagName('player')[0];
+      if (!el) return;
+      const ptsStr = el.getAttribute('points');
+      const gsr = el.getAttribute('gameSecondsRemaining');
+      const exp = el.getAttribute('explanation') || '';
+      const st = gsr != null && gsr.length ? gameStateOf(gsr) : null;
+      out[pid] = {
+        pts: ptsStr != null && ptsStr.length ? parseFloat(ptsStr) : null,
+        st,
+        gameDetail: st === 'FINAL' ? 'Final' : st === 'PRE' ? 'To play' : st === 'LIVE' ? 'Live' : null,
+        isLive: st === 'LIVE',
+        stat: exp ? exp.replace(/\s*(?:&#xA;|&#10;|\n)\s*/gi, ' · ').replace(/\s+/g, ' ').trim() : ''
+      };
+      got++;
+    } catch (e) {}
+  }));
+  console.log('[CFFB Live Scoring] matchup detail: ' + got + '/' + uniq.length + ' players had live stat data');
+  return out;
+}
 window.__loadLiveScoring = loadLiveScoring;
 window.__refreshLiveScoring = refreshLiveScoring;
+window.__loadMatchupDetail = loadMatchupDetail;
 const {
   useState,
   useEffect,
@@ -1785,7 +1830,9 @@ const PlayerRow = ({
       overflow: 'hidden',
       textOverflow: 'ellipsis'
     }
-  }, p.name))), React.createElement("span", {
+  }, p.name)), p.stat ? React.createElement("span", {
+    className: "ls-prow__stat"
+  }, p.stat) : null), React.createElement("span", {
     className: "ls-prow__game"
   }, React.createElement("span", {
     style: {
@@ -2262,6 +2309,7 @@ const App = () => {
   const [conf, setConf] = useState(null);
   const [selId, setSelId] = useState(null);
   const [flashes, setFlashes] = useState({});
+  const [detail, setDetail] = useState({});
   useEffect(() => {
     let alive = true;
     const timers = [];
@@ -2300,11 +2348,6 @@ const App = () => {
     };
   }, []);
   const matchups = data.matchups || [];
-  if (!matchups.length) {
-    return React.createElement("div", {
-      className: "cffb-boot"
-    }, "No live matchups for week ", data.week || '—', " yet.");
-  }
   const myFid = data.myFid;
   const myConf = typeof TEAMS !== 'undefined' && TEAMS[myFid] ? TEAMS[myFid].conf : null;
   const inConf = (g, c) => g.away.conf === c || g.home.conf === c;
@@ -2325,13 +2368,59 @@ const App = () => {
   const myMatchup = matchups.find(g => g.away.fid === myFid || g.home.fid === myFid);
   const inView = id => filtered.some(g => g.id === id);
   const effSelId = selId != null && inView(selId) ? selId : myMatchup && inView(myMatchup.id) ? myMatchup.id : filtered[0] ? filtered[0].id : null;
-  const m = matchups.find(g => g.id === effSelId) || filtered[0] || matchups[0];
+  const m = matchups.length ? matchups.find(g => g.id === effSelId) || filtered[0] || matchups[0] : null;
+  useEffect(() => {
+    let alive = true;
+    if (m && typeof window.__loadMatchupDetail === 'function') {
+      window.__loadMatchupDetail(m).then(d => {
+        if (alive) setDetail(d || {});
+      }).catch(() => {});
+    }
+    return () => {
+      alive = false;
+    };
+  }, [m ? m.id : -1, data.ts]);
+  if (!matchups.length) {
+    return React.createElement("div", {
+      className: "cffb-boot"
+    }, "No live matchups for week ", data.week || '—', " yet.");
+  }
   const anyLive = matchups.some(g => g.away.playing + g.home.playing > 0);
   const pickConf = c => {
     setConf(c);
     setSelId(null);
   };
   const pickMatchup = id => setSelId(id);
+  const applyDet = p => {
+    const d = detail[p.pid];
+    if (!d) return p;
+    return {
+      ...p,
+      pts: d.pts != null ? d.pts : p.pts,
+      st: d.st || p.st,
+      gameDetail: d.gameDetail || p.gameDetail,
+      isLive: d.st ? d.isLive : p.isLive,
+      stat: d.stat || ''
+    };
+  };
+  const withDet = s => {
+    const starters = s.starters.map(applyDet);
+    const bench = s.bench.map(applyDet);
+    const n = st => starters.filter(p => p.st === st).length;
+    return {
+      ...s,
+      starters,
+      bench,
+      playing: n('LIVE'),
+      left: n('PRE'),
+      done: n('FINAL')
+    };
+  };
+  const mv = Object.keys(detail).length ? {
+    ...m,
+    away: withDet(m.away),
+    home: withDet(m.home)
+  } : m;
   return React.createElement("div", {
     style: {
       maxWidth: '1280px',
@@ -2434,7 +2523,7 @@ const App = () => {
   }))) : React.createElement("div", {
     className: "ls-strip-empty"
   }, "No ", effConf === 'TOP25' ? 'Top 25' : CONF_LABEL[effConf] || String(effConf).toUpperCase(), " games this week."), React.createElement(Scoreboard, {
-    m: m
+    m: mv
   }), React.createElement("div", {
     style: {
       display: 'flex',
@@ -2444,10 +2533,10 @@ const App = () => {
       marginTop: '16px'
     }
   }, React.createElement(LineupColumn, {
-    side: m.away,
+    side: mv.away,
     flashes: flashes
   }), React.createElement(LineupColumn, {
-    side: m.home,
+    side: mv.home,
     flashes: flashes
   })), React.createElement("div", {
     style: {

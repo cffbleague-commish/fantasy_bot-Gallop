@@ -284,9 +284,12 @@
   .st-head { flex-direction: column; align-items: flex-start; gap: var(--s-1); }
   .st-head__h1 { font-size: 32px; }
   .st-head__meta { display: none; }
-  .st-conffilter { border-radius: var(--r-2); }
-  .st-conftab { padding: 8px 12px; gap: 7px; }
-  .st-conftab__name { font-size: 14px; }
+  /* Conference bar fills the width; stack the name under the logo (matches Power Rankings). */
+  .st-conffilter { border-radius: var(--r-2); display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; overflow-x: visible; }
+  .st-conftab { position: relative; flex-direction: column; gap: 4px; justify-content: center; padding: 9px 4px 7px; text-align: center; }
+  .st-conftab__logo { width: 23px; height: 23px; }
+  .st-conftab__name { font-size: 12px; line-height: 1; }
+  .st-conftab__count { position: absolute; top: 4px; right: 4px; font-size: 9px; padding: 1px 5px; }
   .st-modal { padding: var(--s-2); }
   .st-modal__panel { padding: var(--s-2); border-radius: var(--r-3); }
   .st-modal__name { font-size: 26px; }

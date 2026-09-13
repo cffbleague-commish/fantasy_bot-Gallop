@@ -368,7 +368,7 @@ async function fetchStatic() {
 // liveScoring omits bench players (BENCH_SOURCE === 'roster').
 async function fetchLivePlayerScores() {
   try {
-    const psD = await fetchJSON('playerScores', '&W=' + WEEK);
+    const psD = await fetchJSON('playerScores', '&W=' + WEEK + '&YEAR=' + MFL_CTX.year);
     const map = {};
     asArray(psD && psD.playerScores && psD.playerScores.playerScore).forEach((s) => {
       const v = parseFloat(s.score);
@@ -455,8 +455,51 @@ async function loadLiveScoring() {
   await refreshLiveScoring();   // seeds PREV_PTS; no flashes on first paint
 }
 
+// ── Per-player LIVE detail (box-score stat line + points + game clock) ────────
+// MFL publishes a small per-player XML at fflnetdynamic{year}/{league}_{pid}_{week}.xml
+// (same-origin on the league page) carrying `points`, `gameSecondsRemaining`, and an
+// `explanation` (the stat line, e.g. "18/24, 232 yds, 2 TD") — the SAME feed MFL's own
+// live page reads. We fetch it only for the FEATURED matchup's players (~20 files),
+// which (a) surfaces stat lines and (b) fills in bench players' real points + status.
+async function loadMatchupDetail(matchup) {
+  if (!matchup || typeof DOMParser === 'undefined') return {};
+  const pids = [];
+  [matchup.away, matchup.home].forEach((s) => {
+    if (!s) return;
+    (s.starters || []).concat(s.bench || []).forEach((p) => pids.push(String(p.pid)));
+  });
+  const uniq = Array.from(new Set(pids));
+  const base = (MFL_CTX.host || MFL_CTX.origin) + '/fflnetdynamic' + MFL_CTX.year + '/' + MFL_CTX.league + '_';
+  const out = {};
+  let got = 0;
+  await Promise.all(uniq.map(async (pid) => {
+    try {
+      const res = await fetch(base + pid + '_' + WEEK + '.xml', { cache: 'no-store' });
+      if (!res.ok) return;                                   // no file yet (game not started) → skip
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');
+      const el = doc.getElementsByTagName('player')[0];
+      if (!el) return;
+      const ptsStr = el.getAttribute('points');
+      const gsr = el.getAttribute('gameSecondsRemaining');
+      const exp = el.getAttribute('explanation') || '';
+      const st = (gsr != null && gsr.length) ? gameStateOf(gsr) : null;
+      out[pid] = {
+        pts: (ptsStr != null && ptsStr.length) ? parseFloat(ptsStr) : null,
+        st,
+        gameDetail: st === 'FINAL' ? 'Final' : st === 'PRE' ? 'To play' : st === 'LIVE' ? 'Live' : null,
+        isLive: st === 'LIVE',
+        stat: exp ? exp.replace(/\s*(?:&#xA;|&#10;|\n)\s*/gi, ' · ').replace(/\s+/g, ' ').trim() : '',
+      };
+      got++;
+    } catch (e) { /* skip this player */ }
+  }));
+  console.log('[CFFB Live Scoring] matchup detail: ' + got + '/' + uniq.length + ' players had live stat data');
+  return out;
+}
+
 window.__loadLiveScoring = loadLiveScoring;
 window.__refreshLiveScoring = refreshLiveScoring;
+window.__loadMatchupDetail = loadMatchupDetail;
 
 // The build concatenates this file and ls-app.jsx into one function scope, so
 // ls-app reads TEAMS / MY_FID / POS_COLORS / CONF_ACCENT / MFL_PLAYER_LINK /
