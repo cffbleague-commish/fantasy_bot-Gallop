@@ -25,6 +25,12 @@ function doGet(e) {
       return serveLedgerFeed(e);
     }
 
+    // Route the Player Awards & Recruiting Dollars feed through the same
+    // deployment. See PlayerAwardsWebApp.gs.
+    if (e && e.parameter && e.parameter.feed === "awards") {
+      return serveAwardsFeed(e);
+    }
+
     const cache = CacheService.getScriptCache();
     const cached = cache.get(PR_CACHE_KEY);
     if (cached && !(e && e.parameter && e.parameter.nocache)) {

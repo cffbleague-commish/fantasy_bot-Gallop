@@ -64,6 +64,7 @@ let PREV_PTS = {};        // pid -> last-seen live points (for delta/flash diffi
 let BENCH_SOURCE = null;  // 'live' (liveScoring returns nonstarters) | 'roster' (we merge in bench)
 let SHEET_COLOR = {};     // fid -> { bg, fg } — the SAME official team colors Power Rankings uses
 let SHEET_RANK = {};      // fid -> rank (number) — the SAME sheet power rank Power Rankings shows
+let SHEET_GAMEDAY = {};   // fid -> { weekNum: true } — from the sheet's IsGameOfTheWeek column
 let LS_PAYLOAD = null;    // last built payload { week, slate, matchups, flashes, ts }
 
 // The league's official team colors live in the Franchise sheet (Primary/Secondary
@@ -278,7 +279,9 @@ function buildMatchups(ld) {
     // within their conference). Cross-conference games (if any) get conf=null and
     // surface only under the "All" tab.
     const conf = away.conf && away.conf === home.conf ? away.conf : null;
-    return { away, home, homeProb: winProb(home, away), conf };
+    // Game of the week: either team's current-week game flagged in the sheet.
+    const gd = (fid) => { const g = SHEET_GAMEDAY[cffbNormFid(fid)]; return !!(g && g[String(WEEK)]); };
+    return { away, home, homeProb: winProb(home, away), conf, gameday: gd(away.fid) || gd(home.fid) };
   }).filter((m) => m.away.fid && m.home.fid);
   // Stable id per matchup (post-filter index) so the featured selection and the
   // conference filter can reference a matchup independent of array order.
@@ -375,6 +378,8 @@ async function fetchLivePlayerScores() {
       if (isFinite(v)) map[String(s.id)] = v;
     });
     LIVE_PTS_BY_ID = map;
+    const nz = Object.keys(map).filter((k) => map[k] !== 0).length;
+    console.log('[CFFB Live Scoring] playerScores(W=' + WEEK + '): ' + Object.keys(map).length + ' entries, ' + nz + ' non-zero (bench points source)');
   } catch (e) { console.warn('[CFFB Live Scoring] playerScores failed:', e && e.message); }
 }
 
@@ -396,6 +401,16 @@ async function refreshLiveScoring() {
     console.log('[CFFB Live Scoring] bench source: ' + BENCH_SOURCE + (BENCH_SOURCE === 'roster' ? ' (merging bench from rosters + playerScores)' : ''));
   }
   if (BENCH_SOURCE === 'roster') await fetchLivePlayerScores();
+  // One-time structural diagnostic: what does the raw liveScoring franchise look like?
+  if (!refreshLiveScoring._logged) {
+    refreshLiveScoring._logged = true;
+    const fr0 = asArray(asArray(ld && ld.liveScoring && ld.liveScoring.matchup)[0] && asArray(ld.liveScoring.matchup)[0].franchise)[0];
+    const pls = asArray(fr0 && fr0.players && fr0.players.player);
+    const starters = pls.filter((p) => String(p.status || '').toLowerCase() !== 'nonstarter');
+    console.log('[CFFB Live Scoring] liveScoring sample franchise ' + (fr0 && fr0.id) + ': score=' + (fr0 && fr0.score)
+      + ', ' + pls.length + ' players (' + starters.length + ' starters, ' + (pls.length - starters.length) + ' nonstarters); first player='
+      + JSON.stringify(pls[0] ? { id: pls[0].id, score: pls[0].score, status: pls[0].status, gsr: pls[0].gameSecondsRemaining } : null));
+  }
   const matchups = buildMatchups(ld);
   const flashes = computeDeltas(matchups);
   SLATE = slateSummary(matchups);
@@ -418,6 +433,12 @@ function applySheetTeams(teams) {
   asArray(teams).forEach((t) => {
     if (t && t.id != null && (t.bg || t.fg)) SHEET_COLOR[String(t.id)] = { bg: t.bg || null, fg: t.fg || null };
     if (t && t.id != null && t.rank != null && +t.rank > 0) SHEET_RANK[cffbNormFid(t.id)] = +t.rank;
+    // Game-of-the-week flag: record which weeks a team's game is flagged gameday
+    // (the flag rides each per-week game entry in the team's schedule).
+    if (t && t.id != null) {
+      const gw = SHEET_GAMEDAY[cffbNormFid(t.id)] || (SHEET_GAMEDAY[cffbNormFid(t.id)] = {});
+      asArray(t.games).concat(asArray(t.upcoming)).forEach((g) => { if (g && g.gameday) gw[String(g.week)] = true; });
+    }
   });
 }
 function loadSheetColors() {
@@ -469,14 +490,23 @@ async function loadMatchupDetail(matchup) {
     (s.starters || []).concat(s.bench || []).forEach((p) => pids.push(String(p.pid)));
   });
   const uniq = Array.from(new Set(pids));
-  const base = (MFL_CTX.host || MFL_CTX.origin) + '/fflnetdynamic' + MFL_CTX.year + '/' + MFL_CTX.league + '_';
+  // Fetch from the PAGE's own origin (matches MFL's own fallback) so the request
+  // is same-origin and carries the login cookie — even if the league runs on a
+  // custom domain (fetching the numbered www## host would be cross-origin → 404).
+  // Use MFL's liveScoringWeek global for the file's week when present.
+  const xmlBase = (MFL_CTX.origin || (typeof location !== 'undefined' ? location.origin : '')) + '/fflnetdynamic' + MFL_CTX.year + '/';
+  const dw = (typeof window !== 'undefined' && parseInt(window.liveScoringWeek, 10)) || WEEK;
+  const base = xmlBase + MFL_CTX.league + '_';
+  console.log('[CFFB Live Scoring] fetching player detail from e.g. ' + base + (uniq[0] || '?') + '_' + dw + '.xml (' + uniq.length + ' players, week ' + dw + ')');
   const out = {};
-  let got = 0;
+  let got = 0, ok200 = 0, firstStatus = null;
   await Promise.all(uniq.map(async (pid) => {
     try {
-      const res = await fetch(base + pid + '_' + WEEK + '.xml', { cache: 'no-store' });
-      if (!res.ok) return;                                   // no file yet (game not started) → skip
+      const res = await fetch(base + pid + '_' + dw + '.xml?t=' + Date.now(), { cache: 'no-store', credentials: 'include' });
+      if (firstStatus == null) firstStatus = res.status;
+      if (res.ok) ok200++; else return;                      // no file yet (game not started / not live) → skip
       const doc = new DOMParser().parseFromString(await res.text(), 'text/xml');
+      if (doc.getElementsByTagName('parsererror').length) return;
       const el = doc.getElementsByTagName('player')[0];
       if (!el) return;
       const ptsStr = el.getAttribute('points');
@@ -493,7 +523,7 @@ async function loadMatchupDetail(matchup) {
       got++;
     } catch (e) { /* skip this player */ }
   }));
-  console.log('[CFFB Live Scoring] matchup detail: ' + got + '/' + uniq.length + ' players had live stat data');
+  console.log('[CFFB Live Scoring] matchup detail: ' + got + '/' + uniq.length + ' players parsed, ' + ok200 + ' XML files returned 200 (first HTTP status ' + firstStatus + ')');
   return out;
 }
 

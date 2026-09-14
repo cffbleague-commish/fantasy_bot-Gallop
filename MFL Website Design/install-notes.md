@@ -155,6 +155,7 @@ share one React runtime (loaded once) and coexist on the same page.
 | Playoff Bracket | `home-message-bracket.html` | hand-authored | MFL export API (live, client-side) |
 | **Player Ledger** | `home-message-player-ledger.html` | `npm run build:player-ledger` | Apps Script `/exec?feed=ledger` |
 | **Roster Board** | `home-message-roster-board.html` | `npm run build:roster-board` | MFL export API (live, client-side) |
+| **Player Awards & Recruiting $** | `home-message-player-awards.html` | `npm run build:player-awards` | Apps Script `/exec?feed=awards` |
 
 ### Playoff Bracket
 
@@ -183,6 +184,22 @@ Apps Script, no deploy, no external service. Paste the whole
 - **Team identity** (name, logo, seed) comes from `franchiseDatabase` + the
   bracket seeds; the panel defaults to the **signed-in franchise** if it made the
   field, else the 1-seed.
+- **Projected field (before MFL is seeded).** If the bracket exists in MFL but
+  no teams are placed yet, the widget builds a **projected 16-team field from the
+  Power Rankings feed** (the same `/exec` payload Live Scoring / Power Rankings
+  use, read same-origin-cached + refreshed):
+  - **Auto-bids:** the champion of each **Power-5 conference** (ACC, B10, B12,
+    P12, SEC) — top of that conference by conference record, tiebroken by Power
+    Ranking — gets an automatic bid, marked with a **gold crown (♛)** on its
+    slot and a "CONF Champion · Auto-bid" pill in the detail panel. (The AAC is
+    Group-of-5 — its champ can still make the field at-large, but gets no
+    auto-bid.)
+  - **At-large:** the remaining spots go to the highest-ranked teams left.
+  - **Seeding:** all 16 are then seeded **strictly by Power Ranking** and placed
+    into a standard bracket (1v16 / 8v9 / 5v12 / 4v13 // 6v11 / 3v14 / 7v10 /
+    2v15). The header switches to "Projected Field" and every game shows as a
+    matchup (no scores). The moment MFL is actually seeded, the real bracket
+    takes over automatically.
 - **Preview fallback.** Opened as a plain file (no MFL globals), it renders the
   built-in demo bracket so the layout can be previewed locally.
 - **Override week (debug):** set `window.CFFB_BRACKET_WEEK = <n>` before the
@@ -250,6 +267,43 @@ the signed-in franchise's roster**.
   fully self-contained. Awards in the encoded data are counts of **National** and
   **All-Conference** honors (shown as `×N`), rendered with the design's trophy
   glyphs.
+
+### Player Awards & Recruiting Dollars
+
+A two-view dashboard: **Awards Watch** (the five national trophies — Heisman,
+National QB / RB / WR-TE, Coach of the Year — with front-runner + finalists, plus
+1st/2nd/3rd All-Conference teams by conference) and **Recruiting $** (a league
+ranking of bonus recruiting dollars accrued for next season, with a per-team
+category breakdown). Because this is a dynasty fantasy league, each award
+winner's team chip is the **owning franchise** (name + manager), not a CFB school.
+
+- **Unlike the other widgets, this one is authored in DesignSync (DCLogic), not
+  hand-written React** — but its runtime (`support.js`) is built on React, so the
+  build inlines the runtime + design-system CSS + the component and it **shares
+  the one React runtime** loaded by the other CFFB widgets.
+- **Data source — the same Apps Script `/exec` deployment as Power Rankings**,
+  via `?feed=awards`. `apps_script/PowerRankingsWebApp.gs::doGet` routes it to
+  `serveAwardsFeed()` in `apps_script/PlayerAwardsWebApp.gs`, which reads the
+  league workbook's **`Awards`** (national + all-conference winners, from
+  `Awards.gs`) and **`RecruitingDollars`** (per-team bonus-dollar totals, from
+  `RecruitingDollars.gs`) tabs, joined to `FranchiseLookup` for team identity.
+  The feed auto-detects the latest season present in those tabs.
+- **You MUST redeploy the web app after adding this feed** (Apps Script editor →
+  Deploy → Manage deployments → edit → new version — deployments are frozen at
+  deploy time). Smoke-test first with `testBuildAwardsPayload(<year>)` in the
+  editor, or `curl "<EXEC_URL>?feed=awards&nocache=1"`.
+- **Recruiting breakdown categories:** Wins (regular + postseason), Player Awards
+  (national + Heisman + Coach of the Year + all-conference), Rivalry Wagers (net,
+  can be negative), and Draft − Retention (draft bonus minus retention costs).
+  The dollar values come straight from the `RecruitingDollars` sheet
+  (`config.recruitingDollars` sets the per-source amounts).
+- **Awards are regular-season only** (weeks 1–12); the recruiting snapshot shows
+  `PROJECTED` until the season is final (`FINAL`). The sheet stores a single
+  current snapshot per team, so the module shows a category breakdown rather than
+  a week-by-week chart.
+- Conference logos are inlined at build time; the widget is otherwise fully
+  self-contained. Cache: the feed is cached ~10 min server-side
+  (`awards_payload_v1`); call `clearAwardsCache()` or append `?nocache=1` to bust.
 
 ## Troubleshooting
 

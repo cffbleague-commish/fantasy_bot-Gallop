@@ -78,6 +78,15 @@
 .ls-conftab__you{font:700 8px/1 var(--font-body);letter-spacing:.14em;color:#0A0A0A;background:var(--gold);border-radius:2px;padding:2px 4px}
 .ls-strip-empty{margin:14px 0 24px;padding:18px;text-align:center;background:var(--bg-surface);border:1px dashed var(--border-strong);border-radius:8px;font:600 11px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-tertiary)}
 
+/* Game-of-the-week badge (gold pill; the football glyph is an original mark) */
+.ls-gameday{display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 8px;border-radius:var(--r-pill);background:var(--gold-gradient);color:#0A0A0A;font:800 9px/1 var(--font-display);letter-spacing:.1em;text-transform:uppercase;box-shadow:var(--inset-metallic)}
+.ls-gameday__ico{width:15px;height:11px;stroke:#0A0A0A;flex:none}
+.ls-gameday__txt{white-space:nowrap}
+/* Compact variant for the tight around-the-league cards: glyph only. */
+.ls-gameday--compact{gap:0;padding:2px 4px}
+.ls-gameday--compact .ls-gameday__txt{display:none}
+.ls-gameday--compact .ls-gameday__ico{width:14px;height:10px}
+
 /* On-bye aggregate note (players whose team is on a bye this week) */
 .ls-bye{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:10px 18px;background:var(--bg-surface-elev);border-top:1px solid var(--border)}
 .ls-bye__lbl{font:700 9px/1.3 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold-light,#E8C547);flex:none}

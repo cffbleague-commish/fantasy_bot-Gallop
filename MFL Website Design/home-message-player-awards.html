@@ -1,0 +1,3643 @@
+<style>
+/* ============================================================
+   CFFB Design System — Colors & Type
+   Foundations for the College Fantasy Football League app.
+   Streamlit (Python) + custom HTML injection.
+
+   Aesthetic: CFP-inspired broadcast graphics. Black + warm gold.
+   ============================================================ */
+
+/* --- Fonts ------------------------------------------------- */
+/* Display: Saira Condensed 600/700  — H1/H2, KPI values, hero names.
+            Wide condensed geometric sans, adjacent to CFP "Video".
+   Body:    Inter 400/500/600          — body, tables, labels, buttons.
+   All numerics use font-variant-numeric: tabular-nums. */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* === Surfaces ============================================ */
+  --bg-canvas:         #0A0A0A;    /* True matte black */
+  --bg-surface:        #141414;    /* Cards */
+  --bg-surface-elev:   #1C1C1C;    /* KPI tiles, popovers */
+  --bg-surface-hover:  #1F1F1F;    /* Row hover */
+  --border:            #2A2A2A;
+  --border-strong:     #3A3A3A;
+
+  /* === Text ================================================ */
+  --fg-primary:        #F5F5F5;    /* Warm white */
+  --fg-secondary:      #9A9A9A;
+  --fg-tertiary:       #5A5A5A;
+
+  /* === Championship Gold system ============================ */
+  --gold:              #C9A227;    /* Flat brassy */
+  --gold-light:        #E8C547;
+  --gold-dark:         #8B6F1F;
+  --gold-gradient:     linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+  /* Use the gradient SPARINGLY — max 1–2 hero values per page. */
+
+  /* === Star tiers ========================================== */
+  --star-5: var(--gold);            /* Championship Gold */
+  --star-4: #3B82C4;                /* Deep blue */
+  --star-3: #7BA4C9;                /* Light blue */
+  --star-2: #6A6A6A;                /* Neutral */
+  --star-1: #4A4A4A;
+
+  /* === Grade scale (desaturated to harmonize w/ gold) ====== */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: var(--gold);
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* === Value deltas ======================================== */
+  --delta-pos: #2D7A4E;
+  --delta-neg: #B84545;
+  --delta-flat: var(--fg-tertiary);
+
+  /* === Live indicator ====================================== */
+  --live: #2D7A4E;   /* pulsing green dot, with gold ring */
+
+  /* === Conferences (sampled from official marks) =========== */
+  --conf-sec:    #1A3668;   /* navy · with --conf-sec-gold #FFC72A accent */
+  --conf-sec-gold: #FFC72A;
+  --conf-b1g:    #0088CE;
+  --conf-acc:    #013CA6;
+  --conf-big12:  #E81E2C;
+  --conf-pac:    #003F87;
+  --conf-aac:    #002855;
+  --conf-aac-red: #D52B1E;
+
+  /* === Type — families ===================================== */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* === Type — scale (px) =================================== */
+  /* Display (Saira Condensed) */
+  --ds-hero: 64px;   /* Page hero / huge KPI value */
+  --ds-1:    48px;   /* Section header / large KPI */
+  --ds-2:    32px;   /* KPI value / player name (expanded) */
+  --ds-3:    24px;   /* Player name (compact) / sub-header */
+  --ds-4:    18px;   /* Small display */
+
+  /* Body (Inter) */
+  --tx-lg:   16px;
+  --tx-md:   14px;   /* Default UI */
+  --tx-sm:   13px;   /* Tables */
+  --tx-xs:   12px;   /* Labels */
+  --tx-2xs:  11px;   /* Eyebrows */
+
+  /* === Weights ============================================= */
+  --w-400: 400;
+  --w-500: 500;
+  --w-600: 600;
+  --w-700: 700;
+
+  /* === Spacing (8px base) ================================== */
+  --s-1:   8px;
+  --s-2:  16px;
+  --s-3:  24px;
+  --s-4:  32px;
+  --s-5:  40px;
+  --s-6:  48px;
+  --s-7:  64px;
+  --s-8:  80px;
+  --s-half: 4px;   /* Reserved for tight inline gaps only */
+
+  /* === Radii =============================================== */
+  --r-1: 2px;     /* chips, tag */
+  --r-2: 4px;     /* buttons, inputs */
+  --r-3: 8px;     /* cards */
+  --r-4: 12px;    /* sheets */
+  --r-pill: 999px;
+
+  /* === Shadows ============================================= */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* === Motion ============================================== */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
+
+  /* === Layout ============================================== */
+  --container-max: 1280px;
+}
+
+/* ============================================================
+   Element styles — drop these into the global Streamlit
+   <style> injection block.
+   ============================================================ */
+
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num * {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* --- Display (Saira Condensed) ----------------------------- */
+.cffb-display-hero {
+  font-family: var(--font-display);
+  font-weight: var(--w-700);
+  font-size: var(--ds-hero);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-display-1 {
+  font-family: var(--font-display);
+  font-weight: var(--w-700);
+  font-size: var(--ds-1);
+  line-height: 1.05;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-display-2 {
+  font-family: var(--font-display);
+  font-weight: var(--w-700);
+  font-size: var(--ds-2);
+  line-height: 1.1;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.cffb-display-3 {
+  font-family: var(--font-display);
+  font-weight: var(--w-600);
+  font-size: var(--ds-3);
+  line-height: 1.15;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Body (Inter) ------------------------------------------ */
+.cffb-h1 {
+  font-family: var(--font-body);
+  font-weight: var(--w-700);
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.cffb-h2 {
+  font-family: var(--font-body);
+  font-weight: var(--w-600);
+  font-size: 20px;
+  line-height: 1.25;
+}
+.cffb-h3 {
+  font-family: var(--font-body);
+  font-weight: var(--w-600);
+  font-size: 16px;
+  line-height: 1.3;
+}
+.cffb-body {
+  font-size: var(--tx-md);
+  color: var(--fg-primary);
+}
+.cffb-body-sm {
+  font-size: var(--tx-sm);
+  color: var(--fg-secondary);
+}
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: var(--w-600);
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+
+/* --- Helpers ---------------------------------------------- */
+.cffb-gold-grad-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+          color: transparent;
+}
+
+/* Live pulse used by LiveIndicator */
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.5; }
+}
+@keyframes cffb-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   CFFB.css — College Fantasy Football League stylesheet
+   Drop-in stylesheet for MyFantasyLeague custom CSS.
+
+   Built on: CFFB Design System (dark mode, championship gold)
+   Inspiration: ESPN GameDay, CFP broadcast graphics, 247sports.
+
+   Sections
+   --------
+   01  Foundations  — tokens, fonts, reset
+   02  Typography   — display + body helpers
+   03  Page chrome  — top bar, sidebar, page shell, ticker
+   04  Surfaces     — cards, KPI tiles, panels
+   05  Tables       — MFL legacy tables + custom data tables
+   06  Buttons + forms
+   07  Player atoms — name plate, position chip, team chip
+   08  NEW · Redshirt chips (traditional + medical bandage)
+   09  NEW · Eligibility dots (class + years used)
+   10  NEW · Award badges (Heisman, Davey O'Brien, Doak Walker,
+            Biletnikoff, Conference All-American)
+   11  Misc · stars, conference badges, grade pills, value delta
+   12  Utilities
+   ============================================================ */
+
+
+/* ============================================================
+   01 · FOUNDATIONS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Surfaces */
+  --bg-canvas:        #0A0A0A;
+  --bg-surface:       #141414;
+  --bg-surface-elev:  #1C1C1C;
+  --bg-surface-hover: #1F1F1F;
+  --border:           #2A2A2A;
+  --border-strong:    #3A3A3A;
+
+  /* Text */
+  --fg-primary:   #F5F5F5;
+  --fg-secondary: #9A9A9A;
+  --fg-tertiary:  #5A5A5A;
+
+  /* Championship gold */
+  --gold:          #C9A227;
+  --gold-light:    #E8C547;
+  --gold-dark:     #8B6F1F;
+  --gold-gradient: linear-gradient(135deg, #E8C547 0%, #C9A227 50%, #8B6F1F 100%);
+
+  /* Star tiers */
+  --star-5: #C9A227;
+  --star-4: #3B82C4;
+  --star-3: #7BA4C9;
+  --star-2: #6A6A6A;
+  --star-1: #4A4A4A;
+
+  /* Grades */
+  --grade-a: #2D7A4E;
+  --grade-b: #4A9968;
+  --grade-c: #C9A227;
+  --grade-d: #B84545;
+  --grade-f: #B84545;
+
+  /* Deltas */
+  --delta-pos:  #2D7A4E;
+  --delta-neg:  #B84545;
+  --delta-flat: #5A5A5A;
+
+  /* Live */
+  --live: #2D7A4E;
+
+  /* Conferences */
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
+  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
+
+  /* Eligibility / Redshirt */
+  --rs-trad:    #C9A227;   /* gold shield */
+  --rs-medical: #D17575;   /* dusty red bandage */
+
+  /* Type */
+  --font-display: 'Saira Condensed', 'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Type scale */
+  --ds-hero: 64px; --ds-1: 48px; --ds-2: 32px; --ds-3: 24px; --ds-4: 18px;
+  --tx-lg: 16px; --tx-md: 14px; --tx-sm: 13px; --tx-xs: 12px; --tx-2xs: 11px;
+
+  /* Weights */
+  --w-400: 400; --w-500: 500; --w-600: 600; --w-700: 700;
+
+  /* Spacing — 8px base */
+  --s-half: 4px;
+  --s-1:  8px; --s-2: 16px; --s-3: 24px; --s-4: 32px;
+  --s-5: 40px; --s-6: 48px; --s-7: 64px; --s-8: 80px;
+
+  /* Radii */
+  --r-1: 2px; --r-2: 4px; --r-3: 8px; --r-4: 12px; --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm:        0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:        0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:        0 20px 60px rgba(0,0,0,0.7);
+  --shadow-glow-gold: 0 0 24px rgba(201,162,39,0.28);
+  --shadow-glow-live: 0 0 12px rgba(45,122,78,0.55);
+  --inset-metallic:   inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 240ms;
+
+  /* Layout */
+  --container-max: 1280px;
+  --topbar-h: 64px;
+  --ticker-h: 44px;
+}
+
+/* Reset (light, MFL-friendly) */
+
+
+/* Tabular numerics on anything that holds a number */
+.cffb-num, .cffb-num *, td.cffb-num, th.cffb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+
+/* ============================================================
+   02 · TYPOGRAPHY
+   ============================================================ */
+
+.cffb-display-hero,
+.cffb-display-1,
+.cffb-display-2,
+.cffb-display-3,
+.cffb-display-4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cffb-display-hero { font-weight: 700; font-size: var(--ds-hero); line-height: 1; }
+.cffb-display-1    { font-weight: 700; font-size: var(--ds-1); line-height: 1.05; }
+.cffb-display-2    { font-weight: 700; font-size: var(--ds-2); line-height: 1.1; }
+.cffb-display-3    { font-weight: 600; font-size: var(--ds-3); line-height: 1.15; }
+.cffb-display-4    { font-weight: 600; font-size: var(--ds-4); line-height: 1.2; }
+
+.cffb-h1 { font: 700 28px/1.2 var(--font-body); letter-spacing: -0.01em; margin: 0; }
+.cffb-h2 { font: 600 20px/1.25 var(--font-body); margin: 0; }
+.cffb-h3 { font: 600 16px/1.3 var(--font-body); margin: 0; }
+.cffb-body    { font-size: var(--tx-md); color: var(--fg-primary); }
+.cffb-body-sm { font-size: var(--tx-sm); color: var(--fg-secondary); }
+
+.cffb-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Gold-gradient text — RESERVE for the page's hero value only. */
+.cffb-gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+
+/* ============================================================
+   03 · PAGE CHROME
+   ============================================================ */
+
+.cffb-shell {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar — sticky, 64px, holds wordmark + nav + manager chip */
+.cffb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 var(--s-3);
+  gap: var(--s-3);
+}
+.cffb-topbar__brand {
+  display: flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; font-size: var(--ds-4);
+  letter-spacing: 0.02em;
+  color: var(--fg-primary);
+  border-right: 1px solid var(--border);
+  padding-right: var(--s-3);
+  height: 100%;
+}
+.cffb-topbar__brand-mark {
+  width: 28px; height: 28px;
+  background: var(--gold-gradient);
+  -webkit-mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+          mask: url('assets/cffb-mark.svg') center/contain no-repeat;
+}
+.cffb-topbar__nav {
+  display: flex; align-items: center; gap: var(--s-half);
+  height: 100%;
+}
+.cffb-topbar__nav a {
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-sm); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 0 var(--s-2); height: 100%;
+  display: inline-flex; align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cffb-topbar__nav a:hover { color: var(--fg-primary); text-decoration: none; }
+.cffb-topbar__nav a.is-active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--gold);
+}
+.cffb-topbar__spacer { flex: 1; }
+.cffb-topbar__manager {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  font-size: var(--tx-sm); font-weight: 600;
+}
+.cffb-topbar__manager-cap {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* Ticker — sticky under topbar, 44px, scrolls left */
+.cffb-ticker {
+  position: sticky; top: var(--topbar-h); z-index: 49;
+  height: var(--ticker-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.cffb-ticker__label {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 0 var(--s-2);
+  background: var(--bg-surface-elev);
+  border-right: 1px solid var(--border);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--tx-sm); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+  z-index: 2;
+}
+.cffb-ticker__track {
+  display: inline-flex; align-items: center; gap: var(--s-4);
+  white-space: nowrap;
+  padding-left: 140px;
+  animation: cffb-ticker-scroll 60s linear infinite;
+}
+.cffb-ticker__item {
+  display: inline-flex; align-items: baseline; gap: var(--s-1);
+  font-size: var(--tx-sm); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-ticker__item strong {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-primary); font-size: var(--tx-md);
+  text-transform: uppercase;
+}
+.cffb-ticker__item em { font-style: normal; color: var(--gold); font-weight: 600; }
+.cffb-ticker__sep { color: var(--border-strong); }
+@keyframes cffb-ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Page shell */
+.cffb-page {
+  flex: 1;
+  max-width: var(--container-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-3) var(--s-3) var(--s-7);
+}
+.cffb-page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--border);
+}
+.cffb-page__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 40px; line-height: 1; text-transform: uppercase;
+  letter-spacing: -0.005em;
+}
+
+/* Footer */
+.cffb-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--s-3);
+  font-size: var(--tx-xs);
+  color: var(--fg-tertiary);
+  text-align: center;
+}
+
+
+/* ============================================================
+   04 · SURFACES — cards, KPI tiles, panels
+   ============================================================ */
+
+.cffb-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3);
+}
+.cffb-card--featured { box-shadow: var(--inset-metallic); }
+.cffb-card--featured::before {
+  content: ""; display: block; height: 3px;
+  background: var(--gold-gradient);
+  margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) var(--s-2);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+.cffb-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.cffb-card__title {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.cffb-card__action {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* KPI tile */
+.cffb-kpi {
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: var(--s-2) var(--s-3) 18px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-kpi__label { /* alias for .cffb-label */
+  font-family: var(--font-body);
+  font-weight: 600; font-size: var(--tx-2xs);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.cffb-kpi__value {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--ds-1); line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.cffb-kpi__value--hero {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cffb-kpi__sub {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-kpi__sub--pos { color: var(--delta-pos); }
+.cffb-kpi__sub--neg { color: var(--delta-neg); }
+.cffb-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+/* Live indicator */
+.cffb-live {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--tx-2xs); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--live);
+}
+.cffb-live__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--live);
+  box-shadow: var(--shadow-glow-live);
+  animation: cffb-live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cffb-live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+
+/* ============================================================
+   05 · TABLES (MFL legacy + custom)
+   ============================================================ */
+
+.cffb-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+.cffb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tx-sm);
+  font-variant-numeric: tabular-nums;
+}
+.cffb-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--tx-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+  padding: 12px var(--s-2);
+  background: var(--bg-surface-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cffb-table tbody td {
+  padding: 12px var(--s-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.cffb-table tbody tr:last-child td { border-bottom: none; }
+.cffb-table tbody tr {
+  position: relative;
+  transition: background var(--dur-fast);
+}
+.cffb-table tbody tr:hover { background: var(--bg-surface-hover); }
+.cffb-table tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table tbody tr.is-active td:first-child { box-shadow: inset 2px 0 0 var(--gold); }
+.cffb-table__num { text-align: right; }
+.cffb-table__rank {
+  font-family: var(--font-display); font-weight: 700;
+  color: var(--fg-secondary);
+  width: 40px; text-align: center;
+}
+
+
+/* ============================================================
+   06 · BUTTONS + FORMS
+   ============================================================ */
+
+.cffb-btn {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body); font-weight: 600;
+  font-size: var(--tx-xs); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--bg-surface-elev);
+  color: var(--fg-primary);
+  cursor: pointer;
+  box-shadow: var(--inset-metallic);
+  transition: filter var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+.cffb-btn:hover { filter: brightness(1.08); }
+.cffb-btn:active { filter: brightness(0.9); }
+.cffb-btn--primary {
+  background: var(--gold-gradient);
+  color: #0A0A0A;
+  border-color: transparent;
+}
+.cffb-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cffb-btn--sm { padding: 6px 10px; font-size: 10px; }
+
+.cffb-input {
+  font-family: var(--font-body); font-size: var(--tx-md);
+  padding: 10px 12px;
+  background: var(--bg-surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  color: var(--fg-primary);
+  width: 100%;
+}
+.cffb-input::placeholder { color: var(--fg-tertiary); }
+.cffb-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.18);
+}
+
+
+/* ============================================================
+   07 · PLAYER ATOMS — name plate, position chip, team chip
+   ============================================================ */
+
+.cffb-player {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  min-width: 0;
+}
+.cffb-player__name {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 18px;
+  text-transform: uppercase; letter-spacing: -0.005em;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.cffb-player__meta {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cffb-pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  min-width: 28px; padding: 3px 6px;
+  border-radius: var(--r-1);
+  color: #0A0A0A;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.cffb-pos--qb { background: #C9A227; }
+.cffb-pos--rb { background: #3B82C4; color: #F5F5F5; }
+.cffb-pos--wr { background: #7BA4C9; }
+.cffb-pos--te { background: #8B6F1F; color: #F5F5F5; }
+.cffb-pos--ol { background: #6A6A6A; color: #F5F5F5; }
+.cffb-pos--def, .cffb-pos--lb, .cffb-pos--db { background: #B84545; color: #F5F5F5; }
+.cffb-pos--k  { background: #5C7A6A; color: #F5F5F5; }
+
+/* Team logo — canonical "ripped pill" PNGs in assets/teams/<slug>.png.
+   Conference badge on left, torn-paper edge, team art on right (250×60).
+   Sizes match the design system: sm 30px, md 48px, lg 60px tall. */
+.cffb-team {
+  display: inline-block;
+  height: 48px; width: auto;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.cffb-team--sm { height: 30px; }
+.cffb-team--md { height: 48px; }
+.cffb-team--lg { height: 60px; }
+
+/* Team chip — circular fallback for teams without ripped art yet */
+.cffb-team-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.cffb-team-chip--sm { width: 24px; height: 24px; font-size: 9px; }
+.cffb-team-chip--lg { width: 48px; height: 48px; font-size: 14px; }
+
+
+/* ============================================================
+   08 · REDSHIRT CHIPS — Traditional + Medical (NEW)
+   ------------------------------------------------------------
+   Sits inline next to a player's name. Shield silhouette,
+   gold for traditional, dusty-red bandage for medical.
+
+   Markup:
+     <span class="cffb-rs cffb-rs--trad" title="Traditional Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield…</svg>
+       <span class="cffb-rs__txt">RS</span>
+     </span>
+     <span class="cffb-rs cffb-rs--med" title="Medical Redshirt">
+       <svg class="cffb-rs__icon" viewBox="0 0 20 22">…shield+bandage…</svg>
+       <span class="cffb-rs__txt">MRS</span>
+     </span>
+
+   Sizes: --xs (12px), --sm (14px default), --md (18px)
+   ------------------------------------------------------------ */
+
+.cffb-rs {
+  display: inline-flex; align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.cffb-rs__icon {
+  display: block;
+  width: 14px; height: auto;
+  flex-shrink: 0;
+}
+.cffb-rs__txt {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Sizes */
+.cffb-rs--xs .cffb-rs__icon { width: 10px; }
+.cffb-rs--xs .cffb-rs__txt  { font-size: 8.5px; }
+.cffb-rs--sm .cffb-rs__icon { width: 14px; }
+.cffb-rs--sm .cffb-rs__txt  { font-size: 10px; }
+.cffb-rs--md .cffb-rs__icon { width: 18px; }
+.cffb-rs--md .cffb-rs__txt  { font-size: 12px; }
+
+/* Traditional */
+.cffb-rs--trad           { color: var(--rs-trad); }
+.cffb-rs--trad .cffb-rs__icon { stroke: var(--rs-trad); fill: rgba(201,162,39,0.08); }
+
+/* Medical */
+.cffb-rs--med            { color: var(--rs-medical); }
+.cffb-rs--med .cffb-rs__icon { stroke: var(--rs-medical); fill: rgba(209,117,117,0.08); }
+
+/* Icon-only variant (no text), used in tight rows/tables */
+.cffb-rs--solo .cffb-rs__txt { display: none; }
+.cffb-rs--solo { gap: 0; }
+
+
+/* ============================================================
+   09 · ELIGIBILITY DOTS — class + years used (NEW)
+   ------------------------------------------------------------
+   Class label (FR / SO / JR / SR / GR) + 5 dots showing years
+   used / remaining. Redshirt years marked with a ring (◎) instead
+   of a fill — communicates "burned a year but no eligibility used".
+
+   Markup:
+     <span class="cffb-elig">
+       <span class="cffb-elig__class">JR</span>
+       <span class="cffb-elig__dots" aria-label="2 of 5 eligibility used">
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot is-rs"></span>   ← redshirt
+         <span class="cffb-elig__dot is-used"></span>
+         <span class="cffb-elig__dot"></span>
+         <span class="cffb-elig__dot"></span>
+       </span>
+       <span class="cffb-elig__remain">2 left</span>
+     </span>
+   ------------------------------------------------------------ */
+
+.cffb-elig {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.cffb-elig__class {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 26px; padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-1);
+  color: var(--fg-primary);
+  text-align: center;
+  background: var(--bg-surface-elev);
+}
+.cffb-elig__class--fr { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--so { border-color: var(--gold-dark); color: var(--gold-light); }
+.cffb-elig__class--jr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--sr { border-color: var(--gold); color: var(--gold); }
+.cffb-elig__class--gr { border-color: var(--gold-light); color: var(--gold-light); background: rgba(201,162,39,0.12); }
+
+.cffb-elig__dots {
+  display: inline-flex; gap: 3px; align-items: center;
+}
+.cffb-elig__dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.cffb-elig__dot.is-used {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.cffb-elig__dot.is-rs {
+  /* Redshirt: filled ring with hollow center — "year burned, no game time" */
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-trad) 2.5px 100%);
+  border-color: var(--rs-trad);
+}
+.cffb-elig__dot.is-rs-med {
+  background:
+    radial-gradient(circle, transparent 0 2.5px, var(--rs-medical) 2.5px 100%);
+  border-color: var(--rs-medical);
+}
+.cffb-elig__remain {
+  font-size: var(--tx-xs); color: var(--fg-secondary);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Compact variant — no remaining label, no class chip */
+.cffb-elig--compact { gap: var(--s-half); }
+.cffb-elig--compact .cffb-elig__class { display: none; }
+.cffb-elig--compact .cffb-elig__remain { display: none; }
+
+
+/* ============================================================
+   10 · AWARD BADGES — Heisman, Davey O'Brien, Doak Walker,
+        Biletnikoff, Conference All-American (NEW)
+   ------------------------------------------------------------
+   Stacked horizontal badges with a stroke-icon glyph, award
+   name, and year. The Heisman is the hero — metallic gold
+   gradient fill; the four position awards share a uniform
+   gold-outline treatment. Conference All-American picks up the
+   player's conference accent color.
+
+   Markup:
+     <div class="cffb-awards">
+       <span class="cffb-award cffb-award--heisman">
+         <svg class="cffb-award__glyph" viewBox="0 0 24 24">…</svg>
+         <span class="cffb-award__name">Heisman</span>
+         <span class="cffb-award__year">2024</span>
+       </span>
+       <span class="cffb-award cffb-award--obrien">…</span>
+       …
+     </div>
+   ------------------------------------------------------------ */
+
+.cffb-awards {
+  display: flex; flex-wrap: wrap;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.cffb-award {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-elev);
+  font-family: var(--font-body);
+  font-size: var(--tx-xs); font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  transition: filter var(--dur-fast);
+  cursor: default;
+}
+.cffb-award:hover { filter: brightness(1.08); }
+
+.cffb-award__glyph {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75;
+  color: var(--gold);
+}
+.cffb-award__name {
+  letter-spacing: 0.04em;
+}
+.cffb-award__year {
+  color: var(--fg-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* Heisman — hero treatment, metallic gold fill */
+.cffb-award--heisman {
+  background: var(--gold-gradient);
+  border-color: transparent;
+  color: #0A0A0A;
+  box-shadow: var(--shadow-glow-gold), var(--inset-metallic);
+  font-weight: 700;
+}
+.cffb-award--heisman .cffb-award__glyph { color: #0A0A0A; stroke-width: 2; }
+.cffb-award--heisman .cffb-award__year  { color: rgba(10,10,10,0.65); }
+
+/* Position awards — gold outline */
+.cffb-award--obrien,
+.cffb-award--walker,
+.cffb-award--biletnikoff {
+  border-color: rgba(201,162,39,0.45);
+  background: rgba(201,162,39,0.06);
+}
+
+/* Conference All-American — picks up conference color */
+.cffb-award--allamerican {
+  border-color: rgba(154,154,154,0.35);
+}
+.cffb-award--allamerican.is-sec   { border-color: rgba(201,162,39,0.45); color: var(--fg-primary); }
+.cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
+.cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
+.cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
+.cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+
+/* Size variants */
+.cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
+.cffb-awards--sm .cffb-award__glyph { width: 13px; height: 13px; }
+.cffb-awards--sm .cffb-award__year { font-size: 10px; }
+
+
+/* ============================================================
+   11 · MISC — stars, conference badges, grade pills, value delta
+   ============================================================ */
+
+/* Stars */
+.cffb-stars { display: inline-flex; align-items: center; gap: 2px; }
+.cffb-star { font-size: 14px; line-height: 1; color: var(--star-5); }
+.cffb-star--off { color: var(--border); }
+.cffb-stars--t5 .cffb-star { color: var(--star-5); }
+.cffb-stars--t4 .cffb-star { color: var(--star-4); }
+.cffb-stars--t3 .cffb-star { color: var(--star-3); }
+.cffb-stars--t2 .cffb-star { color: var(--star-2); }
+
+/* Conference badges */
+.cffb-conf {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-body); font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: var(--r-1);
+  border: 1px solid transparent; color: var(--fg-primary);
+}
+.cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
+.cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
+.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
+.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
+.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
+.cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
+
+/* Grade pill */
+.cffb-grade {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: -0.02em; text-transform: uppercase;
+  border-radius: var(--r-2);
+  padding: 4px 10px 5px; color: var(--fg-primary);
+  font-size: 20px;
+}
+.cffb-grade--sm { font-size: 14px; padding: 2px 6px 3px; }
+.cffb-grade--lg { font-size: 36px; padding: 6px 16px 8px; line-height: 1; }
+.cffb-grade--a  { background: var(--gold-gradient); color: #0A0A0A; box-shadow: 0 0 12px rgba(201,162,39,0.25); }
+.cffb-grade--b  { background: var(--grade-a); color: var(--fg-primary); }
+.cffb-grade--bp { background: var(--grade-b); color: var(--fg-primary); }
+.cffb-grade--c  { background: var(--gold); color: #0A0A0A; }
+.cffb-grade--d  { background: var(--grade-d); color: var(--fg-primary); }
+.cffb-grade--f  { background: var(--grade-f); color: var(--fg-primary); }
+
+/* Value delta */
+.cffb-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-body); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tx-sm);
+}
+.cffb-delta--pos  { color: var(--delta-pos); }
+.cffb-delta--neg  { color: var(--delta-neg); }
+.cffb-delta--flat { color: var(--delta-flat); }
+.cffb-delta__arrow { font-size: 0.85em; line-height: 1; }
+
+
+/* ============================================================
+   12 · UTILITIES
+   ============================================================ */
+
+.cffb-row     { display: flex; gap: var(--s-2); align-items: center; }
+.cffb-row--sb { justify-content: space-between; }
+.cffb-row--end{ justify-content: flex-end; }
+.cffb-stack   { display: flex; flex-direction: column; gap: var(--s-1); }
+.cffb-stack--2 { gap: var(--s-2); }
+.cffb-stack--3 { gap: var(--s-3); }
+
+.cffb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+.cffb-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.cffb-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.cffb-divider { height: 1px; background: var(--border); margin: var(--s-2) 0; }
+.cffb-spacer  { flex: 1; }
+
+.cffb-muted     { color: var(--fg-secondary); }
+.cffb-tertiary  { color: var(--fg-tertiary); }
+.cffb-gold      { color: var(--gold); }
+.cffb-mono      { font-family: var(--font-mono); }
+
+.cffb-mt-1 { margin-top: var(--s-1); }
+.cffb-mt-2 { margin-top: var(--s-2); }
+.cffb-mt-3 { margin-top: var(--s-3); }
+.cffb-mb-2 { margin-bottom: var(--s-2); }
+
+.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}
+</style>
+<x-dc>
+<helmet>
+<style>
+@keyframes cffb-aw-glow{0%,100%{opacity:.55}50%{opacity:.9}}
+</style>
+</helmet>
+<div style="max-width:1280px;margin:0 auto;padding:0 24px 72px;font-family:var(--font-body);color:var(--fg-primary);background:var(--bg-canvas);">
+
+  <div style="position:relative;padding:48px 0 32px;overflow:hidden;border-bottom:1px solid var(--border);">
+    <div style="position:relative;">
+      <div style="display:flex;align-items:baseline;gap:14px;">
+        <div style="width:8px;height:26px;background:var(--gold-gradient);border-radius:1px;"></div>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">League Awards and Recruiting Dollars</div>
+      </div>
+      <div style="margin-top:14px;font-size:var(--tx-md);color:var(--fg-secondary);max-width:560px;text-wrap:pretty;">Award shortlists and projected recruiting dollars, live through Week {{ week }}.</div>
+      <div style="display:flex;width:max-content;margin-top:24px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);padding:4px;gap:4px;">
+        <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="2">
+          <button onClick="{{ v.onSelect }}" style="cursor:pointer;padding:11px 26px;border-radius:var(--r-2);font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase;border:none;transition:color var(--dur-fast) var(--ease-out);background:transparent;color:var(--fg-tertiary);{{ v.activeStyle }}" style-hover="color:var(--fg-primary)">{{ v.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+<sc-if value="{{ isAwards }}" hint-placeholder-val="{{ true }}">
+<div>
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:44px 0 20px;">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <div style="width:8px;height:26px;background:var(--gold-gradient);border-radius:1px;"></div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">National Awards</div>
+    </div>
+    <div style="font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">5 Trophies · Top 10 Finalists</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+    <sc-for list="{{ awardTabs }}" as="tab" hint-placeholder-count="5">
+      <button onClick="{{ tab.onSelect }}" style="flex:1 1 170px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;cursor:pointer;padding:13px 15px;border-radius:var(--r-3);font-family:var(--font-body);transition:filter var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ tab.activeStyle }}" style-hover="filter:brightness(1.12)">
+        <span style="font:600 9px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--fg-primary);color:{{ tab.honorsColor }};">{{ tab.honors }}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:19px;line-height:1;text-transform:uppercase;margin-top:7px;">{{ tab.name }}</span>
+        <span style="display:flex;align-items:center;gap:6px;margin-top:9px;font-size:11px;color:var(--fg-secondary);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);flex:none;"></span>{{ tab.leader }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">
+
+    <div style="flex:1 1 340px;position:relative;display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:20px 22px;overflow:hidden;">
+      <sc-if value="{{ highlightLeader }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold-gradient);pointer-events:none;z-index:2;"></span><span style="position:absolute;inset:0;border-radius:8px;box-shadow:var(--shadow-glow-gold);pointer-events:none;"></span></sc-if>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <span style="font:700 var(--tx-2xs)/1 var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);">★ Front-Runner</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--fg-tertiary);">01</span>
+      </div>
+      <div style="display:grid;grid-template-columns:132px 1fr;gap:18px;align-items:center;margin:18px 0;">
+        <div style="position:relative;width:132px;aspect-ratio:4/5;border-radius:6px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.35);outline-offset:-8px;">
+          <div style="position:absolute;top:0;left:0;right:0;height:4px;z-index:3;background:var(--border-strong);background:{{ leader.teamColor }};"></div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#3A3A3A;">
+            <svg viewBox="0 0 56 56" style="width:46px;height:46px;stroke:#3A3A3A;fill:none;stroke-width:1.5;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+            <span style="font:700 9px/1 var(--font-body);letter-spacing:.24em;color:#5A5A5A;">PHOTO</span>
+            <span style="font:500 8px/1 var(--font-body);letter-spacing:.14em;color:#3A3A3A;">MFL PROFILE</span>
+          </div>
+          <span style="position:absolute;top:8px;left:8px;z-index:4;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.06em;padding:3px 6px;border-radius:2px;color:#F5F5F5;background:rgba(10,10,10,.78);">{{ leader.cls }}</span>
+          <div style="position:absolute;bottom:-8px;left:-8px;z-index:5;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 3px var(--bg-surface);background:var(--border-strong);background:{{ leader.teamColor }};color:var(--fg-primary);color:{{ leader.teamTxt }};">{{ leader.teamAbbr }}</div>
+        </div>
+        <div style="min-width:0;display:flex;flex-direction:column;justify-content:center;">
+          <div style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:2px;font:700 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;background:rgba(201,162,39,.12);color:var(--gold);border:1px solid rgba(201,162,39,.3);">{{ leader.badgeLabel }} {{ leader.badge }}</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:36px;line-height:.94;text-transform:uppercase;margin-top:12px;text-wrap:balance;">{{ leader.name }}</div>
+          <div style="font-size:12px;color:var(--fg-secondary);margin-top:8px;">{{ leader.subline }}</div>
+          <div style="margin-top:16px;display:flex;align-items:baseline;gap:8px;padding:10px 12px;border-radius:var(--r-2);background:var(--bg-surface-elev);border:1px solid var(--border);align-self:flex-start;">
+            <span style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--delta-pos);" class="cffb-num">{{ leader.cushionVal }}</span>
+            <span style="font:600 9px/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-secondary);">{{ leader.cushionLabel }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--border);">
+        <sc-for list="{{ leader.metrics }}" as="m" hint-placeholder-count="3">
+          <div>
+            <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">{{ m.label }}</div>
+            <sc-if value="{{ m.isHero }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;margin-top:4px;background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;" class="cffb-num">{{ m.value }}</div></sc-if>
+            <sc-if value="{{ m.isPlain }}" hint-placeholder-val="{{ true }}"><div style="font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;margin-top:4px;" class="cffb-num">{{ m.value }}</div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:2 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto;">
+     <div style="min-width:560px;">
+      <div style="display:grid;grid-template-columns:28px 44px max-content 1fr 58px 46px 58px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">
+        <span>#</span><span></span><span></span><span>Chasing the Trophy</span><span style="text-align:right;">{{ statMainLabel }}</span><span style="text-align:right;">{{ statSubLabel }}</span><span style="text-align:right;color:var(--gold);">Score</span>
+      </div>
+      <sc-for list="{{ finalists }}" as="f" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:28px 44px max-content 1fr 58px 46px 58px;gap:12px;align-items:center;padding:10px 18px;border-bottom:1px solid rgba(42,42,42,.55);" style-hover="background:var(--bg-surface-hover)">
+          <span style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--fg-tertiary);" class="cffb-num">{{ f.rankStr }}</span>
+          <span style="position:relative;width:40px;height:40px;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;">
+            <span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--border-strong);background:{{ f.teamColor }};"></span>
+            <svg viewBox="0 0 56 56" style="position:absolute;inset:0;margin:auto;width:26px;height:26px;stroke:#3A3A3A;fill:none;stroke-width:1.6;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+          </span>
+          <span style="display:inline-flex;align-items:stretch;justify-self:start;width:max-content;height:24px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+            <span style="width:5px;background:var(--border-strong);background:{{ f.confAccent }};"></span>
+            <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;white-space:nowrap;background:var(--border-strong);background:{{ f.teamColor }};color:var(--fg-primary);color:{{ f.teamTxt }};">{{ f.teamAbbr }}</span>
+          </span>
+          <span style="min-width:0;">
+            <span style="display:block;font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
+            <span style="display:block;font-size:11px;color:var(--fg-secondary);margin-top:1px;">{{ f.meta }}</span>
+          </span>
+          <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:19px;" class="cffb-num">{{ f.statMain }}</span>
+          <span style="text-align:right;font-size:12px;color:var(--fg-secondary);" class="cffb-num">{{ f.statSub }}</span>
+          <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--gold);" class="cffb-num">{{ f.score }}</span>
+        </div>
+      </sc-for>
+     </div>
+    </div>
+  </div>
+
+  <div style="height:1px;background:var(--border);margin:48px 0 0;"></div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:44px 0 20px;">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <div style="width:8px;height:26px;border-radius:1px;background:var(--border-strong);background:{{ conf.accent }};"></div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">All-Conference Teams</div>
+    </div>
+    <div style="font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">First · Second · Third Team</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;margin-bottom:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);">
+    <sc-for list="{{ confTabs }}" as="c" hint-placeholder-count="6">
+      <button onClick="{{ c.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ c.activeStyle }}" style-hover="color:var(--fg-primary)">
+        <span style="width:22px;height:22px;flex-shrink:0;background-size:contain;background-repeat:no-repeat;background-position:center;transition:filter var(--dur-fast) var(--ease-out);{{ c.logoStyle }}"></span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ c.label }}</span>
+        <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ c.countColor }}" class="cffb-num">{{ c.count }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="display:inline-flex;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-2);padding:3px;gap:3px;">
+      <sc-for list="{{ tierTabs }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.onSelect }}" style="cursor:pointer;padding:7px 15px;border-radius:3px;font:600 12px/1 var(--font-body);letter-spacing:.04em;border:none;transition:color var(--dur-fast) var(--ease-out);background:transparent;color:var(--fg-tertiary);{{ t.activeStyle }}" style-hover="color:var(--fg-primary)">{{ t.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:8px;font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-primary);color:{{ conf.accent }};"><span style="width:7px;height:7px;border-radius:50%;background:var(--border-strong);background:{{ conf.accent }};"></span>{{ conf.label }} · {{ tierLabel }}</div>
+  </div>
+
+  <div style="overflow-x:auto;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;">
+   <div style="min-width:740px;">
+    <div style="display:grid;grid-template-columns:52px 44px 1fr 50px 60px 54px 60px 58px;gap:10px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-tertiary);">
+      <span>Pos</span><span></span><span>Player</span><span style="text-align:right;">Pos Rk</span><span style="text-align:right;">Fan Pts</span><span style="text-align:right;">% Team</span><span style="text-align:right;">Conf Pts</span><span style="text-align:right;color:var(--gold);">Score</span>
+    </div>
+    <sc-for list="{{ roster }}" as="p" hint-placeholder-count="8">
+      <div style="display:grid;grid-template-columns:52px 44px 1fr 50px 60px 54px 60px 58px;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(42,42,42,.55);" style-hover="background:var(--bg-surface-hover)">
+        <span style="justify-self:start;font-family:var(--font-display);font-weight:700;font-size:13px;text-align:center;padding:4px 7px;border-radius:2px;background:var(--border-strong);background:{{ p.posColor }};color:var(--fg-primary);color:{{ p.posTxt }};">{{ p.pos }}</span>
+        <span style="position:relative;width:40px;height:40px;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;">
+          <span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--border-strong);background:{{ p.teamColor }};"></span>
+          <svg viewBox="0 0 56 56" style="position:absolute;inset:0;margin:auto;width:26px;height:26px;stroke:#3A3A3A;fill:none;stroke-width:1.6;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+        </span>
+        <span style="min-width:0;">
+          <span style="display:block;font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</span>
+          <span style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+            <span style="display:inline-flex;align-items:stretch;height:20px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+              <span style="width:6px;background:var(--border-strong);background:{{ conf.accent }};"></span>
+              <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;background:var(--border-strong);background:{{ p.teamColor }};color:var(--fg-primary);color:{{ p.teamTxt }};">{{ p.teamAbbr }}</span>
+            </span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:.04em;padding:2px 6px;border-radius:2px;background:var(--bg-surface-elev);border:1px solid var(--border);color:var(--fg-secondary);">{{ p.cls }}</span>
+          </span>
+        </span>
+        <span style="text-align:right;font-size:12px;color:var(--fg-secondary);" class="cffb-num">{{ p.posRank }}</span>
+        <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:19px;" class="cffb-num">{{ p.pts }}</span>
+        <span style="text-align:right;font-size:13px;color:var(--fg-primary);" class="cffb-num">{{ p.pctTeam }}</span>
+        <span style="text-align:right;font-size:13px;color:var(--fg-secondary);" class="cffb-num">{{ p.confPts }}</span>
+        <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--gold);" class="cffb-num">{{ p.score }}</span>
+      </div>
+    </sc-for>
+   </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRecruiting }}" hint-placeholder-val="{{ false }}">
+<div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:44px 0 20px;">
+    <div style="display:flex;align-items:baseline;gap:14px;">
+      <div style="width:8px;height:26px;border-radius:1px;background:var(--gold-gradient);"></div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1;text-transform:uppercase;">Recruiting Bonus Dollars</div>
+    </div>
+    <div style="font:600 var(--tx-2xs)/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">Bonus $ Accrued for Next Season · Thru Week {{ recWeek }}</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;margin-bottom:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);">
+    <sc-for list="{{ recConfTabs }}" as="rc" hint-placeholder-count="7">
+      <button onClick="{{ rc.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ rc.activeStyle }}" style-hover="color:var(--fg-primary)">
+        <sc-if value="{{ rc.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="width:22px;height:22px;flex-shrink:0;background-size:contain;background-repeat:no-repeat;background-position:center;transition:filter var(--dur-fast) var(--ease-out);{{ rc.logoStyle }}"></span></sc-if>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ rc.label }}</span>
+        <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ rc.countColor }}" class="cffb-num">{{ rc.count }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">
+
+    <div style="flex:3 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--border);">
+        <span style="font:700 var(--tx-2xs)/1 var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--fg-secondary);">League Standings · Bonus $ Accrued</span>
+        <span style="font:600 9px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-tertiary);">{{ recScopeLabel }} · Click a program for its breakdown</span>
+      </div>
+      <div style="max-height:620px;overflow-y:auto;">
+      <sc-for list="{{ recRank }}" as="rr" hint-placeholder-count="10">
+        <button onClick="{{ rr.onSelect }}" style="display:grid;grid-template-columns:30px 96px 1fr 64px;gap:12px;align-items:center;width:100%;text-align:left;cursor:pointer;padding:9px 18px;border:none;border-bottom:1px solid rgba(42,42,42,.55);font-family:var(--font-body);background:transparent;{{ rr.rowStyle }}" style-hover="background:var(--bg-surface-hover)">
+          <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--fg-tertiary);" class="cffb-num">{{ rr.rankStr }}</span>
+          <sc-if value="{{ rr.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="justify-self:start;width:96px;height:24px;background-size:contain;background-repeat:no-repeat;background-position:left center;{{ rr.logoStyle }}"></span></sc-if>
+          <sc-if value="{{ rr.noLogo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:stretch;justify-self:start;width:max-content;height:24px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+            <span style="width:5px;background:var(--border-strong);background:{{ rr.confAccent }};"></span>
+            <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;white-space:nowrap;background:var(--border-strong);background:{{ rr.color }};color:var(--fg-primary);color:{{ rr.txt }};">{{ rr.abbr }}</span>
+          </span></sc-if>
+          <span style="min-width:0;display:flex;align-items:center;">
+            <span style="height:14px;border-radius:2px;flex:none;background:var(--border-strong);{{ rr.barStyle }}"></span>
+          </span>
+          <span style="text-align:right;font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--gold);" class="cffb-num">${{ rr.total }}</span>
+        </button>
+      </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:2 1 340px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span style="display:inline-flex;align-items:stretch;height:32px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);">
+            <span style="width:6px;background:var(--border-strong);background:{{ sel.confAccent }};"></span>
+            <span style="display:flex;align-items:center;padding:0 11px;font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;background:var(--border-strong);background:{{ sel.color }};color:var(--fg-primary);color:{{ sel.txt }};">{{ sel.abbr }}</span>
+          </span>
+          <span style="text-align:right;font:600 9px/1.6 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">League Rank {{ sel.rankStr }}<span style="display:block;color:{{ sel.confAccent }};">{{ sel.confLabel }} Rank {{ sel.confRankStr }}</span></span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:14px;">
+          <span style="font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1;background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;" class="cffb-num">${{ sel.total }}</span>
+          <span style="font:600 9px/1.2 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-secondary);">Bonus $ for {{ nextSeason }}</span>
+        </div>
+        <div style="display:flex;height:10px;border-radius:var(--r-pill);overflow:hidden;margin-top:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+          <span style="background:#C9A227;{{ sel.winsW }}"></span>
+          <span style="background:#3B82C4;{{ sel.awardsW }}"></span>
+          <span style="background:#2F7D5C;{{ sel.rivW }}"></span>
+          <span style="background:#C4574E;{{ sel.draftW }}"></span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-bottom:1px solid var(--border);">
+        <div style="padding:12px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-top:3px solid #C9A227;">
+          <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">Wins</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">{{ sel.wins }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.winsPct }} of total</div>
+        </div>
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);border-top:3px solid #3B82C4;">
+          <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">Player Awards</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">{{ sel.awards }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.awardsPct }} of total</div>
+        </div>
+        <div style="padding:12px 14px;border-right:1px solid var(--border);border-top:3px solid #2F7D5C;">
+          <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">Rivalry Wagers</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">{{ sel.rivalry }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.rivPct }} of total</div>
+        </div>
+        <div style="padding:12px 14px;border-top:3px solid #C4574E;">
+          <div style="font:600 9px/1.1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-secondary);">Draft − Retention</div>
+          <div style="font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1;margin-top:5px;" class="cffb-num">{{ sel.draft }}</div>
+          <div style="font-size:10px;color:var(--fg-tertiary);margin-top:3px;" class="cffb-num">{{ sel.draftPct }} of total</div>
+        </div>
+      </div>
+      <div style="padding:14px 18px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 9px/1.5 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-tertiary);">
+          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#C9A227;"></span>Wins</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#3B82C4;"></span>Awards</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#2F7D5C;"></span>Rivalry</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#C4574E;"></span>Draft − Retention</span>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:var(--fg-tertiary);line-height:1.5;">Bonus $ accrues toward next season's recruiting budget from wins, national &amp; all-conference player awards, rivalry wagers, and the draft (less retention costs). {{ recStatus }} · Thru Week {{ recWeek }}.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1180},&quot;defaultView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Awards Watch&quot;,&quot;options&quot;:[&quot;Awards Watch&quot;,&quot;Recruiting $&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Dashboard&quot;,&quot;label&quot;:&quot;Default view on load&quot;},&quot;highlightLeader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Awards&quot;,&quot;label&quot;:&quot;Gold hero treatment on front-runner&quot;},&quot;maxFinalists&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:9,&quot;min&quot;:4,&quot;max&quot;:9,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Awards&quot;,&quot;label&quot;:&quot;Finalists shown per national award&quot;}}">
+class Component extends DCLogic {
+  state = { view: null, award: 'heisman', conf: 'sec', tier: 'first', recConf: 'all', recTeam: null };
+
+  componentDidMount() {
+    if (!window.CFFB_AWARDS || !window.CFFB_RECRUITING) {
+      this._t = setInterval(() => {
+        if (window.CFFB_AWARDS && window.CFFB_RECRUITING) { clearInterval(this._t); this.forceUpdate(); }
+      }, 40);
+    }
+  }
+  componentWillUnmount() { if (this._t) clearInterval(this._t); }
+
+  posColor(pos) {
+    const m = { QB:['#C9A227','#0A0A0A'], RB:['#3B82C4','#F5F5F5'], WR:['#7BA4C9','#0A0A0A'], TE:['#8B6F1F','#F5F5F5'], HC:['#2A2A2A','#F5F5F5'] };
+    return m[pos] || ['#C9A227','#0A0A0A'];
+  }
+  clsFull(c) { return ({ FR:'Freshman', SO:'Sophomore', JR:'Junior', SR:'Senior', GR:'Graduate' })[c] || c; }
+  pad(n) { return n < 10 ? '0' + n : '' + n; }
+  fmt2(n) { return (+n).toFixed(2); }
+  scoreOf(f, isCoach) {
+    if (isCoach) { const wins = +(f.overall.split('-')[0]) || 0; return Math.round(f.teamPts * 0.45) + wins * 6 + Math.round(f.swing * 1.5); }
+    return Math.round(f.pts * 0.55) + Math.round(f.confPts * 0.25) + Math.round(f.pctTeam * 4 * 0.20);
+  }
+
+  buildLeader(award, highlight) {
+    const f = award.finalists[0], nx = award.finalists[1];
+    if (!f) {
+      return { name: '—', cls: '', teamAbbr: '', teamColor: '#2A2A2A', teamTxt: '#fff',
+        subline: 'No winners yet', badgeLabel: '', badge: '', cushionVal: '', cushionLabel: '',
+        score: 0, metrics: [] };
+    }
+    const owner = (f.team && f.team.owner) || '';
+    if (award.isCoach) {
+      const lead = nx ? f.pts - nx.pts : 0;
+      return {
+        name: f.name, cls: f.team.abbr, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+        subline: f.team.name + (owner ? ' · ' + owner : '') + ' · Head Coach',
+        badgeLabel: 'WINS', badge: f.teamWins + ' W',
+        cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Team-PF lead over #2',
+        score: f.awardScore,
+        metrics: [
+          { label: 'WINS', value: '' + f.teamWins, isHero: false, isPlain: true },
+          { label: 'TEAM PF', value: this.fmt2(f.pts), isHero: false, isPlain: true },
+          { label: 'AWARD SCORE', value: this.fmt2(f.awardScore), isHero: !!highlight, isPlain: !highlight },
+        ],
+      };
+    }
+    const lead = nx ? f.pts - nx.pts : 0;
+    return {
+      name: f.name, cls: f.team.abbr, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      subline: f.team.name + (owner ? ' · ' + owner : ''), badgeLabel: f.pos + ' RANK', badge: '#' + f.posRank,
+      cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Fantasy-pt lead over #2',
+      score: f.awardScore,
+      metrics: [
+        { label: 'FANTASY PTS', value: this.fmt2(f.pts), isHero: !!highlight, isPlain: !highlight },
+        { label: '% OF TEAM', value: f.pctTeam + '%', isHero: false, isPlain: true },
+        { label: 'AWARD SCORE', value: this.fmt2(f.awardScore), isHero: false, isPlain: true },
+      ],
+    };
+  }
+
+  buildFinalist(f, isCoach) {
+    const owner = (f.team && f.team.owner) || f.team.name;
+    if (isCoach) return {
+      rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      meta: owner + ' · ' + f.teamWins + ' W', statMain: this.fmt2(f.pts), statSub: f.teamWins + 'W',
+      score: this.fmt2(f.awardScore),
+    };
+    return {
+      rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      meta: f.pos + ' #' + f.posRank + ' · ' + owner, statMain: this.fmt2(f.pts), statSub: f.pctTeam + '%',
+      score: this.fmt2(f.awardScore),
+    };
+  }
+
+  confLogoStyle(id, active) {
+    const url = (window.__CFFB_AWARDS_LOGOS && window.__CFFB_AWARDS_LOGOS[id]) || '';
+    if (!url) return '';
+    return 'background-image:url(' + url + ');' + (active ? '' : 'filter:grayscale(1) opacity(.55);');
+  }
+  money(n) { n = Math.round(n || 0); return (n < 0 ? '-$' : '$') + Math.abs(n); }
+
+  buildRecruiting(R, D) {
+    const keys = Object.keys(R.teams);
+    const ranked = keys.map((k) => ({ key: k, ...R.teams[k] })).sort((a, b) => (b.total || 0) - (a.total || 0));
+    ranked.forEach((t, i) => { t.rank = i + 1; });
+
+    const confKey = this.state.recConf;
+    const recConfTabs = [{ key: 'all', label: 'All Teams' }]
+      .concat(D.confOrder.map((k) => ({ key: k, label: (D.conferences[k] || {}).label || k })))
+      .map((c) => {
+        const active = c.key === confKey;
+        const count = c.key === 'all' ? ranked.length : ranked.filter((t) => t.conf === c.key).length;
+        return {
+          key: c.key, label: c.label, count,
+          hasLogo: c.key !== 'all' && !!(window.__CFFB_AWARDS_LOGOS && window.__CFFB_AWARDS_LOGOS[c.key]),
+          logoStyle: c.key === 'all' ? '' : this.confLogoStyle(c.key, active),
+          countColor: active ? 'color:var(--gold);' : '',
+          activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);' : '',
+          onSelect: () => this.setState({ recConf: c.key }),
+        };
+      });
+
+    const scoped = confKey === 'all' ? ranked : ranked.filter((t) => t.conf === confKey);
+    const selT = ranked.find((t) => t.key === this.state.recTeam) || scoped[0] || ranked[0] || {};
+    const max = Math.max(...scoped.map((t) => t.total || 0), 1);
+    const recRank = scoped.map((t) => ({
+      key: t.key, rankStr: this.pad(t.rank), abbr: t.abbr || t.key, name: t.name, total: t.total || 0,
+      color: t.color, txt: t.txt,
+      hasLogo: false, noLogo: true, logoStyle: '',
+      confAccent: (D.conferences[t.conf] || {}).accent || 'var(--gold)',
+      barStyle: 'width:' + Math.max(3, Math.round(((t.total || 0) / max) * 100)) + '%;background:' + t.color + ';' + (t.key === selT.key ? '' : 'opacity:.55;'),
+      rowStyle: t.key === selT.key ? 'background:var(--bg-surface-elev);box-shadow:inset 3px 0 0 var(--gold);' : '',
+      onSelect: () => this.setState({ recTeam: t.key }),
+    }));
+
+    // Category breakdown for the selected team: Wins / Awards / Rivalry / Draft−Retention.
+    const cat = { wins: selT.wins || 0, awards: selT.awards || 0, rivalry: selT.rivalryNet || 0, draft: selT.draftNet || 0 };
+    const posSum = Math.max(Math.max(cat.wins, 0) + Math.max(cat.awards, 0) + Math.max(cat.rivalry, 0) + Math.max(cat.draft, 0), 1);
+    const wpct = (n) => Math.round((Math.max(n, 0) / posSum) * 100);
+    const tpct = (n) => selT.total ? Math.round((n / selT.total) * 100) : 0;
+    const sel = {
+      abbr: selT.abbr || selT.key || '', name: selT.name || '', color: selT.color || '#2A2A2A', txt: selT.txt || '#fff',
+      confAccent: (D.conferences[selT.conf] || {}).accent || 'var(--gold)',
+      rankStr: '#' + (selT.rank || ''), total: selT.total || 0,
+      confLabel: (D.conferences[selT.conf] || {}).label || '',
+      confRankStr: '#' + (ranked.filter((t) => t.conf === selT.conf).findIndex((t) => t.key === selT.key) + 1),
+      wins: this.money(cat.wins), awards: this.money(cat.awards), rivalry: this.money(cat.rivalry), draft: this.money(cat.draft),
+      winsPct: tpct(cat.wins) + '%', awardsPct: tpct(cat.awards) + '%', rivPct: tpct(cat.rivalry) + '%', draftPct: tpct(cat.draft) + '%',
+      winsW: 'width:' + wpct(cat.wins) + '%;', awardsW: 'width:' + wpct(cat.awards) + '%;', rivW: 'width:' + wpct(cat.rivalry) + '%;', draftW: 'width:' + wpct(cat.draft) + '%;',
+    };
+    return {
+      recWeek: R.week, nextSeason: (R.season || 0) + 1, recStatus: R.status || '',
+      recScopeLabel: confKey === 'all' ? 'All Conferences' : (D.conferences[confKey] || {}).label,
+      recConfTabs, recRank, sel,
+    };
+  }
+
+  renderVals() {
+    const D = window.CFFB_AWARDS;
+    const R = window.CFFB_RECRUITING;
+    const highlight = this.props.highlightLeader !== false;
+    const spot = this.props.showSpotlight !== false;
+    const maxF = Math.max(4, Math.min(9, this.props.maxFinalists ?? 9));
+    const view = this.state.view || (this.props.defaultView === 'Recruiting $' ? 'recruiting' : 'awards');
+    const isAwards = view === 'awards', isRecruiting = view === 'recruiting';
+
+    const viewTabs = [['awards', 'Awards Watch'], ['recruiting', 'Recruiting $']].map(([k, label]) => ({
+      key: k, label,
+      activeStyle: k === view ? 'background:var(--bg-surface-elev);box-shadow:inset 0 2px 0 var(--gold);color:var(--fg-primary);' : '',
+      onSelect: () => this.setState({ view: k }),
+    }));
+
+    if (!D || !R) return { isAwards, isRecruiting, viewTabs, showSpotlight: spot, highlightLeader: highlight, seasonLine: 'Season', week: '—', awardName: '', awardTabs: [], finalists: [], leader: { metrics: [], formulaParts: [] }, confTabs: [], tierTabs: [], roster: [], conf: { accent: 'var(--gold)', label: '' }, statMainLabel: '', statSubLabel: '', tierLabel: '', recWeek: '—', nextSeason: '', recScopeLabel: '', recConfTabs: [], recRank: [], sel: {}, teamLines: [], hiDots: [], hasDotTip: false, dotTipPos: '', dotTipHead: '', dotTipBody: '' };
+
+    const rec = this.buildRecruiting(R, D);
+
+    const awardKey = this.state.award, tier = this.state.tier;
+    const confKey = D.conferences[this.state.conf] ? this.state.conf : (D.confOrder[0] || 'sec');
+
+    const awardTabs = D.nationalOrder.map((k) => {
+      const a = D.national[k], active = k === awardKey;
+      return {
+        key: k, name: a.name, honors: a.honors, leader: (a.finalists[0] && a.finalists[0].name) || '—',
+        honorsColor: active ? 'var(--gold)' : 'var(--fg-tertiary)',
+        activeStyle: active
+          ? 'background:var(--bg-surface-elev);border:1px solid rgba(201,162,39,.5);box-shadow:inset 0 2px 0 var(--gold),0 0 20px rgba(201,162,39,.14);color:var(--fg-primary);'
+          : '',
+        onSelect: () => this.setState({ award: k }),
+      };
+    });
+
+    const award = D.national[awardKey];
+    const leader = this.buildLeader(award, highlight);
+    leader.teamColor = leader.teamColor; leader.teamTxt = leader.teamTxt;
+    const finalists = award.finalists.slice(1, 1 + maxF).map((f) => ({ ...this.buildFinalist(f, !!award.isCoach), confAccent: (D.conferences[f.team.conf] || {}).accent || 'var(--gold)' }));
+
+    const conf = D.conferences[confKey] || { label: '', accent: 'var(--gold)', tint: 'transparent' };
+    const confTabs = D.confOrder.map((k) => {
+      const c = D.conferences[k], active = k === confKey;
+      const tiers = D.confTiers[k] || {};
+      const count = (tiers.first || []).length + (tiers.second || []).length + (tiers.third || []).length;
+      return {
+        key: k, label: c.label, count,
+        logoStyle: this.confLogoStyle(k, active),
+        countColor: active ? 'color:var(--gold);' : '',
+        activeStyle: active
+          ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);'
+          : '',
+        onSelect: () => this.setState({ conf: k }),
+      };
+    });
+
+    const tierMeta = [['first', 'First Team'], ['second', 'Second Team'], ['third', 'Third Team']];
+    const tierTabs = tierMeta.map(([tk, lbl]) => {
+      const active = tk === tier;
+      return {
+        key: tk, label: lbl,
+        activeStyle: active
+          ? 'background:' + conf.tint + ';color:' + conf.accent + ';'
+          : '',
+        onSelect: () => this.setState({ tier: tk }),
+      };
+    });
+    const tierLabel = (tierMeta.find((t) => t[0] === tier) || ['', ''])[1];
+
+    const roster = ((D.confTiers[confKey] || {})[tier] || []).map((p) => {
+      const [pc, pt] = this.posColor(p.pos);
+      return {
+        pos: p.pos, posColor: pc, posTxt: pt,
+        name: p.name, teamAbbr: p.team.abbr, teamColor: p.team.color, teamTxt: p.team.txt,
+        cls: p.cls, posRank: '#' + p.posRank, pts: this.fmt2(p.pts), pctTeam: p.pctTeam + '%', confPts: this.fmt2(p.confPts), score: this.fmt2(p.awardScore),
+      };
+    });
+
+    return {
+      isAwards, isRecruiting, viewTabs,
+      showSpotlight: spot, highlightLeader: highlight,
+      seasonLine: 'Season ' + D.season + ' · Through Week ' + D.week, week: D.week,
+      awardTabs, leader, finalists, awardName: award.name,
+      statMainLabel: award.isCoach ? 'Team PF' : 'Fan Pts',
+      statSubLabel: award.isCoach ? 'Wins' : '% Team',
+      confTabs, conf, tierTabs, tierLabel, roster,
+      ...rec,
+    };
+  }
+}
+</script>
+<script>
+(function () {
+  if (window.__cffbPlayerAwardsBooted) return;
+  window.__cffbPlayerAwardsBooted = true;
+  window.__resources = true;
+  window.__CFFB_AWARDS_LOGOS = {"sec":"data:image/png;base64,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","b1g":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAfCAYAAABEZosIAAACxElEQVR4Ae3BS2gcBQAA0LeT2ZAONhBST2UQT4oQEFqwxQ9RkELESyzoYKVGKsTgQTwIvSlYEIogKAoWTYPFqSIUQYUgClEpASNUKl7qQTIHwUrBFEVqsqsSZXdidjv7DYG8Z8eOjpR0XwkDWNVImpURKGZVEq9pJs1KGNS6a5K4qolQ3m86F6CMZczjZfwg710cVszjmLNRmvnbA5jBQYxo3VVptoTTOCOJKzYI5EWIECFChAgRIkSIECFChAgRIkQYwgBuxjS+xRO6Kc2G8A4+wgRGtGc37sUcPpFmIzYI9F6EU5jUPa/jiO46hPek2YA6gf4I8Ap26VSaHcCU3rgfiTqB/onxoM5N6a0pdQL9dUDn9uut/eqE8ibVzGG3xp7HJTUBXsJejQ1bdwJvWfci9iluWHPv40ON3Y1pjQ2rE8o7p+aU5uaxKO9p7NXYT/6RxBf8J82e0V2vSeIvNZJm5zGtoFB/fab3qpq7gucUFGpfiLKaEiKNnceCrZbEKzipoFD7FlBVU0Jgc1fwJKq2SprdihOKSOKH/CvUvkAxF3AU39tao5jUokBvreJzXLZNBXorxLO4iAnbUKh9b2JZ3sMY83+j+AD3YdHW+BULGMIdCgq1bxaL8m7EmM3twhvYh4p+S+LvMC7NbsKPCgr01+0Yt40E+u9OW6ukBaG8CTWDmrsLe+SNub5RaXYb9lg3orlbpNk91l10fUel2Q2o2ty4FoTyPlbcSe35BS/gsGKO47h1h7CiuWM4pn0r6gT67yudWdJbS+oE+usbfKEzs3rrbXUC/fM7nkJFJ5J4EbN641OcVSfUH5fxKL7WHTMo44jumccjknhNnVDemu4oYRWXcA6v4mfdksR/SJcfo3QWMziIEa27iiWcxhlJXLFBSV6oO0qoYM1m0qyMQOv+lMQVG6VZCYNad00SV+3Y0TN/ATC7l5Uv8zljAAAAAElFTkSuQmCC","acc":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAAAVCAYAAADl/ahuAAAD3UlEQVR4Ae3BbaieZQEA4Ot+93h0nubAZVT6p9Dyj5Y/lCO7iZqbgnMYtU7uMYK+wBCEsg9iLSnslxEUUTki6MTufQQK60s76gbemxaREP0RZMOFc3LCJB2eznnec3fiPfDu8XzsvOds/VnXFfwPhJjehh/gZgv7Qsn1EXNCTJfh49iEq7EOwfK8iC+VXD8fYroUH8MteB/WI1ieU/ha5TwLMV2LMdxoYVP4qzkhpjvxI1xlMF38HDtLridCTJvwMK42uL34asn1S5XzKMR0O36Jyy3u2ZLr180KMd2EAxgymBdxT8n1Y2aFmD6Igxg2mFP4cqnsdbj2X5XzIMRU4ZvYicrSxvXtwpC2U/iHxR3BrpLrCX1fwbC2Cbxicc/hGyXXLzlD5RwLMb0TY9ii7TUcxke1PW5WiOnduFXbt/HdkutpyxRiWoc7tP0QXy+5njSgjnMoxDSCo9ii7Xl8GK9qO4G/6NmKIX0TeLDketpgbsV6ff/EzpLrSStQORc2JiH4Ih7CsLZHcA9ew23aDpVcd/Vs03aw5LoxuDu0PVZy/YYV6lilENNwCHbjxxjWN41vET5Rcj2BG3GltkNmhZg24BZtjxpQiOkS3K7t11ahsgohpmswhhFtL+NzJde/17dZWxeH9GzDpfpewZMGtxnv0Hcaj1uFygqFmLbjp9ig7WncXXL9d223aftzyfUJPdu1/abketLgtmv7Q8n1q1ahMqAQ0xo8gJ3omO96PBdicoYZbNA2blaI6TJs1jZuQCGmYWzT9oRV6hhAiOkKHMQudCxsPdbib9iNT+NBdLSN69mEi7Vd60PJgCIu1/b+EFOwCpVlCjFFjOE95vsXnsFRHMWzJddvmBNiGtN2Cs/oucp8D4QZd4rpBIqlnSzCvZQrzXcfPhJiOoZiaa/jsyXXjTNUzubmJKxxLx7CWm178DP8seT6TQsIMV2EzdoOl1xP63nBfAE34AZn9xN5BzEds7DrcJ2z+1XJdeMtKksIMa3D9/F5badxP2F3yTuKpY3gXdoO6XsCR7DRyjyq52n8FlutzCMW0LGIENN7MY7PoIsuujiGLSXXD5e8ozi7LZjGFKYwiafMKblusBXfw3FMo0GDBg0aNGjQoEGDCRw2q+S6i1F8By9gCg0aNGjQoEGDBg0anMbvLCBYRIhpCBeZb6rketoydeLeIazRU1BmSvffjnzKPBv3CCGsRbA8MyXXk95qZL9QdS9Bx/KUkus3/d/ggjn79h94O36Bm1xYZjBy1ydHj1tAZda+/QdGMIZrXHj+1AmOW0S1b/+BD2AXTuKkC8+e0dFRi/kPFzNFZ1fbXzcAAAAASUVORK5CYII=","big12":"data:image/png;base64,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","pac":"data:image/png;base64,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","aac":"data:image/png;base64,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"};
+  function __paData() {
+/* CFFB — Player Awards & Recruiting Dollars: LIVE data adapter.
+ *
+ * Fetches the Apps Script `?feed=awards` JSON (same /exec deployment as Power
+ * Rankings / Standings / Player Ledger) and reshapes it into the two globals the
+ * DesignSync component polls for: window.CFFB_AWARDS and window.CFFB_RECRUITING.
+ *
+ * The component's componentDidMount already waits for both globals and
+ * re-renders once they appear, so this adapter only has to set them. It exposes
+ * window.__loadPlayerAwards() (returns a Promise) for optional error surfacing,
+ * and kicks the load off immediately on execute.
+ *
+ * https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec is substituted with the live /exec URL at build time.
+ */
+(function () {
+  var FEED_URL = "https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec" + (("https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec").indexOf("?") >= 0 ? "&" : "?") + "feed=awards";
+
+  // Static presentation constants (colors/labels) — mirror the sample
+  // awards-data.js so the component's tabs/accents look identical.
+  var CONFS = {
+    sec:   { key: "sec",   label: "SEC",     accent: "#C9A227", tint: "rgba(201,162,39,0.14)" },
+    b1g:   { key: "b1g",   label: "Big Ten", accent: "#7DA0CC", tint: "rgba(74,111,165,0.16)" },
+    acc:   { key: "acc",   label: "ACC",     accent: "#C58DA0", tint: "rgba(139,74,92,0.18)" },
+    big12: { key: "big12", label: "Big 12",  accent: "#D88787", tint: "rgba(184,69,69,0.16)" },
+    aac:   { key: "aac",   label: "AAC",     accent: "#A799C0", tint: "rgba(107,92,139,0.18)" },
+    pac:   { key: "pac",   label: "Pac-12",  accent: "#9CB8A8", tint: "rgba(92,122,106,0.18)" }
+  };
+
+  // Trophy display metadata (labels only — finalists come from the feed).
+  var NATIONAL_META = {
+    heisman:     { name: "Heisman Trophy",  honors: "Most Outstanding Player", pos: "ANY" },
+    obrien:      { name: "National QB",      honors: "Best Quarterback",        pos: "QB" },
+    walker:      { name: "National RB",      honors: "Best Running Back",       pos: "RB" },
+    biletnikoff: { name: "National WR / TE", honors: "Best Receiver",           pos: "WR/TE" },
+    coach:       { name: "Coach of the Year", honors: "Top Head Coach",         pos: "HC", isCoach: true }
+  };
+
+  function reshape(feed) {
+    var confOrder = feed.confOrder && feed.confOrder.length
+      ? feed.confOrder
+      : ["sec", "b1g", "acc", "big12", "aac", "pac"];
+    var nationalOrder = feed.nationalOrder || ["heisman", "obrien", "walker", "biletnikoff", "coach"];
+
+    // Conferences map (only those present in the data).
+    var conferences = {};
+    confOrder.forEach(function (id) { if (CONFS[id]) conferences[id] = CONFS[id]; });
+
+    // National awards: attach display metadata to the feed's finalists.
+    var national = {};
+    nationalOrder.forEach(function (key) {
+      var meta = NATIONAL_META[key] || { name: key, honors: "", pos: "ANY" };
+      var finalists = ((feed.national && feed.national[key] && feed.national[key].finalists) || []).map(function (f) {
+        return {
+          rank: f.rank, name: f.name, pos: f.pos,
+          cls: f.team ? (f.team.owner || "") : "",   // repurposed slot: owning manager
+          posRank: f.posRank,
+          pts: f.pts, pctTeam: f.pctTeam, confPts: f.confPts || 0,
+          teamWins: f.teamWins, awardScore: f.awardScore,
+          team: f.team
+        };
+      });
+      national[key] = {
+        key: key, name: meta.name, honors: meta.honors, pos: meta.pos,
+        isCoach: !!meta.isCoach, finalists: finalists
+      };
+    });
+
+    // Conference tiers: pass through, repurposing cls -> owning manager.
+    var confTiers = {};
+    Object.keys(feed.confTiers || {}).forEach(function (cid) {
+      var t = feed.confTiers[cid];
+      var mapTier = function (arr) {
+        return (arr || []).map(function (p) {
+          return {
+            pos: p.pos, name: p.name,
+            cls: p.team ? (p.team.owner || "") : "",
+            posRank: p.posRank, pts: p.pts, pctTeam: p.pctTeam, confPts: p.confPts,
+            awardScore: p.awardScore, team: p.team
+          };
+        });
+      };
+      confTiers[cid] = { first: mapTier(t.first), second: mapTier(t.second), third: mapTier(t.third) };
+    });
+
+    window.CFFB_AWARDS = {
+      season: String(feed.season),
+      week: feed.weeksPlayed || "",
+      conferences: conferences,
+      national: national,
+      nationalOrder: nationalOrder,
+      confOrder: confOrder,
+      confTiers: confTiers
+    };
+
+    var rec = feed.recruiting || { teams: {} };
+    window.CFFB_RECRUITING = {
+      season: Number(feed.season),
+      week: rec.weeksPlayed || feed.weeksPlayed || "",
+      totalWeeks: 14,
+      status: rec.status || feed.status || "PROJECTED",
+      teams: rec.teams || {}
+    };
+  }
+
+  window.__loadPlayerAwards = function () {
+    return fetch(FEED_URL, { credentials: "omit" })
+      .then(function (r) { return r.json(); })
+      .then(function (feed) {
+        if (feed && feed.error) throw new Error(feed.error);
+        reshape(feed);
+        return feed;
+      })
+      .catch(function (e) {
+        console.error("[CFFB Player Awards] feed load failed:", e && e.message ? e.message : e);
+        throw e;
+      });
+  };
+
+  // Kick off immediately; the component picks the globals up when they land.
+  window.__loadPlayerAwards();
+})();
+
+  }
+  function __paRuntime() {
+// GENERATED from dc-runtime/src/*.ts — do not edit. Rebuild with `cd dc-runtime && bun run build`.
+"use strict";
+(() => {
+  var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
+  // src/react.ts
+  function getReact() {
+    const R = window.React;
+    if (!R) throw new Error("dc-runtime: window.React is not available yet");
+    return R;
+  }
+  function getReactDOM() {
+    const RD = window.ReactDOM;
+    if (!RD) throw new Error("dc-runtime: window.ReactDOM is not available yet");
+    return RD;
+  }
+  var h = ((...args) => getReact().createElement(
+    ...args
+  ));
+
+  // src/parse.ts
+  function parseDcDocument(doc) {
+    const dc = doc.querySelector("x-dc");
+    if (!dc) return null;
+    const scriptEl = doc.querySelector("script[data-dc-script]");
+    const { props, preview } = parseDataProps(
+      scriptEl?.getAttribute("data-props") ?? null
+    );
+    return {
+      template: dc.innerHTML,
+      js: scriptEl ? scriptEl.textContent || "" : "",
+      props,
+      preview
+    };
+  }
+  function parseDcText(src) {
+    const openMatch = /<x-dc(?:\s[^>]*)?>/.exec(src);
+    if (!openMatch) return null;
+    const close = src.lastIndexOf("</x-dc>");
+    if (close === -1 || close < openMatch.index) return null;
+    const template = src.slice(openMatch.index + openMatch[0].length, close);
+    const doc = new DOMParser().parseFromString(src, "text/html");
+    const scriptEl = doc.querySelector("script[data-dc-script]");
+    const { props, preview } = parseDataProps(
+      scriptEl?.getAttribute("data-props") ?? null
+    );
+    return {
+      template,
+      js: scriptEl ? scriptEl.textContent || "" : "",
+      props,
+      preview
+    };
+  }
+  function parseDataProps(raw) {
+    if (!raw) return { props: null, preview: null };
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return { props: null, preview: null };
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { props: null, preview: null };
+    }
+    const obj = parsed;
+    const preview = obj.$preview && typeof obj.$preview === "object" ? obj.$preview : null;
+    const rest = {};
+    for (const k of Object.keys(obj)) {
+      if (k[0] !== "$") rest[k] = obj[k];
+    }
+    return { props: Object.keys(rest).length ? rest : null, preview };
+  }
+  function dcNameFromPath(pathname) {
+    let p = pathname || "";
+    try {
+      p = decodeURIComponent(p);
+    } catch {
+    }
+    const base = p.split("/").pop() || "Root";
+    return base.replace(/\.dc\.html$/, "").replace(/\.html?$/, "") || "Root";
+  }
+
+  // src/boot.ts
+  var BASE_CSS = `
+    .sc-placeholder{background:color-mix(in srgb,currentColor 8%,transparent);
+      border:1px solid color-mix(in srgb,currentColor 50%,transparent);
+      border-radius:2px;box-sizing:border-box;overflow:hidden}
+    @keyframes sc-shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    html.sc-dc-streaming .sc-placeholder,
+    html.sc-dc-streaming .sc-interp.sc-missing{position:relative;
+      background:color-mix(in srgb,currentColor 5%,transparent);
+      border-color:transparent}
+    html.sc-dc-streaming .sc-placeholder::before,
+    html.sc-dc-streaming .sc-interp.sc-missing::before{content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(217,119,87,0) 25%,rgba(247,225,211,.95) 37%,rgba(217,119,87,0) 63%);
+      background-size:400% 100%;animation:sc-shine 1.4s ease infinite}
+    html.sc-dc-streaming .sc-placeholder:nth-child(n+9 of .sc-placeholder)::before,
+    html.sc-dc-streaming .sc-interp.sc-missing:nth-child(n+9 of .sc-interp.sc-missing)::before{animation:none;
+      background:color-mix(in srgb,currentColor 8%,transparent)}
+    .sc-placeholder-error{padding:4px 8px;font:11px/1.4 ui-monospace,monospace;
+      color:color-mix(in srgb,currentColor 70%,transparent);word-break:break-word}
+    .sc-interp.sc-missing{display:inline-block;width:2em;height:1em;overflow:hidden;
+      vertical-align:text-bottom;background:rgba(255,255,255,.3);border:1px solid rgba(0,0,0,.5);
+      border-radius:2px;box-sizing:border-box;color:transparent;
+      user-select:none}
+    .sc-interp.sc-unresolved{font-family:ui-monospace,monospace;font-size:.85em;
+      color:color-mix(in srgb,currentColor 50%,transparent);
+      background:color-mix(in srgb,currentColor 10%,transparent);border-radius:3px;
+      padding:0 3px}
+    .sc-host.sc-has-error{position:relative}
+    .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
+      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+    /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts \u2014 keep both
+       in sync until dc-runtime regains a build step. */
+    @media print {
+      @page { margin: 0.5cm; }
+      figure, table { break-inside: avoid; }
+      #dc-root, #dc-root > .sc-host { height: auto; }
+      *, *::before, *::after {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important;
+      }
+    }
+  `;
+  var FULL_PAGE_CSS = "#dc-root,#dc-root>.sc-host{height:100%}";
+  function rootNameForDocument(doc, loc) {
+    let bootPath = loc.pathname || "";
+    if (!/\.dc\.html?$/i.test(safeDecode(bootPath))) {
+      try {
+        bootPath = new URL(doc.baseURI || "/").pathname;
+      } catch {
+      }
+    }
+    return dcNameFromPath(bootPath);
+  }
+  function safeDecode(s) {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  }
+  function boot(runtime, doc = document) {
+    const parsed = parseDcDocument(doc);
+    if (!parsed) return null;
+    const React = getReact();
+    const rootName = rootNameForDocument(doc, location);
+    runtime.markFetched(rootName);
+    runtime.setRootName(rootName);
+    runtime.adoptParsed(rootName, parsed);
+    if (!window.__resources) {
+      fetch(location.href).then((res) => res.ok ? res.text() : "").then((t) => {
+        const raw = t ? parseDcText(t) : null;
+        if (raw?.template) runtime.updateHtml(rootName, raw.template);
+      }).catch(() => {
+      });
+    }
+    const dc = doc.querySelector("x-dc");
+    const hostEl = doc.createElement("div");
+    hostEl.id = "dc-root";
+    dc.replaceWith(hostEl);
+    if (!parsed.preview) {
+      const s = doc.createElement("style");
+      s.textContent = FULL_PAGE_CSS;
+      doc.head.appendChild(s);
+    }
+    const Root = runtime.getDC(rootName);
+    const entry = runtime.registry.get(rootName);
+    function StandaloneRoot() {
+      const [, setTick] = React.useState(0);
+      React.useEffect(() => {
+        const sub = () => setTick((n) => n + 1);
+        entry.subs.add(sub);
+        return () => {
+          entry.subs.delete(sub);
+        };
+      }, []);
+      const defaults = React.useMemo(() => {
+        const d = {};
+        for (const k in entry.propsMeta || {}) {
+          const v = entry.propsMeta?.[k]?.default;
+          if (v !== void 0) d[k] = v;
+        }
+        return d;
+      }, [entry.propsMeta]);
+      return h(Root, { ...defaults, ...entry.propOverrides || {} });
+    }
+    const ReactDOM = getReactDOM();
+    if (ReactDOM.createRoot)
+      ReactDOM.createRoot(hostEl).render(h(StandaloneRoot));
+    else ReactDOM.render(h(StandaloneRoot), hostEl);
+    return rootName;
+  }
+
+  // src/expr.ts
+  var IDENT_RE = /^[A-Za-z_$][A-Za-z0-9_$]*/;
+  var NUMBER_RE = /^-?\d+(\.\d+)?$/;
+  function resolve(vals, src) {
+    const expr = String(src).trim();
+    if (!expr) return void 0;
+    if (expr[0] === "(" && expr[expr.length - 1] === ")" && parensWrapWhole(expr)) {
+      return resolve(vals, expr.slice(1, -1));
+    }
+    const eq = findTopLevelEquality(expr);
+    if (eq) {
+      const lv = resolve(vals, expr.slice(0, eq.index));
+      const rv = resolve(vals, expr.slice(eq.index + eq.op.length));
+      switch (eq.op) {
+        case "===":
+          return lv === rv;
+        case "!==":
+          return lv !== rv;
+        case "==":
+          return lv == rv;
+        default:
+          return lv != rv;
+      }
+    }
+    if (expr[0] === "!") return !resolve(vals, expr.slice(1));
+    if (expr === "true") return true;
+    if (expr === "false") return false;
+    if (expr === "null") return null;
+    if (expr === "undefined") return void 0;
+    if (NUMBER_RE.test(expr)) return Number(expr);
+    if (expr.length >= 2 && (expr[0] === '"' || expr[0] === "'") && expr[expr.length - 1] === expr[0]) {
+      return expr.slice(1, -1);
+    }
+    return resolvePath(vals, expr);
+  }
+  function parensWrapWhole(expr) {
+    let depth = 0;
+    for (let i = 0; i < expr.length - 1; i++) {
+      if (expr[i] === "(") depth++;
+      else if (expr[i] === ")") {
+        depth--;
+        if (depth === 0) return false;
+      }
+    }
+    return true;
+  }
+  function findTopLevelEquality(expr) {
+    let depth = 0;
+    for (let i = 0; i < expr.length; i++) {
+      const c = expr[i];
+      if (c === "[" || c === "(") depth++;
+      else if (c === "]" || c === ")") depth--;
+      else if (depth === 0 && (c === "=" || c === "!") && expr[i + 1] === "=") {
+        if (i > 0 && (expr[i - 1] === "=" || expr[i - 1] === "!")) continue;
+        if (!expr.slice(0, i).trim()) continue;
+        const op = expr[i + 2] === "=" ? c + "==" : c + "=";
+        return { index: i, op };
+      }
+    }
+    return null;
+  }
+  function resolvePath(vals, expr) {
+    const head = expr.match(IDENT_RE);
+    if (!head) return void 0;
+    let cur = vals == null ? void 0 : vals[head[0]];
+    let i = head[0].length;
+    while (i < expr.length) {
+      if (expr[i] === ".") {
+        const m = expr.slice(i + 1).match(IDENT_RE) || expr.slice(i + 1).match(/^\d+/);
+        if (!m) return void 0;
+        cur = cur == null ? void 0 : cur[m[0]];
+        i += 1 + m[0].length;
+      } else if (expr[i] === "[") {
+        let depth = 1;
+        let j = i + 1;
+        while (j < expr.length && depth > 0) {
+          if (expr[j] === "[") depth++;
+          else if (expr[j] === "]") {
+            depth--;
+            if (depth === 0) break;
+          }
+          j++;
+        }
+        if (depth !== 0) return void 0;
+        const key = resolve(vals, expr.slice(i + 1, j));
+        cur = cur == null ? void 0 : cur[key];
+        i = j + 1;
+      } else {
+        return void 0;
+      }
+    }
+    return cur;
+  }
+
+  // src/encode.ts
+  var CAMEL_ATTR = "sc-camel-";
+  var INLINE_TEXT_TAGS = new Set(
+    "a abbr b bdi bdo br cite code del dfn em i ins kbd mark q s samp small span strike strong sub sup u var wbr".split(
+      " "
+    )
+  );
+  var RAW_WRAP = {
+    select: "sc-raw-select",
+    table: "sc-raw-table",
+    tbody: "sc-raw-tbody",
+    thead: "sc-raw-thead",
+    tfoot: "sc-raw-tfoot",
+    tr: "sc-raw-tr",
+    td: "sc-raw-td",
+    th: "sc-raw-th",
+    caption: "sc-raw-caption"
+  };
+  var RAW_UNWRAP = Object.fromEntries(
+    Object.entries(RAW_WRAP).map(([k, v]) => [v, k])
+  );
+  var EVENT_MAP = {
+    onclick: "onClick",
+    onchange: "onChange",
+    oninput: "onInput",
+    onsubmit: "onSubmit",
+    onkeydown: "onKeyDown",
+    onkeyup: "onKeyUp",
+    onkeypress: "onKeyPress",
+    onmousedown: "onMouseDown",
+    onmouseup: "onMouseUp",
+    onmouseenter: "onMouseEnter",
+    onmouseleave: "onMouseLeave",
+    onfocus: "onFocus",
+    onblur: "onBlur",
+    ondoubleclick: "onDoubleClick",
+    oncontextmenu: "onContextMenu",
+    onmousemove: "onMouseMove",
+    onmouseover: "onMouseOver",
+    onmouseout: "onMouseOut",
+    onpointerdown: "onPointerDown",
+    onpointerup: "onPointerUp",
+    onpointermove: "onPointerMove",
+    onpointerenter: "onPointerEnter",
+    onpointerleave: "onPointerLeave",
+    onpointercancel: "onPointerCancel",
+    onpointerover: "onPointerOver",
+    onpointerout: "onPointerOut",
+    ongotpointercapture: "onGotPointerCapture",
+    onlostpointercapture: "onLostPointerCapture",
+    ontouchstart: "onTouchStart",
+    ontouchend: "onTouchEnd",
+    ontouchmove: "onTouchMove",
+    ontouchcancel: "onTouchCancel",
+    ondragstart: "onDragStart",
+    ondragend: "onDragEnd",
+    ondragenter: "onDragEnter",
+    ondragleave: "onDragLeave",
+    ondragover: "onDragOver",
+    onanimationstart: "onAnimationStart",
+    onanimationend: "onAnimationEnd",
+    onanimationiteration: "onAnimationIteration",
+    ontransitionend: "onTransitionEnd"
+  };
+  var ATTRS = `(?:[^>"']|"[^"]*"|'[^']*')*`;
+  var IMPORT_SELF_CLOSE_RE = new RegExp(
+    "<(x-import|dc-import)(" + ATTRS + ")/>",
+    "gi"
+  );
+  var CAMEL_ATTR_RE = /(\s)([a-z]+[A-Z][A-Za-z0-9]*)(\s*=)/g;
+  function encodeCamelAttrs(html) {
+    return html.replace(
+      CAMEL_ATTR_RE,
+      (_, sp, name, eq) => sp + CAMEL_ATTR + name.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()) + eq
+    );
+  }
+  function encodeCase(html) {
+    html = html.replace(
+      IMPORT_SELF_CLOSE_RE,
+      (_, t, a) => "<" + t + a + "></" + t + ">"
+    );
+    html = html.replace(/<helmet(\s|>)/gi, "<sc-helmet$1");
+    html = html.replace(/<\/helmet\s*>/gi, "</sc-helmet>");
+    html = encodeCamelAttrs(html);
+    for (const [real, alias] of Object.entries(RAW_WRAP)) {
+      html = html.replace(
+        new RegExp("(</?)" + real + "(?=[\\s>])", "gi"),
+        "$1" + alias
+      );
+    }
+    return html;
+  }
+  function kebabToCamel(s) {
+    return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  }
+  function cssToObj(css) {
+    const o = {};
+    for (const decl of css.split(";")) {
+      const i = decl.indexOf(":");
+      if (i < 0) continue;
+      const prop = decl.slice(0, i).trim();
+      o[prop.startsWith("--") ? prop : kebabToCamel(prop)] = decl.slice(i + 1).trim();
+    }
+    return o;
+  }
+  function compileAttr(raw) {
+    const whole = raw.match(/^\s*\{\{([\s\S]+?)\}\}\s*$/);
+    if (whole) {
+      const path = whole[1];
+      return (vals) => resolve(vals, path);
+    }
+    if (raw.includes("{{")) {
+      const parts = raw.split(/\{\{([\s\S]+?)\}\}/g);
+      return (vals) => parts.map((s, i) => i & 1 ? resolve(vals, s) ?? "" : s).join("");
+    }
+    return () => raw;
+  }
+
+  // src/compile.ts
+  function collectProps(node, kind, host) {
+    const propGetters = [];
+    const pseudoClasses = [];
+    let hintSize = null;
+    for (const { name, value } of [...node.attributes]) {
+      if (name === "sc-name" || name === "data-dc-tpl") continue;
+      let key = name;
+      if (key.startsWith(CAMEL_ATTR))
+        key = kebabToCamel(key.slice(CAMEL_ATTR.length));
+      if (key === "hint-size") {
+        hintSize = value;
+        continue;
+      }
+      if (key.startsWith("style-")) {
+        pseudoClasses.push(host.pseudoClass(key.slice(6), value));
+        continue;
+      }
+      if (kind !== "dom") {
+        if (key.includes("-") && !(kind === "x-import" && (key.startsWith("aria-") || key.startsWith("data-"))))
+          key = kebabToCamel(key);
+      } else {
+        if (key === "class") key = "className";
+        else if (key === "for") key = "htmlFor";
+        else if (key.startsWith("on"))
+          key = EVENT_MAP[key] || "on" + key[2].toUpperCase() + key.slice(3);
+      }
+      propGetters.push([key, compileAttr(value)]);
+    }
+    return { propGetters, pseudoClasses, hintSize };
+  }
+  var HOST_STYLE_PROPS = /* @__PURE__ */ new Set([
+    "position",
+    "left",
+    "right",
+    "top",
+    "bottom",
+    "inset",
+    "width",
+    "height",
+    "z-index",
+    "transform"
+  ]);
+  function hostPositionStyle(style) {
+    const all = typeof style === "string" ? cssToObj(style) : style != null && typeof style === "object" ? style : null;
+    if (!all) return void 0;
+    const out = {};
+    for (const [k, v] of Object.entries(all)) {
+      const kebab = k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+      if (HOST_STYLE_PROPS.has(kebab)) out[k] = v;
+    }
+    return Object.keys(out).length ? out : void 0;
+  }
+  function compileTemplate(html, host) {
+    const tpl = document.createElement("template");
+    //! nosemgrep: direct-inner-html-assignment
+    tpl.innerHTML = encodeCase(html);
+    let tplN = 0;
+    (function stamp(node) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        node.setAttribute("data-dc-tpl", String(tplN++));
+      }
+      for (const c of node.childNodes) stamp(c);
+    })(tpl.content);
+    const builders = walkChildren(tpl.content, host);
+    const render = ((vals, ctx) => builders.map((b, i) => b(vals || {}, ctx, i)));
+    render.__annotated = tpl.innerHTML;
+    return render;
+  }
+  function walkChildren(node, host) {
+    return [...node.childNodes].map((c) => walk(c, host)).filter((b) => b != null);
+  }
+  function walk(node, host) {
+    if (node.nodeType === Node.TEXT_NODE) return walkText(node);
+    if (node.nodeType !== Node.ELEMENT_NODE) return null;
+    const el = node;
+    const tag = el.tagName.toLowerCase();
+    if (tag === "sc-for") return walkFor(el, host);
+    if (tag === "sc-if") return walkIf(el, host);
+    if (tag === "x-import") return walkXImport(el, host);
+    if (tag === "sc-helmet") return host.helmet(el);
+    if (tag === "dc-import") return walkComponent(el, host);
+    return walkElement(el, host);
+  }
+  var warnedHoles = /* @__PURE__ */ new Set();
+  function warnUnresolved(ctx, what) {
+    const key = (ctx?.__name || "?") + "\0" + what;
+    if (warnedHoles.has(key)) return;
+    warnedHoles.add(key);
+    console.warn("[dc-runtime] " + (ctx?.__name || "template") + ": " + what);
+  }
+  function walkText(node) {
+    const txt = node.nodeValue ?? "";
+    if (!txt.includes("{{")) {
+      if (!txt.trim() && !txt.includes(" ")) return null;
+      return () => txt;
+    }
+    const parts = txt.split(/\{\{([\s\S]+?)\}\}/g);
+    return (vals, ctx, key) => h(
+      getReact().Fragment,
+      { key },
+      ...parts.map((p, i) => {
+        if (!(i & 1)) return p;
+        const v = resolve(vals, p);
+        if (v === void 0) {
+          if (!ctx?.__streamingNow) {
+            if (document.body?.hasAttribute("data-dc-editor-on")) {
+              return h(
+                "span",
+                { key: i, className: "sc-interp sc-unresolved" },
+                "{{ " + p.trim() + " }}"
+              );
+            }
+            warnUnresolved(
+              ctx,
+              "{{ " + p.trim() + " }} never resolved \u2014 rendered as empty"
+            );
+            return null;
+          }
+          return h(
+            "span",
+            { key: i, className: "sc-interp sc-missing" },
+            p.trim()
+          );
+        }
+        if (getReact().isValidElement(v) || Array.isArray(v)) {
+          return h(getReact().Fragment, { key: i }, v);
+        }
+        if (v === null || typeof v === "boolean") return null;
+        return h("span", { key: i, className: "sc-interp" }, String(v));
+      })
+    );
+  }
+  function walkFor(el, host) {
+    const listGet = compileAttr(el.getAttribute("list") || "");
+    const asName = el.getAttribute("as") || "item";
+    const hintN = parseInt(el.getAttribute("hint-placeholder-count") || "0", 10);
+    const kids = walkChildren(el, host);
+    const listSrc = el.getAttribute("list") || "";
+    return (vals, ctx, key) => {
+      let list = listGet(vals);
+      if (!Array.isArray(list)) {
+        if (!ctx?.__streamingNow) {
+          if (list !== void 0 && list !== null) {
+            warnUnresolved(
+              ctx,
+              'sc-for list="' + listSrc + '" is not an array (' + typeof list + ")"
+            );
+          }
+          list = [];
+        } else {
+          list = hintN > 0 ? Array(hintN).fill(void 0) : [];
+        }
+      }
+      return h(
+        getReact().Fragment,
+        { key },
+        list.map((item, i) => {
+          const sub = { ...vals, [asName]: item, $index: i };
+          return h(
+            getReact().Fragment,
+            { key: i },
+            kids.map((b, j) => b(sub, ctx, j))
+          );
+        })
+      );
+    };
+  }
+  function walkIf(el, host) {
+    const valGet = compileAttr(el.getAttribute("value") || "");
+    const hintRaw = el.getAttribute("hint-placeholder-val");
+    const hintGet = hintRaw != null ? compileAttr(hintRaw) : null;
+    const kids = walkChildren(el, host);
+    return (vals, ctx, key) => {
+      let v = valGet(vals);
+      if (v === void 0 && hintGet && ctx?.__streamingNow) v = hintGet(vals);
+      return v ? h(
+        getReact().Fragment,
+        { key },
+        kids.map((b, j) => b(vals, ctx, j))
+      ) : null;
+    };
+  }
+  function walkComponent(el, host) {
+    const name = el.getAttribute("name") || el.getAttribute("component") || "";
+    el.removeAttribute("name");
+    el.removeAttribute("component");
+    const tplId = el.getAttribute("data-dc-tpl");
+    const styleRaw = el.getAttribute("style");
+    el.removeAttribute("style");
+    const styleGet = styleRaw != null ? compileAttr(styleRaw) : null;
+    const { propGetters, hintSize } = collectProps(el, "dc-import", host);
+    const kids = walkChildren(el, host);
+    return (vals, ctx, key) => {
+      const props = {
+        key,
+        __hintSize: hintSize,
+        __tplId: tplId,
+        __hostStyle: styleGet ? hostPositionStyle(styleGet(vals)) : void 0
+      };
+      for (const [k, g] of propGetters) {
+        const v = g(vals);
+        if (k === "dcProps") {
+          if (v && typeof v === "object") Object.assign(props, v);
+          continue;
+        }
+        props[k] = v;
+      }
+      if (kids.length) props.children = kids.map((b, j) => b(vals, ctx, j));
+      return h(host.component(name), props);
+    };
+  }
+  function walkXImport(el, host) {
+    const globalNameGet = compileAttr(
+      el.getAttribute("component-from-global-scope") || ""
+    );
+    const exportNameGet = compileAttr(
+      el.getAttribute("component") || el.getAttribute("name") || ""
+    );
+    const fromRaw = el.getAttribute("from") || (el.getAttribute("component-from-global-scope") ? "" : el.getAttribute("src") || el.getAttribute("import") || "");
+    const urls = fromRaw.trim() ? fromRaw.trim().split(/\s+/) : [];
+    const url = urls.length ? urls[urls.length - 1] : "";
+    const kindOf = (u) => /\.(jsx|tsx)(\?|#|$)/i.test(u) ? "jsx" : "js";
+    const tplId = el.getAttribute("data-dc-tpl");
+    const styleRaw = el.getAttribute("style");
+    el.removeAttribute("style");
+    const styleGet = styleRaw != null ? compileAttr(styleRaw) : null;
+    const wrap = tplId != null || styleGet != null;
+    const { propGetters, hintSize } = collectProps(el, "x-import", host);
+    const hasContent = el.children.length > 0 || !!(el.textContent || "").trim();
+    const kids = hasContent ? walkChildren(el, host) : [];
+    const urlBindable = fromRaw.includes("{{");
+    if (urls.length && !urlBindable) {
+      let prev;
+      for (const u of urls) prev = host.loadExternal(kindOf(u), u, prev);
+    }
+    const evalName = (g, vals) => {
+      const v = g(vals);
+      const s = v == null ? "" : String(v);
+      return s.includes("{{") ? "" : s;
+    };
+    return (vals, ctx, key) => {
+      const globalName = evalName(globalNameGet, vals);
+      const name = globalName || evalName(exportNameGet, vals);
+      const C = !name || urlBindable ? null : globalName ? host.resolveExternalGlobal(url, globalName) : host.resolveExternal(url, name);
+      const hostStyle = styleGet ? hostPositionStyle(styleGet(vals)) : void 0;
+      const wrapper = wrap ? {
+        key,
+        className: "sc-host-x",
+        "data-dc-tpl": tplId,
+        style: hostStyle || { display: "contents" }
+      } : null;
+      if (!C) {
+        const error = urlBindable ? "x-import `from` cannot contain {{ \u2026 }} \u2014 module URLs are resolved at parse time; use a literal URL" : host.resolveExternalError(url, name);
+        const ph = host.placeholder({
+          key: wrapper ? void 0 : key,
+          name,
+          hintSize,
+          error
+        });
+        return wrapper ? h("div", wrapper, ph) : ph;
+      }
+      const props = wrapper ? {} : { key };
+      let unresolvedHole = false;
+      for (const [k, g] of propGetters) {
+        if (k === "component" || k === "componentFromGlobalScope" || k === "from") {
+          continue;
+        }
+        const v = g(vals);
+        if (v === void 0) unresolvedHole = true;
+        if (k === "dcProps") {
+          if (v && typeof v === "object") Object.assign(props, v);
+          continue;
+        }
+        props[k] = v;
+      }
+      if (unresolvedHole && ctx?.__htmlStreamingNow) {
+        const ph = host.placeholder({
+          key: wrapper ? void 0 : key,
+          name,
+          hintSize,
+          error: null
+        });
+        return wrapper ? h("div", wrapper, ph) : ph;
+      }
+      if (kids.length) props.children = kids.map((b, j) => b(vals, ctx, j));
+      return wrapper ? h("div", wrapper, h(C, props)) : h(C, props);
+    };
+  }
+  function contentKey(el) {
+    const clone = el.cloneNode(true);
+    for (const d of clone.querySelectorAll("*")) {
+      while (d.attributes.length) d.removeAttribute(d.attributes[0].name);
+    }
+    const s = clone.innerHTML;
+    let h2 = 5381;
+    for (let i = 0; i < s.length; i++) h2 = (h2 << 5) + h2 + s.charCodeAt(i) | 0;
+    return s.length + "." + (h2 >>> 0).toString(36);
+  }
+  var NEVER_CONTENT_KEYED = new Set(
+    "script style textarea option title select canvas iframe video audio".split(
+      " "
+    )
+  );
+  var NOT_INLINE_SELECTOR = ":not(" + [...INLINE_TEXT_TAGS].join(",") + ")";
+  function walkElement(el, host) {
+    const realTag = RAW_UNWRAP[el.localName] || el.localName;
+    const tplId = el.getAttribute("data-dc-tpl");
+    const inlineOnly = el.childNodes.length > 0 && !NEVER_CONTENT_KEYED.has(realTag) && el.querySelector(NOT_INLINE_SELECTOR) === null;
+    const keySuffix = inlineOnly ? "|" + contentKey(el) : "";
+    const { propGetters, pseudoClasses } = collectProps(el, "dom", host);
+    const kids = walkChildren(el, host);
+    return (vals, ctx, key) => {
+      const props = {
+        key: key + keySuffix,
+        "data-dc-tpl": tplId
+      };
+      for (const [k, g] of propGetters) {
+        let v = g(vals);
+        if (k === "style" && typeof v === "string") v = cssToObj(v);
+        if ((k === "value" || k === "checked") && v === void 0) {
+          v = k === "checked" ? false : "";
+        }
+        props[k] = v;
+      }
+      if (pseudoClasses.length) {
+        props.className = [props.className, ...pseudoClasses].filter(Boolean).join(" ");
+      }
+      return h(realTag, props, ...kids.map((b, j) => b(vals, ctx, j)));
+    };
+  }
+
+  // src/logic.ts
+  var StreamableLogic = class {
+    constructor(props) {
+      __publicField(this, "props");
+      __publicField(this, "state", {});
+      /** Back-pointer to the wrapper component, installed after construction. */
+      __publicField(this, "__host");
+      this.props = props || {};
+    }
+    setState(update, cb) {
+      this.__host && this.__host.__setLogicState(update, cb);
+    }
+    forceUpdate() {
+      this.__host && this.__host.forceUpdate();
+    }
+    componentDidMount() {
+    }
+    componentDidUpdate(_prevProps) {
+    }
+    componentWillUnmount() {
+    }
+    /** The flat object the template renders against (merged over props). */
+    renderVals() {
+      return {};
+    }
+  };
+  function evalDcLogic(src) {
+    //! nosemgrep: eval-and-function-constructor
+    const fn = new Function(
+      "DCLogic",
+      "StreamableLogic",
+      "React",
+      src + '\n;return (typeof Component!=="undefined"&&Component)||undefined;'
+    );
+    return fn(StreamableLogic, StreamableLogic, getReact());
+  }
+
+  // src/component.ts
+  function shallowEqual(a, b) {
+    if (!b) return false;
+    const ak = Object.keys(a).filter((k) => k !== "children");
+    const bk = Object.keys(b).filter((k) => k !== "children");
+    if (ak.length !== bk.length) return false;
+    for (const k of ak) if (a[k] !== b[k]) return false;
+    return true;
+  }
+  function Placeholder({
+    name,
+    hintSize,
+    streaming,
+    error
+  }) {
+    const [w, hgt] = (hintSize || "100%,60px").split(",");
+    return h(
+      "div",
+      {
+        className: "sc-placeholder" + (streaming ? " sc-streaming" : ""),
+        style: { width: w.trim(), height: hgt && hgt.trim() },
+        title: name
+      },
+      error ? h(
+        "div",
+        { className: "sc-placeholder-error" },
+        (name ? name + ": " : "") + error
+      ) : null
+    );
+  }
+  function hintToMin(hint) {
+    if (!hint) return void 0;
+    const [w, hgt] = hint.split(",");
+    return { minWidth: w.trim(), minHeight: hgt && hgt.trim() };
+  }
+  function createComponentFactory(registry, ensureFetched) {
+    const React = getReact();
+    const AncestorContext = React.createContext([]);
+    class StreamableComponent extends React.Component {
+      constructor(props) {
+        super(props);
+        __publicField(this, "__name");
+        __publicField(this, "__sub");
+        __publicField(this, "__needsDidMount", false);
+        /** Snapshot of the registry's streaming flags taken at render time —
+         *  builders read it off the RenderCtx (this) to pick placeholder vs
+         *  render-nothing for unresolved values. */
+        __publicField(this, "__streamingNow", false);
+        __publicField(this, "__htmlStreamingNow", false);
+        /** When a construct throws, remember the (class, registry.ver, props)
+         *  triple so render-time reconcile doesn't re-attempt it on every parent
+         *  re-render. A registry bump (new class, template, external module
+         *  resolving via bumpAll) changes `ver` and breaks the memo so an
+         *  env-dependent constructor can self-heal. */
+        __publicField(this, "__failedLogic", null);
+        __publicField(this, "__failedUserProps", null);
+        __publicField(this, "__failedVer", -1);
+        /** Per-instance constructor error — kept here (not on the registry entry)
+         *  so one instance's successful construct can't hide a sibling's failure,
+         *  and a construct can never wipe an eval error `updateJs` recorded on
+         *  `r.logicError`. */
+        __publicField(this, "__ctorError", null);
+        __publicField(this, "logic");
+        this.__name = props.__name;
+        this.state = { __v: 0, __err: null };
+        this.__sub = () => {
+          if (this.state.__err) this.setState({ __err: null });
+          this.forceUpdate();
+        };
+        this.__makeLogic(registry.get(this.__name).Logic, null);
+        ensureFetched(this.__name);
+      }
+      /** Error-boundary hook: a render crash anywhere in this DC's subtree
+       *  (its own template, an x-import'd component, a child DC without its
+       *  own deeper boundary) lands here instead of unmounting the page. */
+      static getDerivedStateFromError(e) {
+        return { __err: e instanceof Error && e.message ? e.message : String(e) };
+      }
+      componentDidCatch(e, info) {
+        console.error(
+          "[dc-runtime] render error in <" + this.__name + ">:",
+          e,
+          info?.componentStack || ""
+        );
+      }
+      /** Instantiate the logic class (or the no-op base) and adopt `prevState`
+       *  over its initial state — used both at mount and on hot-swap. */
+      __makeLogic(Logic, prevState) {
+        const L = Logic || StreamableLogic;
+        try {
+          this.logic = new L(this.__userProps());
+          this.__failedLogic = null;
+          this.__failedUserProps = null;
+          this.__ctorError = null;
+        } catch (e) {
+          console.error(e);
+          this.__failedLogic = Logic;
+          this.__failedUserProps = this.__userProps();
+          this.__failedVer = registry.get(this.__name).ver;
+          this.__ctorError = this.__name + ": " + (e instanceof Error && e.message ? e.message : String(e));
+          this.logic = new StreamableLogic(
+            this.__userProps()
+          );
+        }
+        this.logic.__host = this;
+        if (prevState)
+          this.logic.state = { ...this.logic.state || {}, ...prevState };
+      }
+      /** The props the author's logic + template see — internal __-prefixed
+       *  wiring stripped. */
+      __userProps() {
+        const { __name, __hintSize, __tplId, __hostStyle, ...rest } = this.props;
+        return rest;
+      }
+      __setLogicState(update, cb) {
+        const prev = this.logic.state;
+        const patch = typeof update === "function" ? update(prev) : update;
+        this.logic.state = { ...prev, ...patch };
+        this.setState((s) => ({ __v: s.__v + 1 }), cb);
+      }
+      /** Swap the logic instance when the registry's Logic class changed
+       *  (streaming completion, hot reload). State carries over; didMount
+       *  re-fires after the swap commits so refs exist. */
+      __reconcileLogic() {
+        const r = registry.get(this.__name);
+        const Next = r.Logic;
+        const Cur = this.logic.constructor;
+        if (Next === Cur || !Next && Cur === StreamableLogic || Next === this.__failedLogic && r.ver === this.__failedVer && shallowEqual(this.__userProps(), this.__failedUserProps)) {
+          return;
+        }
+        if (!this.__needsDidMount) {
+          try {
+            this.logic.componentWillUnmount();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        this.__makeLogic(Next, this.logic.state);
+        this.__needsDidMount = true;
+      }
+      componentDidMount() {
+        registry.get(this.__name).subs.add(this.__sub);
+        try {
+          this.logic.componentDidMount();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      componentDidUpdate(prevProps) {
+        this.logic.props = this.__userProps();
+        if (this.__needsDidMount) {
+          if (this.state.__err || !registry.get(this.__name).tpl) return;
+          this.__needsDidMount = false;
+          try {
+            this.logic.componentDidMount();
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          try {
+            this.logic.componentDidUpdate(prevProps);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+      componentWillUnmount() {
+        registry.get(this.__name).subs.delete(this.__sub);
+        if (!this.__needsDidMount) {
+          try {
+            this.logic.componentWillUnmount();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+      render() {
+        const r = registry.get(this.__name);
+        const cls = "sc-host" + (r.htmlStreaming ? " sc-streaming-html" : "") + (r.jsStreaming ? " sc-streaming-js" : "");
+        const hintStyle = r.htmlStreaming ? hintToMin(this.props.__hintSize) : void 0;
+        const hostStyle = this.props.__hostStyle || hintStyle ? { ...hintStyle || {}, ...this.props.__hostStyle || {} } : void 0;
+        const hostBase = {
+          className: cls,
+          style: hostStyle,
+          "data-sc-name": this.__name,
+          "data-dc-tpl": this.props.__tplId
+        };
+        const chain = Array.isArray(this.context) ? this.context : [];
+        if (chain.includes(this.__name)) {
+          const cycle = [
+            ...chain.slice(chain.indexOf(this.__name)),
+            this.__name
+          ].join(" \u2192 ");
+          return h(
+            "div",
+            { ...hostBase, className: cls + " sc-has-error" },
+            h(Placeholder, {
+              name: this.__name,
+              hintSize: this.props.__hintSize,
+              error: "circular import: " + cycle
+            })
+          );
+        }
+        if (this.state.__err) {
+          return h(
+            "div",
+            { ...hostBase, className: cls + " sc-has-error" },
+            h(
+              "div",
+              { className: "sc-logic-error", "data-omelette-chrome": "" },
+              this.__name + ": " + this.state.__err
+            ),
+            h(Placeholder, {
+              name: this.__name,
+              hintSize: this.props.__hintSize,
+              error: this.state.__err
+            })
+          );
+        }
+        this.__reconcileLogic();
+        if (!r.tpl) {
+          return h(
+            "div",
+            hostBase,
+            h(Placeholder, { name: this.__name, hintSize: this.props.__hintSize })
+          );
+        }
+        const userProps = this.__userProps();
+        this.logic.props = userProps;
+        let vals = userProps;
+        let renderErr = r.logicError || this.__ctorError;
+        try {
+          vals = { ...userProps, ...this.logic.renderVals() || {} };
+        } catch (e) {
+          console.error(e);
+          renderErr = this.__name + ".renderVals(): " + (e instanceof Error && e.message ? e.message : String(e));
+        }
+        this.__streamingNow = !!(r.htmlStreaming || r.jsStreaming);
+        this.__htmlStreamingNow = !!r.htmlStreaming;
+        return h(
+          "div",
+          { ...hostBase, className: cls + (renderErr ? " sc-has-error" : "") },
+          renderErr && h(
+            "div",
+            { className: "sc-logic-error", "data-omelette-chrome": "" },
+            renderErr
+          ),
+          h(
+            AncestorContext.Provider,
+            { value: [...chain, this.__name] },
+            r.tpl(vals, this)
+          )
+        );
+      }
+    }
+    __publicField(StreamableComponent, "contextType", AncestorContext);
+    const named = /* @__PURE__ */ new Map();
+    function getDC(name) {
+      const hit = named.get(name);
+      if (hit) return hit;
+      function Dispatcher(p) {
+        const [, setTick] = React.useState(0);
+        React.useEffect(() => {
+          const sub = () => setTick((n) => n + 1);
+          registry.get(name).subs.add(sub);
+          return () => {
+            registry.get(name).subs.delete(sub);
+          };
+        }, []);
+        ensureFetched(name);
+        return h(StreamableComponent, { ...p, __name: name });
+      }
+      Dispatcher.displayName = name;
+      named.set(name, Dispatcher);
+      return Dispatcher;
+    }
+    return {
+      getDC,
+      StreamableComponent
+    };
+  }
+
+  // src/bundled.ts
+  function bundledBlob(url) {
+    const blobs = window.__resourceBlobs;
+    const b = blobs ? blobs[url.split("#")[0]] : void 0;
+    return b instanceof Blob ? b : null;
+  }
+
+  // src/cdn.ts
+  var REACT_URL = "https://unpkg.com/react@18.3.1/umd/react.production.min.js";
+  var REACT_SRI = "sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z";
+  var REACT_DOM_URL = "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js";
+  var REACT_DOM_SRI = "sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1";
+  var BABEL_URL = "https://unpkg.com/@babel/standalone@7.29.0/babel.min.js";
+  var BABEL_SRI = "sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y";
+  function cdnScriptFor(url, sri) {
+    const res = window.__resources;
+    const v = res ? res[url] : void 0;
+    return typeof v === "string" && v ? { src: v } : { src: url, integrity: sri };
+  }
+
+  // src/external.ts
+  var isCustomElementName = (n) => !n.includes(".") && n.includes("-");
+  function isRenderableType(g) {
+    if (typeof g === "function") return !isElementClass(g);
+    return typeof g === "object" && g !== null && typeof g.$$typeof === "symbol";
+  }
+  function resolveDottedPath(root, name) {
+    let cur = root;
+    for (const seg of name.split(".")) {
+      if (cur == null) return void 0;
+      cur = cur[seg];
+    }
+    return cur;
+  }
+  var GLOBAL_POLL_INTERVAL_MS = 50;
+  var GLOBAL_POLL_TIMEOUT_MS = 3e4;
+  function createExternalModules(onResolved) {
+    const cache = /* @__PURE__ */ new Map();
+    let babelLoading = null;
+    const reportedMissing = /* @__PURE__ */ new Map();
+    const polling = /* @__PURE__ */ new Set();
+    function ensureBabel() {
+      if (window.Babel) return Promise.resolve();
+      if (babelLoading) return babelLoading;
+      const babel = cdnScriptFor(BABEL_URL, BABEL_SRI);
+      babelLoading = new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = babel.src;
+        if (babel.integrity) {
+          s.integrity = babel.integrity;
+          s.crossOrigin = "anonymous";
+        }
+        s.onload = () => res();
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      return babelLoading;
+    }
+    const pending = /* @__PURE__ */ new Map();
+    function load(kind, url, after) {
+      const existing = pending.get(url);
+      if (existing) return existing;
+      cache.set(url, null);
+      console.info("[dc-runtime] x-import: loading", url, "(" + kind + ")");
+      const ready = Promise.all([
+        kind === "jsx" ? ensureBabel() : Promise.resolve(),
+        after ?? Promise.resolve()
+      ]);
+      const p = ready.then(() => {
+        const pre = bundledBlob(url);
+        if (pre) return pre.text();
+        return fetch(url).then((r) => {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.text();
+        });
+      }).then((src) => {
+        const code = kind === "jsx" ? window.Babel.transform(src, {
+          filename: url,
+          presets: ["react", "typescript"]
+        }).code : src;
+        const module = { exports: {} };
+        const before = new Set(Object.keys(window));
+        //! nosemgrep: eval-and-function-constructor
+        new Function("React", "module", "exports", "require", code)(
+          getReact(),
+          module,
+          module.exports,
+          () => ({})
+        );
+        const globals = {};
+        for (const k of Object.keys(window)) {
+          if (!before.has(k) && typeof window[k] === "function") {
+            globals[k] = window[k];
+          }
+        }
+        cache.set(url, { mod: module.exports, globals });
+        console.info(
+          "[dc-runtime] x-import: loaded",
+          url,
+          "\u2014 exports:",
+          Object.keys(module.exports),
+          "window globals:",
+          Object.keys(globals)
+        );
+        onResolved();
+      }).catch((e) => {
+        cache.set(url, {
+          mod: {},
+          globals: {},
+          error: "failed to load: " + (e instanceof Error && e.message ? e.message : String(e))
+        });
+        console.error(
+          "[dc-runtime] x-import: FAILED to load",
+          url,
+          "(" + kind + ")",
+          e
+        );
+        onResolved();
+      });
+      pending.set(url, p);
+      return p;
+    }
+    function resolve2(url, name) {
+      const entry = cache.get(url);
+      if (!entry) return null;
+      const { mod, globals } = entry;
+      const C = mod && mod[name] || globals && globals[name] || typeof window !== "undefined" && window[name] || mod && mod.default;
+      if (typeof C === "function") return C;
+      const key = url + "\0" + name;
+      if (!reportedMissing.has(key)) {
+        reportedMissing.set(
+          key,
+          entry.error || 'no export named "' + name + '" (has: ' + Object.keys(mod).join(", ") + ")"
+        );
+        console.error(
+          "[dc-runtime] x-import: module",
+          url,
+          "loaded but has no component named",
+          JSON.stringify(name),
+          "\u2014 available exports:",
+          Object.keys(mod),
+          "window globals:",
+          Object.keys(globals),
+          ". The module must `module.exports = {" + name + "}` or set `window." + name + "`."
+        );
+      }
+      return null;
+    }
+    function waitForGlobal(name) {
+      if (polling.has(name)) return;
+      polling.add(name);
+      const started = Date.now();
+      const isCE = isCustomElementName(name);
+      const tick = () => {
+        const found = isCE ? customElements.get(name) : isRenderableType(resolveDottedPath(window, name));
+        if (found) {
+          polling.delete(name);
+          onResolved();
+          return;
+        }
+        if (Date.now() - started >= GLOBAL_POLL_TIMEOUT_MS) {
+          console.warn(
+            "[dc-runtime] x-import: global",
+            JSON.stringify(name),
+            "never appeared on window after " + GLOBAL_POLL_TIMEOUT_MS + "ms"
+          );
+          return;
+        }
+        setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);
+      };
+      setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);
+    }
+    function resolveGlobal(url, name) {
+      const isCE = isCustomElementName(name);
+      if (!url) {
+        if (isCE) {
+          if (customElements.get(name)) return name;
+          waitForGlobal(name);
+          return null;
+        }
+        const g2 = resolveDottedPath(window, name);
+        if (isRenderableType(g2)) return g2;
+        waitForGlobal(name);
+        return null;
+      }
+      const entry = cache.get(url);
+      if (!entry) return null;
+      if (isCE && customElements.get(name)) return name;
+      const g = entry.globals[name] ?? resolveDottedPath(window, name);
+      if (isRenderableType(g)) return g;
+      if (name.includes(".")) return null;
+      const key = url + "\0global\0" + name;
+      if (!reportedMissing.has(key)) {
+        reportedMissing.set(key, null);
+        if (isCE && !customElements.get(name)) {
+          console.warn(
+            "[dc-runtime] x-import:",
+            url,
+            "loaded but no custom element",
+            JSON.stringify(name),
+            "is registered and window." + name + " is not a function \u2014 rendering <" + name + "> as an unknown element."
+          );
+        }
+      }
+      return name;
+    }
+    function getError(url, name) {
+      const entry = cache.get(url);
+      if (entry?.error) return entry.error;
+      return reportedMissing.get(url + "\0" + name) || null;
+    }
+    return { load, resolve: resolve2, resolveGlobal, getError };
+  }
+  function isElementClass(g) {
+    try {
+      return typeof g === "function" && typeof HTMLElement !== "undefined" && g.prototype instanceof HTMLElement;
+    } catch {
+      return false;
+    }
+  }
+
+  // src/atomics.ts
+  var ATOMIC_CSS = (
+    // layout
+    ".fx{display:flex}.col{display:flex;flex-direction:column}.grid{display:grid}.ac{align-items:center}.jc{justify-content:center}.jb{justify-content:space-between}.f1{flex:1}.noshrink{flex-shrink:0}.wrap{flex-wrap:wrap}.fw5{font-weight:500}.fw6{font-weight:600}.fw7{font-weight:700}.fw8{font-weight:800}.fs11{font-size:11px}.fs12{font-size:12px}.fs13{font-size:13px}.fs14{font-size:14px}.fs15{font-size:15px}.fs16{font-size:16px}.fs20{font-size:20px}.fs22{font-size:22px}.upper{text-transform:uppercase}.tc{text-align:center}.nowrap{white-space:nowrap}.gap8{gap:8px}.gap10{gap:10px}.gap12{gap:12px}.gap16{gap:16px}.gap24{gap:24px}.m0{margin:0}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.posrel{position:relative}.posabs{position:absolute}.round{border-radius:50%}.ohide{overflow:hidden}.bbox{box-sizing:border-box}.pointer{cursor:pointer}.w100{width:100%}.b0{border:none}"
+  );
+
+  // src/helmet.ts
+  var DESIGN_DOC_MODE_RE = /<meta\b[^>]*\bname\s*=\s*["']design_doc_mode["'][^>]*\b(?:content|value)\s*=\s*["'](\w+)["']/i;
+  var CANVAS_BG_LIGHT = "#f0eee6";
+  var CANVAS_BG_DARK = "#2e2c26";
+  function createHelmetManager(doc, isStreaming) {
+    const mounted = /* @__PURE__ */ new Set();
+    const live = /* @__PURE__ */ new Map();
+    let designDocMode = null;
+    let canvasStyleEl = null;
+    let appTheme = "light";
+    try {
+      const ds = doc.documentElement.dataset.theme;
+      appTheme = ds === "dark" || ds === "light" ? ds : new URLSearchParams(doc.defaultView?.location.search ?? "").get(
+        "theme"
+      ) === "dark" ? "dark" : "light";
+    } catch {
+    }
+    function applyCanvasBg() {
+      if (!canvasStyleEl) return;
+      const bg = appTheme === "dark" ? CANVAS_BG_DARK : CANVAS_BG_LIGHT;
+      canvasStyleEl.textContent = `html,body{background:${bg}}#dc-root>.sc-host{position:relative}`;
+    }
+    function postDesignMode(mode) {
+      if (window.parent === window) return;
+      try {
+        window.parent.postMessage({ type: "__dc_design_mode", mode }, "*");
+      } catch {
+      }
+    }
+    function setDesignDocMode(mode) {
+      if (mode === designDocMode) return;
+      designDocMode = mode;
+      postDesignMode(mode);
+      if (mode === "canvas") {
+        doc.documentElement.setAttribute("data-dc-canvas", "");
+        canvasStyleEl = doc.createElement("style");
+        canvasStyleEl.setAttribute("data-dc-canvas", "");
+        applyCanvasBg();
+        doc.head.appendChild(canvasStyleEl);
+      } else {
+        doc.documentElement.removeAttribute("data-dc-canvas");
+        canvasStyleEl?.remove();
+        canvasStyleEl = null;
+      }
+    }
+    window.addEventListener("message", (e) => {
+      const type = e.data && e.data.type;
+      if (type === "__dc_theme") {
+        const t = e.data.theme;
+        if (t === "light" || t === "dark") {
+          appTheme = t;
+          applyCanvasBg();
+        }
+        return;
+      }
+      if (!designDocMode || type !== "__dc_probe") return;
+      postDesignMode(designDocMode);
+    });
+    function compile(node) {
+      const raw = [...node.children];
+      const helmetClosed = node.nextSibling != null || node.parentNode?.nextSibling != null;
+      if (node.hasAttribute("data-dc-atomics") && !mounted.has("__dc-atomics")) {
+        mounted.add("__dc-atomics");
+        const el = doc.createElement("style");
+        el.id = "__dc-atomics";
+        el.textContent = ATOMIC_CSS;
+        doc.head.appendChild(el);
+      }
+      return (_vals, ctx) => {
+        const name = ctx && ctx.__name || "";
+        const streaming = !!(name && isStreaming(name));
+        for (let i = 0; i < raw.length; i++) {
+          const child = raw[i];
+          const tag = child.tagName;
+          const mayBePartial = streaming && !helmetClosed && i === raw.length - 1;
+          if (tag === "SCRIPT") {
+            if (mayBePartial) continue;
+            const key = "SCRIPT|" + (child.getAttribute("src") || child.textContent || "");
+            if (mounted.has(key)) continue;
+            mounted.add(key);
+            const el = doc.createElement("script");
+            for (const { name: an, value } of [...child.attributes])
+              el.setAttribute(an, value);
+            if (child.textContent) el.textContent = child.textContent;
+            doc.head.appendChild(el);
+          } else if (tag === "LINK" || tag === "META") {
+            if (mayBePartial) continue;
+            const key = tag + "|" + (child.getAttribute("href") || child.getAttribute("src") || child.outerHTML);
+            if (mounted.has(key)) continue;
+            mounted.add(key);
+            if (tag === "LINK") {
+              const rel = (child.getAttribute("rel") || "").toLowerCase().split(/\s+/);
+              const href = (child.getAttribute("href") || "").trim();
+              const res = window.__resources;
+              const pre = res && rel.includes("stylesheet") && !rel.includes("alternate") ? res[href] : void 0;
+              const blob = typeof pre === "string" && pre ? bundledBlob(pre) : null;
+              if (blob) {
+                const el = doc.createElement("style");
+                if (child.hasAttribute("disabled")) {
+                  el.setAttribute("media", "not all");
+                } else if (child.getAttribute("media")) {
+                  el.setAttribute("media", child.getAttribute("media"));
+                }
+                if (child.getAttribute("title"))
+                  el.setAttribute("title", child.getAttribute("title"));
+                void blob.text().then((css) => {
+                  el.textContent = css;
+                });
+                doc.head.appendChild(el);
+                continue;
+              }
+            }
+            doc.head.appendChild(child.cloneNode(true));
+          } else {
+            const key = name + "|" + i;
+            let el = live.get(key);
+            if (!el || el.tagName !== tag) {
+              if (el) el.remove();
+              el = doc.createElement(tag.toLowerCase());
+              live.set(key, el);
+              doc.head.appendChild(el);
+            }
+            for (const { name: an, value } of [...child.attributes]) {
+              if (el.getAttribute(an) !== value) el.setAttribute(an, value);
+            }
+            if (el.textContent !== child.textContent)
+              el.textContent = child.textContent;
+          }
+        }
+        return null;
+      };
+    }
+    return { compile, setDesignDocMode };
+  }
+
+  // src/pseudo.ts
+  function scanUnquotedUrl(css, i) {
+    if (css[i] !== "u" && css[i] !== "U" || css.slice(i, i + 4).toLowerCase() !== "url(" || /[a-z0-9_-]/i.test(css[i - 1] ?? "")) {
+      return -1;
+    }
+    let j = i + 4;
+    while (j < css.length && /\s/.test(css[j])) j++;
+    if (css[j] === '"' || css[j] === "'") return -1;
+    while (j < css.length && css[j] !== ")") {
+      if (css[j] === "\\") j++;
+      j++;
+    }
+    return j < css.length ? j + 1 : css.length;
+  }
+  function stripComments(css) {
+    let out = "";
+    let quote = "";
+    for (let i = 0; i < css.length; i++) {
+      const c = css[i];
+      if (quote) {
+        if (c === "\\") {
+          out += c + (css[i + 1] ?? "");
+          i++;
+          continue;
+        }
+        if (c === quote) quote = "";
+        out += c;
+      } else if (c === "'" || c === '"') {
+        quote = c;
+        out += c;
+      } else if (c === "/" && css[i + 1] === "*") {
+        const end = css.indexOf("*/", i + 2);
+        i = end === -1 ? css.length : end + 1;
+        out += " ";
+      } else {
+        const end = scanUnquotedUrl(css, i);
+        if (end === -1) out += c;
+        else {
+          out += css.slice(i, end);
+          i = end - 1;
+        }
+      }
+    }
+    return out;
+  }
+  function importantify(css) {
+    css = stripComments(css);
+    const decls = [];
+    let start = 0;
+    let depth = 0;
+    let quote = "";
+    for (let i = 0; i < css.length; i++) {
+      const c = css[i];
+      if (quote) {
+        if (c === "\\") i++;
+        else if (c === quote) quote = "";
+      } else if (c === "'" || c === '"') quote = c;
+      else if (c === "(") depth++;
+      else if (c === ")") depth = Math.max(0, depth - 1);
+      else if (c === ";" && depth === 0) {
+        decls.push(css.slice(start, i));
+        start = i + 1;
+      } else {
+        const end = scanUnquotedUrl(css, i);
+        if (end !== -1) i = end - 1;
+      }
+    }
+    decls.push(css.slice(start));
+    return decls.map((d) => d.trim()).filter(Boolean).map((d) => /!\s*important$/i.test(d) ? d : d + " !important").join(";");
+  }
+  function createPseudoSheet(doc) {
+    let el = null;
+    const cache = /* @__PURE__ */ new Map();
+    let n = 0;
+    return (pseudo, css) => {
+      const k = pseudo + "|" + css;
+      const hit = cache.get(k);
+      if (hit) return hit;
+      if (!el) {
+        el = doc.createElement("style");
+        doc.head.appendChild(el);
+      }
+      const cls = "scp" + (n++).toString(36);
+      const isPseudoElement = pseudo === "before" || pseudo === "after";
+      const sel = isPseudoElement ? "." + cls + "::" + pseudo : "." + cls + ":" + pseudo;
+      el.sheet.insertRule(
+        sel + "{" + (isPseudoElement ? css : importantify(css)) + "}",
+        el.sheet.cssRules.length
+      );
+      cache.set(k, cls);
+      return cls;
+    };
+  }
+
+  // src/registry.ts
+  function createRegistry() {
+    const entries = /* @__PURE__ */ Object.create(null);
+    function get(name) {
+      return entries[name] || (entries[name] = {
+        html: "",
+        tpl: null,
+        Logic: null,
+        jsStreaming: false,
+        htmlStreaming: false,
+        ver: 0,
+        subs: /* @__PURE__ */ new Set(),
+        fetched: false
+      });
+    }
+    function bump(name) {
+      const r = get(name);
+      r.ver++;
+      for (const fn of r.subs) fn();
+    }
+    return {
+      entries,
+      get,
+      bump,
+      bumpAll() {
+        for (const n in entries) bump(n);
+      }
+    };
+  }
+
+  // src/runtime.ts
+  var COMPONENT_DIR = ".";
+  function createRuntime(doc = document) {
+    const registry = createRegistry();
+    const pseudoClass = createPseudoSheet(doc);
+    const helmet = createHelmetManager(
+      doc,
+      (name) => registry.get(name).htmlStreaming
+    );
+    const external = createExternalModules(() => registry.bumpAll());
+    const factory = createComponentFactory(registry, ensureFetched);
+    const host = {
+      component: (name) => factory.getDC(name),
+      placeholder: (props) => h(Placeholder, props),
+      helmet: (node) => helmet.compile(node),
+      loadExternal: (kind, url, after) => external.load(kind, url, after),
+      resolveExternal: (url, name) => external.resolve(url, name),
+      resolveExternalGlobal: (url, name) => external.resolveGlobal(url, name),
+      resolveExternalError: (url, name) => external.getError(url, name),
+      pseudoClass
+    };
+    function ensureFetched(name) {
+      const r = registry.get(name);
+      if (r.fetched) return;
+      r.fetched = true;
+      const url = COMPONENT_DIR + "/" + encodeURIComponent(name) + ".dc.html";
+      const res = window.__resources;
+      const pre = res ? res[url] : void 0;
+      const target = typeof pre === "string" && pre ? pre : url;
+      const blob = bundledBlob(target);
+      (blob ? blob.text() : fetch(target).then((res2) => {
+        if (!res2.ok) {
+          console.error(
+            '[dc-runtime] sibling fetch for "' + name + '" failed:',
+            url,
+            "returned",
+            res2.status,
+            "\u2014 the reference renders as an empty placeholder."
+          );
+          return "";
+        }
+        return res2.text();
+      })).then((t) => {
+        if (!t) return;
+        const parsed = parseDcText(t);
+        if (!parsed) {
+          console.error(
+            '[dc-runtime] sibling fetch for "' + name + '":',
+            url,
+            "has no <x-dc> block \u2014 not a Design Component."
+          );
+          return;
+        }
+        if (parsed.props) r.propsMeta = parsed.props;
+        if (parsed.preview) r.preview = parsed.preview;
+        if (parsed.template && !r.html) updateHtml(name, parsed.template);
+        if (parsed.js && !r.Logic) updateJs(name, parsed.js);
+      }).catch(
+        (e) => console.error(
+          '[dc-runtime] sibling fetch for "' + name + '" threw:',
+          url,
+          e
+        )
+      );
+    }
+    let rootName = null;
+    function updateHtml(name, html) {
+      const r = registry.get(name);
+      r.html = html;
+      if (name === rootName) {
+        const mode = DESIGN_DOC_MODE_RE.exec(html)?.[1] ?? null;
+        if (mode || !r.htmlStreaming) helmet.setDesignDocMode(mode);
+      }
+      try {
+        r.tpl = compileTemplate(html, host);
+      } catch (e) {
+        console.error("[dc-runtime] template compile FAILED for", name, e);
+      }
+      registry.bump(name);
+    }
+    function updateJs(name, src) {
+      const r = registry.get(name);
+      const seq = r.jsSeq = (r.jsSeq || 0) + 1;
+      try {
+        const Cls = evalDcLogic(src);
+        if (r.jsSeq !== seq) return;
+        if (typeof Cls !== "function") {
+          r.logicError = name + ".dc.html: <script data-dc-script> must define `class Component extends DCLogic`";
+        } else {
+          r.logicError = null;
+          r.Logic = Cls;
+        }
+      } catch (e) {
+        if (r.jsSeq !== seq) return;
+        console.error(
+          "[dc-runtime] logic class eval FAILED for",
+          name,
+          "\u2014 the template renders with props only.",
+          e
+        );
+        r.logicError = name + ": " + (e instanceof Error && e.message ? e.message : String(e));
+      }
+      registry.bump(name);
+    }
+    function setStreaming(name, kind, on) {
+      const r = registry.get(name);
+      if (kind === "html") r.htmlStreaming = !!on;
+      else r.jsStreaming = !!on;
+      let any = false;
+      for (const n in registry.entries) {
+        const e = registry.entries[n];
+        if (e && (e.htmlStreaming || e.jsStreaming)) {
+          any = true;
+          break;
+        }
+      }
+      doc.documentElement.classList.toggle("sc-dc-streaming", any);
+      registry.bump(name);
+    }
+    function dcUpdate(name, kind, content, streaming) {
+      if (streaming) registry.get(name).fetched = true;
+      if (kind === "html") {
+        setStreaming(name, "html", !!streaming);
+        updateHtml(name, content);
+      } else if (kind === "js") {
+        setStreaming(name, "js", !!streaming);
+        if (!streaming) updateJs(name, content);
+      } else if (kind === "props") {
+        const { props, preview } = parseDataProps(content);
+        const r = registry.get(name);
+        r.propsMeta = props ?? void 0;
+        r.preview = preview;
+        registry.bump(name);
+      }
+    }
+    function setProps(name, overrides) {
+      registry.get(name).propOverrides = overrides && typeof overrides === "object" ? { ...overrides } : null;
+      registry.bump(name);
+    }
+    function adoptParsed(name, parsed) {
+      if (!parsed) return;
+      const r = registry.get(name);
+      if (parsed.props) r.propsMeta = parsed.props;
+      if (parsed.preview) r.preview = parsed.preview;
+      if (parsed.template) updateHtml(name, parsed.template);
+      if (parsed.js) updateJs(name, parsed.js);
+    }
+    return {
+      registry,
+      getDC: factory.getDC,
+      updateHtml,
+      updateJs,
+      dcUpdate,
+      setProps,
+      adoptParsed,
+      setRootName: (name) => {
+        rootName = name;
+      },
+      markFetched: (name) => {
+        registry.get(name).fetched = true;
+      },
+      annotatedTemplate: (name) => {
+        const r = registry.get(name);
+        return r.tpl && r.tpl.__annotated || null;
+      },
+      templateSource: (name) => registry.get(name).html || null,
+      StreamableLogic
+    };
+  }
+
+  // src/stream-state.ts
+  function createStreamTracker(staleMs = 6e4, now = Date.now) {
+    const since = /* @__PURE__ */ new Map();
+    const liveOne = (n) => {
+      const t = since.get(n);
+      if (t === void 0) return false;
+      if (now() - t > staleMs) {
+        since.delete(n);
+        return false;
+      }
+      return true;
+    };
+    return {
+      push(name, streaming, viewportKey) {
+        if (viewportKey === "dc-model") return;
+        if (streaming) since.set(name, now());
+        else since.delete(name);
+      },
+      live(name) {
+        if (name !== void 0) return liveOne(name);
+        for (const n of [...since.keys()]) if (liveOne(n)) return true;
+        return false;
+      }
+    };
+  }
+
+  // src/index.ts
+  function hideRawTemplate() {
+    const s = document.createElement("style");
+    s.textContent = "x-dc{display:none!important}";
+    document.head.appendChild(s);
+  }
+  function loadScript(src, integrity) {
+    return new Promise((resolve2, reject) => {
+      //! nosemgrep: create-script-element
+      const s = document.createElement("script");
+      s.src = src;
+      if (integrity) {
+        s.integrity = integrity;
+        s.crossOrigin = "anonymous";
+      }
+      s.async = false;
+      s.onload = () => resolve2();
+      s.onerror = () => reject(new Error(`failed to load ${src}`));
+      document.head.appendChild(s);
+    });
+  }
+  function loadReactUmd() {
+    const w = window;
+    if (w.React && w.ReactDOM) return Promise.resolve();
+    const react = cdnScriptFor(REACT_URL, REACT_SRI);
+    const reactDom = cdnScriptFor(REACT_DOM_URL, REACT_DOM_SRI);
+    return Promise.all([
+      loadScript(react.src, react.integrity),
+      loadScript(reactDom.src, reactDom.integrity)
+    ]).then(() => void 0);
+  }
+  function init() {
+    const runtime = createRuntime(document);
+    let rootName = "Root";
+    const baseCss = document.createElement("style");
+    baseCss.textContent = BASE_CSS;
+    document.head.prepend(baseCss);
+    const notifyHost = () => {
+      if (window.parent === window) return;
+      const r = runtime.registry.entries[rootName];
+      try {
+        window.parent.postMessage(
+          {
+            type: "__dc_booted",
+            rootName,
+            propsMeta: r && r.propsMeta || null,
+            preview: r && r.preview || null
+          },
+          "*"
+        );
+      } catch {
+      }
+    };
+    const streams = createStreamTracker();
+    const api = {
+      __dcUpdate: (name, kind, content, streaming, viewportKey) => {
+        streams.push(name, streaming, viewportKey);
+        runtime.dcUpdate(name, kind, content, streaming);
+        if (name === rootName && !streaming && kind === "props") notifyHost();
+      },
+      __dcStreaming: (name) => streams.live(name),
+      __dcSetProps: (name, overrides) => runtime.setProps(name, overrides),
+      /** Name of the component currently mounted as the page root — DC tools
+       *  push their template-stream here when targeting "the open page". */
+      __dcRootName: () => rootName,
+      /** Editor bridge — the encoded, `data-dc-tpl`-annotated template source.
+       *  The host editor parses this into its own template DOM so it can map a
+       *  rendered node (carrying the same `data-dc-tpl`) back to the source
+       *  node that emitted it. Returns the encoded form (`sc-camel-*` attrs,
+       *  `<sc-raw-*>`/`<sc-helmet>` tags); the editor decodes on serialize. */
+      __dcAnnotatedTemplate: (name) => runtime.annotatedTemplate(name),
+      /** Editor bridge — the *original* (decoded) template source. */
+      __dcTemplateSource: (name) => runtime.templateSource(name),
+      __dcBoot: () => {
+        rootName = boot(runtime, document) ?? rootName;
+        notifyHost();
+      },
+      __dcRegistry: runtime.registry.entries,
+      getDC: (name) => runtime.getDC(name),
+      // `DCLogic` is the documented base class name; `StreamableLogic` is the
+      // implementation alias kept for any project that already references it.
+      DCLogic: runtime.StreamableLogic,
+      StreamableLogic: runtime.StreamableLogic
+    };
+    Object.assign(window, api);
+    window.__dcContentKeyed = true;
+    if (document.readyState !== "loading") api.__dcBoot();
+    else document.addEventListener("DOMContentLoaded", () => api.__dcBoot());
+  }
+  hideRawTemplate();
+  loadReactUmd().then(init).catch((err) => {
+    console.error("[dc] failed to load React or boot:", err);
+    throw err;
+  });
+})();
+
+  }
+  try { __paData(); } catch (e) { console.error("[CFFB Player Awards] data adapter error:", e); }
+  var RV = "18.3.1";
+  function ready() { return window.React && window.ReactDOM && window.ReactDOM.createRoot; }
+  if (ready()) { __paRuntime(); return; }
+  window.__cffbReactPromise = window.__cffbReactPromise || new Promise(function (resolve) {
+    function load(src, cb) { var s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous"; s.onload = cb; s.onerror = cb; document.head.appendChild(s); }
+    load("https://unpkg.com/react@" + RV + "/umd/react.production.min.js", function () {
+      load("https://unpkg.com/react-dom@" + RV + "/umd/react-dom.production.min.js", resolve);
+    });
+  });
+  window.__cffbReactPromise.then(__paRuntime);
+})();
+</script>
