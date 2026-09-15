@@ -14,6 +14,25 @@
 (function () {
   var FEED_URL = "__WEBAPP_URL__" + (("__WEBAPP_URL__").indexOf("?") >= 0 ? "&" : "?") + "feed=awards";
 
+  // MFL player headshot — same live path the Roster Board / Player Ledger use.
+  // Missing photos 404, so a background-image layer just falls back to the
+  // silhouette placeholder underneath (no broken-image icon).
+  function photoUrl(pid) {
+    return pid ? "https://www46.myfantasyleague.com/player_photos_2014/" + pid + "_thumb.jpg" : "";
+  }
+  // Normalize imgur page URLs to a direct image (matches rb-data-live imgurDirect).
+  function imgurDirect(u) {
+    var m = String(u || "").match(/^https?:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]+)(?:\.[A-Za-z0-9]+)?$/i);
+    return m ? "https://i.imgur.com/" + m[1] + ".png" : (u || "");
+  }
+  function cleanTeam(t) {
+    if (!t) return t;
+    return {
+      abbr: t.abbr, name: t.name, color: t.color, txt: t.txt, conf: t.conf,
+      owner: t.owner || "", logo: imgurDirect(t.logo)
+    };
+  }
+
   // Static presentation constants (colors/labels) — mirror the sample
   // awards-data.js so the component's tabs/accents look identical.
   var CONFS = {
@@ -52,10 +71,11 @@
         return {
           rank: f.rank, name: f.name, pos: f.pos,
           cls: f.team ? (f.team.owner || "") : "",   // repurposed slot: owning manager
+          playerId: f.playerId || "", photo: photoUrl(f.playerId),
           posRank: f.posRank,
           pts: f.pts, pctTeam: f.pctTeam, confPts: f.confPts || 0,
           teamWins: f.teamWins, awardScore: f.awardScore,
-          team: f.team
+          team: cleanTeam(f.team)
         };
       });
       national[key] = {
@@ -73,8 +93,9 @@
           return {
             pos: p.pos, name: p.name,
             cls: p.team ? (p.team.owner || "") : "",
+            playerId: p.playerId || "", photo: photoUrl(p.playerId),
             posRank: p.posRank, pts: p.pts, pctTeam: p.pctTeam, confPts: p.confPts,
-            awardScore: p.awardScore, team: p.team
+            awardScore: p.awardScore, team: cleanTeam(p.team)
           };
         });
       };
@@ -92,12 +113,16 @@
     };
 
     var rec = feed.recruiting || { teams: {} };
+    var recTeams = rec.teams || {};
+    Object.keys(recTeams).forEach(function (fid) {
+      if (recTeams[fid]) recTeams[fid].logo = imgurDirect(recTeams[fid].logo);
+    });
     window.CFFB_RECRUITING = {
       season: Number(feed.season),
       week: rec.weeksPlayed || feed.weeksPlayed || "",
       totalWeeks: 14,
       status: rec.status || feed.status || "PROJECTED",
-      teams: rec.teams || {}
+      teams: recTeams
     };
   }
 

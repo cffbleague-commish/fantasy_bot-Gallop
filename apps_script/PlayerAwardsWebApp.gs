@@ -74,7 +74,8 @@ function buildAwardsPayload(overrideYear) {
       color: m.bg || "#2A2A2A",
       txt: m.fg || "#FFFFFF",
       conf: awardsConfId(m.conf || ""),
-      owner: m.owner || ""
+      owner: m.owner || "",
+      logo: m.logo || ""   // FranchiseLookup logo URL (same field PR's pill uses)
     };
   };
 
@@ -126,7 +127,11 @@ function readAwardsForYear(year) {
 
   data.slice(1).forEach(function (row) {
     if (Number(row[idx["Year"]]) !== Number(year)) return;
-    const type = String(row[idx["AwardType"]] || "");
+    // Awards.gs writes the WR/TE national award as "National_WR/TE" (the slash
+    // comes from the "WR/TE" position-group key). Normalize the slash so it
+    // buckets as National_WR_TE to match the dashboard's biletnikoff trophy.
+    var type = String(row[idx["AwardType"]] || "");
+    if (type.indexOf("National_") === 0) type = type.replace(/\//g, "_");
     const rec = {
       awardType: type,
       copyId: String(row[idx["PlayerCopyID"]] || ""),
@@ -172,6 +177,7 @@ function buildNational(awards, teamOf) {
       return {
         rank: i + 1,
         name: r.name,
+        playerId: r.playerId,
         pos: opts && opts.coach ? "HC" : r.pos,
         posRank: opts && opts.usePosGroupRank
           ? (posRankByCopy[r.copyId] || i + 1)
@@ -222,6 +228,7 @@ function buildConfTiers(awards, teamOf) {
       tiers[cid][tk].push({
         pos: r.pos,
         name: r.name,
+        playerId: r.playerId,
         posRank: posRank[r.copyId] || r.rank,
         pts: round2(r.pts),
         pctTeam: r.teamPF ? Math.round((r.pts / r.teamPF) * 100) : 0,
@@ -284,7 +291,7 @@ function buildRecruiting(year, teamOf) {
     const team = teamOf(fid);
     out.teams[fid] = {
       name: team.name, abbr: team.abbr, color: team.color, txt: team.txt,
-      conf: team.conf, owner: team.owner,
+      conf: team.conf, owner: team.owner, logo: team.logo,
       total: total, wins: wins, awards: awardsD, rivalryNet: rivalryNet, draftNet: draftNet,
       raw: {
         regSeason: g(row, "RegSeasonDollars"), postseason: g(row, "PostseasonDollars"),

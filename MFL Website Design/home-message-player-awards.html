@@ -1216,6 +1216,7 @@
             <span style="font:700 9px/1 var(--font-body);letter-spacing:.24em;color:#5A5A5A;">PHOTO</span>
             <span style="font:500 8px/1 var(--font-body);letter-spacing:.14em;color:#3A3A3A;">MFL PROFILE</span>
           </div>
+          <sc-if value="{{ leader.hasPhoto }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;z-index:2;background-size:cover;background-position:center top;background-repeat:no-repeat;{{ leader.photoBg }}"></div></sc-if>
           <span style="position:absolute;top:8px;left:8px;z-index:4;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.06em;padding:3px 6px;border-radius:2px;color:#F5F5F5;background:rgba(10,10,10,.78);">{{ leader.cls }}</span>
           <div style="position:absolute;bottom:-8px;left:-8px;z-index:5;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 3px var(--bg-surface);background:var(--border-strong);background:{{ leader.teamColor }};color:var(--fg-primary);color:{{ leader.teamTxt }};">{{ leader.teamAbbr }}</div>
         </div>
@@ -1249,13 +1250,15 @@
         <div style="display:grid;grid-template-columns:28px 44px max-content 1fr 58px 46px 58px;gap:12px;align-items:center;padding:10px 18px;border-bottom:1px solid rgba(42,42,42,.55);" style-hover="background:var(--bg-surface-hover)">
           <span style="font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--fg-tertiary);" class="cffb-num">{{ f.rankStr }}</span>
           <span style="position:relative;width:40px;height:40px;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;">
-            <span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--border-strong);background:{{ f.teamColor }};"></span>
+            <span style="position:absolute;top:0;left:0;right:0;height:3px;z-index:2;background:var(--border-strong);background:{{ f.teamColor }};"></span>
             <svg viewBox="0 0 56 56" style="position:absolute;inset:0;margin:auto;width:26px;height:26px;stroke:#3A3A3A;fill:none;stroke-width:1.6;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+            <sc-if value="{{ f.hasPhoto }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;z-index:1;background-size:cover;background-position:center top;background-repeat:no-repeat;{{ f.photoBg }}"></span></sc-if>
           </span>
-          <span style="display:inline-flex;align-items:stretch;justify-self:start;width:max-content;height:24px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+          <sc-if value="{{ f.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="justify-self:start;width:58px;height:24px;background-size:contain;background-repeat:no-repeat;background-position:left center;{{ f.logoBg }}"></span></sc-if>
+          <sc-if value="{{ f.noLogo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:stretch;justify-self:start;width:max-content;height:24px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
             <span style="width:5px;background:var(--border-strong);background:{{ f.confAccent }};"></span>
             <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;white-space:nowrap;background:var(--border-strong);background:{{ f.teamColor }};color:var(--fg-primary);color:{{ f.teamTxt }};">{{ f.teamAbbr }}</span>
-          </span>
+          </span></sc-if>
           <span style="min-width:0;">
             <span style="display:block;font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
             <span style="display:block;font-size:11px;color:var(--fg-secondary);margin-top:1px;">{{ f.meta }}</span>
@@ -1306,16 +1309,18 @@
       <div style="display:grid;grid-template-columns:52px 44px 1fr 50px 60px 54px 60px 58px;gap:10px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(42,42,42,.55);" style-hover="background:var(--bg-surface-hover)">
         <span style="justify-self:start;font-family:var(--font-display);font-weight:700;font-size:13px;text-align:center;padding:4px 7px;border-radius:2px;background:var(--border-strong);background:{{ p.posColor }};color:var(--fg-primary);color:{{ p.posTxt }};">{{ p.pos }}</span>
         <span style="position:relative;width:40px;height:40px;border-radius:5px;background:var(--bg-surface-elev);overflow:hidden;outline:1px dashed rgba(201,162,39,.28);outline-offset:-4px;">
-          <span style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--border-strong);background:{{ p.teamColor }};"></span>
+          <span style="position:absolute;top:0;left:0;right:0;height:3px;z-index:2;background:var(--border-strong);background:{{ p.teamColor }};"></span>
           <svg viewBox="0 0 56 56" style="position:absolute;inset:0;margin:auto;width:26px;height:26px;stroke:#3A3A3A;fill:none;stroke-width:1.6;"><circle cx="28" cy="20" r="9"></circle><path d="M10 50 C10 38 18 32 28 32 C38 32 46 38 46 50"></path></svg>
+          <sc-if value="{{ p.hasPhoto }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;z-index:1;background-size:cover;background-position:center top;background-repeat:no-repeat;{{ p.photoBg }}"></span></sc-if>
         </span>
         <span style="min-width:0;">
           <span style="display:block;font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</span>
           <span style="display:flex;align-items:center;gap:8px;margin-top:3px;">
-            <span style="display:inline-flex;align-items:stretch;height:20px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
+            <sc-if value="{{ p.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="width:52px;height:20px;background-size:contain;background-repeat:no-repeat;background-position:left center;{{ p.logoBg }}"></span></sc-if>
+            <sc-if value="{{ p.noLogo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:stretch;height:20px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);">
               <span style="width:6px;background:var(--border-strong);background:{{ conf.accent }};"></span>
               <span style="display:flex;align-items:center;padding:0 8px;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.02em;background:var(--border-strong);background:{{ p.teamColor }};color:var(--fg-primary);color:{{ p.teamTxt }};">{{ p.teamAbbr }}</span>
-            </span>
+            </span></sc-if>
             <span style="font-size:11px;font-weight:600;letter-spacing:.04em;padding:2px 6px;border-radius:2px;background:var(--bg-surface-elev);border:1px solid var(--border);color:var(--fg-secondary);">{{ p.cls }}</span>
           </span>
         </span>
@@ -1379,10 +1384,11 @@
     <div style="flex:2 1 340px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
       <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <span style="display:inline-flex;align-items:stretch;height:32px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);">
+          <sc-if value="{{ sel.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="height:32px;width:84px;background-size:contain;background-repeat:no-repeat;background-position:left center;{{ sel.logoBg }}"></span></sc-if>
+          <sc-if value="{{ sel.noLogo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:stretch;height:32px;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);">
             <span style="width:6px;background:var(--border-strong);background:{{ sel.confAccent }};"></span>
             <span style="display:flex;align-items:center;padding:0 11px;font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.02em;background:var(--border-strong);background:{{ sel.color }};color:var(--fg-primary);color:{{ sel.txt }};">{{ sel.abbr }}</span>
-          </span>
+          </span></sc-if>
           <span style="text-align:right;font:600 9px/1.6 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary);">League Rank {{ sel.rankStr }}<span style="display:block;color:{{ sel.confAccent }};">{{ sel.confLabel }} Rank {{ sel.confRankStr }}</span></span>
         </div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:14px;">
@@ -1464,6 +1470,7 @@ class Component extends DCLogic {
     if (!f) {
       return { name: '—', cls: '', teamAbbr: '', teamColor: '#2A2A2A', teamTxt: '#fff',
         subline: 'No winners yet', badgeLabel: '', badge: '', cushionVal: '', cushionLabel: '',
+        hasPhoto: false, photoBg: '', hasLogo: false, logoBg: '',
         score: 0, metrics: [] };
     }
     const owner = (f.team && f.team.owner) || '';
@@ -1471,6 +1478,7 @@ class Component extends DCLogic {
       const lead = nx ? f.pts - nx.pts : 0;
       return {
         name: f.name, cls: f.team.abbr, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+        hasPhoto: false, photoBg: '', hasLogo: !!f.team.logo, logoBg: this.bgUrl(f.team.logo),
         subline: f.team.name + (owner ? ' · ' + owner : '') + ' · Head Coach',
         badgeLabel: 'WINS', badge: f.teamWins + ' W',
         cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Team-PF lead over #2',
@@ -1485,6 +1493,7 @@ class Component extends DCLogic {
     const lead = nx ? f.pts - nx.pts : 0;
     return {
       name: f.name, cls: f.team.abbr, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      hasPhoto: !!f.photo, photoBg: this.bgUrl(f.photo), hasLogo: !!f.team.logo, logoBg: this.bgUrl(f.team.logo),
       subline: f.team.name + (owner ? ' · ' + owner : ''), badgeLabel: f.pos + ' RANK', badge: '#' + f.posRank,
       cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Fantasy-pt lead over #2',
       score: f.awardScore,
@@ -1500,11 +1509,13 @@ class Component extends DCLogic {
     const owner = (f.team && f.team.owner) || f.team.name;
     if (isCoach) return {
       rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      hasPhoto: false, photoBg: '', hasLogo: !!f.team.logo, noLogo: !f.team.logo, logoBg: this.bgUrl(f.team.logo),
       meta: owner + ' · ' + f.teamWins + ' W', statMain: this.fmt2(f.pts), statSub: f.teamWins + 'W',
       score: this.fmt2(f.awardScore),
     };
     return {
       rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
+      hasPhoto: !!f.photo, photoBg: this.bgUrl(f.photo), hasLogo: !!f.team.logo, noLogo: !f.team.logo, logoBg: this.bgUrl(f.team.logo),
       meta: f.pos + ' #' + f.posRank + ' · ' + owner, statMain: this.fmt2(f.pts), statSub: f.pctTeam + '%',
       score: this.fmt2(f.awardScore),
     };
@@ -1519,6 +1530,9 @@ class Component extends DCLogic {
     return 'pa-conf-logo pa-conf-logo--' + id + (active ? '' : ' pa-conf-logo--off');
   }
   money(n) { n = Math.round(n || 0); return (n < 0 ? '-$' : '$') + Math.abs(n); }
+  // Remote-URL background-image (MFL headshots / franchise logos). Safe in an
+  // inline style — only data: URIs break the runtime's ';'-split style parser.
+  bgUrl(url) { return url ? 'background-image:url(' + url + ');' : ''; }
 
   buildRecruiting(R, D) {
     const keys = Object.keys(R.teams);
@@ -1547,7 +1561,7 @@ class Component extends DCLogic {
     const recRank = scoped.map((t) => ({
       key: t.key, rankStr: this.pad(t.rank), abbr: t.abbr || t.key, name: t.name, total: t.total || 0,
       color: t.color, txt: t.txt,
-      hasLogo: false, noLogo: true, logoStyle: '',
+      hasLogo: !!t.logo, noLogo: !t.logo, logoStyle: this.bgUrl(t.logo),
       confAccent: (D.conferences[t.conf] || {}).accent || 'var(--gold)',
       barStyle: 'width:' + Math.max(3, Math.round(((t.total || 0) / max) * 100)) + '%;background:' + t.color + ';' + (t.key === selT.key ? '' : 'opacity:.55;'),
       rowStyle: t.key === selT.key ? 'background:var(--bg-surface-elev);box-shadow:inset 3px 0 0 var(--gold);' : '',
@@ -1561,6 +1575,7 @@ class Component extends DCLogic {
     const tpct = (n) => selT.total ? Math.round((n / selT.total) * 100) : 0;
     const sel = {
       abbr: selT.abbr || selT.key || '', name: selT.name || '', color: selT.color || '#2A2A2A', txt: selT.txt || '#fff',
+      hasLogo: !!selT.logo, noLogo: !selT.logo, logoBg: this.bgUrl(selT.logo),
       confAccent: (D.conferences[selT.conf] || {}).accent || 'var(--gold)',
       rankStr: '#' + (selT.rank || ''), total: selT.total || 0,
       confLabel: (D.conferences[selT.conf] || {}).label || '',
@@ -1649,6 +1664,7 @@ class Component extends DCLogic {
       return {
         pos: p.pos, posColor: pc, posTxt: pt,
         name: p.name, teamAbbr: p.team.abbr, teamColor: p.team.color, teamTxt: p.team.txt,
+        hasPhoto: !!p.photo, photoBg: this.bgUrl(p.photo), hasLogo: !!p.team.logo, noLogo: !p.team.logo, logoBg: this.bgUrl(p.team.logo),
         cls: p.cls, posRank: '#' + p.posRank, pts: this.fmt2(p.pts), pctTeam: p.pctTeam + '%', confPts: this.fmt2(p.confPts), score: this.fmt2(p.awardScore),
       };
     });
@@ -1689,6 +1705,25 @@ class Component extends DCLogic {
 (function () {
   var FEED_URL = "https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec" + (("https://script.google.com/macros/s/AKfycbzPEJXZ0aL7GaveabunScoXiLhca0h52bYKJxXMkPdZexoEO186KreVclj7VcAGB_yW/exec").indexOf("?") >= 0 ? "&" : "?") + "feed=awards";
 
+  // MFL player headshot — same live path the Roster Board / Player Ledger use.
+  // Missing photos 404, so a background-image layer just falls back to the
+  // silhouette placeholder underneath (no broken-image icon).
+  function photoUrl(pid) {
+    return pid ? "https://www46.myfantasyleague.com/player_photos_2014/" + pid + "_thumb.jpg" : "";
+  }
+  // Normalize imgur page URLs to a direct image (matches rb-data-live imgurDirect).
+  function imgurDirect(u) {
+    var m = String(u || "").match(/^https?:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]+)(?:\.[A-Za-z0-9]+)?$/i);
+    return m ? "https://i.imgur.com/" + m[1] + ".png" : (u || "");
+  }
+  function cleanTeam(t) {
+    if (!t) return t;
+    return {
+      abbr: t.abbr, name: t.name, color: t.color, txt: t.txt, conf: t.conf,
+      owner: t.owner || "", logo: imgurDirect(t.logo)
+    };
+  }
+
   // Static presentation constants (colors/labels) — mirror the sample
   // awards-data.js so the component's tabs/accents look identical.
   var CONFS = {
@@ -1727,10 +1762,11 @@ class Component extends DCLogic {
         return {
           rank: f.rank, name: f.name, pos: f.pos,
           cls: f.team ? (f.team.owner || "") : "",   // repurposed slot: owning manager
+          playerId: f.playerId || "", photo: photoUrl(f.playerId),
           posRank: f.posRank,
           pts: f.pts, pctTeam: f.pctTeam, confPts: f.confPts || 0,
           teamWins: f.teamWins, awardScore: f.awardScore,
-          team: f.team
+          team: cleanTeam(f.team)
         };
       });
       national[key] = {
@@ -1748,8 +1784,9 @@ class Component extends DCLogic {
           return {
             pos: p.pos, name: p.name,
             cls: p.team ? (p.team.owner || "") : "",
+            playerId: p.playerId || "", photo: photoUrl(p.playerId),
             posRank: p.posRank, pts: p.pts, pctTeam: p.pctTeam, confPts: p.confPts,
-            awardScore: p.awardScore, team: p.team
+            awardScore: p.awardScore, team: cleanTeam(p.team)
           };
         });
       };
@@ -1767,12 +1804,16 @@ class Component extends DCLogic {
     };
 
     var rec = feed.recruiting || { teams: {} };
+    var recTeams = rec.teams || {};
+    Object.keys(recTeams).forEach(function (fid) {
+      if (recTeams[fid]) recTeams[fid].logo = imgurDirect(recTeams[fid].logo);
+    });
     window.CFFB_RECRUITING = {
       season: Number(feed.season),
       week: rec.weeksPlayed || feed.weeksPlayed || "",
       totalWeeks: 14,
       status: rec.status || feed.status || "PROJECTED",
-      teams: rec.teams || {}
+      teams: recTeams
     };
   }
 
