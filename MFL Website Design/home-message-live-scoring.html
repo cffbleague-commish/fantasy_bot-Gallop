@@ -944,11 +944,11 @@
    scroll at any size. */
 .ls-lcol{container-type:inline-size;flex:1 1 460px;min-width:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto}
 .ls-lcol__inner{min-width:520px}
-.ls-lhead,.ls-prow{display:grid;column-gap:10px;align-items:center;grid-template-columns:36px 34px minmax(0,1fr) 118px 52px 44px;grid-template-areas:"pos av name game pts proj"}
+.ls-lhead,.ls-prow{display:grid;column-gap:10px;align-items:center;grid-template-columns:40px 34px minmax(0,1fr) 118px 52px 44px;grid-template-areas:"pos av name game pts proj"}
 .ls-lhead{padding:9px 18px;border-bottom:1px solid var(--border);font:600 9px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-tertiary)}
 .ls-prow{padding:9px 18px;border-bottom:1px solid rgba(42,42,42,.55)}
 .ls-prow--bench{padding:8px 18px;border-bottom-color:rgba(42,42,42,.4);opacity:.72}
-.ls-prow__pos{grid-area:pos}
+.ls-prow__pos{grid-area:pos;justify-self:start;align-self:center}
 .ls-prow__av{grid-area:av;display:flex;align-items:center}
 .ls-prow__name{grid-area:name;min-width:0}
 .ls-prow__game{grid-area:game;min-width:0}
@@ -977,7 +977,7 @@
 @container (max-width:520px){
   .ls-lcol__inner{min-width:0}
   .ls-lhead{display:none}
-  .ls-prow{grid-template-columns:24px 34px minmax(0,1fr) auto;grid-template-areas:"pos av name pts" "pos av game proj";column-gap:8px;row-gap:1px;padding:9px 12px}
+  .ls-prow{grid-template-columns:38px 32px minmax(0,1fr) auto;grid-template-areas:"pos av name pts" "pos av game proj";column-gap:8px;row-gap:1px;padding:9px 12px}
   .ls-prow--bench{padding:8px 12px}
 }
 
@@ -1825,14 +1825,7 @@ const PlayerRow = ({
       animation: flash ? 'cffb-ls-flash' + flash.dir + ' 2.4s ease-out' : 'none'
     }
   }, React.createElement("span", {
-    className: "ls-prow__pos",
-    style: {
-      fontFamily: 'var(--font-display)',
-      fontWeight: 700,
-      fontSize: (bench ? 11 : 12) + 'px',
-      color: 'var(--fg-tertiary)',
-      letterSpacing: '.04em'
-    }
+    className: 'ls-prow__pos cffb-pos cffb-pos--' + p.pos.toLowerCase()
   }, p.pos), React.createElement("span", {
     className: "ls-prow__av"
   }, React.createElement(Avatar, {

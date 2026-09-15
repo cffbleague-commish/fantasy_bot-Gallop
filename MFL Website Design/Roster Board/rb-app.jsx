@@ -157,12 +157,15 @@ const ConfTabs = ({ team, setTeam }) => {
   useEffect(() => {
     // Keep clicks inside a tab OR the (portaled) menu; anything else closes it.
     const close = (e) => { if (!e.target.closest('.rb-conftab') && !e.target.closest('.rb-menu')) setOpen(null); };
-    // The menu is position:fixed, so it would drift from its tab on scroll/resize — dismiss instead.
+    // The menu is position:fixed, so PAGE scroll would drift it from its tab —
+    // dismiss then. But the menu itself scrolls internally (long team lists), so
+    // ignore scrolls that originate inside it, otherwise scrolling the list closes it.
+    const onScroll = (e) => { if (e && e.target && e.target.closest && e.target.closest('.rb-menu')) return; setOpen(null); };
     const dismiss = () => setOpen(null);
     document.addEventListener('click', close);
-    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', dismiss);
-    return () => { document.removeEventListener('click', close); window.removeEventListener('scroll', dismiss, true); window.removeEventListener('resize', dismiss); };
+    return () => { document.removeEventListener('click', close); window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', dismiss); };
   }, []);
   const toggle = (c) => (e) => {
     const r = e.currentTarget.getBoundingClientRect();

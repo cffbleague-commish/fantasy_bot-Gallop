@@ -137,8 +137,19 @@ const safeCss = dsCss
   .replace(/(^|\n)\s*a\s*\{[^}]*\}/g, '$1')
   .replace(/(^|\n)\s*a:hover\s*\{[^}]*\}/g, '$1');
 
+// Conference logos as CSS classes. Inline data: URIs must live in real CSS rules
+// (not interpolated inline styles): the dc-runtime parses inline styles by
+// splitting on ';', which shatters a data:image/png;base64,… URI.
+const logoCss = [
+  '.pa-conf-logo{background-size:contain;background-repeat:no-repeat;background-position:center}',
+  '.pa-conf-logo--off{filter:grayscale(1) opacity(.55)}',
+].concat(
+  Object.keys(confLogos).map((k) => '.pa-conf-logo--' + k + '{background-image:url(' + confLogos[k] + ')}')
+).join('\n');
+
 const extraCss = [
   '.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}',
+  logoCss,
 ].join('\n');
 
 // ---------------------------------------------------------------------------
@@ -153,7 +164,7 @@ const bootScript = [
   '  if (window.__cffbPlayerAwardsBooted) return;',
   '  window.__cffbPlayerAwardsBooted = true;',
   '  window.__resources = true;',   // skip the runtime\'s self re-fetch of location.href
-  '  window.__CFFB_AWARDS_LOGOS = ' + JSON.stringify(confLogos) + ';',
+  '  window.__CFFB_AWARDS_LOGO_IDS = ' + JSON.stringify(Object.keys(confLogos)) + ';',
   '  function __paData() {',
   dataLive,
   '  }',

@@ -140,7 +140,7 @@
   <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;margin-bottom:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);">
     <sc-for list="{{ confTabs }}" as="c" hint-placeholder-count="6">
       <button onClick="{{ c.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ c.activeStyle }}" style-hover="color:var(--fg-primary)">
-        <span style="width:22px;height:22px;flex-shrink:0;background-size:contain;background-repeat:no-repeat;background-position:center;transition:filter var(--dur-fast) var(--ease-out);{{ c.logoStyle }}"></span>
+        <span class="{{ c.logoClass }}" style="width:22px;height:22px;flex-shrink:0;transition:filter var(--dur-fast) var(--ease-out);"></span>
         <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ c.label }}</span>
         <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ c.countColor }}" class="cffb-num">{{ c.count }}</span>
       </button>
@@ -204,7 +204,7 @@
   <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;margin-bottom:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-3);">
     <sc-for list="{{ recConfTabs }}" as="rc" hint-placeholder-count="7">
       <button onClick="{{ rc.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ rc.activeStyle }}" style-hover="color:var(--fg-primary)">
-        <sc-if value="{{ rc.hasLogo }}" hint-placeholder-val="{{ false }}"><span style="width:22px;height:22px;flex-shrink:0;background-size:contain;background-repeat:no-repeat;background-position:center;transition:filter var(--dur-fast) var(--ease-out);{{ rc.logoStyle }}"></span></sc-if>
+        <sc-if value="{{ rc.hasLogo }}" hint-placeholder-val="{{ false }}"><span class="{{ rc.logoClass }}" style="width:22px;height:22px;flex-shrink:0;transition:filter var(--dur-fast) var(--ease-out);"></span></sc-if>
         <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ rc.label }}</span>
         <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ rc.countColor }}" class="cffb-num">{{ rc.count }}</span>
       </button>
@@ -372,10 +372,13 @@ class Component extends DCLogic {
     };
   }
 
-  confLogoStyle(id, active) {
-    const url = (window.__CFFB_AWARDS_LOGOS && window.__CFFB_AWARDS_LOGOS[id]) || '';
-    if (!url) return '';
-    return 'background-image:url(' + url + ');' + (active ? '' : 'filter:grayscale(1) opacity(.55);');
+  // Conference logos are served as build-injected CSS classes (.pa-conf-logo--<id>)
+  // rather than inline background-image: the dc-runtime parses inline styles by
+  // splitting on ';', which shatters a data: URI (data:image/png;base64,…).
+  hasConfLogo(id) { const ids = window.__CFFB_AWARDS_LOGO_IDS || []; return ids.indexOf(id) >= 0; }
+  confLogoClass(id, active) {
+    if (!this.hasConfLogo(id)) return 'pa-conf-logo';
+    return 'pa-conf-logo pa-conf-logo--' + id + (active ? '' : ' pa-conf-logo--off');
   }
   money(n) { n = Math.round(n || 0); return (n < 0 ? '-$' : '$') + Math.abs(n); }
 
@@ -392,8 +395,8 @@ class Component extends DCLogic {
         const count = c.key === 'all' ? ranked.length : ranked.filter((t) => t.conf === c.key).length;
         return {
           key: c.key, label: c.label, count,
-          hasLogo: c.key !== 'all' && !!(window.__CFFB_AWARDS_LOGOS && window.__CFFB_AWARDS_LOGOS[c.key]),
-          logoStyle: c.key === 'all' ? '' : this.confLogoStyle(c.key, active),
+          hasLogo: c.key !== 'all' && this.hasConfLogo(c.key),
+          logoClass: c.key === 'all' ? 'pa-conf-logo' : this.confLogoClass(c.key, active),
           countColor: active ? 'color:var(--gold);' : '',
           activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);' : '',
           onSelect: () => this.setState({ recConf: c.key }),
@@ -481,7 +484,7 @@ class Component extends DCLogic {
       const count = (tiers.first || []).length + (tiers.second || []).length + (tiers.third || []).length;
       return {
         key: k, label: c.label, count,
-        logoStyle: this.confLogoStyle(k, active),
+        logoClass: this.confLogoClass(k, active),
         countColor: active ? 'color:var(--gold);' : '',
         activeStyle: active
           ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);'

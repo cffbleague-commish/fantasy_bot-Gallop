@@ -158,7 +158,7 @@ const PlayerRow = ({ p, flash, bench, groupStart }) => {
         animation: flash ? 'cffb-ls-flash' + flash.dir + ' 2.4s ease-out' : 'none',
       }}
     >
-      <span className="ls-prow__pos" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: (bench ? 11 : 12) + 'px', color: 'var(--fg-tertiary)', letterSpacing: '.04em' }}>{p.pos}</span>
+      <span className={'ls-prow__pos cffb-pos cffb-pos--' + p.pos.toLowerCase()}>{p.pos}</span>
       <span className="ls-prow__av"><Avatar p={p} size={34} /></span>
       <span className="ls-prow__name">
         <span style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
