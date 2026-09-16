@@ -11,10 +11,10 @@ const CFFB_WEBAPP_URL = '__WEBAPP_URL__';
 const CONF_ACCENT_MAP = {
   sec: '#C9A227',
   b1g: '#4A6FA5', bten: '#4A6FA5', bigten: '#4A6FA5',
-  acc: '#8B4A5C',
+  acc: '#AEB4BA',
   big12: '#B84545', b12: '#B84545',
-  aac: '#6B5C8B',
-  pac: '#5C7A6A', pac12: '#5C7A6A', p12: '#5C7A6A'
+  aac: '#D0403F',
+  pac: '#3B7DD8', pac12: '#3B7DD8', p12: '#3B7DD8'
 };
 
 // ── Per-browser cache (stale-while-revalidate) ───────────────────────────────

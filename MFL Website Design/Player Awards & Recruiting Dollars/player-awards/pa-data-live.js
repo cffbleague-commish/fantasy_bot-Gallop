@@ -38,10 +38,10 @@
   var CONFS = {
     sec:   { key: "sec",   label: "SEC",     accent: "#C9A227", tint: "rgba(201,162,39,0.14)" },
     b1g:   { key: "b1g",   label: "Big Ten", accent: "#7DA0CC", tint: "rgba(74,111,165,0.16)" },
-    acc:   { key: "acc",   label: "ACC",     accent: "#C58DA0", tint: "rgba(139,74,92,0.18)" },
+    acc:   { key: "acc",   label: "ACC",     accent: "#AEB4BA", tint: "rgba(174,180,186,0.16)" },
     big12: { key: "big12", label: "Big 12",  accent: "#D88787", tint: "rgba(184,69,69,0.16)" },
-    aac:   { key: "aac",   label: "AAC",     accent: "#A799C0", tint: "rgba(107,92,139,0.18)" },
-    pac:   { key: "pac",   label: "Pac-12",  accent: "#9CB8A8", tint: "rgba(92,122,106,0.18)" }
+    aac:   { key: "aac",   label: "AAC",     accent: "#D0403F", tint: "rgba(208,64,63,0.16)" },
+    pac:   { key: "pac",   label: "Pac-12",  accent: "#3B7DD8", tint: "rgba(59,125,216,0.16)" }
   };
 
   // Trophy display metadata (labels only — finalists come from the feed).

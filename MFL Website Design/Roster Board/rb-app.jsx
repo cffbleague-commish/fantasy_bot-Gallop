@@ -202,7 +202,7 @@ const ConfTabs = ({ team, setTeam }) => {
           <div key={c} className="rb-conftab">
             <button role="tab" aria-selected={isActive} aria-expanded={open === c} className={'rb-tab' + (isActive ? ' is-active' : '')} style={isActive ? { boxShadow: 'inset 0 -2px 0 ' + CONF_ACCENT[c] } : null} onClick={toggle(c)}>
               {CONF_META[c].logo && <img className="rb-conflogo" src={CONF_META[c].logo} alt="" />}
-              <span className="rb-tab__abbr">{CONF_META[c].label}</span>
+              <span className="rb-tab__abbr" style={isActive ? { color: CONF_ACCENT[c] } : null}>{CONF_META[c].label}</span>
               {isActive && <span className="rb-tab__cur">{TEAMS[team].abbr}</span>}
               <span className="rb-caret">▾</span>
             </button>

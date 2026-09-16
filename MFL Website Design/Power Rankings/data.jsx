@@ -21,7 +21,7 @@ const CONFERENCES = [
 ];
 
 const CONF_ACCENT = {
-  sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A',
+  sec: '#C9A227', b1g: '#4A6FA5', acc: '#AEB4BA', big12: '#B84545', aac: '#D0403F', pac: '#3B7DD8',
 };
 const CONF_NAME = { sec: 'SEC', b1g: 'Big Ten', acc: 'ACC', big12: 'Big 12', aac: 'AAC', pac: 'Pac-12' };
 

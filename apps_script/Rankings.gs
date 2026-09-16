@@ -984,31 +984,70 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
     return;
   }
 
-  // Load cumulative data from the last complete week (if any)
+  // Re-seed the running cumulative to the state ENTERING startProcessingWeek by
+  // aggregating the WEEKLY columns of every kept row (this year, week <
+  // startProcessingWeek). We deliberately do NOT read the Season* snapshot
+  // columns: with the "entering the week" convention a row's Season* stores
+  // through (week - 1), so re-seeding from a single row's snapshot would
+  // under-count by one week. Summing the weekly columns reproduces the true
+  // through-(startProcessingWeek-1) totals and is independent of that convention.
+  // This mirrors the accumulation in the main loop below (and in
+  // calculateRegularSeasonRecords / calculateAllPlayDataFromScheduleResults).
   if (maxExistingWeekWithData > 0) {
-    existingData.slice(1).forEach(row => {
-      if (Number(row[colMap["Year"]]) !== year) return;
-      if (Number(row[colMap["Week"]]) !== maxExistingWeekWithData) return;
-
-      const franchiseId = String(row[colMap["FranchiseID"]]).padStart(3, "0");
-      existingCumulative[franchiseId] = {
-        wins: Number(row[colMap["SeasonWins"]] || 0),
-        losses: Number(row[colMap["SeasonLosses"]] || 0),
-        ties: Number(row[colMap["SeasonTies"]] || 0),
-        pointsFor: Number(row[colMap["SeasonPointsFor"]] || 0),
-        confWins: Number(row[colMap["SeasonConfWins"]] || 0),
-        confLosses: Number(row[colMap["SeasonConfLosses"]] || 0),
-        allPlayWins: Number(row[colMap["SeasonAllPlayWins"]] || 0),
-        allPlayLosses: Number(row[colMap["SeasonAllPlayLosses"]] || 0),
-        allPlayTies: Number(row[colMap["SeasonAllPlayTies"]] || 0),
-        oppAllPlayWins: Number(row[colMap["SeasonOppAllPlayWins"]] || 0),
-        oppAllPlayLosses: Number(row[colMap["SeasonOppAllPlayLosses"]] || 0),
-        oppAllPlayTies: Number(row[colMap["SeasonOppAllPlayTies"]] || 0),
-        postseasonWins: Number(row[colMap["PostseasonWins"]] || 0),
-        postseasonLosses: Number(row[colMap["PostseasonLosses"]] || 0)
+    franchiseIds.forEach(fId => {
+      existingCumulative[fId] = {
+        wins: 0, losses: 0, ties: 0,
+        pointsFor: 0,
+        confWins: 0, confLosses: 0,
+        allPlayWins: 0, allPlayLosses: 0, allPlayTies: 0,
+        oppAllPlayWins: 0, oppAllPlayLosses: 0, oppAllPlayTies: 0,
+        postseasonWins: 0, postseasonLosses: 0
       };
     });
-    Logger.log(`Loaded cumulative data from Week ${maxExistingWeekWithData} for ${Object.keys(existingCumulative).length} teams`);
+
+    existingData.slice(1).forEach(row => {
+      if (Number(row[colMap["Year"]]) !== year) return;
+      const rowWeek = Number(row[colMap["Week"]]);
+      if (rowWeek >= startProcessingWeek) return;  // only weeks we're keeping
+
+      const franchiseId = String(row[colMap["FranchiseID"]]).padStart(3, "0");
+      const acc = existingCumulative[franchiseId];
+      if (!acc) return;
+
+      const gameResult = row[colMap["GameResult"]];
+      // Only completed games count (skip BYE, FINAL, and blank/unplayed rows)
+      if (gameResult !== "W" && gameResult !== "L" && gameResult !== "T") return;
+
+      const teamScore = Number(row[colMap["TeamScore"]] || 0);
+      const rawIsConf = row[colMap["IsConferenceGame"]];
+      const isConf = rawIsConf === true || String(rawIsConf).toUpperCase() === "TRUE";
+
+      if (rowWeek <= 12) {
+        // Regular season
+        if (gameResult === "W") acc.wins++;
+        else if (gameResult === "L") acc.losses++;
+        else acc.ties++;
+
+        acc.pointsFor += teamScore;
+
+        if (isConf) {
+          if (gameResult === "W") acc.confWins++;
+          else if (gameResult === "L") acc.confLosses++;
+        }
+
+        acc.allPlayWins += Number(row[colMap["WeeklyAllPlayWins"]] || 0);
+        acc.allPlayLosses += Number(row[colMap["WeeklyAllPlayLosses"]] || 0);
+        acc.allPlayTies += Number(row[colMap["WeeklyAllPlayTies"]] || 0);
+        acc.oppAllPlayWins += Number(row[colMap["WeeklyOppAllPlayWins"]] || 0);
+        acc.oppAllPlayLosses += Number(row[colMap["WeeklyOppAllPlayLosses"]] || 0);
+        acc.oppAllPlayTies += Number(row[colMap["WeeklyOppAllPlayTies"]] || 0);
+      } else if (rowWeek <= 17) {
+        // Postseason (weeks 13-17): only postseason W/L accumulate
+        if (gameResult === "W") acc.postseasonWins++;
+        else if (gameResult === "L") acc.postseasonLosses++;
+      }
+    });
+    Logger.log(`Reconstructed cumulative through Week ${startProcessingWeek - 1} for ${Object.keys(existingCumulative).length} teams`);
   }
 
   // Keep rows from other years + completed weeks from this year
@@ -1136,6 +1175,13 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
     franchiseIds.forEach(franchiseId => {
       const opponent = opponentMap[franchiseId];
 
+      // Snapshot cumulative state ENTERING this week (through week N-1) BEFORE we
+      // fold in this week's game below. This row's Season*/RankingScore/SeasonRank
+      // reflect "entering the week" (look-backward convention): Week 1 = 0-0,
+      // Week N = through Week N-1. The running `cumulative` is still advanced with
+      // this week's game so week N+1 is seeded correctly.
+      const entering = { ...cumulative[franchiseId] };
+
       let gameResult = "";
       let opponentId = "";
       let opponentName = "";
@@ -1215,8 +1261,8 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
         opponentScore = "";
       }
 
-      // Calculate percentages
-      const c = cumulative[franchiseId];
+      // Calculate percentages from the ENTERING snapshot (through week N-1)
+      const c = entering;
       const seasonAllPlayPct = calculateAllPlayPct(c.allPlayWins, c.allPlayLosses, c.allPlayTies);
       const seasonOppAllPlayPct = calculateAllPlayPct(c.oppAllPlayWins, c.oppAllPlayLosses, c.oppAllPlayTies);
 
@@ -1254,9 +1300,11 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
       return 0;
     });
 
-    // Check for championship override in Week 17+ (champion is always #1 after championship)
-    // Week 17 = Championship week, Week 18 = Final Rankings
-    if (week >= 17) {
+    // Championship override: force the champion to #1 ONLY on the Week 18 row.
+    // With the "entering the week" convention, the Week 17 row shows state through
+    // Week 16 (before the championship is played), so it must NOT be overridden;
+    // Week 18 shows state through Week 17 (championship complete) = final standings.
+    if (week >= 18) {
       const championId = getChampionshipWinner(year);
       if (championId) {
         const champIndex = rankingArray.findIndex(t => t.franchiseId === championId);
@@ -1273,6 +1321,18 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
     rankingArray.forEach((team, index) => {
       rankMap[team.franchiseId] = index + 1;
     });
+
+    // Week 1 rankings come from the manually-entered preseason coaches poll, not
+    // from (nonexistent) prior-week data. Override the computed rankMap with the
+    // poll so SeasonRank and the College Gameday picks below match the poll. This
+    // makes this path produce the same result as stampWeek1GamedayFromPoll, so the
+    // preseason stamp can no longer be clobbered when weekly rankings are calculated.
+    if (week === 1) {
+      const pollMap = getPreseasonPollRankMap(year);
+      if (Object.keys(pollMap).length > 0) {
+        franchiseIds.forEach(fId => { rankMap[fId] = pollMap[fId] || 100; });
+      }
+    }
 
     // Calculate College Gameday data for this week
     // Find each unique matchup and calculate average rank
@@ -1531,13 +1591,16 @@ function calculateAndSaveRankings(year, rankingWeek, refreshScheduleResults = tr
     return [];
   }
 
-  // Add previous rank and movement from the week before
-  const previousDataWeek = dataWeek - 1;
+  // Add previous rank and movement from the previously published rankings.
+  // Current rankings come from row `rankingWeek` (state through rankingWeek-1). The
+  // previously published poll is ranking week (rankingWeek-1), whose standings now
+  // live in row (rankingWeek-1) under the "entering the week" convention.
+  const previousRankWeek = rankingWeek - 1;
   rankings.forEach(team => {
-    if (previousDataWeek >= 1) {
-      team.previousRank = getTeamRankFromScheduleResults(year, previousDataWeek, team.franchiseId);
+    if (previousRankWeek >= 2) {
+      team.previousRank = getTeamRankFromScheduleResults(year, previousRankWeek, team.franchiseId);
     } else {
-      // For Week 2 rankings (dataWeek=1), look up Week 1 preseason from PowerRankings
+      // previousRankWeek === 1: the prior poll is the Week 1 preseason coaches poll
       team.previousRank = getPreviousRankFromPowerRankings(year, 1, team.franchiseId);
     }
     team.movement = calculateMovement(team.rank, team.previousRank);
@@ -1744,16 +1807,15 @@ function calculateFinalRankings(year) {
  * @returns {Object} - { gamedayMatchup, gamesOfTheWeek, allMatchups }
  */
 function getCollegeGamedayMatchups(year, upcomingWeek) {
-  // Get current rankings (from the week before the upcoming games)
-  const dataWeek = upcomingWeek - 1;
-
-  // Get rankings from ScheduleResults for the previous week
+  // We want the rankings ENTERING upcomingWeek (state through upcomingWeek-1). With
+  // the "entering the week" convention, row `upcomingWeek` in ScheduleResults holds
+  // exactly that (row 1 = preseason poll, row N = through Week N-1).
   let rankings;
-  if (dataWeek >= 1) {
-    rankings = getRankingsFromScheduleResults(year, dataWeek);
+  if (upcomingWeek >= 1) {
+    rankings = getRankingsFromScheduleResults(year, upcomingWeek);
   }
 
-  // If no rankings yet (Week 1 games), try PowerRankings preseason
+  // Fallback if that row isn't populated yet (e.g., Week 1): PowerRankings preseason
   if (!rankings || rankings.length === 0) {
     rankings = getCurrentRankings(year, 1);  // Week 1 preseason
   }

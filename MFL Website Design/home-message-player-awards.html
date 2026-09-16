@@ -308,8 +308,8 @@
   --live: #2D7A4E;
 
   /* Conferences */
-  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
-  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #AEB4BA;
+  --conf-big12: #B84545; --conf-pac: #3B7DD8; --conf-aac: #D0403F;
   --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
 
   /* Eligibility / Redshirt */
@@ -1044,12 +1044,14 @@
 .cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
 .cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
 .cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
-.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
-.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(174,180,186,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C7CCD1; }
 .cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
 .cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
-.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
-.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(59,125,216,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #8FB4E8; }
+.cffb-award--allamerican.is-aac   { border-color: rgba(208,64,63,0.55); }
+.cffb-award--allamerican.is-aac .cffb-award__glyph { color: #E89290; }
 
 /* Size variants */
 .cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
@@ -1080,10 +1082,10 @@
 }
 .cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
 .cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
-.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--acc   { background: rgba(174,180,186,0.16); color: #C7CCD1; border-color: rgba(174,180,186,0.45); }
 .cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
-.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
-.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--pac   { background: rgba(59,125,216,0.16); color: #8FB4E8; border-color: rgba(59,125,216,0.45); }
+.cffb-conf--aac   { background: rgba(208,64,63,0.16); color: #E89290; border-color: rgba(208,64,63,0.45); }
 .cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
 .cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
 
@@ -1285,7 +1287,7 @@
     <sc-for list="{{ confTabs }}" as="c" hint-placeholder-count="6">
       <button onClick="{{ c.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ c.activeStyle }}" style-hover="color:var(--fg-primary)">
         <span class="{{ c.logoClass }}" style="width:22px;height:22px;flex-shrink:0;transition:filter var(--dur-fast) var(--ease-out);"></span>
-        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ c.label }}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:{{ c.labelColor }};">{{ c.label }}</span>
         <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ c.countColor }}" class="cffb-num">{{ c.count }}</span>
       </button>
     </sc-for>
@@ -1350,7 +1352,7 @@
     <sc-for list="{{ recConfTabs }}" as="rc" hint-placeholder-count="7">
       <button onClick="{{ rc.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ rc.activeStyle }}" style-hover="color:var(--fg-primary)">
         <sc-if value="{{ rc.hasLogo }}" hint-placeholder-val="{{ false }}"><span class="{{ rc.logoClass }}" style="width:22px;height:22px;flex-shrink:0;transition:filter var(--dur-fast) var(--ease-out);"></span></sc-if>
-        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ rc.label }}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:{{ rc.labelColor }};">{{ rc.label }}</span>
         <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ rc.countColor }}" class="cffb-num">{{ rc.count }}</span>
       </button>
     </sc-for>
@@ -1545,12 +1547,14 @@ class Component extends DCLogic {
       .map((c) => {
         const active = c.key === confKey;
         const count = c.key === 'all' ? ranked.length : ranked.filter((t) => t.conf === c.key).length;
+        const accent = (D.conferences[c.key] || {}).accent || 'var(--gold)';
         return {
           key: c.key, label: c.label, count,
           hasLogo: c.key !== 'all' && this.hasConfLogo(c.key),
           logoClass: c.key === 'all' ? 'pa-conf-logo' : this.confLogoClass(c.key, active),
           countColor: active ? 'color:var(--gold);' : '',
-          activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);' : '',
+          labelColor: active ? accent : '',
+          activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);box-shadow:inset 0 -2px 0 ' + accent + ';' : '',
           onSelect: () => this.setState({ recConf: c.key }),
         };
       });
@@ -1639,8 +1643,9 @@ class Component extends DCLogic {
         key: k, label: c.label, count,
         logoClass: this.confLogoClass(k, active),
         countColor: active ? 'color:var(--gold);' : '',
+        labelColor: active ? (c.accent || 'var(--fg-primary)') : '',
         activeStyle: active
-          ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);'
+          ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);box-shadow:inset 0 -2px 0 ' + (c.accent || 'var(--gold)') + ';'
           : '',
         onSelect: () => this.setState({ conf: k }),
       };
@@ -1729,10 +1734,10 @@ class Component extends DCLogic {
   var CONFS = {
     sec:   { key: "sec",   label: "SEC",     accent: "#C9A227", tint: "rgba(201,162,39,0.14)" },
     b1g:   { key: "b1g",   label: "Big Ten", accent: "#7DA0CC", tint: "rgba(74,111,165,0.16)" },
-    acc:   { key: "acc",   label: "ACC",     accent: "#C58DA0", tint: "rgba(139,74,92,0.18)" },
+    acc:   { key: "acc",   label: "ACC",     accent: "#AEB4BA", tint: "rgba(174,180,186,0.16)" },
     big12: { key: "big12", label: "Big 12",  accent: "#D88787", tint: "rgba(184,69,69,0.16)" },
-    aac:   { key: "aac",   label: "AAC",     accent: "#A799C0", tint: "rgba(107,92,139,0.18)" },
-    pac:   { key: "pac",   label: "Pac-12",  accent: "#9CB8A8", tint: "rgba(92,122,106,0.18)" }
+    aac:   { key: "aac",   label: "AAC",     accent: "#D0403F", tint: "rgba(208,64,63,0.16)" },
+    pac:   { key: "pac",   label: "Pac-12",  accent: "#3B7DD8", tint: "rgba(59,125,216,0.16)" }
   };
 
   // Trophy display metadata (labels only — finalists come from the feed).

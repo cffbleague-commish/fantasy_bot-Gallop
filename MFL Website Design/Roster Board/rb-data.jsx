@@ -29,7 +29,7 @@ const TEAMS = {
 };
 const TEAM_ORDER = ['UNC', 'UGA', 'TEX', 'OSU', 'MICH', 'UTAH', 'ARMY', 'ORST'];
 
-const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A' };
+const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#AEB4BA', big12: '#B84545', aac: '#D0403F', pac: '#3B7DD8' };
 const CONF_ORDER = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
 const CONF_META = {
   sec:   { label: 'SEC',    logo: '../assets/conferences/sec.png' },

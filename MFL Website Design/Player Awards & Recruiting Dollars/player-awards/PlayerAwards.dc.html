@@ -144,7 +144,7 @@
     <sc-for list="{{ confTabs }}" as="c" hint-placeholder-count="6">
       <button onClick="{{ c.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ c.activeStyle }}" style-hover="color:var(--fg-primary)">
         <span class="{{ c.logoClass }}" style="width:22px;height:22px;flex-shrink:0;transition:filter var(--dur-fast) var(--ease-out);"></span>
-        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ c.label }}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:{{ c.labelColor }};">{{ c.label }}</span>
         <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ c.countColor }}" class="cffb-num">{{ c.count }}</span>
       </button>
     </sc-for>
@@ -210,7 +210,7 @@
     <sc-for list="{{ recConfTabs }}" as="rc" hint-placeholder-count="7">
       <button onClick="{{ rc.onSelect }}" style="display:flex;align-items:center;gap:9px;flex-shrink:0;cursor:pointer;padding:9px 15px;border-radius:var(--r-2);transition:color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);background:var(--bg-surface);border:1px solid var(--border);color:var(--fg-secondary);{{ rc.activeStyle }}" style-hover="color:var(--fg-primary)">
         <sc-if value="{{ rc.hasLogo }}" hint-placeholder-val="{{ false }}"><span class="{{ rc.logoClass }}" style="width:22px;height:22px;flex-shrink:0;transition:filter var(--dur-fast) var(--ease-out);"></span></sc-if>
-        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;">{{ rc.label }}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:{{ rc.labelColor }};">{{ rc.label }}</span>
         <span style="font-family:var(--font-body);font-weight:600;font-size:11px;font-variant-numeric:tabular-nums;background:#101010;border-radius:var(--r-pill);padding:2px 7px;color:var(--fg-tertiary);{{ rc.countColor }}" class="cffb-num">{{ rc.count }}</span>
       </button>
     </sc-for>
@@ -407,12 +407,14 @@ class Component extends DCLogic {
       .map((c) => {
         const active = c.key === confKey;
         const count = c.key === 'all' ? ranked.length : ranked.filter((t) => t.conf === c.key).length;
+        const accent = (D.conferences[c.key] || {}).accent || 'var(--gold)';
         return {
           key: c.key, label: c.label, count,
           hasLogo: c.key !== 'all' && this.hasConfLogo(c.key),
           logoClass: c.key === 'all' ? 'pa-conf-logo' : this.confLogoClass(c.key, active),
           countColor: active ? 'color:var(--gold);' : '',
-          activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);' : '',
+          labelColor: active ? accent : '',
+          activeStyle: active ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);box-shadow:inset 0 -2px 0 ' + accent + ';' : '',
           onSelect: () => this.setState({ recConf: c.key }),
         };
       });
@@ -501,8 +503,9 @@ class Component extends DCLogic {
         key: k, label: c.label, count,
         logoClass: this.confLogoClass(k, active),
         countColor: active ? 'color:var(--gold);' : '',
+        labelColor: active ? (c.accent || 'var(--fg-primary)') : '',
         activeStyle: active
-          ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);'
+          ? 'background:var(--bg-surface-elev);border:1px solid var(--border-strong);color:var(--fg-primary);box-shadow:inset 0 -2px 0 ' + (c.accent || 'var(--gold)') + ';'
           : '',
         onSelect: () => this.setState({ conf: k }),
       };

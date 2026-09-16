@@ -438,13 +438,13 @@ const CONF_ACCENT_MAP = {
   b1g: '#4A6FA5',
   bten: '#4A6FA5',
   bigten: '#4A6FA5',
-  acc: '#8B4A5C',
+  acc: '#AEB4BA',
   big12: '#B84545',
   b12: '#B84545',
-  aac: '#6B5C8B',
-  pac: '#5C7A6A',
-  pac12: '#5C7A6A',
-  p12: '#5C7A6A'
+  aac: '#D0403F',
+  pac: '#3B7DD8',
+  pac12: '#3B7DD8',
+  p12: '#3B7DD8'
 };
 const CFFB_CACHE_KEY = 'cffb_webapp_payload_v1';
 const CFFB_FRESH_MS = 6 * 60 * 60 * 1000;
@@ -594,7 +594,10 @@ const ConfFilter = ({
   role: "tab",
   "aria-selected": active === c.id,
   className: 'conf-tab' + (active === c.id ? ' is-active' : ''),
-  onClick: () => onChange(c.id)
+  onClick: () => onChange(c.id),
+  style: active === c.id ? {
+    boxShadow: 'inset 0 -2px 0 ' + (CONF_ACCENT[c.id] || 'var(--gold)')
+  } : null
 }, c.logo ? React.createElement("img", {
   className: "conf-tab__logo",
   src: c.logo,
@@ -602,7 +605,10 @@ const ConfFilter = ({
 }) : React.createElement("span", {
   className: "conf-tab__all"
 }, "\u2605"), React.createElement("span", {
-  className: "conf-tab__name"
+  className: "conf-tab__name",
+  style: active === c.id ? {
+    color: CONF_ACCENT[c.id] || 'var(--gold)'
+  } : null
 }, c.name), React.createElement("span", {
   className: "conf-tab__count"
 }, CONF_COUNTS[c.id] || 0))));

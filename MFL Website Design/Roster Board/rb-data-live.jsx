@@ -20,7 +20,7 @@
 // and window.__loadRosterBoard (awaited by the boot wrapper before mount).
 
 // ── Static maps (from the design) ────────────────────────────────────────────
-const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A' };
+const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#AEB4BA', big12: '#B84545', aac: '#D0403F', pac: '#3B7DD8' };
 const CONF_ORDER  = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
 // Conference logos are inlined as base64 data URIs at build time (so the widget
 // stays self-contained on MFL); ConfTabs falls back to the text label when a
@@ -743,22 +743,32 @@ function rbParseLineupForm(html, fid) {
     req[slot] = { min: parseInt(m[1], 10), max: m[2] ? parseInt(m[2], 10) : parseInt(m[1], 10) };
   }
 
-  // Starter checkboxes: name = <slot><fid>. Capture pid + checked + the anchor's
-  // title (weekly matchup) and the first projection cell that follows.
+  // Starter checkboxes: name = <slot><fid>. Identity (slot/pid/checked) comes from
+  // the checkbox ALONE. A current-week starter's row carries extra live-game markup
+  // (opponent score, status, links) that used to push the projection cell past a
+  // fixed lookahead and drop the player entirely — so future weeks showed the full
+  // roster but the in-progress week lost every already-selected starter. Opponent +
+  // projection are now best-effort enrichment, scoped to the span up to the next
+  // checkbox, and never gate whether the player appears.
   const slots = {};                      // slot -> [ { pid, checked, opp, proj } ]
   const cbRe = new RegExp(
-    '<input[^>]*type="checkbox"[^>]*name="([A-Za-z+/]+)' + fid + '"[^>]*value="(\\d+)"([^>]*?)>' +
-    '\\s*<a[^>]*?title="([^"]*)"[^>]*>[\\s\\S]{0,400}?class="points">([\\d.]*)<', 'gi');
+    '<input[^>]*?type="checkbox"[^>]*?name="([A-Za-z+/]+)' + fid + '"[^>]*?value="(\\d+)"([^>]*?)>', 'gi');
+  const hits = [];
   while ((m = cbRe.exec(inner))) {
-    const slot = m[1], pid = m[2], checked = /checked/i.test(m[3] || ''), title = m[4] || '';
-    const wk = title.match(/Week\s+\d+:\s*(.+)$/);
-    (slots[slot] = slots[slot] || []).push({
-      pid, checked,
-      opp: wk ? wk[1].trim() : '',
-      proj: m[5] ? parseFloat(m[5]) : null,
-    });
-    if (order.indexOf(slot) < 0) order.push(slot);
+    hits.push({ slot: m[1], pid: m[2], checked: /checked/i.test(m[3] || ''), end: cbRe.lastIndex });
   }
+  hits.forEach((h, i) => {
+    const seg = inner.slice(h.end, i + 1 < hits.length ? hits[i + 1].end : inner.length);
+    const t = /title="([^"]*)"/i.exec(seg);
+    const wk = t && t[1].match(/Week\s+\d+:\s*(.+)$/);
+    const pts = /class="points">([\d.]*)</i.exec(seg);
+    (slots[h.slot] = slots[h.slot] || []).push({
+      pid: h.pid, checked: h.checked,
+      opp: wk ? wk[1].trim() : '',
+      proj: pts && pts[1] ? parseFloat(pts[1]) : null,
+    });
+    if (order.indexOf(h.slot) < 0) order.push(h.slot);
+  });
 
   // Tiebreaker <select> — the pre-selected roster player.
   let tiebreaker = null;

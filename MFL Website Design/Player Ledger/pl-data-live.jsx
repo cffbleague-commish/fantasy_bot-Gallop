@@ -25,7 +25,7 @@ const POS_COLORS = {
   OL: '#8A8A8A', DL: '#8B6F1F', LB: '#B84545', DB: '#6E86A8', ATH: '#9A9A9A',
 };
 const CONF_ACCENT = {
-  sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A',
+  sec: '#C9A227', b1g: '#4A6FA5', acc: '#AEB4BA', big12: '#B84545', aac: '#D0403F', pac: '#3B7DD8',
 };
 const CONF_ORDER = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
 

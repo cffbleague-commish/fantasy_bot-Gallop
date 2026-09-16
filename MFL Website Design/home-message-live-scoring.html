@@ -73,8 +73,8 @@
   --live: #2D7A4E;
 
   /* Conferences */
-  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #8B4A5C;
-  --conf-big12: #B84545; --conf-pac: #5C7A6A; --conf-aac: #6B5C8B;
+  --conf-sec: #C9A227; --conf-b1g: #4A6FA5; --conf-acc: #AEB4BA;
+  --conf-big12: #B84545; --conf-pac: #3B7DD8; --conf-aac: #D0403F;
   --conf-mw: #8B6F1F; --conf-ind: #5A5A5A;
 
   /* Eligibility / Redshirt */
@@ -809,12 +809,14 @@
 .cffb-award--allamerican.is-sec .cffb-award__glyph { color: var(--gold); }
 .cffb-award--allamerican.is-b1g   { border-color: rgba(74,111,165,0.55); }
 .cffb-award--allamerican.is-b1g .cffb-award__glyph { color: #7DA0CC; }
-.cffb-award--allamerican.is-acc   { border-color: rgba(139,74,92,0.55); }
-.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C58DA0; }
+.cffb-award--allamerican.is-acc   { border-color: rgba(174,180,186,0.55); }
+.cffb-award--allamerican.is-acc .cffb-award__glyph { color: #C7CCD1; }
 .cffb-award--allamerican.is-big12 { border-color: rgba(184,69,69,0.55); }
 .cffb-award--allamerican.is-big12 .cffb-award__glyph { color: #D88787; }
-.cffb-award--allamerican.is-pac   { border-color: rgba(92,122,106,0.55); }
-.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #9CB8A8; }
+.cffb-award--allamerican.is-pac   { border-color: rgba(59,125,216,0.55); }
+.cffb-award--allamerican.is-pac .cffb-award__glyph { color: #8FB4E8; }
+.cffb-award--allamerican.is-aac   { border-color: rgba(208,64,63,0.55); }
+.cffb-award--allamerican.is-aac .cffb-award__glyph { color: #E89290; }
 
 /* Size variants */
 .cffb-awards--sm .cffb-award { padding: 3px 8px 3px 6px; font-size: 11px; gap: 5px; }
@@ -845,10 +847,10 @@
 }
 .cffb-conf--sec   { background: rgba(201,162,39,0.15); color: var(--gold); border-color: rgba(201,162,39,0.4); }
 .cffb-conf--b1g   { background: rgba(74,111,165,0.15); color: #7DA0CC; border-color: rgba(74,111,165,0.4); }
-.cffb-conf--acc   { background: rgba(139,74,92,0.18); color: #C58DA0; border-color: rgba(139,74,92,0.45); }
+.cffb-conf--acc   { background: rgba(174,180,186,0.16); color: #C7CCD1; border-color: rgba(174,180,186,0.45); }
 .cffb-conf--big12 { background: rgba(184,69,69,0.15); color: #D88787; border-color: rgba(184,69,69,0.4); }
-.cffb-conf--pac   { background: rgba(92,122,106,0.18); color: #9CB8A8; border-color: rgba(92,122,106,0.45); }
-.cffb-conf--aac   { background: rgba(107,92,139,0.18); color: #A799C0; border-color: rgba(107,92,139,0.45); }
+.cffb-conf--pac   { background: rgba(59,125,216,0.16); color: #8FB4E8; border-color: rgba(59,125,216,0.45); }
+.cffb-conf--aac   { background: rgba(208,64,63,0.16); color: #E89290; border-color: rgba(208,64,63,0.45); }
 .cffb-conf--mw    { background: rgba(139,111,31,0.18); color: #BFA058; border-color: rgba(139,111,31,0.45); }
 .cffb-conf--ind   { background: var(--bg-surface-elev); color: var(--fg-secondary); border-color: var(--border); }
 
@@ -1032,10 +1034,10 @@
 const CONF_ACCENT = {
   sec: '#C9A227',
   b1g: '#4A6FA5',
-  acc: '#8B4A5C',
+  acc: '#AEB4BA',
   big12: '#B84545',
-  aac: '#6B5C8B',
-  pac: '#5C7A6A'
+  aac: '#D0403F',
+  pac: '#3B7DD8'
 };
 const CONF_ORDER = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
 const CONF_LABEL = {

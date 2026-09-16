@@ -185,7 +185,8 @@ function buildPowerRankingsPayload(overrideYear) {
       upcoming: upcoming,
 
       // Weekly rank timeline for the RankTrail chart. rankHist[i] is the
-      // team's league rank AFTER week (i+1). moves[i] is the delta vs the
+      // team's published league rank GOING INTO week (i+1) (state through week i;
+      // rankHist[0] = the Week 1 preseason poll). moves[i] is the delta vs the
       // prior week (positive = climbed, negative = dropped).
       rankHist: (historyByFranchise[fid] && historyByFranchise[fid].rankHist) || [],
       moves:    (historyByFranchise[fid] && historyByFranchise[fid].moves)    || []
@@ -314,7 +315,9 @@ function readLatestPowerRankings(year) {
  * We use ScheduleResults (not PowerRankings) because Rankings.gs::writeRankingsToSheet
  * intentionally clears PowerRankings on each run — it only ever holds the latest
  * week. ScheduleResults, in contrast, keeps a row per franchise per week with a
- * `SeasonRank` column populated as of that week.
+ * `SeasonRank` column. Under the "entering the week" convention, each week's
+ * SeasonRank is the rank GOING INTO that week (Week 1 = preseason poll, Week N =
+ * state through Week N-1).
  */
 function readPowerRankingsHistory(year) {
   const sheet = SpreadsheetApp.getActive().getSheetByName("ScheduleResults");

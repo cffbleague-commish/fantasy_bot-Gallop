@@ -658,9 +658,12 @@ function getConferenceStandingsWithTiebreakers(year, conference, throughWeek = n
   if (allRankings && allRankings.length > 0) {
     Logger.log(`Using ${allRankings.length} rankings from PowerRankings Week ${rankingsWeek}`);
   } else {
-    // No rankings found - calculate tiebreaker data from ScheduleResults cumulative columns
-    Logger.log(`No rankings found for Week ${rankingsWeek}, reading tiebreaker data from ScheduleResults Week ${throughWeek}...`);
-    allRankings = calculateTiebreakerDataFromSchedule(year, throughWeek);
+    // No rankings found - calculate tiebreaker data from ScheduleResults cumulative columns.
+    // Read row `rankingsWeek` (= throughWeek + 1): with the "entering the week"
+    // convention that row's Season* columns hold cumulative through throughWeek,
+    // matching the PowerRankings path above.
+    Logger.log(`No rankings found for Week ${rankingsWeek}, reading tiebreaker data from ScheduleResults Week ${rankingsWeek}...`);
+    allRankings = calculateTiebreakerDataFromSchedule(year, rankingsWeek);
   }
 
   const rankingsMap = {};

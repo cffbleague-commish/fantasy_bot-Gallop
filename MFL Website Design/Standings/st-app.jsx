@@ -318,10 +318,11 @@ function App() {
       <nav className="st-conffilter" role="tablist" aria-label="Conference">
         {model.conferences.map((c) => (
           <button key={c} role="tab" aria-selected={view === c}
-            className={'st-conftab' + (view === c ? ' is-active' : '')} onClick={() => setView(c)}>
+            className={'st-conftab' + (view === c ? ' is-active' : '')} onClick={() => setView(c)}
+            style={view === c ? { boxShadow: 'inset 0 -2px 0 var(--conf-' + confSlug(c) + ')', color: 'var(--fg-primary)' } : null}>
             <img className="st-conftab__logo" src={(model.confLogos && model.confLogos[c]) || confLogo(c)} alt=""
               onError={(e) => { e.target.style.display = 'none'; }} />
-            <span className="st-conftab__name">{c}</span>
+            <span className="st-conftab__name" style={view === c ? { color: 'var(--conf-' + confSlug(c) + ')' } : null}>{c}</span>
             <span className="st-conftab__count cffb-num">{counts[c] || 0}</span>
           </button>
         ))}

@@ -25,7 +25,7 @@
 // (awaited by the boot wrapper) and window.__refreshLiveScoring (the poll).
 
 // ── Static maps ───────────────────────────────────────────────────────────────
-const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#8B4A5C', big12: '#B84545', aac: '#6B5C8B', pac: '#5C7A6A' };
+const CONF_ACCENT = { sec: '#C9A227', b1g: '#4A6FA5', acc: '#AEB4BA', big12: '#B84545', aac: '#D0403F', pac: '#3B7DD8' };
 const CONF_ORDER  = ['sec', 'b1g', 'acc', 'big12', 'pac', 'aac'];
 const CONF_LABEL  = { sec: 'SEC', b1g: 'B1G', acc: 'ACC', big12: 'BIG 12', pac: 'PAC', aac: 'AAC' };
 // MFL franchise division code -> conference id.

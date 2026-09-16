@@ -29,11 +29,12 @@ const ConfFilter = ({ active, onChange }) => (
   <div className="conf-filter" role="tablist" aria-label="Conference">
     {CONFERENCES.map((c) => (
       <button key={c.id} role="tab" aria-selected={active === c.id}
-        className={'conf-tab' + (active === c.id ? ' is-active' : '')} onClick={() => onChange(c.id)}>
+        className={'conf-tab' + (active === c.id ? ' is-active' : '')} onClick={() => onChange(c.id)}
+        style={active === c.id ? { boxShadow: 'inset 0 -2px 0 ' + (CONF_ACCENT[c.id] || 'var(--gold)') } : null}>
         {c.logo
           ? <img className="conf-tab__logo" src={c.logo} alt={c.name} />
           : <span className="conf-tab__all">★</span>}
-        <span className="conf-tab__name">{c.name}</span>
+        <span className="conf-tab__name" style={active === c.id ? { color: (CONF_ACCENT[c.id] || 'var(--gold)') } : null}>{c.name}</span>
         <span className="conf-tab__count">{CONF_COUNTS[c.id] || 0}</span>
       </button>
     ))}
