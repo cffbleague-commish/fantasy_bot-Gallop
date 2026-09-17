@@ -476,7 +476,6 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
   const startWk = week || (form && form.week) || 1;
   const weekOpts = [];
   for (let w = startWk; w <= LINEUP_MAX_WEEK; w++) weekOpts.push(w);
-  const selectedPids = form ? form.order.reduce((acc, slot) => acc.concat(sel[slot] || []), []) : [];
 
   return (
     <div className="rb-modal" role="dialog" aria-modal="true"
@@ -553,7 +552,7 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
               <label className="rb-lu__tb">Tie-breaker&nbsp;
                 <select value={tb || ''} disabled={locked || busy} onChange={(e) => setTb(e.target.value || null)}>
                   <option value="">(none)</option>
-                  {selectedPids.map((pid) => { const p = PLAYERS_BY_ID[pid] || { name: pid }; return <option key={pid} value={pid}>{displayName(p.name)}</option>; })}
+                  {(form.tiebreakerOpts || []).map((o) => { const p = PLAYERS_BY_ID[o.pid]; return <option key={o.pid} value={o.pid}>{p ? displayName(p.name) : o.label}</option>; })}
                 </select>
               </label>
               <MBtn tone="go" disabled={!valid || locked || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>

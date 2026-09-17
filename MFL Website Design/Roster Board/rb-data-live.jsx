@@ -759,21 +759,40 @@ function rbParseLineupForm(html, fid) {
   }
   hits.forEach((h, i) => {
     const seg = inner.slice(h.end, i + 1 < hits.length ? hits[i + 1].end : inner.length);
-    const t = /title="([^"]*)"/i.exec(seg);
-    const wk = t && t[1].match(/Week\s+\d+:\s*(.+)$/);
-    const pts = /class="points">([\d.]*)</i.exec(seg);
+    // Opponent + projection are anchored to the game-matchup link ("Week N: at …").
+    // Two reasons this must be specific, not "first title / first points cell":
+    //   • the week in the title is the row's real week, so future weeks show their
+    //     own matchup rather than the current one;
+    //   • the projection cell is read AFTER that anchor, skipping the live-score
+    //     cell MFL puts before it in-week (which is blank pre-game and otherwise
+    //     wiped out this week's projections).
+    const a = /<a[^>]*title="(Week\s+\d+:[^"]*)"/i.exec(seg);
+    const after = a ? seg.slice(a.index) : seg;
+    const pts = /class="points">([\d.]*)</i.exec(after);
     (slots[h.slot] = slots[h.slot] || []).push({
       pid: h.pid, checked: h.checked,
-      opp: wk ? wk[1].trim() : '',
+      opp: a ? a[1].replace(/^Week\s+\d+:\s*/i, '').trim() : '',
       proj: pts && pts[1] ? parseFloat(pts[1]) : null,
     });
     if (order.indexOf(h.slot) < 0) order.push(h.slot);
   });
 
-  // Tiebreaker <select> — the pre-selected roster player.
+  // Tiebreaker <select> — MFL only lists eligible tiebreaker players here (its own
+  // rule: a non-starter). Mirror MFL's exact option set so we never offer a player
+  // MFL rejects on submit; capture the pre-selected one and the full candidate list.
   let tiebreaker = null;
+  const tiebreakerOpts = [];             // [ { pid, label } ] — MFL's allowed choices
   const tbSel = new RegExp('<select[^>]*name="TIEBREAKER' + fid + '"[\\s\\S]*?</select>', 'i').exec(inner);
-  if (tbSel) { const s = /<option[^>]*value="([^"]*)"[^>]*selected/i.exec(tbSel[0]); tiebreaker = s ? s[1] : null; }
+  if (tbSel) {
+    const optRe = /<option[^>]*value="([^"]*)"([^>]*)>([\s\S]*?)<\/option>/gi;
+    let om;
+    while ((om = optRe.exec(tbSel[0]))) {
+      const pid = om[1];
+      if (!pid) continue;                // skip the empty "(none)" option
+      if (/selected/i.test(om[2] || '')) tiebreaker = pid;
+      tiebreakerOpts.push({ pid, label: om[3].replace(/<[^>]*>/g, '').trim() });
+    }
+  }
 
   // Projection source <select> — replay whatever is selected (fallback INITPROJSRC/mfl).
   let projsrc = hidden.INITPROJSRC || 'mfl';
@@ -787,7 +806,7 @@ function rbParseLineupForm(html, fid) {
     expires: parseInt(hidden.lineup_expires, 10) || null,   // unix seconds; past = locked
     minStarters: parseInt((html.match(/MinStarters'\]\s*=\s*(\d+)/) || [])[1], 10) || null,
     maxStarters: parseInt((html.match(/MaxStarters'\]\s*=\s*(\d+)/) || [])[1], 10) || null,
-    req, slots, order, tiebreaker, projsrc,
+    req, slots, order, tiebreaker, tiebreakerOpts, projsrc,
   };
 }
 async function rbFetchLineup(week, targetFid, forceFid) {
