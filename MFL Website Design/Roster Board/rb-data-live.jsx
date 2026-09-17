@@ -743,13 +743,25 @@ function rbParseLineupForm(html, fid) {
     req[slot] = { min: parseInt(m[1], 10), max: m[2] ? parseInt(m[2], 10) : parseInt(m[1], 10) };
   }
 
-  // Starter checkboxes: name = <slot><fid>. Identity (slot/pid/checked) comes from
-  // the checkbox ALONE. A current-week starter's row carries extra live-game markup
-  // (opponent score, status, links) that used to push the projection cell past a
-  // fixed lookahead and drop the player entirely — so future weeks showed the full
-  // roster but the in-progress week lost every already-selected starter. Opponent +
-  // projection are now best-effort enrichment, scoped to the span up to the next
-  // checkbox, and never gate whether the player appears.
+  // Starter checkboxes: name = <slot><fid>. Verified against a real saved lineup page —
+  // one player row looks like:
+  //   <input type="checkbox" name="QB0032" value="17030" /><a href="player?…"
+  //     title="Copy 1 Info: 0017_SO, …, Week 2: vs Eagles Sun 1:00 p.m. ET" …>Ward, Cam…</a></td>
+  //   <td>vs PHI …</td><td>…</td><td>9</td>
+  //   <td class="points"><a>20.2</a></td>          ← Opp Avg vs Pos
+  //   <td class="points …"><a>19</a></td>          ← Opp Rank vs Pos
+  //   <td class="points"><a>13.90</a></td>         ← YTD Pts
+  //   <td class="points">13.900</td>               ← Avg Pts
+  //   <td class="points">15.08</td><td class="rank">26</td>   ← Proj Pts, then Pos Rank
+  // Landmines this encodes:
+  //   • Identity comes from the CHECKBOX alone. A current starter is checked and wrapped
+  //     in <b> (…checked/><b><a>…</a></b>); requiring "<a> right after the checkbox" is
+  //     what silently dropped every already-selected starter.
+  //   • The week ("Week 2: …") sits at the END of the player-link title, not the start,
+  //     and reflects whichever week the page is for — so future weeks show their own game.
+  //   • There are ~6 class="points" cells per row and the useful ones are wrapped in <a>.
+  //     Proj Pts is the ONLY one immediately followed by the class="rank" (Pos Rank) cell,
+  //     so anchor on points→rank rather than "first points cell" (which is empty/Opp Avg).
   const slots = {};                      // slot -> [ { pid, checked, opp, proj } ]
   const cbRe = new RegExp(
     '<input[^>]*?type="checkbox"[^>]*?name="([A-Za-z+/]+)' + fid + '"[^>]*?value="(\\d+)"([^>]*?)>', 'gi');
@@ -759,40 +771,23 @@ function rbParseLineupForm(html, fid) {
   }
   hits.forEach((h, i) => {
     const seg = inner.slice(h.end, i + 1 < hits.length ? hits[i + 1].end : inner.length);
-    // Opponent + projection are anchored to the game-matchup link ("Week N: at …").
-    // Two reasons this must be specific, not "first title / first points cell":
-    //   • the week in the title is the row's real week, so future weeks show their
-    //     own matchup rather than the current one;
-    //   • the projection cell is read AFTER that anchor, skipping the live-score
-    //     cell MFL puts before it in-week (which is blank pre-game and otherwise
-    //     wiped out this week's projections).
-    const a = /<a[^>]*title="(Week\s+\d+:[^"]*)"/i.exec(seg);
-    const after = a ? seg.slice(a.index) : seg;
-    const pts = /class="points">([\d.]*)</i.exec(after);
+    const t = /title="([^"]*)"/i.exec(seg);                                   // player link = first title, carries "Week N: …"
+    const wk = t && t[1].match(/Week\s+\d+:\s*(.+)$/);
+    const pts = /class="points">([\d.]*)<\/td>\s*<td class="rank">/i.exec(seg); // Proj Pts = the points cell before Pos Rank
     (slots[h.slot] = slots[h.slot] || []).push({
       pid: h.pid, checked: h.checked,
-      opp: a ? a[1].replace(/^Week\s+\d+:\s*/i, '').trim() : '',
+      opp: wk ? wk[1].trim() : '',
       proj: pts && pts[1] ? parseFloat(pts[1]) : null,
     });
     if (order.indexOf(h.slot) < 0) order.push(h.slot);
   });
 
-  // Tiebreaker <select> — MFL only lists eligible tiebreaker players here (its own
-  // rule: a non-starter). Mirror MFL's exact option set so we never offer a player
-  // MFL rejects on submit; capture the pre-selected one and the full candidate list.
+  // Tiebreaker <select> — the pre-selected roster player. The candidate list itself is
+  // derived in the UI (roster minus current starters): the tiebreaker must be a
+  // NON-starter, and doing it there keeps it live as starters are toggled.
   let tiebreaker = null;
-  const tiebreakerOpts = [];             // [ { pid, label } ] — MFL's allowed choices
   const tbSel = new RegExp('<select[^>]*name="TIEBREAKER' + fid + '"[\\s\\S]*?</select>', 'i').exec(inner);
-  if (tbSel) {
-    const optRe = /<option[^>]*value="([^"]*)"([^>]*)>([\s\S]*?)<\/option>/gi;
-    let om;
-    while ((om = optRe.exec(tbSel[0]))) {
-      const pid = om[1];
-      if (!pid) continue;                // skip the empty "(none)" option
-      if (/selected/i.test(om[2] || '')) tiebreaker = pid;
-      tiebreakerOpts.push({ pid, label: om[3].replace(/<[^>]*>/g, '').trim() });
-    }
-  }
+  if (tbSel) { const s = /<option[^>]*value="([^"]*)"[^>]*selected/i.exec(tbSel[0]); tiebreaker = s ? s[1] : null; }
 
   // Projection source <select> — replay whatever is selected (fallback INITPROJSRC/mfl).
   let projsrc = hidden.INITPROJSRC || 'mfl';
@@ -806,7 +801,7 @@ function rbParseLineupForm(html, fid) {
     expires: parseInt(hidden.lineup_expires, 10) || null,   // unix seconds; past = locked
     minStarters: parseInt((html.match(/MinStarters'\]\s*=\s*(\d+)/) || [])[1], 10) || null,
     maxStarters: parseInt((html.match(/MaxStarters'\]\s*=\s*(\d+)/) || [])[1], 10) || null,
-    req, slots, order, tiebreaker, tiebreakerOpts, projsrc,
+    req, slots, order, tiebreaker, projsrc,
   };
 }
 async function rbFetchLineup(week, targetFid, forceFid) {

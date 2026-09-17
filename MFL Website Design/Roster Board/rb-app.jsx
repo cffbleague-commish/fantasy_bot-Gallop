@@ -477,6 +477,15 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
   const weekOpts = [];
   for (let w = startWk; w <= LINEUP_MAX_WEEK; w++) weekOpts.push(w);
 
+  // Tiebreaker must be a NON-starter: every unique roster player in the form, minus
+  // whoever is currently selected as a starter. Recomputed each render so it stays in
+  // sync as starters are toggled.
+  const selectedSet = form ? new Set(form.order.reduce((acc, slot) => acc.concat(sel[slot] || []), [])) : new Set();
+  const benchPids = form
+    ? Array.from(new Set(form.order.reduce((acc, slot) => acc.concat((form.slots[slot] || []).map((x) => x.pid)), [])))
+        .filter((pid) => !selectedSet.has(pid))
+    : [];
+
   return (
     <div className="rb-modal" role="dialog" aria-modal="true"
       onClick={(e) => { if (e.target.classList.contains('rb-modal')) onClose(); }}>
@@ -552,7 +561,7 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
               <label className="rb-lu__tb">Tie-breaker&nbsp;
                 <select value={tb || ''} disabled={locked || busy} onChange={(e) => setTb(e.target.value || null)}>
                   <option value="">(none)</option>
-                  {(form.tiebreakerOpts || []).map((o) => { const p = PLAYERS_BY_ID[o.pid]; return <option key={o.pid} value={o.pid}>{p ? displayName(p.name) : o.label}</option>; })}
+                  {benchPids.map((pid) => { const p = PLAYERS_BY_ID[pid] || { name: pid }; return <option key={pid} value={pid}>{displayName(p.name)}</option>; })}
                 </select>
               </label>
               <MBtn tone="go" disabled={!valid || locked || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>
