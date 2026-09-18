@@ -743,22 +743,22 @@ function rbParseLineupForm(html, fid) {
     req[slot] = { min: parseInt(m[1], 10), max: m[2] ? parseInt(m[2], 10) : parseInt(m[1], 10) };
   }
 
-  // Starter checkboxes: name = <slot><fid>. Verified against a real saved lineup page —
-  // one player row looks like:
-  //   <input type="checkbox" name="QB0032" value="17030" /><a href="player?…"
-  //     title="Copy 1 Info: 0017_SO, …, Week 2: vs Eagles Sun 1:00 p.m. ET" …>Ward, Cam…</a></td>
-  //   <td>vs PHI …</td><td>…</td><td>9</td>
-  //   <td class="points"><a>20.2</a></td>          ← Opp Avg vs Pos
-  //   <td class="points …"><a>19</a></td>          ← Opp Rank vs Pos
-  //   <td class="points"><a>13.90</a></td>         ← YTD Pts
-  //   <td class="points">13.900</td>               ← Avg Pts
-  //   <td class="points">15.08</td><td class="rank">26</td>   ← Proj Pts, then Pos Rank
+  // Starter checkboxes: name = <slot><fid>. Verified against a real saved lineup page.
+  // Column order per row: Player | Week N Opp | Inj | Bye | Opp Avg | Opp Rank | YTD |
+  // Avg | Proj Pts | Pos Rank | % Start | News. One row:
+  //   <td><input type="checkbox" name="QB0032" value="17030" /><a …>Ward, Cam…</a></td>
+  //   <td>vs PHI Sun 1:00 p.m. (Weather)</td>                 ← Week N Opp (per-week!)
+  //   <td>…</td><td>9</td>
+  //   <td class="points"><a>20.2</a></td> … several class="points" cells …
+  //   <td class="points">15.08</td><td class="rank">26</td>  ← Proj Pts, then Pos Rank
   // Landmines this encodes:
   //   • Identity comes from the CHECKBOX alone. A current starter is checked and wrapped
   //     in <b> (…checked/><b><a>…</a></b>); requiring "<a> right after the checkbox" is
   //     what silently dropped every already-selected starter.
-  //   • The week ("Week 2: …") sits at the END of the player-link title, not the start,
-  //     and reflects whichever week the page is for — so future weeks show their own game.
+  //   • Opponent must come from the "Week N Opp" COLUMN, not the player-link title. The
+  //     title is a static player tooltip that always shows the nearest game, so reading it
+  //     made every future week show the current week's matchup. The column is the one MFL
+  //     rewrites per week — it's the first <td> after the player cell closes.
   //   • There are ~6 class="points" cells per row and the useful ones are wrapped in <a>.
   //     Proj Pts is the ONLY one immediately followed by the class="rank" (Pos Rank) cell,
   //     so anchor on points→rank rather than "first points cell" (which is empty/Opp Avg).
@@ -771,12 +771,14 @@ function rbParseLineupForm(html, fid) {
   }
   hits.forEach((h, i) => {
     const seg = inner.slice(h.end, i + 1 < hits.length ? hits[i + 1].end : inner.length);
-    const t = /title="([^"]*)"/i.exec(seg);                                   // player link = first title, carries "Week N: …"
-    const wk = t && t[1].match(/Week\s+\d+:\s*(.+)$/);
+    const oppM = /<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/i.exec(seg);              // Week N Opp = first <td> after the player cell
+    const opp = oppM
+      ? oppM[1].replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+/g, ' ').trim()
+      : '';
     const pts = /class="points">([\d.]*)<\/td>\s*<td class="rank">/i.exec(seg); // Proj Pts = the points cell before Pos Rank
     (slots[h.slot] = slots[h.slot] || []).push({
       pid: h.pid, checked: h.checked,
-      opp: wk ? wk[1].trim() : '',
+      opp,
       proj: pts && pts[1] ? parseFloat(pts[1]) : null,
     });
     if (order.indexOf(h.slot) < 0) order.push(h.slot);
