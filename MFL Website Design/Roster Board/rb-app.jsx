@@ -537,7 +537,14 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
                   {(form.slots[slot] || []).map((rowp) => {
                     const p = PLAYERS_BY_ID[rowp.pid] || { name: rowp.pid, pos: '', team: '' };
                     const on = (sel[slot] || []).indexOf(rowp.pid) >= 0;
-                    const inj = p.injury ? p.injury[0] : null;
+                    const inj = p.injury ? p.injury[0] : null;                       // rich (OUT/Q/…) from injuries feed
+                    const injTag = inj || rowp.inj;                                  // fall back to the lineup page's own flag
+                    // Per-week detail MFL rewrites each week: matchup, bye, opponent's
+                    // strength vs this position, and the player's positional rank.
+                    const stat = [];
+                    if (rowp.bye != null) stat.push('Bye ' + rowp.bye);
+                    if (rowp.oppAvg != null) stat.push('Opp vs Pos ' + rowp.oppAvg + (rowp.oppRank != null ? ' (Rk ' + rowp.oppRank + ')' : ''));
+                    if (rowp.posRank != null) stat.push('Pos Rk ' + rowp.posRank);
                     return (
                       <button key={rowp.pid} type="button"
                         className={'rb-lu__row' + (on ? ' is-on' : '')}
@@ -547,8 +554,9 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
                         <span className="rb-lu__pname">
                           {displayName(p.name)}
                           <span className="rb-lu__pmeta">{[p.pos, p.team].filter(Boolean).join(' · ')}{rowp.opp ? ' · ' + rowp.opp : ''}</span>
+                          {stat.length > 0 && <span className="rb-lu__stats">{stat.join('  ·  ')}</span>}
                         </span>
-                        {inj && <span className={'rb-lu__inj rb-lu__inj--' + inj.toLowerCase()}>{inj}</span>}
+                        {injTag && <span className={'rb-lu__inj rb-lu__inj--' + (inj ? inj.toLowerCase() : 'q')}>{injTag}</span>}
                         <span className="rb-lu__proj">{rowp.proj != null ? rowp.proj.toFixed(1) : '—'}</span>
                       </button>
                     );

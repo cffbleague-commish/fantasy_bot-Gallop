@@ -294,6 +294,7 @@ const extraCss = [
   '.rb-lu__check.is-on{background:var(--gold,#C9A227);border-color:var(--gold,#C9A227)}',
   '.rb-lu__pname{flex:1;min-width:0;font-family:var(--font-display,sans-serif);font-weight:700;font-size:14px;line-height:1.15;text-transform:uppercase;color:var(--fg-primary,#F5F5F5);display:flex;flex-direction:column;gap:2px}',
   '.rb-lu__pmeta{font:500 10px/1.3 var(--font-body,sans-serif);letter-spacing:0;text-transform:none;color:var(--fg-tertiary,#6A6A66);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+  '.rb-lu__stats{font:500 10px/1.3 var(--font-body,sans-serif);letter-spacing:0;text-transform:none;color:var(--fg-secondary,#9A9A9A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;margin-top:1px}',
   '.rb-lu__inj{flex:none;font:700 9px/1 var(--font-body,sans-serif);letter-spacing:.08em;border-radius:2px;padding:3px 5px}',
   '.rb-lu__inj--o{color:#D88787;border:1px solid rgba(184,69,69,.55)}',
   '.rb-lu__inj--q{color:var(--gold,#C9A227);border:1px solid rgba(201,162,39,.5)}',

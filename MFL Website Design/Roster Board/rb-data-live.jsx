@@ -744,25 +744,23 @@ function rbParseLineupForm(html, fid) {
   }
 
   // Starter checkboxes: name = <slot><fid>. Verified against a real saved lineup page.
-  // Column order per row: Player | Week N Opp | Inj | Bye | Opp Avg | Opp Rank | YTD |
-  // Avg | Proj Pts | Pos Rank | % Start | News. One row:
-  //   <td><input type="checkbox" name="QB0032" value="17030" /><a …>Ward, Cam…</a></td>
-  //   <td>vs PHI Sun 1:00 p.m. (Weather)</td>                 ← Week N Opp (per-week!)
-  //   <td>…</td><td>9</td>
-  //   <td class="points"><a>20.2</a></td> … several class="points" cells …
-  //   <td class="points">15.08</td><td class="rank">26</td>  ← Proj Pts, then Pos Rank
+  // The row is a <tr> of <td> cells in this fixed column order (from the table header):
+  //   [player] | Week N Opp | Inj | Bye | Opp Avg vs Pos | Opp Rank vs Pos | YTD |
+  //   Avg | Proj Pts | Pos Rank | % Start | News
+  // We index those columns by position — EXCEPT the player cell, which opens before the
+  // checkbox, so the first cell in our per-row segment is already "Week N Opp" (index 0).
   // Landmines this encodes:
   //   • Identity comes from the CHECKBOX alone. A current starter is checked and wrapped
   //     in <b> (…checked/><b><a>…</a></b>); requiring "<a> right after the checkbox" is
   //     what silently dropped every already-selected starter.
-  //   • Opponent must come from the "Week N Opp" COLUMN, not the player-link title. The
-  //     title is a static player tooltip that always shows the nearest game, so reading it
-  //     made every future week show the current week's matchup. The column is the one MFL
-  //     rewrites per week — it's the first <td> after the player cell closes.
-  //   • There are ~6 class="points" cells per row and the useful ones are wrapped in <a>.
-  //     Proj Pts is the ONLY one immediately followed by the class="rank" (Pos Rank) cell,
-  //     so anchor on points→rank rather than "first points cell" (which is empty/Opp Avg).
-  const slots = {};                      // slot -> [ { pid, checked, opp, proj } ]
+  //   • These per-week columns (opp, opp-vs-pos, bye) are what MFL rewrites for each week —
+  //     read them here, NOT from the player-link title (a static tooltip stuck on the
+  //     nearest game, which made future weeks echo the current week).
+  //   • MFL emits some cells WITHOUT a closing </td> (e.g. the Opp-Rank cell). So split on
+  //     the NEXT <td / </tr boundary, not on </td>, or the columns shift out of alignment.
+  const strip = (s) => (s || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+  const numCell = (s) => { const t = strip(s).replace(/[^\d.\-]/g, ''); return t === '' ? null : parseFloat(t); };
+  const slots = {};                      // slot -> [ { pid, checked, opp, inj, bye, oppAvg, oppRank, proj, posRank } ]
   const cbRe = new RegExp(
     '<input[^>]*?type="checkbox"[^>]*?name="([A-Za-z+/]+)' + fid + '"[^>]*?value="(\\d+)"([^>]*?)>', 'gi');
   const hits = [];
@@ -771,15 +769,19 @@ function rbParseLineupForm(html, fid) {
   }
   hits.forEach((h, i) => {
     const seg = inner.slice(h.end, i + 1 < hits.length ? hits[i + 1].end : inner.length);
-    const oppM = /<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/i.exec(seg);              // Week N Opp = first <td> after the player cell
-    const opp = oppM
-      ? oppM[1].replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+/g, ' ').trim()
-      : '';
-    const pts = /class="points">([\d.]*)<\/td>\s*<td class="rank">/i.exec(seg); // Proj Pts = the points cell before Pos Rank
+    const cells = [];
+    const tdRe = /<td\b[^>]*>([\s\S]*?)(?=<td\b|<\/tr\b|$)/gi;
+    let cm;
+    while ((cm = tdRe.exec(seg))) cells.push(cm[1]);
     (slots[h.slot] = slots[h.slot] || []).push({
       pid: h.pid, checked: h.checked,
-      opp,
-      proj: pts && pts[1] ? parseFloat(pts[1]) : null,
+      opp: strip(cells[0]).replace(/\s*\([^)]*\)\s*$/, ''),  // 0: Week N Opp (drop trailing "(Dome)"/"(Weather)")
+      inj: strip(cells[1]) || null,                         // 1: Inj
+      bye: numCell(cells[2]),                               // 2: Bye
+      oppAvg: numCell(cells[3]),                            // 3: Opp Avg vs Pos
+      oppRank: numCell(cells[4]),                           // 4: Opp Rank vs Pos
+      proj: numCell(cells[7]),                              // 7: Proj Pts
+      posRank: numCell(cells[8]),                           // 8: Pos Rank
     });
     if (order.indexOf(h.slot) < 0) order.push(h.slot);
   });
