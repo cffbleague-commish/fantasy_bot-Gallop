@@ -819,21 +819,35 @@ function rbGameStateOf(gsr) {
   if (s <= 0) return 'FINAL';
   return 'LIVE';
 }
-// Map pid -> gameSecondsRemaining for a week, from liveScoring (the only feed that
-// carries the game clock). Covers every franchise's players, so it works whether or
-// not the lineup form still lists a locked player. Returns {} for future/unplayed
-// weeks (MFL emits no clock), which correctly leaves everyone editable.
-async function rbFetchGameClocks(week) {
+// Live game data for a week from the liveScoring feed (the only one carrying the game
+// clock). Returns per-player clocks (pid -> gameSecondsRemaining) across all franchises,
+// plus the set of pids the given franchise is currently STARTING. {} / empty set for
+// future/unplayed weeks (no clock emitted → everyone stays editable).
+async function rbFetchGameData(week, fid) {
   try {
     const ld = await fetchJSON('liveScoring', '&W=' + week);
-    const map = {};
+    const clocks = {};
+    const starters = {};   // used as a set: pid -> true
     asArray(ld && ld.liveScoring && ld.liveScoring.matchup).forEach((mt) =>
-      asArray(mt.franchise).forEach((fr) =>
+      asArray(mt.franchise).forEach((fr) => {
+        const isTarget = String(fr.id) === String(fid);
         asArray(fr.players && fr.players.player).forEach((pl) => {
-          if (pl && pl.id != null && pl.gameSecondsRemaining != null) map[String(pl.id)] = pl.gameSecondsRemaining;
-        })));
-    return map;
-  } catch (e) { return {}; }   // no clock feed → treat all as not-started (editable)
+          if (!pl || pl.id == null) return;
+          if (pl.gameSecondsRemaining != null) clocks[String(pl.id)] = pl.gameSecondsRemaining;
+          // liveScoring marks bench players status="nonstarter"; anything else (incl.
+          // a missing status, since some feeds list only starters) counts as starting.
+          if (isTarget && String(pl.status || '').toLowerCase() !== 'nonstarter') starters[String(pl.id)] = true;
+        });
+      }));
+    return { clocks, starters };
+  } catch (e) { return { clocks: {}, starters: {} }; }
+}
+// Map an NFL position to the starter slot that accepts it (e.g. WR/TE -> "WR+TE"),
+// using the form's own slot labels so it tracks whatever this league runs.
+function rbSlotForPos(order, pos) {
+  if (!pos) return null;
+  const P = pos.toUpperCase();
+  return order.find((slot) => slot.toUpperCase().split(/[+/]/).indexOf(P) >= 0) || null;
 }
 async function rbFetchLineup(week, targetFid, forceFid) {
   const wkParam = week ? '&W=' + week : '';
@@ -843,15 +857,42 @@ async function rbFetchLineup(week, targetFid, forceFid) {
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const form = rbParseLineupForm(await res.text(), targetFid);
   if (!form) return form;
-  // Lock signal #2 (suspenders): overlay the live game clock. A player whose game
-  // has kicked off (LIVE/FINAL) is locked regardless of how MFL rendered the row.
-  // Uses the form's own week so future-week edits (no clock) stay fully open.
-  const clocks = await rbFetchGameClocks(form.week || week);
+  const fid = form.fid || targetFid;
+  // Overlay the live game clock. A player whose game has kicked off (LIVE/FINAL) is
+  // locked regardless of how MFL rendered the row. Uses the form's own week so
+  // future-week edits (no clock) stay fully open.
+  const { clocks, starters } = await rbFetchGameData(form.week || week, fid);
+  const inForm = {};   // pid -> true, for every checkbox row MFL rendered
+  form.order.forEach((slot) => (form.slots[slot] || []).forEach((row) => {
+    inForm[String(row.pid)] = true;
+    const st = rbGameStateOf(clocks[String(row.pid)]);
+    row.gameState = st;                           // 'PRE' | 'LIVE' | 'FINAL'
+    row.started = st !== 'PRE' || !!row.locked;    // combine clock + MFL's disabled attr
+  }));
+
+  // Reconstruct locked players MFL DROPPED from the mid-week form (once a game starts
+  // MFL stops rendering that player's checkbox, so a checkbox-only parse loses them and
+  // the starter count can no longer reach the minimum). Rebuild them from the roster +
+  // live clock as read-only rows: `synthetic` so Save never posts them (MFL retains
+  // locked players itself), `checked` iff they were the current starter.
+  const roster = (typeof ROSTER_MEMBERS !== 'undefined' && ROSTER_MEMBERS[fid]) ? ROSTER_MEMBERS[fid] : [];
+  roster.forEach((m) => {
+    const pid = String(m.pid);
+    if (inForm[pid]) return;                                   // already in the form
+    if (String(m.status || 'ROSTER').toUpperCase() !== 'ROSTER') return;  // not startable (taxi/IR)
+    const st = rbGameStateOf(clocks[pid]);
+    if (st === 'PRE') return;                                  // game hasn't started → not locked; nothing to add
+    const info = (typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[pid]) || null;
+    const slot = rbSlotForPos(form.order, info && info.pos);
+    if (!slot) return;                                         // position has no starter slot (e.g. PK/DEF)
+    (form.slots[slot] = form.slots[slot] || []).push({
+      pid, checked: !!starters[pid], locked: true, started: true, synthetic: true,
+      gameState: st, opp: '', inj: null, bye: null, oppAvg: null, oppRank: null, proj: null, posRank: null,
+    });
+  });
+
   let anyStarted = false, anyOpen = false;
   form.order.forEach((slot) => (form.slots[slot] || []).forEach((row) => {
-    const st = rbGameStateOf(clocks[String(row.pid)]);
-    row.gameState = st;                          // 'PRE' | 'LIVE' | 'FINAL'
-    row.started = st !== 'PRE' || !!row.locked;   // combine both lock signals
     if (row.started) anyStarted = true; else anyOpen = true;
   }));
   form.anyStarted = anyStarted;   // at least one player already locked → show partial-lock note

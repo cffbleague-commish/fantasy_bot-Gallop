@@ -2046,17 +2046,34 @@ function rbGameStateOf(gsr) {
   if (s <= 0) return 'FINAL';
   return 'LIVE';
 }
-async function rbFetchGameClocks(week) {
+async function rbFetchGameData(week, fid) {
   try {
     const ld = await fetchJSON('liveScoring', '&W=' + week);
-    const map = {};
-    asArray(ld && ld.liveScoring && ld.liveScoring.matchup).forEach(mt => asArray(mt.franchise).forEach(fr => asArray(fr.players && fr.players.player).forEach(pl => {
-      if (pl && pl.id != null && pl.gameSecondsRemaining != null) map[String(pl.id)] = pl.gameSecondsRemaining;
-    })));
-    return map;
+    const clocks = {};
+    const starters = {};
+    asArray(ld && ld.liveScoring && ld.liveScoring.matchup).forEach(mt => asArray(mt.franchise).forEach(fr => {
+      const isTarget = String(fr.id) === String(fid);
+      asArray(fr.players && fr.players.player).forEach(pl => {
+        if (!pl || pl.id == null) return;
+        if (pl.gameSecondsRemaining != null) clocks[String(pl.id)] = pl.gameSecondsRemaining;
+        if (isTarget && String(pl.status || '').toLowerCase() !== 'nonstarter') starters[String(pl.id)] = true;
+      });
+    }));
+    return {
+      clocks,
+      starters
+    };
   } catch (e) {
-    return {};
+    return {
+      clocks: {},
+      starters: {}
+    };
   }
+}
+function rbSlotForPos(order, pos) {
+  if (!pos) return null;
+  const P = pos.toUpperCase();
+  return order.find(slot => slot.toUpperCase().split(/[+/]/).indexOf(P) >= 0) || null;
 }
 async function rbFetchLineup(week, targetFid, forceFid) {
   const wkParam = week ? '&W=' + week : '';
@@ -2069,13 +2086,47 @@ async function rbFetchLineup(week, targetFid, forceFid) {
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const form = rbParseLineupForm(await res.text(), targetFid);
   if (!form) return form;
-  const clocks = await rbFetchGameClocks(form.week || week);
-  let anyStarted = false,
-    anyOpen = false;
+  const fid = form.fid || targetFid;
+  const {
+    clocks,
+    starters
+  } = await rbFetchGameData(form.week || week, fid);
+  const inForm = {};
   form.order.forEach(slot => (form.slots[slot] || []).forEach(row => {
+    inForm[String(row.pid)] = true;
     const st = rbGameStateOf(clocks[String(row.pid)]);
     row.gameState = st;
     row.started = st !== 'PRE' || !!row.locked;
+  }));
+  const roster = typeof ROSTER_MEMBERS !== 'undefined' && ROSTER_MEMBERS[fid] ? ROSTER_MEMBERS[fid] : [];
+  roster.forEach(m => {
+    const pid = String(m.pid);
+    if (inForm[pid]) return;
+    if (String(m.status || 'ROSTER').toUpperCase() !== 'ROSTER') return;
+    const st = rbGameStateOf(clocks[pid]);
+    if (st === 'PRE') return;
+    const info = typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[pid] || null;
+    const slot = rbSlotForPos(form.order, info && info.pos);
+    if (!slot) return;
+    (form.slots[slot] = form.slots[slot] || []).push({
+      pid,
+      checked: !!starters[pid],
+      locked: true,
+      started: true,
+      synthetic: true,
+      gameState: st,
+      opp: '',
+      inj: null,
+      bye: null,
+      oppAvg: null,
+      oppRank: null,
+      proj: null,
+      posRank: null
+    });
+  });
+  let anyStarted = false,
+    anyOpen = false;
+  form.order.forEach(slot => (form.slots[slot] || []).forEach(row => {
     if (row.started) anyStarted = true;else anyOpen = true;
   }));
   form.anyStarted = anyStarted;
@@ -2724,7 +2775,7 @@ const LineupModal = ({
   const initFrom = f => {
     const s = {};
     (f.order || []).forEach(slot => {
-      s[slot] = (f.slots[slot] || []).filter(x => x.checked).map(x => x.pid);
+      s[slot] = (f.slots[slot] || []).filter(x => x.checked && !x.started).map(x => x.pid);
     });
     setSel(s);
     setTb(f.tiebreaker || null);
@@ -2753,9 +2804,13 @@ const LineupModal = ({
   useEffect(() => {
     load(null);
   }, []);
-  const total = form ? Object.keys(sel).reduce((n, slot) => n + (sel[slot] || []).length, 0) : 0;
+  const lockedStartersIn = slot => form ? (form.slots[slot] || []).filter(x => x.started && x.checked).length : 0;
+  const submittableCount = form ? Object.keys(sel).reduce((n, slot) => n + (sel[slot] || []).length, 0) : 0;
+  const lockedTotal = form ? form.order.reduce((n, slot) => n + lockedStartersIn(slot), 0) : 0;
+  const total = submittableCount + lockedTotal;
+  const slotCount = slot => (sel[slot] || []).length + lockedStartersIn(slot);
   const slotOk = slot => {
-    const n = (sel[slot] || []).length;
+    const n = slotCount(slot);
     const rq = form.req[slot] || {
       min: 0,
       max: 99
@@ -2764,6 +2819,7 @@ const LineupModal = ({
   };
   const valid = !!form && form.order.every(slotOk) && (!form.minStarters || total >= form.minStarters) && (!form.maxStarters || total <= form.maxStarters);
   const allLocked = !!(form && form.anyOpen === false);
+  const canSave = valid && !allLocked && submittableCount > 0;
   const toggle = (slot, pid) => {
     if (busy || allLocked) return;
     const row = (form.slots[slot] || []).find(x => x.pid === pid);
@@ -2773,11 +2829,11 @@ const LineupModal = ({
       if (arr.indexOf(pid) >= 0) return Object.assign({}, cur, {
         [slot]: arr.filter(x => x !== pid)
       });
-      const tot = Object.keys(cur).reduce((n, s) => n + (cur[s] || []).length, 0);
+      const tot = Object.keys(cur).reduce((n, s) => n + (cur[s] || []).length, 0) + lockedTotal;
       const rq = form.req[slot] || {
         max: 99
       };
-      if (arr.length >= rq.max) return cur;
+      if (arr.length + lockedStartersIn(slot) >= rq.max) return cur;
       if (form.maxStarters && tot >= form.maxStarters) return cur;
       return Object.assign({}, cur, {
         [slot]: arr.concat(pid)
@@ -2810,7 +2866,7 @@ const LineupModal = ({
   const weekOpts = [];
   for (let w = startWk; w <= LINEUP_MAX_WEEK; w++) weekOpts.push(w);
   const selectedSet = form ? new Set(form.order.reduce((acc, slot) => acc.concat(sel[slot] || []), [])) : new Set();
-  const benchPids = form ? Array.from(new Set(form.order.reduce((acc, slot) => acc.concat((form.slots[slot] || []).map(x => x.pid)), []))).filter(pid => !selectedSet.has(pid)) : [];
+  const benchPids = form ? Array.from(new Set(form.order.reduce((acc, slot) => acc.concat((form.slots[slot] || []).filter(x => !x.started).map(x => x.pid)), []))).filter(pid => !selectedSet.has(pid)) : [];
   return React.createElement("div", {
     className: "rb-modal",
     role: "dialog",
@@ -2866,7 +2922,7 @@ const LineupModal = ({
       min: 0,
       max: 0
     };
-    const n = (sel[slot] || []).length;
+    const n = slotCount(slot);
     const label = rq.min === rq.max ? 'Start ' + rq.min : 'Start ' + rq.min + '–' + rq.max;
     return React.createElement("div", {
       className: "rb-mng__sec",
@@ -2932,11 +2988,13 @@ const LineupModal = ({
     }, displayName(p.name));
   }))), React.createElement(MBtn, {
     tone: "go",
-    disabled: !valid || allLocked || busy,
+    disabled: !canSave || busy,
     onClick: save
   }, busy ? 'Saving…' : 'Save Lineup')), allLocked && React.createElement("div", {
     className: "rb-lu__hint"
-  }, "Every game this week has started \u2014 the lineup is locked."), !valid && !allLocked && React.createElement("div", {
+  }, "Every game this week has started \u2014 the lineup is locked."), !allLocked && valid && submittableCount === 0 && React.createElement("div", {
+    className: "rb-lu__hint"
+  }, "All your starters are locked \u2014 nothing left to change this week."), !valid && !allLocked && React.createElement("div", {
     className: "rb-lu__hint"
   }, "Pick within each slot\u2019s range and exactly ", form.maxStarters || form.minStarters, " starters to enable Save."))));
 };

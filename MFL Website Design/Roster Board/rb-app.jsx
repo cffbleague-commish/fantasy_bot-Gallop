@@ -427,8 +427,11 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
   const [saveResult, setSaveResult] = useState(null);
 
   const initFrom = (f) => {
+    // sel holds only SUBMITTABLE starters — checked rows whose game hasn't started.
+    // Locked-in starters (started && checked) are counted separately and are never
+    // re-posted (MFL retains them; disabled/dropped checkboxes aren't submitted).
     const s = {};
-    (f.order || []).forEach((slot) => { s[slot] = (f.slots[slot] || []).filter((x) => x.checked).map((x) => x.pid); });
+    (f.order || []).forEach((slot) => { s[slot] = (f.slots[slot] || []).filter((x) => x.checked && !x.started).map((x) => x.pid); });
     setSel(s); setTb(f.tiebreaker || null);
   };
   const load = async (wk) => {
@@ -444,14 +447,24 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
   };
   useEffect(() => { load(null); }, []);        // initial → current editable week
 
-  const total = form ? Object.keys(sel).reduce((n, slot) => n + (sel[slot] || []).length, 0) : 0;
-  const slotOk = (slot) => { const n = (sel[slot] || []).length; const rq = form.req[slot] || { min: 0, max: 99 }; return n >= rq.min && n <= rq.max; };
+  // Locked-in starters per slot: already-playing players who are current starters. They
+  // fill slot/total requirements just like MFL counts them server-side, but live outside
+  // `sel` because they can't be changed or re-submitted.
+  const lockedStartersIn = (slot) => form ? (form.slots[slot] || []).filter((x) => x.started && x.checked).length : 0;
+  const submittableCount = form ? Object.keys(sel).reduce((n, slot) => n + (sel[slot] || []).length, 0) : 0;
+  const lockedTotal = form ? form.order.reduce((n, slot) => n + lockedStartersIn(slot), 0) : 0;
+  const total = submittableCount + lockedTotal;   // what MFL will see: editable picks + retained locks
+  const slotCount = (slot) => (sel[slot] || []).length + lockedStartersIn(slot);
+  const slotOk = (slot) => { const n = slotCount(slot); const rq = form.req[slot] || { min: 0, max: 99 }; return n >= rq.min && n <= rq.max; };
   const valid = !!form && form.order.every(slotOk)
     && (!form.minStarters || total >= form.minStarters) && (!form.maxStarters || total <= form.maxStarters);
   // Per-player lock: a player is frozen once their own NFL game kicks off (row.started,
   // set in rbFetchLineup from the live game clock). The WHOLE form is only locked when
   // no player is still editable — until then, not-yet-played players stay swappable.
   const allLocked = !!(form && form.anyOpen === false);
+  // Guard MFL's "zero checkboxes = erase the lineup" behaviour: never post an empty
+  // submission. If nothing editable is selected there's also nothing to change.
+  const canSave = valid && !allLocked && submittableCount > 0;
 
   const toggle = (slot, pid) => {
     if (busy || allLocked) return;
@@ -460,10 +473,10 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
     setSel((cur) => {
       const arr = cur[slot] || [];
       if (arr.indexOf(pid) >= 0) return Object.assign({}, cur, { [slot]: arr.filter((x) => x !== pid) });
-      const tot = Object.keys(cur).reduce((n, s) => n + (cur[s] || []).length, 0);
+      const tot = Object.keys(cur).reduce((n, s) => n + (cur[s] || []).length, 0) + lockedTotal;
       const rq = (form.req[slot]) || { max: 99 };
-      if (arr.length >= rq.max) return cur;                         // this slot is full
-      if (form.maxStarters && tot >= form.maxStarters) return cur;  // total starters full
+      if (arr.length + lockedStartersIn(slot) >= rq.max) return cur;   // this slot is full (incl. locked)
+      if (form.maxStarters && tot >= form.maxStarters) return cur;     // total starters full
       return Object.assign({}, cur, { [slot]: arr.concat(pid) });
     });
   };
@@ -487,7 +500,7 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
   // sync as starters are toggled.
   const selectedSet = form ? new Set(form.order.reduce((acc, slot) => acc.concat(sel[slot] || []), [])) : new Set();
   const benchPids = form
-    ? Array.from(new Set(form.order.reduce((acc, slot) => acc.concat((form.slots[slot] || []).map((x) => x.pid)), [])))
+    ? Array.from(new Set(form.order.reduce((acc, slot) => acc.concat((form.slots[slot] || []).filter((x) => !x.started).map((x) => x.pid)), [])))
         .filter((pid) => !selectedSet.has(pid))
     : [];
 
@@ -533,7 +546,7 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
           <div className="rb-mng__body">
             {form.order.map((slot) => {
               const rq = form.req[slot] || { min: 0, max: 0 };
-              const n = (sel[slot] || []).length;
+              const n = slotCount(slot);   // editable picks + locked-in starters
               const label = rq.min === rq.max ? ('Start ' + rq.min) : ('Start ' + rq.min + '–' + rq.max);
               return (
                 <div className="rb-mng__sec" key={slot}>
@@ -582,9 +595,10 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
                   {benchPids.map((pid) => { const p = PLAYERS_BY_ID[pid] || { name: pid }; return <option key={pid} value={pid}>{displayName(p.name)}</option>; })}
                 </select>
               </label>
-              <MBtn tone="go" disabled={!valid || allLocked || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>
+              <MBtn tone="go" disabled={!canSave || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>
             </div>
             {allLocked && <div className="rb-lu__hint">Every game this week has started — the lineup is locked.</div>}
+            {!allLocked && valid && submittableCount === 0 && <div className="rb-lu__hint">All your starters are locked — nothing left to change this week.</div>}
             {!valid && !allLocked && <div className="rb-lu__hint">Pick within each slot’s range and exactly {form.maxStarters || form.minStarters} starters to enable Save.</div>}
           </div>
         )}
