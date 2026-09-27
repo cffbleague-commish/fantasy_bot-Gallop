@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>GameDay · Mobile Preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700&amp;family=Inter:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#050505;color:#F5F5F5;font-family:Inter,sans-serif;padding:32px 24px}
+a{color:#E8C547}a:hover{color:#F4D66A}
+.wrap{display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start}
+.dev{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.14em;color:#9A9A9A}
+.lab b{color:#F5F5F5}
+.phone{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:44px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.screen{border-radius:32px;overflow:hidden;background:#0A0A0A;position:relative}
+.notch{position:absolute;top:10px;left:50%;width:110px;height:30px;margin-left:-55px;background:#000;border-radius:20px;z-index:2}
+iframe{display:block;border:0;background:#0A0A0A}
+.bar{display:flex;gap:8px}
+button{background:#1C1C1C;border:1px solid #2A2A2A;border-radius:4px;color:#F5F5F5;padding:8px 14px;font:600 12px Inter,sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+button:hover{filter:brightness(1.12)}
+h1{margin:0 0 6px;font:700 32px 'Saira Condensed',sans-serif;text-transform:uppercase;text-align:center}
+p{margin:0 0 28px;text-align:center;color:#9A9A9A;font-size:13px}
+</style></head><body>
+<h1>GameDay Message · Device Preview</h1>
+<p>Live copies of the message at real phone widths. Tap a bar to expand; scroll inside each screen.</p>
+<div class="bar" style="justify-content:center;margin-bottom:28px">
+<button onclick="all(true)">Expand all</button><button onclick="all(false)">Collapse all</button><button onclick="reload()">Replay intro</button>
+</div>
+<div class="wrap">
+<div class="dev"><div class="lab"><b>iPhone 15</b> · 393 × 852</div><div class="phone"><div class="screen"><div class="notch"></div><iframe src="Gameday MFL Message.html" width="393" height="760"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>Small Android</b> · 360 × 780</div><div class="phone"><div class="screen"><div class="notch"></div><iframe src="Gameday MFL Message.html" width="360" height="700"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>iPad / MFL sidebar</b> · 768 wide</div><div class="phone" style="border-radius:28px"><div class="screen" style="border-radius:16px"><iframe src="Gameday MFL Message.html" width="768" height="760"></iframe></div></div></div>
+</div>
+<script>
+function frames(){ return Array.from(document.querySelectorAll('iframe')); }
+function all(open){ frames().forEach(function(f){ try{ var d=f.contentDocument, r=d.getElementById('cffb-gd'); if(r && r.classList.contains('is-open')!==open) d.querySelector('#cffb-gd .gd-bar').click(); }catch(e){} }); }
+function reload(){ frames().forEach(function(f){ f.src=f.src; }); }
+</script>
+</body></html>
