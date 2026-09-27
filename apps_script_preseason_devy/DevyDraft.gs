@@ -167,7 +167,7 @@ function getCommissionerGuideHtml() {
     <tr><td>ConsecutiveYear</td><td>1 the first time a player is retained, 2 the next year, and so on (RETAIN only).</td></tr>
     <tr><td>PickUsed</td><td>Which pick the retention consumes — <code>Round 2</code> for a team's first retention that year, <code>Round 1</code> for the second.</td></tr>
     <tr><td>BaseRebate</td><td>Always <code>$20</code> (RETAIN only).</td></tr>
-    <tr><td>RebateRemaining</td><td><code>max(0, $20 − $5 × (ConsecutiveYear − 1))</code>: $20, then $15, $10, $5, $0…</td></tr>
+    <tr><td>RebateRemaining</td><td><code>max(0, $20 − $5 × ConsecutiveYear)</code>: $15, then $10, $5, $0…</td></tr>
     <tr><td>IsRookie</td><td>Formula column — TRUE once the player appears in the RookieLedger (entered the NFL).</td></tr>
   </table>
   <div class="note"><b>Notes:</b> Releasing a player returns their pool copy to Available and logs a <code>RELEASE</code> row, but does <em>not</em> delete past ledger rows — a retention that happened is historical fact. Historical seasons are loaded separately via <span class="menu">📜 Backfill History</span>. The <code>Decision</code> column is added automatically to older sheets the next time the sheet is opened or <span class="menu">Initialize Draft Sheets</span> is run.</div>
@@ -466,7 +466,7 @@ const DEVY_RETENTION_HISTORY_HEADERS = [
   "ConsecutiveYear",   // 1st retention, 2nd retention, etc.
   "PickUsed",          // "Round 1" or "Round 2"
   "BaseRebate",        // Starting rebate (e.g., $20)
-  "RebateRemaining",   // BaseRebate - ($5 × (ConsecutiveYear - 1))
+  "RebateRemaining",   // BaseRebate - ($5 × ConsecutiveYear)
   "IsRookie",          // Formula column: TRUE if player found in RookieLedger (no longer a devy)
   "Timestamp",
   "Decision"           // "RETAIN" or "RELEASE" (blank on legacy rows = RETAIN)
@@ -1289,8 +1289,9 @@ function getDevyRetentionCounts(playerId, franchiseId, year) {
 /**
  * Append one row to DevyRetentionHistory for a retention decision.
  * Centralizes field order + rebate math so live rows match the backfill importer
- * (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per consecutive retention
- * year, floored at 0. The first retention a team makes in a year spends Round 2, the
+ * (BackfillDevyHistory.gs): BaseRebate $20; RebateRemaining = max(0, $20 - $5 x
+ * ConsecutiveYear) -> $15, $10, $5, $0 (the first retention already takes a $5 cut).
+ * The first retention a team makes in a year spends Round 2, the
  * second spends Round 1 (max 2 per team per year).
  *
  * @param {Object} info - { playerId, conference, franchiseId, firstName, lastName,
@@ -1321,13 +1322,13 @@ function appendDevyRetentionRecord(info) {
     // 1st retention of the year -> Round 2, 2nd -> Round 1
     pickUsed = counts.teamRetentionsThisYear === 0 ? "Round 2" : "Round 1";
     baseRebate = 20;
-    rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
+    rebateRemaining = Math.max(0, baseRebate - 5 * consecutiveYear);
   } else if (decision === "PENDING") {
     // Preview the rebate on the seeded worklist row (PickUsed decided at retain time).
     const counts = getDevyRetentionCounts(info.playerId, info.franchiseId, info.retentionYear);
     consecutiveYear = counts.playerPriorRetentions + 1;
     baseRebate = 20;
-    rebateRemaining = Math.max(0, baseRebate - 5 * (consecutiveYear - 1));
+    rebateRemaining = Math.max(0, baseRebate - 5 * consecutiveYear);
   }
 
   // Order must match DEVY_RETENTION_HISTORY_HEADERS
@@ -3342,7 +3343,7 @@ function openRetentionWindow(year, conference) {
     }
 
     const consecutiveYear = (priorRetainByPlayer[playerId] || 0) + 1;
-    const rebateRemaining = Math.max(0, 20 - 5 * (consecutiveYear - 1));
+    const rebateRemaining = Math.max(0, 20 - 5 * consecutiveYear);
 
     // Order must match DEVY_RETENTION_HISTORY_HEADERS
     newRows.push([

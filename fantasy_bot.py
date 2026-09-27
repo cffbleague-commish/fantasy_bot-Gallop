@@ -7037,8 +7037,9 @@ def log_devy_retention(player_id: str, conference: str, franchise_id: str,
     """Append one row to DevyRetentionHistory for a retain/release decision.
 
     Centralizes field order + rebate math so live rows match the backfill importer
-    (BackfillDevyHistory.gs): BaseRebate $20, decreasing $5 per consecutive retention
-    year, floored at 0. The first retention a team makes in a year spends Round 2, the
+    (BackfillDevyHistory.gs): BaseRebate $20; RebateRemaining = max(0, $20 - $5 x
+    ConsecutiveYear) -> $15, $10, $5, $0 (the first retention already takes a $5 cut).
+    The first retention a team makes in a year spends Round 2, the
     second spends Round 1. RELEASE rows are decision-only (blank rebate/pick fields).
     """
     if devy_retention_history_ws is None:
@@ -7057,7 +7058,7 @@ def log_devy_retention(player_id: str, conference: str, franchise_id: str,
         # 1st retention of the year -> Round 2, 2nd -> Round 1
         pick_used = "Round 2" if team_this_year == 0 else "Round 1"
         base_rebate = 20
-        rebate_remaining = max(0, base_rebate - 5 * (consecutive_year - 1))
+        rebate_remaining = max(0, base_rebate - 5 * consecutive_year)
 
     # Resolve TeamName from the franchise lookup (same pattern as devy_retention_start)
     team_name = ""

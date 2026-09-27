@@ -224,7 +224,7 @@ function importHistoricalPicks(dryRun = false) {
       // Record a RETAIN decision at the CSV Year ONLY - the original draft is its own
       // Years-Retained=0 CSV row, so we don't fabricate a draft row here. PickUsed
       // comes from the CSV pick's round.
-      const rebateRemaining = Math.max(0, 20 - 5 * (numRetentions - 1));
+      const rebateRemaining = Math.max(0, 20 - 5 * numRetentions);
 
       // Headers: Year, Conference, FranchiseID, TeamName, PlayerID, PlayerName,
       //          PlayerFirstName, PlayerLastName, PlayerPosition, ConsecutiveYear,
