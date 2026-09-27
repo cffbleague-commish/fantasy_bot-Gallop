@@ -2171,25 +2171,45 @@ function getCurrentNFLWeek() {
   const headers = data[0];
   const yearIdx = headers.indexOf("Year");
   const weekIdx = headers.indexOf("Week");
+  const resultIdx = headers.indexOf("GameResult");
+  const scoreIdx = headers.indexOf("TeamScore");
 
   if (yearIdx === -1 || weekIdx === -1) {
     Logger.log("getCurrentNFLWeek: Missing Year/Week columns, defaulting to week 1");
     return 1;
   }
 
-  // Find the max week for the configured year
+  // Find the max PLAYED week for the configured year. The full schedule is
+  // pre-populated in ScheduleResults, so a row existing does NOT mean the week
+  // has been played. A week only counts as current once it has a genuine
+  // result (W/L/T) AND a real TeamScore > 0 -- the schedule feed publishes
+  // W/L before the weeklyResults feed publishes scores, so a W/L with a
+  // blank/zero score is not yet complete. This mirrors the hasRealScore check
+  // in populateScheduleResults().
   let maxWeek = 0;
   data.slice(1).forEach(row => {
-    if (Number(row[yearIdx]) === Number(year)) {
-      const week = Number(row[weekIdx]);
-      if (week > maxWeek) {
-        maxWeek = week;
-      }
+    if (Number(row[yearIdx]) !== Number(year)) return;
+
+    const week = Number(row[weekIdx]);
+
+    // Fall back to bare row presence only if the completion columns are absent
+    if (resultIdx === -1 || scoreIdx === -1) {
+      if (week > maxWeek) maxWeek = week;
+      return;
+    }
+
+    const gameResult = row[resultIdx];
+    const rawTeamScore = row[scoreIdx];
+    const hasRealScore = rawTeamScore !== "" && rawTeamScore !== null &&
+      rawTeamScore !== undefined && Number(rawTeamScore) > 0;
+
+    if ((gameResult === "W" || gameResult === "L" || gameResult === "T") && hasRealScore) {
+      if (week > maxWeek) maxWeek = week;
     }
   });
 
   if (maxWeek === 0) {
-    Logger.log(`getCurrentNFLWeek: No ScheduleResults data for ${year}, defaulting to week 1`);
+    Logger.log(`getCurrentNFLWeek: No played weeks in ScheduleResults for ${year}, defaulting to week 1`);
     return 1;
   }
 

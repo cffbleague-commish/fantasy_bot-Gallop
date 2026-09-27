@@ -498,6 +498,19 @@ function promptCalculateAwards() {
     return;
   }
 
+  // Force-refresh the current (still-live) week before calculating.
+  // Rankings/other flows may have cached this week mid-play with partial
+  // scores. Because fetchAllWeeklyResultsWithCache only fetches weeks that
+  // are MISSING, that stale week would otherwise be reused and awards would
+  // come out unchanged. Refreshing it here mirrors what weeklyAwardsUpdate()
+  // (the trigger path) already does. Missing prior weeks are still auto-filled
+  // by calculateAwards -> fetchAllWeeklyResultsWithCache.
+  try {
+    refreshWeekCache(defaultYear, currentWeek);
+  } catch (e) {
+    Logger.log(`  Warning: could not refresh week ${currentWeek} cache - ${e.message}`);
+  }
+
   // Run calculation
   const rankings = calculateAwards(defaultYear, currentWeek);
 
