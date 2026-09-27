@@ -290,6 +290,10 @@ const extraCss = [
   '#' + ROOT_ID + ' .rb-lu__row:hover{background:var(--bg-surface-hover,#1F1F1F)}',
   '#' + ROOT_ID + ' .rb-lu__row.is-on{background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.4)}',
   '#' + ROOT_ID + ' .rb-lu__row:disabled{opacity:.55;cursor:default}',
+  // Locked (game underway/final) rows: keep starters legible but visibly non-interactive.
+  '#' + ROOT_ID + ' .rb-lu__row.is-started{opacity:.82;cursor:default}',
+  '#' + ROOT_ID + ' .rb-lu__row.is-started:hover{background:transparent}',
+  '#' + ROOT_ID + ' .rb-lu__row.is-started.is-on{background:rgba(154,154,154,.06);border-color:rgba(154,154,154,.28)}',
   '.rb-lu__check{flex:none;width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-strong,#3A3A3A);display:inline-flex;align-items:center;justify-content:center;font:700 12px/1 var(--font-body,sans-serif);color:#0A0A0A}',
   '.rb-lu__check.is-on{background:var(--gold,#C9A227);border-color:var(--gold,#C9A227)}',
   '.rb-lu__pname{flex:1;min-width:0;font-family:var(--font-display,sans-serif);font-weight:700;font-size:14px;line-height:1.15;text-transform:uppercase;color:var(--fg-primary,#F5F5F5);display:flex;flex-direction:column;gap:2px}',
@@ -299,6 +303,7 @@ const extraCss = [
   '.rb-lu__inj--o{color:#D88787;border:1px solid rgba(184,69,69,.55)}',
   '.rb-lu__inj--q{color:var(--gold,#C9A227);border:1px solid rgba(201,162,39,.5)}',
   '.rb-lu__inj--p{color:#8FCBA4;border:1px solid rgba(45,122,78,.5)}',
+  '.rb-lu__inj--lock{color:#B8B8B4;border:1px solid var(--border-strong,#3A3A3A);text-transform:uppercase}',
   '.rb-lu__proj{flex:none;min-width:44px;text-align:right;font-family:var(--font-display,sans-serif);font-weight:700;font-size:15px;color:var(--fg-secondary,#9A9A9A);font-variant-numeric:tabular-nums}',
   '.rb-lu__foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--border,#2A2A2A)}',
   '.rb-lu__tb{font:600 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-secondary,#9A9A9A);display:inline-flex;align-items:center}',

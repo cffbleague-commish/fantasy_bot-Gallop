@@ -448,10 +448,15 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
   const slotOk = (slot) => { const n = (sel[slot] || []).length; const rq = form.req[slot] || { min: 0, max: 99 }; return n >= rq.min && n <= rq.max; };
   const valid = !!form && form.order.every(slotOk)
     && (!form.minStarters || total >= form.minStarters) && (!form.maxStarters || total <= form.maxStarters);
-  const locked = !!(form && form.expires && Math.floor(Date.now() / 1000) > form.expires);
+  // Per-player lock: a player is frozen once their own NFL game kicks off (row.started,
+  // set in rbFetchLineup from the live game clock). The WHOLE form is only locked when
+  // no player is still editable — until then, not-yet-played players stay swappable.
+  const allLocked = !!(form && form.anyOpen === false);
 
   const toggle = (slot, pid) => {
-    if (locked || busy) return;
+    if (busy || allLocked) return;
+    const row = (form.slots[slot] || []).find((x) => x.pid === pid);
+    if (row && row.started) return;   // this player's game has started — locked
     setSel((cur) => {
       const arr = cur[slot] || [];
       if (arr.indexOf(pid) >= 0) return Object.assign({}, cur, { [slot]: arr.filter((x) => x !== pid) });
@@ -499,7 +504,8 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
         </div>
         <div className="rb-modal__note">
           {commish && <b>Acting as commissioner on {TEAMS[team].name}. </b>}
-          Pick your starters and Save — this posts to MFL live. Future weeks stay editable until each locks at kickoff.
+          Pick your starters and Save — this posts to MFL live. Each player locks at their own game's kickoff;
+          players whose games haven't started stay editable{form && form.anyStarted ? ' — 🔒 marks the ones already underway' : ''}.
         </div>
 
         <div className="rb-lu__bar">
@@ -508,7 +514,8 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
               {weekOpts.map((w) => <option key={w} value={w}>{w}</option>)}
             </select>
           </label>
-          {form && <span className={'rb-lu__lock' + (locked ? ' is-locked' : '')}>{locked ? '🔒 Locked' : fmtLock(form.expires)}</span>}
+          {form && <span className={'rb-lu__lock' + (allLocked || form.anyStarted ? ' is-locked' : '')}>
+            {allLocked ? '🔒 Locked' : form.anyStarted ? '🔒 Some games started' : fmtLock(form.expires)}</span>}
           {form && <span className={'rb-lu__count' + (valid ? ' is-ok' : '')}>{total} / {form.maxStarters || '?'} starters</span>}
         </div>
 
@@ -545,17 +552,20 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
                     if (rowp.bye != null) stat.push('Bye ' + rowp.bye);
                     if (rowp.oppAvg != null) stat.push('Opp vs Pos ' + rowp.oppAvg + (rowp.oppRank != null ? ' (Rk ' + rowp.oppRank + ')' : ''));
                     if (rowp.posRank != null) stat.push('Pos Rk ' + rowp.posRank);
+                    const lockTag = rowp.started ? (rowp.gameState === 'FINAL' ? 'Final' : 'Started') : null;
                     return (
                       <button key={rowp.pid} type="button"
-                        className={'rb-lu__row' + (on ? ' is-on' : '')}
-                        disabled={locked || busy}
+                        className={'rb-lu__row' + (on ? ' is-on' : '') + (rowp.started ? ' is-started' : '')}
+                        disabled={rowp.started || busy}
+                        title={rowp.started ? 'This player’s game has started — locked by MFL' : undefined}
                         onClick={() => toggle(slot, rowp.pid)}>
-                        <span className={'rb-lu__check' + (on ? ' is-on' : '')}>{on ? '✓' : ''}</span>
+                        <span className={'rb-lu__check' + (on ? ' is-on' : '')}>{rowp.started ? '🔒' : on ? '✓' : ''}</span>
                         <span className="rb-lu__pname">
                           {displayName(p.name)}
                           <span className="rb-lu__pmeta">{[p.pos, p.team].filter(Boolean).join(' · ')}{rowp.opp ? ' · ' + rowp.opp : ''}</span>
                           {stat.length > 0 && <span className="rb-lu__stats">{stat.join('  ·  ')}</span>}
                         </span>
+                        {lockTag && <span className="rb-lu__inj rb-lu__inj--lock">{lockTag}</span>}
                         {injTag && <span className={'rb-lu__inj rb-lu__inj--' + (inj ? inj.toLowerCase() : 'q')}>{injTag}</span>}
                         <span className="rb-lu__proj">{rowp.proj != null ? rowp.proj.toFixed(1) : '—'}</span>
                       </button>
@@ -567,14 +577,15 @@ const LineupModal = ({ team, targetFid, commish, onClose }) => {
 
             <div className="rb-lu__foot">
               <label className="rb-lu__tb">Tie-breaker&nbsp;
-                <select value={tb || ''} disabled={locked || busy} onChange={(e) => setTb(e.target.value || null)}>
+                <select value={tb || ''} disabled={allLocked || busy} onChange={(e) => setTb(e.target.value || null)}>
                   <option value="">(none)</option>
                   {benchPids.map((pid) => { const p = PLAYERS_BY_ID[pid] || { name: pid }; return <option key={pid} value={pid}>{displayName(p.name)}</option>; })}
                 </select>
               </label>
-              <MBtn tone="go" disabled={!valid || locked || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>
+              <MBtn tone="go" disabled={!valid || allLocked || busy} onClick={save}>{busy ? 'Saving…' : 'Save Lineup'}</MBtn>
             </div>
-            {!valid && !locked && <div className="rb-lu__hint">Pick within each slot’s range and exactly {form.maxStarters || form.minStarters} starters to enable Save.</div>}
+            {allLocked && <div className="rb-lu__hint">Every game this week has started — the lineup is locked.</div>}
+            {!valid && !allLocked && <div className="rb-lu__hint">Pick within each slot’s range and exactly {form.maxStarters || form.minStarters} starters to enable Save.</div>}
           </div>
         )}
       </div>

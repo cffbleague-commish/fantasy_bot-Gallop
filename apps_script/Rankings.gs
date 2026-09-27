@@ -1358,8 +1358,8 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
     }
 
     // Calculate College Gameday data for this week
-    // Find each unique matchup and calculate average rank
-    const matchupAvgRanks = {};  // key: sorted franchise IDs, value: avg rank
+    // Find each unique matchup and calculate average rank + best (top) team rank
+    const matchupAvgRanks = {};  // key: sorted franchise IDs, value: { avg, best }
     const processedMatchups = new Set();
 
     franchiseIds.forEach(franchiseId => {
@@ -1373,18 +1373,22 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
           const team1Rank = rankMap[franchiseId] || 100;
           const team2Rank = rankMap[d.opponentId] || 100;
           const avgRank = (team1Rank + team2Rank) / 2;
-          matchupAvgRanks[matchupKey] = avgRank;
+          matchupAvgRanks[matchupKey] = { avg: avgRank, best: Math.min(team1Rank, team2Rank) };
         }
       }
     });
 
-    // Find the Gameday matchup (lowest average rank)
+    // Find the Gameday matchup: lowest average rank. Tiebreaker: if two matchups
+    // share the lowest average, the one containing the highest-ranked team (lowest
+    // rank number, #1 = highest) is the main event.
     let gamedayMatchupKey = null;
     let lowestAvgRank = Infinity;
+    let lowestBestRank = Infinity;
 
-    Object.entries(matchupAvgRanks).forEach(([key, avgRank]) => {
-      if (avgRank < lowestAvgRank) {
-        lowestAvgRank = avgRank;
+    Object.entries(matchupAvgRanks).forEach(([key, m]) => {
+      if (m.avg < lowestAvgRank || (m.avg === lowestAvgRank && m.best < lowestBestRank)) {
+        lowestAvgRank = m.avg;
+        lowestBestRank = m.best;
         gamedayMatchupKey = key;
       }
     });
@@ -1888,8 +1892,15 @@ function getCollegeGamedayMatchups(year, upcomingWeek) {
     };
   });
 
-  // Sort by average rank (lowest first = best matchup)
-  analyzedMatchups.sort((a, b) => a.avgRank - b.avgRank);
+  // Sort by average rank (lowest first = best matchup). Tiebreaker: when averages
+  // are equal, the matchup containing the highest-ranked team (lowest rank number)
+  // comes first, so it becomes the main event.
+  analyzedMatchups.sort((a, b) => {
+    if (a.avgRank !== b.avgRank) return a.avgRank - b.avgRank;
+    const aBest = Math.min(a.team1.rank, a.team2.rank);
+    const bBest = Math.min(b.team1.rank, b.team2.rank);
+    return aBest - bBest;
+  });
 
   // The Gameday matchup is always the first one (lowest avg rank)
   const gamedayMatchup = analyzedMatchups.length > 0 ? analyzedMatchups[0] : null;
@@ -2036,7 +2047,8 @@ function stampWeek1GamedayFromPoll(year, rankMap) {
   }
   if (week1.length === 0) return 0;
 
-  // Average rank per unique matchup; the Gameday game is the lowest average
+  // Average rank per unique matchup; the Gameday game is the lowest average.
+  // Also track the matchup's best (top) team rank for the tiebreaker below.
   const matchupAvg = {};
   week1.forEach(r => {
     if (!r.oppId) return;
@@ -2044,13 +2056,20 @@ function stampWeek1GamedayFromPoll(year, rankMap) {
     if (matchupAvg[key] !== undefined) return;
     const rk1 = rankMap[r.fId] || 100;
     const rk2 = rankMap[r.oppId] || 100;
-    matchupAvg[key] = (rk1 + rk2) / 2;
+    matchupAvg[key] = { avg: (rk1 + rk2) / 2, best: Math.min(rk1, rk2) };
   });
 
+  // Tiebreaker: on equal averages, the matchup with the highest-ranked team
+  // (lowest rank number) is the main event.
   let gamedayKey = null;
   let lowest = Infinity;
-  Object.entries(matchupAvg).forEach(([k, avg]) => {
-    if (avg < lowest) { lowest = avg; gamedayKey = k; }
+  let lowestBest = Infinity;
+  Object.entries(matchupAvg).forEach(([k, m]) => {
+    if (m.avg < lowest || (m.avg === lowest && m.best < lowestBest)) {
+      lowest = m.avg;
+      lowestBest = m.best;
+      gamedayKey = k;
+    }
   });
 
   // Write per-row values (rank from poll; Gameday flags derived from it)

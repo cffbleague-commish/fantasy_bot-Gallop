@@ -1123,6 +1123,9 @@
 #cffb-rb-root .rb-lu__row:hover{background:var(--bg-surface-hover,#1F1F1F)}
 #cffb-rb-root .rb-lu__row.is-on{background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.4)}
 #cffb-rb-root .rb-lu__row:disabled{opacity:.55;cursor:default}
+#cffb-rb-root .rb-lu__row.is-started{opacity:.82;cursor:default}
+#cffb-rb-root .rb-lu__row.is-started:hover{background:transparent}
+#cffb-rb-root .rb-lu__row.is-started.is-on{background:rgba(154,154,154,.06);border-color:rgba(154,154,154,.28)}
 .rb-lu__check{flex:none;width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border-strong,#3A3A3A);display:inline-flex;align-items:center;justify-content:center;font:700 12px/1 var(--font-body,sans-serif);color:#0A0A0A}
 .rb-lu__check.is-on{background:var(--gold,#C9A227);border-color:var(--gold,#C9A227)}
 .rb-lu__pname{flex:1;min-width:0;font-family:var(--font-display,sans-serif);font-weight:700;font-size:14px;line-height:1.15;text-transform:uppercase;color:var(--fg-primary,#F5F5F5);display:flex;flex-direction:column;gap:2px}
@@ -1132,6 +1135,7 @@
 .rb-lu__inj--o{color:#D88787;border:1px solid rgba(184,69,69,.55)}
 .rb-lu__inj--q{color:var(--gold,#C9A227);border:1px solid rgba(201,162,39,.5)}
 .rb-lu__inj--p{color:#8FCBA4;border:1px solid rgba(45,122,78,.5)}
+.rb-lu__inj--lock{color:#B8B8B4;border:1px solid var(--border-strong,#3A3A3A);text-transform:uppercase}
 .rb-lu__proj{flex:none;min-width:44px;text-align:right;font-family:var(--font-display,sans-serif);font-weight:700;font-size:15px;color:var(--fg-secondary,#9A9A9A);font-variant-numeric:tabular-nums}
 .rb-lu__foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--border,#2A2A2A)}
 .rb-lu__tb{font:600 11px/1 var(--font-body,sans-serif);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-secondary,#9A9A9A);display:inline-flex;align-items:center}
@@ -1984,7 +1988,8 @@ function rbParseLineupForm(html, fid) {
     hits.push({
       slot: m[1],
       pid: m[2],
-      checked: /checked/i.test(m[3] || ''),
+      checked: /checked/i.test(m[0]),
+      disabled: /disabled/i.test(m[0]),
       end: cbRe.lastIndex
     });
   }
@@ -1997,6 +2002,7 @@ function rbParseLineupForm(html, fid) {
     (slots[h.slot] = slots[h.slot] || []).push({
       pid: h.pid,
       checked: h.checked,
+      locked: !!h.disabled,
       opp: strip(cells[0]).replace(/\s*\([^)]*\)\s*$/, ''),
       inj: strip(cells[1]) || null,
       bye: numCell(cells[2]),
@@ -2034,6 +2040,24 @@ function rbParseLineupForm(html, fid) {
     projsrc
   };
 }
+function rbGameStateOf(gsr) {
+  const s = parseFloat(gsr);
+  if (!isFinite(s) || s >= 3600) return 'PRE';
+  if (s <= 0) return 'FINAL';
+  return 'LIVE';
+}
+async function rbFetchGameClocks(week) {
+  try {
+    const ld = await fetchJSON('liveScoring', '&W=' + week);
+    const map = {};
+    asArray(ld && ld.liveScoring && ld.liveScoring.matchup).forEach(mt => asArray(mt.franchise).forEach(fr => asArray(fr.players && fr.players.player).forEach(pl => {
+      if (pl && pl.id != null && pl.gameSecondsRemaining != null) map[String(pl.id)] = pl.gameSecondsRemaining;
+    })));
+    return map;
+  } catch (e) {
+    return {};
+  }
+}
 async function rbFetchLineup(week, targetFid, forceFid) {
   const wkParam = week ? '&W=' + week : '';
   const fidParam = forceFid && targetFid ? '&FRANCHISE_ID=' + targetFid : '';
@@ -2043,7 +2067,20 @@ async function rbFetchLineup(week, targetFid, forceFid) {
     cache: 'no-store'
   });
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  return rbParseLineupForm(await res.text(), targetFid);
+  const form = rbParseLineupForm(await res.text(), targetFid);
+  if (!form) return form;
+  const clocks = await rbFetchGameClocks(form.week || week);
+  let anyStarted = false,
+    anyOpen = false;
+  form.order.forEach(slot => (form.slots[slot] || []).forEach(row => {
+    const st = rbGameStateOf(clocks[String(row.pid)]);
+    row.gameState = st;
+    row.started = st !== 'PRE' || !!row.locked;
+    if (row.started) anyStarted = true;else anyOpen = true;
+  }));
+  form.anyStarted = anyStarted;
+  form.anyOpen = anyOpen;
+  return form;
 }
 async function rbSubmitLineup(form, selections, tiebreakerPid) {
   const parts = [];
@@ -2726,9 +2763,11 @@ const LineupModal = ({
     return n >= rq.min && n <= rq.max;
   };
   const valid = !!form && form.order.every(slotOk) && (!form.minStarters || total >= form.minStarters) && (!form.maxStarters || total <= form.maxStarters);
-  const locked = !!(form && form.expires && Math.floor(Date.now() / 1000) > form.expires);
+  const allLocked = !!(form && form.anyOpen === false);
   const toggle = (slot, pid) => {
-    if (locked || busy) return;
+    if (busy || allLocked) return;
+    const row = (form.slots[slot] || []).find(x => x.pid === pid);
+    if (row && row.started) return;
     setSel(cur => {
       const arr = cur[slot] || [];
       if (arr.indexOf(pid) >= 0) return Object.assign({}, cur, {
@@ -2793,7 +2832,7 @@ const LineupModal = ({
     "aria-label": "Close"
   }, "\u2715")), React.createElement("div", {
     className: "rb-modal__note"
-  }, commish && React.createElement("b", null, "Acting as commissioner on ", TEAMS[team].name, ". "), "Pick your starters and Save \u2014 this posts to MFL live. Future weeks stay editable until each locks at kickoff."), React.createElement("div", {
+  }, commish && React.createElement("b", null, "Acting as commissioner on ", TEAMS[team].name, ". "), "Pick your starters and Save \u2014 this posts to MFL live. Each player locks at their own game's kickoff; players whose games haven't started stay editable", form && form.anyStarted ? ' — 🔒 marks the ones already underway' : '', "."), React.createElement("div", {
     className: "rb-lu__bar"
   }, React.createElement("label", {
     className: "rb-lu__wk"
@@ -2809,8 +2848,8 @@ const LineupModal = ({
     key: w,
     value: w
   }, w)))), form && React.createElement("span", {
-    className: 'rb-lu__lock' + (locked ? ' is-locked' : '')
-  }, locked ? '🔒 Locked' : fmtLock(form.expires)), form && React.createElement("span", {
+    className: 'rb-lu__lock' + (allLocked || form.anyStarted ? ' is-locked' : '')
+  }, allLocked ? '🔒 Locked' : form.anyStarted ? '🔒 Some games started' : fmtLock(form.expires)), form && React.createElement("span", {
     className: 'rb-lu__count' + (valid ? ' is-ok' : '')
   }, total, " / ", form.maxStarters || '?', " starters")), form === null && !loadErr && React.createElement("div", {
     className: "rb-mng__load"
@@ -2849,21 +2888,25 @@ const LineupModal = ({
       if (rowp.bye != null) stat.push('Bye ' + rowp.bye);
       if (rowp.oppAvg != null) stat.push('Opp vs Pos ' + rowp.oppAvg + (rowp.oppRank != null ? ' (Rk ' + rowp.oppRank + ')' : ''));
       if (rowp.posRank != null) stat.push('Pos Rk ' + rowp.posRank);
+      const lockTag = rowp.started ? rowp.gameState === 'FINAL' ? 'Final' : 'Started' : null;
       return React.createElement("button", {
         key: rowp.pid,
         type: "button",
-        className: 'rb-lu__row' + (on ? ' is-on' : ''),
-        disabled: locked || busy,
+        className: 'rb-lu__row' + (on ? ' is-on' : '') + (rowp.started ? ' is-started' : ''),
+        disabled: rowp.started || busy,
+        title: rowp.started ? 'This player’s game has started — locked by MFL' : undefined,
         onClick: () => toggle(slot, rowp.pid)
       }, React.createElement("span", {
         className: 'rb-lu__check' + (on ? ' is-on' : '')
-      }, on ? '✓' : ''), React.createElement("span", {
+      }, rowp.started ? '🔒' : on ? '✓' : ''), React.createElement("span", {
         className: "rb-lu__pname"
       }, displayName(p.name), React.createElement("span", {
         className: "rb-lu__pmeta"
       }, [p.pos, p.team].filter(Boolean).join(' · '), rowp.opp ? ' · ' + rowp.opp : ''), stat.length > 0 && React.createElement("span", {
         className: "rb-lu__stats"
-      }, stat.join('  ·  '))), injTag && React.createElement("span", {
+      }, stat.join('  ·  '))), lockTag && React.createElement("span", {
+        className: "rb-lu__inj rb-lu__inj--lock"
+      }, lockTag), injTag && React.createElement("span", {
         className: 'rb-lu__inj rb-lu__inj--' + (inj ? inj.toLowerCase() : 'q')
       }, injTag), React.createElement("span", {
         className: "rb-lu__proj"
@@ -2875,7 +2918,7 @@ const LineupModal = ({
     className: "rb-lu__tb"
   }, "Tie-breaker\xA0", React.createElement("select", {
     value: tb || '',
-    disabled: locked || busy,
+    disabled: allLocked || busy,
     onChange: e => setTb(e.target.value || null)
   }, React.createElement("option", {
     value: ""
@@ -2889,9 +2932,11 @@ const LineupModal = ({
     }, displayName(p.name));
   }))), React.createElement(MBtn, {
     tone: "go",
-    disabled: !valid || locked || busy,
+    disabled: !valid || allLocked || busy,
     onClick: save
-  }, busy ? 'Saving…' : 'Save Lineup')), !valid && !locked && React.createElement("div", {
+  }, busy ? 'Saving…' : 'Save Lineup')), allLocked && React.createElement("div", {
+    className: "rb-lu__hint"
+  }, "Every game this week has started \u2014 the lineup is locked."), !valid && !allLocked && React.createElement("div", {
     className: "rb-lu__hint"
   }, "Pick within each slot\u2019s range and exactly ", form.maxStarters || form.minStarters, " starters to enable Save."))));
 };

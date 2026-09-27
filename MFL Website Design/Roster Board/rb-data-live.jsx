@@ -765,7 +765,10 @@ function rbParseLineupForm(html, fid) {
     '<input[^>]*?type="checkbox"[^>]*?name="([A-Za-z+/]+)' + fid + '"[^>]*?value="(\\d+)"([^>]*?)>', 'gi');
   const hits = [];
   while ((m = cbRe.exec(inner))) {
-    hits.push({ slot: m[1], pid: m[2], checked: /checked/i.test(m[3] || ''), end: cbRe.lastIndex });
+    // Lock signal #1 (belt): if MFL leaves a locked player's checkbox in the form
+    // mid-week, it renders it `disabled`. Read the whole tag, not just the trailing
+    // attrs, since `disabled` can sit before value= too.
+    hits.push({ slot: m[1], pid: m[2], checked: /checked/i.test(m[0]), disabled: /disabled/i.test(m[0]), end: cbRe.lastIndex });
   }
   hits.forEach((h, i) => {
     const seg = inner.slice(h.end, i + 1 < hits.length ? hits[i + 1].end : inner.length);
@@ -774,7 +777,7 @@ function rbParseLineupForm(html, fid) {
     let cm;
     while ((cm = tdRe.exec(seg))) cells.push(cm[1]);
     (slots[h.slot] = slots[h.slot] || []).push({
-      pid: h.pid, checked: h.checked,
+      pid: h.pid, checked: h.checked, locked: !!h.disabled,
       opp: strip(cells[0]).replace(/\s*\([^)]*\)\s*$/, ''),  // 0: Week N Opp (drop trailing "(Dome)"/"(Weather)")
       inj: strip(cells[1]) || null,                         // 1: Inj
       bye: numCell(cells[2]),                               // 2: Bye
@@ -808,13 +811,52 @@ function rbParseLineupForm(html, fid) {
     req, slots, order, tiebreaker, projsrc,
   };
 }
+// gameSecondsRemaining semantics (confirmed vs MFL's mfl_common.js, mirrors Live
+// Scoring): >= 3600 or unset = yet to play, 0 < s < 3600 = currently playing, <= 0 = final.
+function rbGameStateOf(gsr) {
+  const s = parseFloat(gsr);
+  if (!isFinite(s) || s >= 3600) return 'PRE';
+  if (s <= 0) return 'FINAL';
+  return 'LIVE';
+}
+// Map pid -> gameSecondsRemaining for a week, from liveScoring (the only feed that
+// carries the game clock). Covers every franchise's players, so it works whether or
+// not the lineup form still lists a locked player. Returns {} for future/unplayed
+// weeks (MFL emits no clock), which correctly leaves everyone editable.
+async function rbFetchGameClocks(week) {
+  try {
+    const ld = await fetchJSON('liveScoring', '&W=' + week);
+    const map = {};
+    asArray(ld && ld.liveScoring && ld.liveScoring.matchup).forEach((mt) =>
+      asArray(mt.franchise).forEach((fr) =>
+        asArray(fr.players && fr.players.player).forEach((pl) => {
+          if (pl && pl.id != null && pl.gameSecondsRemaining != null) map[String(pl.id)] = pl.gameSecondsRemaining;
+        })));
+    return map;
+  } catch (e) { return {}; }   // no clock feed → treat all as not-started (editable)
+}
 async function rbFetchLineup(week, targetFid, forceFid) {
   const wkParam = week ? '&W=' + week : '';
   const fidParam = (forceFid && targetFid) ? '&FRANCHISE_ID=' + targetFid : '';
   const url = `${MFL_CTX.host || MFL_CTX.origin}/${MFL_CTX.year}/lineup?L=${MFL_CTX.league}${wkParam}${fidParam}`;
   const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  return rbParseLineupForm(await res.text(), targetFid);
+  const form = rbParseLineupForm(await res.text(), targetFid);
+  if (!form) return form;
+  // Lock signal #2 (suspenders): overlay the live game clock. A player whose game
+  // has kicked off (LIVE/FINAL) is locked regardless of how MFL rendered the row.
+  // Uses the form's own week so future-week edits (no clock) stay fully open.
+  const clocks = await rbFetchGameClocks(form.week || week);
+  let anyStarted = false, anyOpen = false;
+  form.order.forEach((slot) => (form.slots[slot] || []).forEach((row) => {
+    const st = rbGameStateOf(clocks[String(row.pid)]);
+    row.gameState = st;                          // 'PRE' | 'LIVE' | 'FINAL'
+    row.started = st !== 'PRE' || !!row.locked;   // combine both lock signals
+    if (row.started) anyStarted = true; else anyOpen = true;
+  }));
+  form.anyStarted = anyStarted;   // at least one player already locked → show partial-lock note
+  form.anyOpen = anyOpen;         // at least one player still editable → keep Save usable
+  return form;
 }
 // POST the chosen starters. selections: { slot: [pid,...] }. Only checked starters
 // are sent (unchecked = benched), exactly as MFL's own checkbox form would.
