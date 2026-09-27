@@ -156,6 +156,38 @@ share one React runtime (loaded once) and coexist on the same page.
 | **Player Ledger** | `home-message-player-ledger.html` | `npm run build:player-ledger` | Apps Script `/exec?feed=ledger` |
 | **Roster Board** | `home-message-roster-board.html` | `npm run build:roster-board` | MFL export API (live, client-side) |
 | **Player Awards & Recruiting $** | `home-message-player-awards.html` | `npm run build:player-awards` | Apps Script `/exec?feed=awards` |
+| **GameDay** | `home-message-gameday.html` | `npm run build:gameday` | Apps Script `/exec` |
+
+### GameDay
+
+An ESPN College GameDay–styled banner for the week's marquee matchups. A
+collapsed lead-in bar expands to a full "Tale of the Tape" (records, points,
+all-play %, opp all-play %) for the featured game plus the rest of the GameDay
+slate. Paste the whole `home-message-gameday.html` into its own home page message
+(Advanced Editor **OFF**).
+
+- **Data source: the same `/exec` payload** Standings / Power Rankings / Live
+  Scoring use, read from (and refreshed into) the **shared** `cffb_webapp_payload_v1`
+  localStorage cache — so it loads instantly alongside the other widgets and needs
+  no MFL page globals.
+- **Which games show.** It reads the league sheet's per-game **`gameday`** flag
+  (the same "College Gameday" flag Power Rankings shows) for the **current week**
+  (the highest week already rolled into `games[]`). Every flagged matchup appears
+  in the slate; the **featured "Main Event"** is the rivalry game if any, else the
+  best matchup by combined national ranking.
+- **Per team**, name/mascot are split from the sheet team name, and colors
+  (`bg`/`fg`), logo (`pill`), national rank, W-L, points, all-play % and opp
+  all-play % all come straight from the payload — no per-week hand editing.
+- **Rivalry games** are tagged automatically; a trophy name/badge/est can be added
+  later (the design renders a badge only when one is supplied — the sheet currently
+  carries only the rivalry boolean).
+- **GameDay logo:** defaults to the hosted College GameDay badge
+  (`https://i.imgur.com/9Kvqh5Y.png`, the same one Power Rankings uses); change
+  `GAMEDAY_LOGO` in `Game Day/gd-data-live.js` to swap it.
+- **Preview fallback.** `Game Day/Gameday MFL Message.html` opened as a plain file
+  (no live loader) renders a built-in sample so the layout previews offline;
+  `Game Day/Gameday Mobile Preview.html` shows it at phone widths. If the live
+  fetch ever fails on the page, the widget falls back to that same sample.
 
 ### Playoff Bracket
 
