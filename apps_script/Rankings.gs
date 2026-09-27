@@ -946,6 +946,7 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
     const week = Number(row[colMap["Week"]]);
     const gameResult = row[colMap["GameResult"]];
     const opponentId = row[colMap["OpponentID"]];
+    const rawTeamScore = row[colMap["TeamScore"]];
     const franchiseId = String(row[colMap["FranchiseID"]]).padStart(3, "0");
 
     existingWeeksSet.add(week);
@@ -957,8 +958,14 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
       }
     }
 
-    // Check if this week has actual game data (W/L/T result, not empty or just schedule)
-    if (gameResult === "W" || gameResult === "L" || gameResult === "T") {
+    // Check if this week is genuinely COMPLETE. A W/L/T alone is not enough: the
+    // schedule feed publishes results before the weeklyResults feed publishes
+    // scores, so a week can carry a W/L with a blank/zero TeamScore (missing
+    // scores + All-Play). Require a real TeamScore too, otherwise the week would
+    // be flagged "done" and the incremental skip would refuse to backfill it.
+    const hasRealScore = rawTeamScore !== "" && rawTeamScore !== null &&
+      rawTeamScore !== undefined && Number(rawTeamScore) > 0;
+    if ((gameResult === "W" || gameResult === "L" || gameResult === "T") && hasRealScore) {
       if (week > maxExistingWeekWithData) {
         maxExistingWeekWithData = week;
       }
@@ -1126,12 +1133,16 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
 
     // Build opponent map for this week
     const opponentMap = {};
+    const scheduleScoreMap = {};  // each franchise's own score from the schedule feed
     weekMatchups.forEach(m => {
       const f1 = m.franchises[0];
       const f2 = m.franchises[1];
       const conf1 = franchiseConferenceMap[f1.franchiseId];
       const conf2 = franchiseConferenceMap[f2.franchiseId];
       const isConf = conf1 && conf2 && conf1 === conf2;
+
+      scheduleScoreMap[f1.franchiseId] = Number(f1.score || 0);
+      scheduleScoreMap[f2.franchiseId] = Number(f2.score || 0);
 
       // Determine game result
       let result1 = "T";
@@ -1159,6 +1170,18 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
         isConf: isConf
       };
     });
+
+    // Fallback: if the weeklyResults feed had no score for a team (e.g., MFL
+    // published the schedule result before posting fantasy scoring), use that
+    // team's score from the schedule feed so scores + All-Play still populate.
+    if (hasGameData) {
+      Object.keys(scheduleScoreMap).forEach(fId => {
+        const s = scoreMap[fId];
+        if ((s === undefined || s === null || Number(s) <= 0) && scheduleScoreMap[fId] > 0) {
+          scoreMap[fId] = scheduleScoreMap[fId];
+        }
+      });
+    }
 
     // Get all scores for All-Play calculation (only teams that played)
     const teamsWithGames = Object.keys(opponentMap);
