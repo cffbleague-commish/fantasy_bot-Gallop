@@ -260,8 +260,8 @@ const Scoreboard = ({ m }) => {
   const awayColor = useTeamColor(m.away);
   const homeColor = useTeamColor(m.home);
   return (
-    <div style={{ position: 'relative', background: 'var(--bg-surface)', border: '1px solid ' + (m.gameday ? 'rgba(201,162,39,.5)' : 'var(--border)'), borderRadius: '8px', padding: '28px 28px 24px', overflow: 'hidden', boxShadow: m.gameday ? '0 0 22px rgba(201,162,39,.16)' : 'none' }}>
-      <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'var(--gold-gradient)' }} />
+    <div style={{ position: 'relative', background: 'var(--bg-surface)', border: '1px solid ' + (m.gameday ? '#F26A21' : 'var(--border)'), borderRadius: '8px', padding: '28px 28px 24px', overflow: 'hidden', boxShadow: m.gameday ? '0 0 22px rgba(242,106,33,.20)' : 'none' }}>
+      <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: m.gameday ? 'linear-gradient(90deg,#B8480F,#F26A21 50%,#B8480F)' : 'var(--gold-gradient)' }} />
       {m.gameday && <div style={{ position: 'absolute', top: '12px', right: '14px' }}><GamedayBadge /></div>}
       <div className="ls-board">
         <SideBlock side={m.away} leading={awayLead} />
@@ -283,15 +283,17 @@ const Scoreboard = ({ m }) => {
   );
 };
 
-// ── Game-of-the-week badge (original mark — an on-brand football + "Gameday") ──
+// ── Game-of-the-week badge (the hosted College GameDay logo — same mark the
+// Power Rankings + GameDay widgets use). Compact variant shrinks it for the
+// tight around-the-league cards.
+const GAMEDAY_LOGO = 'https://i.imgur.com/9Kvqh5Y.png';
 const GamedayBadge = ({ compact }) => (
-  <span className={'ls-gameday' + (compact ? ' ls-gameday--compact' : '')} title="Game of the Week">
-    <svg className="ls-gameday__ico" viewBox="0 0 24 16" fill="none" stroke="currentColor" aria-hidden="true">
-      <ellipse cx="12" cy="8" rx="10" ry="6" strokeWidth="1.8" />
-      <path d="M8 8 H16 M10.5 5.6 V10.4 M12 5.2 V10.8 M13.5 5.6 V10.4" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-    <span className="ls-gameday__txt">Gameday</span>
-  </span>
+  <img
+    src={GAMEDAY_LOGO}
+    alt="College Gameday"
+    title="Game of the Week"
+    className={'ls-gameday-logo' + (compact ? ' ls-gameday-logo--compact' : '')}
+  />
 );
 
 // ── Around-the-league strip ───────────────────────────────────────────────────
@@ -322,8 +324,13 @@ const StripCard = ({ m, i, active, onSelect }) => {
       style={{
         cursor: 'pointer', textAlign: 'left', padding: '8px 10px', borderRadius: 'var(--r-3)',
         fontFamily: 'var(--font-body)', background: active ? 'var(--bg-surface-elev)' : 'var(--bg-surface)',
-        border: '1px solid ' + (active ? 'var(--gold)' : (m.gameday ? 'rgba(201,162,39,.5)' : 'var(--border)')),
-        boxShadow: m.gameday ? 'inset 0 0 0 1px rgba(201,162,39,.22), 0 0 10px rgba(201,162,39,.12)' : 'none',
+        // GameDay matchups always read orange (the College GameDay accent) so they
+        // stand out from the gold "selected" indicator; the glow strengthens when
+        // the card is also the active one.
+        border: '1px solid ' + (m.gameday ? '#F26A21' : (active ? 'var(--gold)' : 'var(--border)')),
+        boxShadow: m.gameday
+          ? (active ? 'inset 0 0 0 1px rgba(242,106,33,.5), 0 0 14px rgba(242,106,33,.28)' : 'inset 0 0 0 1px rgba(242,106,33,.3), 0 0 10px rgba(242,106,33,.16)')
+          : 'none',
         transition: 'filter var(--dur-fast) var(--ease-out)',
       }}
     >
