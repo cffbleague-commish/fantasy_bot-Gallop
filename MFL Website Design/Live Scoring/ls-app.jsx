@@ -74,6 +74,11 @@ const Avatar = ({ p, size }) => {
 
 const stColor = (st) => (st === 'LIVE' ? '#57B87F' : st === 'PRE' ? 'var(--fg-secondary)' : 'var(--fg-tertiary)');
 const fmt = (n) => (typeof n === 'number' ? n.toFixed(2) : '—');
+// Last live-refresh time (local) for the discreet "as of" note in the footer.
+const lsAsOf = (ts) => {
+  try { const d = new Date(ts); return isNaN(d.getTime()) ? '' : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }); }
+  catch (e) { return ''; }
+};
 
 // ── Per-team color ────────────────────────────────────────────────────────────
 // MFL exposes no franchise color field, so we sample each team's real color from
@@ -538,6 +543,7 @@ const App = () => {
 
       <div style={{ marginTop: '18px', font: '500 10px/1.5 var(--font-body)', letterSpacing: '.06em', color: 'var(--fg-tertiary)', textTransform: 'uppercase' }}>
         Scores update live (~40s) · Proj &amp; win probability are estimates · Tap any matchup above to open its scoreboard
+        {data.ts ? ' · As of ' + lsAsOf(data.ts) : ''}
       </div>
     </div>
   );

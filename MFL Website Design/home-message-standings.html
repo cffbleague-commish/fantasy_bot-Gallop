@@ -1055,6 +1055,7 @@
 
 /* Legend */
 .st-legend { margin-top: var(--s-2); color: var(--fg-tertiary); }
+.st-asof { margin: 6px 0 0; color: var(--fg-tertiary); font-size: 11px; letter-spacing: .04em; }
 .st-legend .st-leader__star { margin-right: 3px; }
 .st-legend__src { color: var(--fg-tertiary); }
 .st-legend code { font-family: var(--font-mono); color: var(--fg-secondary); font-size: 12px; }
@@ -1514,6 +1515,7 @@ function buildStandingsModel(d) {
     confLogos,
     weeksPlayed: num(d.weeksPlayed),
     year: d.season != null ? String(d.season) : '',
+    updatedAt: d.updatedAt || null,
     source: 'live'
   };
 }
@@ -1534,6 +1536,19 @@ const fmtPts = n => n.toLocaleString('en-US', {
 });
 const recOverall = t => t.wins + '\u2013' + t.losses + (t.ties ? '\u2013' + t.ties : '');
 const recConf = t => t.confWins + '\u2013' + t.confLosses;
+const fmtAsOf = v => {
+  try {
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return '';
+  }
+};
 const TB_BADGE = {
   'Head-to-head': 'H2H',
   'All-play %': 'AP%',
@@ -2019,7 +2034,9 @@ function App() {
     className: "st-confrank__tb"
   }, "\u2020"), " conference tiebreaker \xB7 click any team for season results & schedule", model.source && model.source !== 'live' && React.createElement("span", {
     className: "st-legend__src"
-  }, " \xB7 showing sample data \u2014 paste your sheet URL in ", React.createElement("code", null, "st-data.jsx"))), sel && React.createElement(TeamModal, {
+  }, " \xB7 showing sample data \u2014 paste your sheet URL in ", React.createElement("code", null, "st-data.jsx"))), model.updatedAt && React.createElement("p", {
+    className: "st-asof"
+  }, "As of ", fmtAsOf(model.updatedAt)), sel && React.createElement(TeamModal, {
     team: sel,
     onClose: () => setSel(null)
   }));

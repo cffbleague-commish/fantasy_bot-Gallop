@@ -300,6 +300,7 @@ function buildStandingsModel(d) {
     confLogos,
     weeksPlayed: num(d.weeksPlayed),
     year: d.season != null ? String(d.season) : '',
+    updatedAt: d.updatedAt || null,   // sheet-generation time, for the "as of" note
     source: 'live',
   };
 }

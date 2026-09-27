@@ -2,6 +2,12 @@
 
 const { useState: useStateA, useMemo } = React;
 
+// Local-time "as of" formatter for the discreet freshness note.
+const fmtAsOf = (v) => {
+  try { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  catch (e) { return ''; }
+};
+
 const App = () => {
   const [conf, setConf] = useStateA('all');
   const [selected, setSelected] = useStateA(STANDINGS[0].id);
@@ -57,6 +63,8 @@ const App = () => {
         </div>
 
         {selRow && <RankTrail r={selRow} />}
+
+        {window.CFFB_UPDATED_AT && <p className="pr-asof">As of {fmtAsOf(window.CFFB_UPDATED_AT)}</p>}
       </div>
     </div>
   );

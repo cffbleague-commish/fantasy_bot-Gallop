@@ -1720,6 +1720,18 @@ const Avatar = ({
 };
 const stColor = st => st === 'LIVE' ? '#57B87F' : st === 'PRE' ? 'var(--fg-secondary)' : 'var(--fg-tertiary)';
 const fmt = n => typeof n === 'number' ? n.toFixed(2) : '—';
+const lsAsOf = ts => {
+  try {
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? '' : d.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return '';
+  }
+};
 const LS_TEAM_COLOR = {};
 function hashColor(seed) {
   let h = 0;
@@ -2599,7 +2611,7 @@ const App = () => {
       color: 'var(--fg-tertiary)',
       textTransform: 'uppercase'
     }
-  }, "Scores update live (~40s) \xB7 Proj & win probability are estimates \xB7 Tap any matchup above to open its scoreboard"));
+  }, "Scores update live (~40s) \xB7 Proj & win probability are estimates \xB7 Tap any matchup above to open its scoreboard", data.ts ? ' · As of ' + lsAsOf(data.ts) : ''));
 };
 const CFFBLiveScoringBoot = () => {
   const [ready, setReady] = React.useState(false);

@@ -6,6 +6,12 @@ const fmtPts = (n) => n.toLocaleString('en-US', { maximumFractionDigits: 2, mini
 const recOverall = (t) => t.wins + '\u2013' + t.losses + (t.ties ? '\u2013' + t.ties : '');
 const recConf = (t) => t.confWins + '\u2013' + t.confLosses;
 
+// Local-time "as of" formatter for the discreet freshness note.
+const fmtAsOf = (v) => {
+  try { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  catch (e) { return ''; }
+};
+
 // Short badge code for whichever step actually broke the conference tie.
 const TB_BADGE = { 'Head-to-head': 'H2H', 'All-play %': 'AP%', 'Total points': 'PTS', 'National ranking': 'RANK' };
 const tbBadge = (d) => TB_BADGE[d] || 'TIE';
@@ -336,6 +342,8 @@ function App() {
         <span className="st-leader__star">★</span> league leader · <span className="st-ccg st-ccg--inline">CCG</span> projected conference championship (top 2) · <span className="st-confrank__tb">†</span> conference tiebreaker · click any team for season results &amp; schedule
         {model.source && model.source !== 'live' && <span className="st-legend__src"> · showing sample data — paste your sheet URL in <code>st-data.jsx</code></span>}
       </p>
+
+      {model.updatedAt && <p className="st-asof">As of {fmtAsOf(model.updatedAt)}</p>}
 
       {sel && <TeamModal team={sel} onClose={() => setSel(null)} />}
     </div>

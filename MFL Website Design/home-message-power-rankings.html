@@ -105,6 +105,7 @@ img { display: block; }
 
 .page-head { margin-bottom: 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
 .page-head__sub { font-size: 13px; color: var(--fg-secondary); }
+.pr-asof { margin: 20px 0 0; color: var(--fg-tertiary); font-size: 11px; letter-spacing: .04em; }
 .page-head__sub strong { color: var(--fg-primary); font-weight: 600; }
 
 /* ============================================================ CONF FILTER */
@@ -1504,6 +1505,19 @@ const {
   useState: useStateA,
   useMemo
 } = React;
+const fmtAsOf = v => {
+  try {
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return '';
+  }
+};
 const App = () => {
   const [conf, setConf] = useStateA('all');
   const [selected, setSelected] = useStateA(STANDINGS[0].id);
@@ -1561,7 +1575,9 @@ const App = () => {
     r: selRow
   })), selRow && React.createElement(RankTrail, {
     r: selRow
-  })));
+  }), window.CFFB_UPDATED_AT && React.createElement("p", {
+    className: "pr-asof"
+  }, "As of ", fmtAsOf(window.CFFB_UPDATED_AT))));
 };
 const CFFBBoot = () => {
   const [ready, setReady] = React.useState(false);

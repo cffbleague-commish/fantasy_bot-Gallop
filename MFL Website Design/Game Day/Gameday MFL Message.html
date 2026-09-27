@@ -106,6 +106,9 @@
 #cffb-gd .gd-at{font:800 14px 'Saira Condensed',sans-serif;color:var(--fg3)}
 #cffb-gd .gd-gtag{font-size:10px;font-weight:800;letter-spacing:.14em;padding:5px 8px;border-radius:2px;background:var(--s2);color:var(--fg2);white-space:nowrap}
 #cffb-gd .gd-game.feat .gd-gtag{background:var(--or);color:#0A0A0A}
+/* as-of note */
+#cffb-gd .gd-asof{padding:0 28px 18px;font-size:11px;color:var(--fg3);letter-spacing:.04em}
+#cffb-gd .gd-asof:empty{display:none}
 /* open-state choreography */
 #cffb-gd.is-open .gd-side.a{animation:gdWipeL .55s .1s cubic-bezier(.2,.8,.2,1) both}
 #cffb-gd.is-open .gd-side.b{animation:gdWipeR .55s .1s cubic-bezier(.2,.8,.2,1) both}
@@ -135,7 +138,7 @@
 #cffb-gd .gd-tlogo{width:160px}#cffb-gd .gd-chip{width:72px;height:72px;font-size:24px}
 #cffb-gd .gd-tname{font-size:26px}
 #cffb-gd .gd-vs{width:52px;height:52px}#cffb-gd .gd-vs span{font-size:22px}#cffb-gd .gd-midtag{display:none}
-#cffb-gd .gd-stats,#cffb-gd .gd-slate{padding-left:16px;padding-right:16px}
+#cffb-gd .gd-stats,#cffb-gd .gd-slate,#cffb-gd .gd-asof{padding-left:16px;padding-right:16px}
 #cffb-gd .gd-row{grid-template-columns:64px minmax(0,1fr) 64px;gap:12px}
 #cffb-gd .gd-val{font-size:22px}#cffb-gd .gd-lab small{display:none}#cffb-gd .gd-lab b{font-size:10px;letter-spacing:.1em}
 #cffb-gd .gd-game{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}#cffb-gd .gd-gtags{grid-column:1/-1;justify-self:center;flex-direction:row}
@@ -206,6 +209,7 @@
 <div data-gd="riv"></div>
 <div class="gd-stats"><div class="gd-sh"><h3>Tale of the Tape</h3><span data-gd="thruWeek"></span></div><div data-gd="rows"></div></div>
 <div class="gd-slate"><div class="gd-sh"><h3>The GameDay Slate</h3><span data-gd="slateCount"></span></div><div data-gd="slate" style="display:flex;flex-direction:column;gap:10px"></div></div>
+<div class="gd-asof" data-gd="asof"></div>
 </div></div></div>
 </div>
 <script>
@@ -255,6 +259,8 @@ $('tease').innerHTML = '<span>'+rk(main.ra)+full(A)+'</span><i>VS</i><span>'+rk(
 $('teaseSub').textContent = rec(main.sa) + ' vs ' + rec(main.sb) + (GD.games.length > 1 ? ' \u00B7 ' + GD.games.length + ' GameDay games this week' : '');
 $('thruWeek').textContent = 'THROUGH WEEK ' + (GD.week - 1);
 $('slateCount').textContent = 'WEEK ' + GD.week + ' \u00B7 ' + GD.games.length + (GD.games.length === 1 ? ' GAME' : ' GAMES');
+var fmtAsOf = function(v){ try { var dt = new Date(v); if (isNaN(dt.getTime())) return ''; return dt.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); } catch(e){ return ''; } };
+if ($('asof')) $('asof').textContent = GD.updatedAt ? ('As of ' + fmtAsOf(GD.updatedAt)) : '';
 root.style.setProperty('--ca', A.color); root.style.setProperty('--cb', B.color);
 $('hero').innerHTML =
   '<div class="gd-side a"></div><div class="gd-side b"></div>' +

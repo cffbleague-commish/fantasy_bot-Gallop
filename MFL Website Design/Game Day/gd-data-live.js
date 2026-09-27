@@ -146,7 +146,8 @@
       week: week,
       logo: GAMEDAY_LOGO,
       teams: teamsMap,
-      games: games
+      games: games,
+      updatedAt: (d && d.updatedAt) || null   // sheet-generation time, for the "as of" note
     };
   }
 

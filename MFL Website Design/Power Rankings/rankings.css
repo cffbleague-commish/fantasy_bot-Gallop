@@ -110,6 +110,7 @@ img { display: block; }
 
 .page-head { margin-bottom: 16px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
 .page-head__sub { font-size: 13px; color: var(--fg-secondary); }
+.pr-asof { margin: 20px 0 0; color: var(--fg-tertiary); font-size: 11px; letter-spacing: .04em; }
 .page-head__sub strong { color: var(--fg-primary); font-weight: 600; }
 
 /* ============================================================ CONF FILTER */

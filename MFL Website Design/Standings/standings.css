@@ -139,6 +139,7 @@
 
 /* Legend */
 .st-legend { margin-top: var(--s-2); color: var(--fg-tertiary); }
+.st-asof { margin: 6px 0 0; color: var(--fg-tertiary); font-size: 11px; letter-spacing: .04em; }
 .st-legend .st-leader__star { margin-right: 3px; }
 .st-legend__src { color: var(--fg-tertiary); }
 .st-legend code { font-family: var(--font-mono); color: var(--fg-secondary); font-size: 12px; }
