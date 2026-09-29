@@ -1740,7 +1740,7 @@ class Component extends DCLogic {
     const ownerVals = (o) => {
       const t = T[o] || { name: o, color: '#2A2A2A', txt: '#F5F5F5' }, logo = LOGOS[o];
       return {
-        key: o, name: t.name, logo: logo || '', hasLogo: !!logo, noLogo: !logo,
+        key: t.abbr || o, name: t.name, logo: logo || '', hasLogo: !!logo, noLogo: !logo,
         ringStyle: 'border-color:' + accent(o) + (focus && focus !== o ? ';opacity:.35' : focus === o ? ';box-shadow:0 0 0 2px var(--bg-surface),0 0 0 4px var(--gold);z-index:3' : ''),
         markStyle: logo ? 'background:#F5F5F5' : 'background:' + t.color + ';color:' + t.txt,
         onSelect: () => this.setState({ dFocus: focus === o ? null : o }),
@@ -1772,7 +1772,7 @@ class Component extends DCLogic {
     const dBoard = board.map((b, i) => {
       const t = T[b.key] || { name: b.key, color: '#2A2A2A', txt: '#F5F5F5' };
       return {
-        key: b.key, rank: i + 1, name: t.name, bonus: b.bonus, count: b.count, r1: b.r1,
+        key: t.abbr || b.key, rank: i + 1, name: t.name, bonus: b.bonus, count: b.count, r1: b.r1,
         chipStyle: 'background:' + t.color + ';color:' + t.txt, confBar: 'background:' + accent(b.key),
         barW: 'width:' + (b.bonus / maxB * 100).toFixed(1) + '%',
         rowStyle: focus === b.key ? 'background:rgba(201,162,39,.08);box-shadow:inset 3px 0 0 var(--gold)' : focus ? 'opacity:.55' : '',
@@ -1788,7 +1788,7 @@ class Component extends DCLogic {
         count: confPicks.length, scope: confKey === 'all' ? 'Across all conferences' : D.conferences[confKey].label + ' franchises',
         r1: confPicks.filter((p) => p.round === 1).length, r1Share: (confPicks.length ? Math.round(confPicks.filter((p) => p.round === 1).length / confPicks.length * 100) : 0) + '%',
         bonus: confPicks.reduce((a, p) => a + p.bonus * ownIn(p).length, 0),
-        topName: topT ? topT.name : '—', topKey: top ? top.key : '—',
+        topName: topT ? topT.name : '—', topKey: top ? ((topT && topT.abbr) || top.key) : '—',
         topPill: top && PILLS[top.key] ? '../../assets/teams/' + PILLS[top.key] + '.png' : '', topHasPill: !!(top && PILLS[top.key]), topNoPill: !(top && PILLS[top.key]),
         topChip: topT ? 'background:' + topT.color + ';color:' + topT.txt : '', topConfBar: top ? 'background:' + accent(top.key) : '',
         topLine: top ? '$' + top.bonus + ' · ' + top.count + ' picks · ' + top.r1 + ' in Rd 1' : '',
@@ -1800,26 +1800,28 @@ class Component extends DCLogic {
   }
 
   buildRecruiting(R, D) {
-    const srcMeta = { W: ['Wins', '#C9A227', 'rgba(201,162,39,.14)', ''], R: ['Rivalry', '#3B82C4', 'rgba(59,130,196,.14)', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='], D: ['Draft', '#2F7D5C', 'rgba(47,125,92,.14)', ''], G: ['GameDay', '#C4574E', 'rgba(196,87,78,.14)', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM6YzJwYT0iaHR0cDovL2MycGEub3JnL21hbmlmZXN0Ij48bWV0YWRhdGE+PGMycGE6bWFuaWZlc3Q+QUFBV2dtcDFiV0lBQUFBZWFuVnRaR015Y0dFQUVRQVFnQUFBcWdBNG0zRURZekp3WVFBQUFCWmNhblZ0WWdBQUFFZHFkVzFrWXpKdFlRQVJBQkNBQUFDcUFEaWJjUU4xY200Nll6SndZVHBsTkRsaFkyUmpNQzB3WkRoaExUUXlORFl0T1dFeU55MHlaamt5TmpjM1lUVmtPRGtBQUFBRGwycDFiV0lBQUFBcGFuVnRaR015WVhNQUVRQVFnQUFBcWdBNG0zRURZekp3WVM1aGMzTmxjblJwYjI1ekFBQUFBTHhxZFcxaUFBQUFSR3AxYldSalltOXlBQkVBRUlBQUFLb0FPSnR4RTJNeWNHRXVhVzVuY21Wa2FXVnVkQzUyTXdBQUFBQVlZekp6YUJUZDNpWERzQTdSRVJtQStyMFkvbzhBQUFCd1kySnZjcU5wWkdNNlptOXliV0YwYldsdFlXZGxMM04yWnl0NGJXeHFhVzV6ZEdGdVkyVkpSSGdzZUcxd09tbHBaRG8xTnpRNVlUVTNPUzB6TjJRNExUUTRaV0l0T1RrMVlTMHlaVGxpT0RjMFlUUXlNVEpzY21Wc1lYUnBiMjV6YUdsd2FIQmhjbVZ1ZEU5bUFBQUI0bXAxYldJQUFBQkJhblZ0WkdOaWIzSUFFUUFRZ0FBQXFnQTRtM0VUWXpKd1lTNWhZM1JwYjI1ekxuWXlBQUFBQUJoak1uTm9aVGg2SzVtWHE0SDNlM0xxanZ0R3RRQUFBWmxqWW05eW9tZGhZM1JwYjI1emdxSm1ZV04wYVc5dWEyTXljR0V1YjNCbGJtVmthbkJoY21GdFpYUmxjbk9oYTJsdVozSmxaR2xsYm5SemdhSmpkWEpzZUMxelpXeG1JMnAxYldKbVBXTXljR0V1WVhOelpYSjBhVzl1Y3k5ak1uQmhMbWx1WjNKbFpHbGxiblF1ZGpOa2FHRnphRmdnSnI2Z05hQjloRFpVT1JaQzJrckhWQll2VEtvendGS1lMUmd4UHdlWUc5ZWtabUZqZEdsdmJuZ2RZMjl0TG1GdWRHaHliM0JwWXk1amJHRjFaR1V1Y0hKdmRtbGtaV1JxY0dGeVlXMWxkR1Z5YzZGNEgyTnZiUzVoYm5Sb2NtOXdhV011YjNKcFoybHVMV052Ym1acFpHVnVZMlZuZFc1cmJtOTNibXRrWlhOamNtbHdkR2x2Ym5obVEyeGhkV1JsSUhCeWIzWnBaR1ZrSUhSb2FYTWdabWxzWlNCaGRDQjBhR1VnY21WeGRXVnpkQ0J2WmlCaElIVnpaWElnWVc1a0lHMWhlU0JvWVhabElHTnlaV0YwWldRZ2IzSWdiVzlrYVdacFpXUWdkR2hsSUdacGJHVWdZMjl1ZEdWdWRITXViWE52Wm5SM1lYSmxRV2RsYm5TaFpHNWhiV1ZtUTJ4aGRXUmxjbUZzYkVGamRHbHZibk5KYm1Oc2RXUmxaUFVBQUFESWFuVnRZZ0FBQUVCcWRXMWtZMkp2Y2dBUkFCQ0FBQUNxQURpYmNSTmpNbkJoTG1oaGMyZ3VaR0YwWVFBQUFBQVlZekp6YUpZdytyZzdaaHY0R1BBVTVFbVdXb1VBQUFDQVkySnZjcVZqWVd4blpuTm9ZVEkxTm1Od1lXUk5BQUFBQUFBQUFBQUFBQUFBQUdSb1lYTm9XQ0FaT2RLUks5WTA2TVNJNkswNDRnVlc3VE5wL3ZBUU9wNC9yWXl1ZWVJYUoyUnVZVzFsYm1wMWJXSm1JRzFoYm1sbVpYTjBhbVY0WTJ4MWMybHZibk9Cb21WemRHRnlkQmg3Wm14bGJtZDBhQmtlQkFBQUFqNXFkVzFpQUFBQUoycDFiV1JqTW1Oc0FCRUFFSUFBQUtvQU9KdHhBMk15Y0dFdVkyeGhhVzB1ZGpJQUFBQUNEMk5pYjNLbFkyRnNaMlp6YUdFeU5UWnBjMmxuYm1GMGRYSmxlRTF6Wld4bUkycDFiV0ptUFM5ak1uQmhMM1Z5Ympwak1uQmhPbVUwT1dGalpHTXdMVEJrT0dFdE5ESTBOaTA1WVRJM0xUSm1PVEkyTnpkaE5XUTRPUzlqTW5CaExuTnBaMjVoZEhWeVpXcHBibk4wWVc1alpVbEVlQ3g0YlhBNmFXbGtPalJsWkRjM09XTXhMV0kxTkdZdE5HVTNPUzFoTVRNNExXRm1aRGc1TWpkbFlqSmxPSEpqY21WaGRHVmtYMkZ6YzJWeWRHbHZibk9Eb21OMWNteDRMWE5sYkdZamFuVnRZbVk5WXpKd1lTNWhjM05sY25ScGIyNXpMMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNMlJvWVhOb1dDQW12cUExb0gyRU5sUTVGa0xhU3NkVUZpOU1xalBBVXBndEdERS9CNWdiMTZKamRYSnNlQ3B6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtRmpkR2x2Ym5NdWRqSmthR0Z6YUZnZ0VXZFpsSENFV2VIR0M3SXhETmx1WU9VRWUvdG5ZU0ZSOWZJWGpCMXg0RStpWTNWeWJIZ3BjMlZzWmlOcWRXMWlaajFqTW5CaExtRnpjMlZ5ZEdsdmJuTXZZekp3WVM1b1lYTm9MbVJoZEdGa2FHRnphRmdnRkJ6cThiaDdCZVlQTWFVcVlPeUV1K1MwdE5MMVhoQUtmL0s2YzNrR3pKbDBZMnhoYVcxZloyVnVaWEpoZEc5eVgybHVabStqWkc1aGJXVnZRVzUwYUhKdmNHbGpJRVpwYkdWelozWmxjbk5wYjI1bE1TNHdMakJyYzNCbFkxWmxjbk5wYjI1bE1pNDBMakFBQUJBNGFuVnRZZ0FBQUNocWRXMWtZekpqY3dBUkFCQ0FBQUNxQURpYmNRTmpNbkJoTG5OcFoyNWhkSFZ5WlFBQUFCQUlZMkp2Y3RLRVdRSVNvZ0VtR0NGWkFnb3dnZ0lHTUlJQmphQURBZ0VDQWhSQTVhQUs3c0k1MEw2NGcvb0dRZ1U5WjFVVEFEQUtCZ2dxaGtqT1BRUURBekJKTVJjd0ZRWURWUVFLRXc1QmJuUm9jbTl3YVdNc0lGQkNRekV1TUN3R0ExVUVBeE1sUVc1MGFISnZjR2xqSUVOdmJuUmxiblFnUTNKbFpHVnVkR2xoYkhNZ1VtOXZkQ0JEUVRBZUZ3MHlOakE0TURjeE9EUXpOVFphRncweU9EQTRNRFl4T1RRek5UWmFNRVF4RnpBVkJnTlZCQW9URGtGdWRHaHliM0JwWXl3Z1VFSkRNU2t3SndZRFZRUURFeUJCYm5Sb2NtOXdhV01nUTJ4aGRXUmxJRU52Ym5SbGJuUWdVMmxuYm1sdVp6QlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJKaDZDbXZMVUJnRkZOVTB2VUtsT1Z0RTZkamQxN0w1U3V3WDBMZW1GaXNCTTNka2QvM2N5anhGQTNRbzVTNDZmWDAvaWhZMFZaN21mYjlLRjcwM3Q1T2pXREJXTUE0R0ExVWREd0VCL3dRRUF3SUhnREFWQmdOVkhTVUVEakFNQmdvckJnRUVBWVBvWGdJQk1Bd0dBMVVkRXdFQi93UUNNQUF3SHdZRFZSMGpCQmd3Rm9BVXpsSGlCSUZPWkZzaitPUEV6NW8rbk1IWFhNSXdDZ1lJS29aSXpqMEVBd01EWndBd1pBSXdNWE1kRko0QmV0TExWWTdPUnVFOW5vcWJiQVpPWm4vYUFyWHlUd0ZBWmZLclB6eEYydlBvSk5mMStVQ2RnMVhHQWpCd1gxemQ5V0dxWWtxbUw1U0ZxdzFReVNqcjF6SmZwSk05KzFyZER3U1BMTU9QT2pLdWlYam9VL3BVVWVHOVJ3bWhZM0JoWkZrTm5nQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBUFpZUUZiS2JvcXd5SWVOQ0FHYmN1TlUweDE4aUZHQnExak5XWGFsa09PSnVYeWF0QlVQamxmZ3dPS1paaXdxeGE0K1EzRDU1cFYrTmxyQmV5aWNXdEpKaXZVPTwvYzJwYTptYW5pZmVzdD48L21ldGFkYXRhPjxyZWN0IHg9IjQiIHk9IjMiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxMSIgcng9IjEuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ij48L3JlY3Q+PHBhdGggZD0iTTcgMjFsNS03IDUgNyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjwvcGF0aD48dGV4dCB4PSIxMiIgeT0iMTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI2LjUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJjdXJyZW50Q29sb3IiPkdEPC90ZXh0Pjwvc3ZnPg=='] };
+    // Live feed teams carry aggregate buckets (total, wins, awards, rivalryNet,
+    // draftNet, optional gameday) — not the sample's per-event log. Consume the
+    // aggregates directly (mirrors the shipped 2-tab build) so this works live.
     const keys = Object.keys(R.teams);
-    // Player awards → bonus $: award leader, other top-3, remaining finalists (coach award excluded)
-    const AW = { lead: 6, top3: 3, fin: 1 };
-    const awEv = {};
-    D.nationalOrder.forEach((ak) => {
-      const a = D.national[ak]; if (!a || a.isCoach) return;
-      a.finalists.forEach((f) => {
-        const tk = f.team && f.team.abbr; if (!tk || !R.teams[tk]) return;
-        const amt = f.rank === 1 ? AW.lead : f.rank <= 3 ? AW.top3 : AW.fin;
-        (awEv[tk] = awEv[tk] || []).push({ week: D.week, src: 'A', amt, desc: a.name + ': ' + f.name, player: f.name, award: a.name, status: f.rank === 1 ? 'Leader' : f.rank <= 3 ? 'Top 3' : 'Finalist' });
-      });
-    });
-    const withAw = (k) => ({ ...R.teams[k], events: R.teams[k].events.concat(awEv[k] || []) });
-    const totOf = (t) => t.events.reduce((a, e) => a + e.amt, 0);
-    const ranked = keys.map((k) => { const t = withAw(k); return { key: k, ...t, total: totOf(t) }; }).sort((a, b) => b.total - a.total);
+    // Normalize either shape to aggregate buckets: live teams already carry them;
+    // the offline sample carries an `events` log, so fold it into buckets.
+    const agg = (t) => {
+      if (t && t.events && t.total == null) {
+        const s = { W: 0, R: 0, D: 0, G: 0, A: 0 };
+        t.events.forEach((e) => { s[e.src] = (s[e.src] || 0) + e.amt; });
+        return { ...t, wins: s.W, rivalryNet: s.R, draftNet: s.D, gameday: s.G, awards: s.A,
+          total: s.W + s.R + s.D + s.G + s.A };
+      }
+      return t;
+    };
+    const totalOf = (t) => (t.total != null ? t.total
+      : (t.wins || 0) + (t.awards || 0) + (t.rivalryNet || 0) + (t.draftNet || 0) + (t.gameday || 0));
+    const ranked = keys.map((k) => { const t = agg(R.teams[k]); return { key: k, ...t, total: totalOf(t) }; })
+      .sort((a, b) => (b.total || 0) - (a.total || 0));
     ranked.forEach((t, i) => { t.rank = i + 1; });
 
     const confKey = this.state.recConf;
-    const confLogos = { sec: 'sec', b1g: 'b1g', acc: 'acc', big12: 'big12', aac: 'aac', pac: 'pac12' };
     const recConfTabs = [{ key: 'all', label: 'All' }].concat(D.confOrder.map((k) => ({ key: k, label: D.conferences[k].label }))).map((c) => {
       const active = c.key === confKey;
       const count = c.key === 'all' ? ranked.length : ranked.filter((t) => t.conf === c.key).length;
@@ -1832,22 +1834,8 @@ class Component extends DCLogic {
       };
     });
 
-    const teamPills = { UGA: 'georgia', ARMY: 'army', FRES: 'fresno-state', UNC: 'north-carolina' };
     const scoped = confKey === 'all' ? ranked : ranked.filter((t) => t.conf === confKey);
-    const selT = ranked.find((t) => t.key === this.state.recTeam) || scoped[0] || ranked[0];
-    const max = Math.max(...scoped.map((t) => t.total), 1);
-    const recRank = scoped.map((t) => ({
-      key: t.key, rankStr: this.pad(t.rank), abbr: t.key, name: t.name, total: t.total,
-      color: t.color, txt: t.txt,
-      hasLogo: !!teamPills[t.key], noLogo: !teamPills[t.key],
-      logoStyle: teamPills[t.key] ? 'background-image:url(../../assets/teams/' + teamPills[t.key] + '.png);' : '',
-      confAccent: (D.conferences[t.conf] || {}).accent || 'var(--gold)',
-      barStyle: 'width:' + Math.max(3, Math.round((t.total / max) * 100)) + '%;background:' + t.color + ';' + (t.key === selT.key ? '' : 'opacity:.55;'),
-      rowStyle: t.key === selT.key ? 'background:var(--bg-surface-elev);box-shadow:inset 3px 0 0 var(--gold);' : '',
-      onSelect: () => this.setState({ recTeam: t.key, dotTip: null }),
-      onHover: () => this.setState({ recHover: t.key, dotTip: null }),
-      onLeave: () => this.setState({ recHover: null }),
-    }));
+    const selT = ranked.find((t) => t.key === this.state.recTeam) || scoped[0] || ranked[0] || { abbr: '—', name: '', total: 0, events: [] };
 
     const hiKey = this.state.recHover || selT.key;
     const CH = 600, PAD = 36, swW = this.state.swW || 600, narrow = swW < 360, COLL = narrow ? 22 : 28, halfW = swW / 2 - (narrow ? 14 : 18);
@@ -1870,9 +1858,9 @@ class Component extends DCLogic {
       const hi = t.key === hiKey;
       const size = narrow ? (hi ? 30 : 22) : (hi ? 36 : 27);
       const below = yy < CH / 2;
-      const tip = { head: t.key + ' · $' + t.total, body: '#' + t.rank + ' · ' + t.name, pos: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(below ? yy + size / 2 + 10 : yy - size / 2 - 10) + 'px;' + (below ? '' : 'transform:translate(-50%,-100%);') };
+      const tip = { head: (t.abbr || t.key) + ' · $' + t.total, body: '#' + t.rank + ' · ' + t.name, pos: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(below ? yy + size / 2 + 10 : yy - size / 2 - 10) + 'px;' + (below ? '' : 'transform:translate(-50%,-100%);') };
       return {
-        mono: t.key.slice(0, 2),
+        mono: String(t.abbr || t.key).slice(0, 2),
         markStyle: 'background:' + t.color + ';color:' + t.txt + ';',
         style: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(yy) + 'px;width:' + size + 'px;height:' + size + 'px;border-color:' + t.color + ';' + (hi ? 'z-index:3;box-shadow:0 0 0 2px rgba(201,162,39,.4),0 4px 14px rgba(0,0,0,.55);' : 'opacity:.8;'),
         onEnter: () => this.setState({ recHover: t.key, dotTip: tip }),
@@ -1885,22 +1873,27 @@ class Component extends DCLogic {
       style: 'top:' + Math.round(PAD + (i / 4) * (CH - PAD * 2)) + 'px;',
     }));
 
-    const sums = { W: 0, R: 0, D: 0, G: 0, A: 0 };
-    selT.events.forEach((e) => { sums[e.src] = (sums[e.src] || 0) + e.amt; });
-    const pct = (n) => Math.round((n / Math.max(selT.total, 1)) * 100);
+    // Category breakdown from the feed's aggregate buckets. GameDay has no feed
+    // field yet → 0. Awards use the feed's real awards $ (not a synthetic score).
+    const cat = {
+      wins: selT.wins || 0, aw: selT.awards || 0,
+      riv: selT.rivalryNet || 0, draft: selT.draftNet || 0,
+      gd: selT.gameday != null ? selT.gameday : 0,
+    };
+    const selTotal = selT.total != null ? selT.total : (cat.wins + cat.aw + cat.riv + cat.draft + cat.gd);
+    const posSum = Math.max(Math.max(cat.wins, 0) + Math.max(cat.aw, 0) + Math.max(cat.riv, 0) + Math.max(cat.draft, 0) + Math.max(cat.gd, 0), 1);
+    const tpct = (n) => Math.round((n / Math.max(selTotal, 1)) * 100);   // share of total (can be negative for net buckets)
+    const wpct = (n) => Math.max(0, Math.round((Math.max(n, 0) / posSum) * 100)); // bar width (clamped ≥0)
     const sel = {
-      abbr: selT.key, name: selT.name, color: selT.color, txt: selT.txt,
+      abbr: selT.abbr || selT.key, name: selT.name, color: selT.color, txt: selT.txt,
       confAccent: (D.conferences[selT.conf] || {}).accent || 'var(--gold)',
-      rankStr: '#' + selT.rank, total: selT.total,
+      rankStr: '#' + selT.rank, total: selTotal,
       confLabel: (D.conferences[selT.conf] || {}).label || '',
       confRankStr: '#' + (ranked.filter((t) => t.conf === selT.conf).findIndex((t) => t.key === selT.key) + 1),
-      wins: sums.W, riv: sums.R, draft: sums.D, gd: sums.G,
-      winsPct: pct(sums.W) + '%', rivPct: pct(sums.R) + '%', draftPct: pct(sums.D) + '%', gdPct: pct(sums.G) + '%',
-      winsW: 'width:' + pct(sums.W) + '%;', rivW: 'width:' + pct(sums.R) + '%;', draftW: 'width:' + pct(sums.D) + '%;', gdW: 'width:' + pct(sums.G) + '%;',
-      aw: sums.A, awPct: pct(sums.A) + '%', awW: 'width:' + pct(sums.A) + '%;',
-      awList: selT.events.filter((e) => e.src === 'A').sort((a, b) => b.amt - a.amt).map((e) => ({ player: e.player, award: e.award, status: e.status, amt: e.amt })),
+      wins: cat.wins, riv: cat.riv, draft: cat.draft, gd: cat.gd, aw: cat.aw,
+      winsPct: tpct(cat.wins) + '%', rivPct: tpct(cat.riv) + '%', draftPct: tpct(cat.draft) + '%', gdPct: tpct(cat.gd) + '%', awPct: tpct(cat.aw) + '%',
+      winsW: 'width:' + wpct(cat.wins) + '%;', rivW: 'width:' + wpct(cat.riv) + '%;', draftW: 'width:' + wpct(cat.draft) + '%;', gdW: 'width:' + wpct(cat.gd) + '%;', awW: 'width:' + wpct(cat.aw) + '%;',
     };
-    sel.hasAw = sel.awList.length > 0; sel.noAw = !sel.hasAw;
     return {
       swRef: this._swRef || (this._swRef = (el) => {
         if (this._swRo) { this._swRo.disconnect(); this._swRo = null; }
@@ -1908,9 +1901,9 @@ class Component extends DCLogic {
         this._swRo = new ResizeObserver((en) => { const w = Math.round(en[0].contentRect.width); if (w && w !== this.state.swW) this.setState({ swW: w }); });
         this._swRo.observe(el);
       }),
-      recWeek: R.week, nextSeason: R.season + 1, awScale: AW,
+      recWeek: R.week, nextSeason: (R.season || 0) + 1,
       recScopeLabel: confKey === 'all' ? 'All Conferences' : (D.conferences[confKey] || {}).label,
-      recConfTabs, recRank, sel, swarmDots, swarmTicks,
+      recConfTabs, sel, swarmDots, swarmTicks,
       hasDotTip: !!this.state.dotTip,
       dotTipPos: (this.state.dotTip || {}).pos || '',
       dotTipHead: (this.state.dotTip || {}).head || '',
