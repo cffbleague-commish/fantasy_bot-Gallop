@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Awards &amp; Recruiting · Mobile Preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700&amp;family=Inter:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#050505;color:#F5F5F5;font-family:Inter,sans-serif;padding:32px 24px}
+a{color:#E8C547}a:hover{color:#F4D66A}
+h1{margin:0 0 6px;font:700 32px 'Saira Condensed',sans-serif;text-transform:uppercase;text-align:center}
+p{margin:0 0 20px;text-align:center;color:#9A9A9A;font-size:13px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px}
+button{min-height:36px;background:#1C1C1C;border:1px solid #2A2A2A;border-radius:4px;color:#F5F5F5;padding:8px 14px;font:600 12px Inter,sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+button:hover{filter:brightness(1.12)}
+.wrap{display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start}
+.dev{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.14em;color:#9A9A9A;text-transform:uppercase}.lab b{color:#F5F5F5}
+.phone{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:44px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.screen{border-radius:32px;overflow:hidden;background:#0A0A0A;position:relative}
+.notch{position:absolute;top:10px;left:50%;width:110px;height:30px;margin-left:-55px;background:#000;border-radius:20px;z-index:2}
+iframe{display:block;border:0;background:#0A0A0A}
+</style></head><body>
+<h1>Awards &amp; Recruiting · Device Preview</h1>
+<p>Live copies of the dashboard at phone width, each opened to a different tab. Scroll inside each screen.</p>
+<div class="bar">
+<button onclick="setAll()">Reset views</button>
+<button onclick="setAll('Awards Watch')">All: Awards Watch</button>
+<button onclick="setAll('NFL Draft')">All: NFL Draft</button>
+<button onclick="setAll('Recruiting $')">All: Recruiting $</button>
+</div>
+<div class="wrap">
+<div class="dev"><div class="lab"><b>Awards Watch</b> · 393 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="Awards Watch" src="playerawards.update.html" width="393" height="800"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>NFL Draft</b> · 393 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="NFL Draft" src="playerawards.update.html" width="393" height="800"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>Recruiting $</b> · 360 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="Recruiting $" src="playerawards.update.html" width="360" height="760"></iframe></div></div></div>
+</div>
+<script>
+function frames(){return Array.from(document.querySelectorAll('iframe'));}
+function go(f,label,tries){tries=tries||0;try{var d=f.contentDocument;var b=Array.from(d.querySelectorAll('button')).find(function(x){return x.textContent.trim().toUpperCase()===label.toUpperCase();});if(b){b.click();d.documentElement.scrollTop=0;return;}}catch(e){}if(tries<60)setTimeout(function(){go(f,label,tries+1);},150);}
+function setAll(label){frames().forEach(function(f){go(f,label||f.getAttribute('data-view'));});}
+frames().forEach(function(f){f.addEventListener('load',function(){go(f,f.getAttribute('data-view'));});});
+</script>
+</body></html>

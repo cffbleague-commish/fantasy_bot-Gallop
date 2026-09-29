@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Devy Draft · Mobile Preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700&amp;family=Inter:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#050505;color:#F5F5F5;font-family:Inter,sans-serif;padding:32px 24px}
+a{color:#E8C547}a:hover{color:#F4D66A}
+.wrap{display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start}
+.dev{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.14em;color:#9A9A9A;text-transform:uppercase}
+.lab b{color:#F5F5F5}
+.phone{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:44px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.screen{border-radius:32px;overflow:hidden;background:#0A0A0A;position:relative}
+.notch{position:absolute;top:10px;left:50%;width:110px;height:30px;margin-left:-55px;background:#000;border-radius:20px;z-index:2}
+iframe{display:block;border:0;background:#0A0A0A}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px}
+button{min-height:36px;background:#1C1C1C;border:1px solid #2A2A2A;border-radius:4px;color:#F5F5F5;padding:8px 14px;font:600 12px Inter,sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+button:hover{filter:brightness(1.12)}
+h1{margin:0 0 6px;font:700 32px 'Saira Condensed',sans-serif;text-transform:uppercase;text-align:center}
+p{margin:0 0 20px;text-align:center;color:#9A9A9A;font-size:13px}
+</style></head><body>
+<h1>Devy Draft Message · Device Preview</h1>
+<p>Live copies at real phone widths, each opened to a different view. Everything is interactive; scroll inside each screen.</p>
+<div class="bar">
+<button onclick="setAll(reset)">Reset views</button>
+<button onclick="setAll(function(d){go(d,'draft','board')})">All: Draft order</button>
+<button onclick="setAll(function(d){go(d,'draft','pool')})">All: Player pool</button>
+<button onclick="setAll(function(d){go(d,'ret')})">All: Retention</button>
+<button onclick="setAll(function(d){go(d,'past')})">All: Past drafts</button>
+<button onclick="setAll(function(d){click(d,'[data-act=simpre]')})">Toggle pre-draft</button>
+</div>
+<div class="wrap">
+<div class="dev"><div class="lab"><b>Draft order</b> · 393 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="board" src="Devy Draft MFL Message.html" width="393" height="780"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>Player pool</b> · 393 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="pool" src="Devy Draft MFL Message.html" width="393" height="780"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>Retention</b> · 393 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="ret" src="Devy Draft MFL Message.html" width="393" height="780"></iframe></div></div></div>
+<div class="dev"><div class="lab"><b>Past drafts</b> · 360 wide</div><div class="phone"><div class="screen"><div class="notch"></div><iframe data-view="past" src="Devy Draft MFL Message.html" width="360" height="720"></iframe></div></div></div>
+</div>
+<script>
+function frames(){return Array.from(document.querySelectorAll('iframe'));}
+function click(d,sel){var e=d.querySelector('#cffb-dv '+sel);if(e) e.click();}
+function go(d,tab,sub){click(d,'[data-act=tab][data-v='+tab+']');if(sub) click(d,'[data-act=sub][data-v='+sub+']');}
+function reset(d,f){var v=f.getAttribute('data-view');if(v==='board') go(d,'draft','board');else if(v==='pool') go(d,'draft','pool');else go(d,v);}
+function setAll(fn){frames().forEach(function(f){try{fn(f.contentDocument,f);}catch(e){}});}
+frames().forEach(function(f){f.addEventListener('load',function(){try{var d=f.contentDocument;d.body.style.padding='52px 0 16px';reset(d,f);}catch(e){}});});
+</script>
+</body></html>

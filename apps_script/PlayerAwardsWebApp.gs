@@ -19,7 +19,7 @@
  * Redeploy after editing this file (deployments are frozen at deploy time).
  */
 
-const AW_CACHE_KEY = "awards_payload_v1";
+const AW_CACHE_KEY = "awards_payload_v2";
 const AW_CACHE_TTL_SECONDS = 600; // 10 minutes
 
 // ============================================================================
@@ -83,6 +83,7 @@ function buildAwardsPayload(overrideYear) {
   const national = buildNational(awards, teamOf);
   const confTiers = buildConfTiers(awards, teamOf);
   const recruiting = buildRecruiting(year, teamOf);
+  const theoreticalDraft = buildTheoreticalDraft(year); // NFL Draft board (per-player picks)
 
   // Conferences present in the data, in the canonical league order.
   const order = ["sec", "b1g", "acc", "big12", "aac", "pac"];
@@ -103,7 +104,8 @@ function buildAwardsPayload(overrideYear) {
     confOrder: order.filter(function (c) { return present[c]; }),
     national: national,
     confTiers: confTiers,
-    recruiting: recruiting
+    recruiting: recruiting,
+    theoreticalDraft: theoreticalDraft
   };
 }
 
@@ -308,6 +310,85 @@ function buildRecruiting(year, teamOf) {
 }
 
 // ============================================================================
+// THEORETICAL NFL DRAFT READER
+// ============================================================================
+
+/**
+ * Read the TheoreticalDraft tab for a year and shape it into the per-player draft
+ * board the dashboard's "NFL Draft" view renders (window.CFFB_NFLDRAFT). The tab
+ * is written by TheoreticalDraft.gs and holds one row per drafted player COPY:
+ *   Year, PlayerID, PlayerName, Position, PositionGroup, CopyID, Conference,
+ *   FranchiseID, DraftReason, SeasonPoints, PositionRank, DraftRound, RoundLabel,
+ *   DollarValue, CalculatedAt.
+ *
+ * Rows are grouped by player (a player owned as multiple copies becomes one pick
+ * with several owners). Undrafted rows (round 0 / $0) are dropped. Owners are
+ * emitted as normalized franchise ids so the board can resolve them against
+ * recruiting.teams (which is keyed by franchise id). Picks are ordered round →
+ * dollar → season points so the board's per-round list reads best-to-worst.
+ *
+ * @returns {Object} { year, rounds, bonusScale:[[label,value],…], picks:[…] }
+ */
+function buildTheoreticalDraft(year) {
+  const config = getConfig();
+  const td = (config && config.theoreticalDraft) || {};
+  const bonusScale = ((td.tiers) || [])
+    .filter(function (t) { return t.round > 0; })
+    .map(function (t) { return [t.label, t.value]; });
+
+  const out = { year: Number(year), rounds: 0, bonusScale: bonusScale, picks: [] };
+
+  const sheet = SpreadsheetApp.getActive().getSheetByName(config.sheets.theoreticalDraft);
+  if (!sheet || sheet.getLastRow() < 2) return out;
+
+  const data = sheet.getDataRange().getValues();
+  const idx = headerIndexMap(data[0].map(String));
+  if (idx["Year"] == null) return out;
+
+  const byPlayer = {};
+  data.slice(1).forEach(function (row) {
+    if (Number(row[idx["Year"]]) !== Number(year)) return;
+    const round = numOrZero(row[idx["DraftRound"]]);
+    const bonus = numOrZero(row[idx["DollarValue"]]);
+    if (!round || bonus <= 0) return; // skip undrafted / $0 rows
+
+    const pid = String(row[idx["PlayerID"]] || "");
+    const fid = normalizeId(row[idx["FranchiseID"]]);
+    const key = pid || (String(row[idx["PlayerName"]] || "") + "|" + round);
+
+    let p = byPlayer[key];
+    if (!p) {
+      p = byPlayer[key] = {
+        playerId: pid,
+        player: String(row[idx["PlayerName"]] || ""),
+        pos: String(row[idx["Position"]] || ""),
+        conf: awardsConfId(String(row[idx["Conference"]] || "")),
+        round: round,
+        bonus: bonus,
+        reason: String(row[idx["DraftReason"]] || ""),
+        seasonPoints: numOrZero(row[idx["SeasonPoints"]]),
+        posRank: numOrZero(row[idx["PositionRank"]]),
+        owners: []
+      };
+    }
+    if (fid && fid !== "000" && p.owners.indexOf(fid) < 0) p.owners.push(fid);
+  });
+
+  const picks = Object.keys(byPlayer).map(function (k) { return byPlayer[k]; });
+  picks.sort(function (a, b) {
+    return a.round - b.round
+      || b.bonus - a.bonus
+      || b.seasonPoints - a.seasonPoints
+      || String(a.player).localeCompare(String(b.player));
+  });
+  picks.forEach(function (p, i) { p.order = i + 1; });
+
+  out.picks = picks;
+  out.rounds = picks.reduce(function (m, p) { return Math.max(m, p.round); }, 0);
+  return out;
+}
+
+// ============================================================================
 // HELPERS
 // ============================================================================
 
@@ -394,6 +475,9 @@ function testBuildAwardsPayload(year) {
     Logger.log("  confTiers." + c + ": " + t.first.length + "/" + t.second.length + "/" + t.third.length);
   });
   Logger.log("Recruiting teams: " + Object.keys(p.recruiting.teams).length);
+  const td = p.theoreticalDraft || { picks: [], rounds: 0 };
+  Logger.log("TheoreticalDraft: " + td.picks.length + " picks across " + td.rounds + " rounds" +
+    (td.picks[0] ? " (top: " + td.picks[0].player + " · $" + td.picks[0].bonus + ")" : ""));
   Logger.log("Payload size: " + body.length + " bytes");
 }
 

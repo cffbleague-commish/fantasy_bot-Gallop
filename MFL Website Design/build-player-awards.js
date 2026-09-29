@@ -21,7 +21,7 @@ const { PNG } = require('pngjs');
 
 const DIR      = __dirname;
 const SRC_DIR  = path.join(DIR, 'Player Awards & Recruiting Dollars', 'player-awards');
-const DC_PATH        = path.join(SRC_DIR, 'PlayerAwards.dc.html');
+const DC_PATH        = path.join(SRC_DIR, 'playerawards.update.html');
 const RUNTIME_PATH   = path.join(SRC_DIR, 'support.js');
 const DATA_LIVE_PATH = path.join(SRC_DIR, 'pa-data-live.js');
 const OUT_PATH       = path.join(DIR, 'home-message-player-awards.html');
@@ -89,6 +89,59 @@ Object.keys(CONF_LOGO_FILES).forEach((conf) => {
 });
 
 // ---------------------------------------------------------------------------
+// New banner/icon assets (the redesigned "NFL Draft" + hero banners) -> inlined
+// data URIs. The updated component references art under ../../assets (= this
+// dir's assets/) plus two placeholder SVGs in the component folder. Two cases:
+//   • <img src> / JS string-literal paths  -> data URI directly (safe).
+//   • hero-banner backgrounds              -> CSS-class overrides, because the
+//     dc-runtime splits inline style on ';' and a data URI contains one.
+// Conference logos are already handled above as .pa-conf-logo--<id> classes.
+// Missing files are non-fatal: banners keep their solid color, <img> assets fall
+// back to a 1x1 transparent PNG (no broken-image icon). Drop the real files into
+// assets/ and re-run to light them up.
+// ---------------------------------------------------------------------------
+
+const ASSET_DIR = path.join(DIR, 'assets');
+const TRANSPARENT_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+function fileDataUri(absPath) {
+  if (!absPath || !fs.existsSync(absPath)) return null;
+  const ext = path.extname(absPath).toLowerCase();
+  const mime = ext === '.svg' ? 'image/svg+xml'
+    : ext === '.png' ? 'image/png'
+    : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg'
+    : ext === '.webp' ? 'image/webp'
+    : 'application/octet-stream';
+  return 'data:' + mime + ';base64,' + fs.readFileSync(absPath).toString('base64');
+}
+
+// Hero banner backgrounds -> CSS-class overrides of the selectors the component
+// declares (later declaration wins over the dev relative-url rule).
+const bannerCss = [];
+[
+  ['pa-hero--awards', 'heisman-stage.png',   '#0B0906', '72% 8%/cover no-repeat'],
+  ['pa-hero--draft',  'nfl-draft-stage.png', '#07101F', 'center 38%/cover no-repeat'],
+].forEach((b) => {
+  const uri = fileDataUri(path.join(ASSET_DIR, b[1]));
+  if (uri) bannerCss.push('.' + b[0] + '{background:' + b[2] + ' url(' + uri + ') ' + b[3] + '}');
+  else console.warn('warn: banner asset not found: assets/' + b[1] + ' (hero keeps its solid color)');
+});
+
+// <img src> / string-literal asset paths -> data URIs (replaced in the assembled
+// output below).
+const IMG_ASSETS = {
+  '../../assets/icons/rivalry.svg':       path.join(ASSET_DIR, 'icons', 'rivalry.svg'),
+  '../../assets/nfl-draft-logo.png':      path.join(ASSET_DIR, 'nfl-draft-logo.png'),
+  '../../assets/gameday-logo.png':        path.join(ASSET_DIR, 'gameday-logo.png'),
+  '../../assets/icons/award-heisman.svg': path.join(ASSET_DIR, 'icons', 'award-heisman.svg'),
+  './nfl-draft-placeholder.svg':          path.join(SRC_DIR, 'nfl-draft-placeholder.svg'),
+  './gameday-placeholder.svg':            path.join(SRC_DIR, 'gameday-placeholder.svg'),
+};
+
+// Draft banner logo -> window global read by pa-data-live -> CFFB_NFLDRAFT.logo.
+const draftLogoUri = fileDataUri(path.join(ASSET_DIR, 'nfl-draft-logo.png')) || '';
+
+// ---------------------------------------------------------------------------
 // Extract the DesignSync component: <x-dc> template + the DCLogic script.
 // ---------------------------------------------------------------------------
 
@@ -101,7 +154,7 @@ let template = xdcMatch[0];
 // The <helmet> loads the design system + sample data via <script src>. On MFL we
 // inline the DS CSS ourselves and feed LIVE data, so drop those loaders. Their
 // keyframe <style> stays.
-template = template.replace(/<script\s+src="\.\/(?:ds-base|awards-data|recruiting-data)\.js"><\/script>\s*/g, '');
+template = template.replace(/<script\s+src="\.\/(?:ds-base|awards-data|recruiting-data|nfl-draft-data)\.js(?:\?[^"]*)?"><\/script>\s*/g, '');
 
 const dcScriptMatch = dcSrc.match(/<script\s+type="text\/x-dc"[\s\S]*?<\/script>/);
 if (!dcScriptMatch) { console.error('ERROR: data-dc-script block not found in ' + DC_PATH); process.exit(1); }
@@ -150,6 +203,7 @@ const logoCss = [
 const extraCss = [
   '.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}',
   logoCss,
+  bannerCss.join('\n'),
 ].join('\n');
 
 // ---------------------------------------------------------------------------
@@ -165,6 +219,7 @@ const bootScript = [
   '  window.__cffbPlayerAwardsBooted = true;',
   '  window.__resources = true;',   // skip the runtime\'s self re-fetch of location.href
   '  window.__CFFB_AWARDS_LOGO_IDS = ' + JSON.stringify(Object.keys(confLogos)) + ';',
+  '  window.__CFFB_DRAFT_LOGO = ' + JSON.stringify(draftLogoUri) + ';',
   '  function __paData() {',
   dataLive,
   '  }',
@@ -207,6 +262,14 @@ let out = [
 // comments before the banned-tag check).
 out = out.replace(/<!--[\s\S]*?-->\s*/g, '');
 
+// Inline the <img src> / string-literal asset paths (see IMG_ASSETS). Done after
+// comment stripping so paths hidden in comments are already gone.
+Object.keys(IMG_ASSETS).forEach((ref) => {
+  const uri = fileDataUri(IMG_ASSETS[ref]);
+  if (!uri) console.warn('warn: asset not found: ' + ref + ' (using transparent placeholder)');
+  out = out.split(ref).join(uri || TRANSPARENT_PNG);
+});
+
 // Sanity check: never ship a tag MFL rejects.
 const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
 if (banned.test(out)) {
@@ -224,4 +287,6 @@ console.log('home-message-player-awards.html generated.');
 console.log('  Path: ' + OUT_PATH);
 console.log('  Feed: ' + WEBAPP_URL + '?feed=awards');
 console.log('  Logos inlined: ' + Object.keys(confLogos).join(', '));
+console.log('  Banners inlined: ' + (bannerCss.length ? bannerCss.length + '/2' : 'none (assets/ empty)'));
+console.log('  Draft logo: ' + (draftLogoUri ? 'inlined' : 'placeholder fallback'));
 console.log('  Size: ' + bytes + ' bytes (' + (bytes / 1024).toFixed(1) + ' KB) — MFL limit is 768 KB');

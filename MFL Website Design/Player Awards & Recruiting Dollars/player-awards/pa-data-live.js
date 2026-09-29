@@ -44,6 +44,20 @@
     pac:   { key: "pac",   label: "Pac-12",  accent: "#3B7DD8", tint: "rgba(59,125,216,0.16)" }
   };
 
+  // Draft-reason chip metadata. The board's per-pick chip has no NFL-team
+  // equivalent in Theoretical Draft data, so it is repurposed to show WHY the
+  // player is entering the draft (short tag + tint).
+  var DRAFT_REASON = {
+    GRADUATING:    { label: "GRAD",  color: "#C9A227", txt: "#0A0A0A" },
+    EARLY_DECLARE: { label: "EARLY", color: "#3B82C4", txt: "#F5F5F5" },
+    RELEASING:     { label: "CUT",   color: "#B84545", txt: "#F5F5F5" },
+    COULD_DECLARE: { label: "MAYBE", color: "#6A6A6A", txt: "#F5F5F5" }
+  };
+  function draftReason(raw) {
+    return DRAFT_REASON[String(raw || "").toUpperCase()]
+      || { label: "", color: "#1C1C1C", txt: "#F5F5F5" };
+  }
+
   // Trophy display metadata (labels only — finalists come from the feed).
   var NATIONAL_META = {
     heisman:     { name: "Heisman Trophy",  honors: "Most Outstanding Player", pos: "ANY" },
@@ -123,6 +137,28 @@
       totalWeeks: 14,
       status: rec.status || feed.status || "PROJECTED",
       teams: recTeams
+    };
+
+    // NFL Draft board (Theoretical Draft data). owners are franchise ids so they
+    // resolve against CFFB_RECRUITING.teams (also keyed by franchise id). The
+    // draft-logo data URI, when present, is injected by the build as a global.
+    var nd = feed.theoreticalDraft || { picks: [], rounds: 0, bonusScale: [] };
+    var draftPicks = (nd.picks || []).map(function (p) {
+      var r = draftReason(p.reason);
+      return {
+        player: p.player, pos: p.pos, bonus: p.bonus,
+        round: p.round, order: p.order,
+        playerId: p.playerId || "", photo: photoUrl(p.playerId),
+        owners: p.owners || [],
+        nfl: r.label, nflColor: r.color, nflTxt: r.txt
+      };
+    });
+    window.CFFB_NFLDRAFT = {
+      year: nd.year || Number(feed.season) || "",
+      rounds: nd.rounds || draftPicks.reduce(function (m, p) { return Math.max(m, p.round); }, 0),
+      logo: (typeof window !== "undefined" && window.__CFFB_DRAFT_LOGO) || "",
+      bonusScale: nd.bonusScale || [],
+      picks: draftPicks
     };
   }
 

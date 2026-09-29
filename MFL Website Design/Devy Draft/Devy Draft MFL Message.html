@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CFFB Devy Draft</title><style>body{margin:0;background:#0A0A0A;padding:24px 12px;font-family:Inter,system-ui,sans-serif}</style></head><body>
+<!-- ===== START MFL MESSAGE ===== (paste START→END into MFL Home Page Message) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+#cffb-dv{--gold:#C9A227;--gold-l:#E8C547;--gold-d:#8B6F1F;--tl:#2FA6A0;--tl-l:#4FC9C2;--tl-t:rgba(47,166,160,.14);--red:#B84545;--grn:#2D7A4E;--bg:#0A0A0A;--s1:#141414;--s2:#1C1C1C;--sh:#1F1F1F;--bd:#2A2A2A;--fg:#F5F5F5;--fg2:#9A9A9A;--fg3:#5A5A5A;max-width:1180px;margin:0 auto;container-type:inline-size;container-name:dv;font-family:Inter,system-ui,sans-serif;color:var(--fg);font-size:14px;line-height:1.4;box-sizing:border-box}
+#cffb-dv *{box-sizing:border-box}
+#cffb-dv a{color:var(--gold-l)}#cffb-dv a:hover{color:#F4D66A}
+#cffb-dv button{font-family:inherit;color:inherit;cursor:pointer}
+#cffb-dv .n{font-variant-numeric:tabular-nums}
+#cffb-dv .d{font-family:'Saira Condensed',Impact,sans-serif;text-transform:uppercase;line-height:.92}
+#cffb-dv .eb{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--fg2)}
+#cffb-dv .shell{background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+/* header */
+#cffb-dv .hd{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:1fr auto;grid-template-areas:"brand otc clk" "brand nx clk";align-items:stretch;border-bottom:1px solid var(--bd)}
+#cffb-dv .hd::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#E8C547,#C9A227 50%,#8B6F1F)}
+#cffb-dv .brand{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:24px 28px;border-right:1px solid var(--bd);background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(47,166,160,.06) 22px 30px)}
+#cffb-dv .brand b{font-size:44px;font-weight:900}
+#cffb-dv .brand .eb{color:var(--tl-l)}
+#cffb-dv .live{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--fg)}
+#cffb-dv .live i{width:8px;height:8px;border-radius:50%;background:var(--grn);box-shadow:0 0 10px rgba(45,122,78,.7);animation:dvPulse 1.4s infinite}
+#cffb-dv .brand{grid-area:brand}#cffb-dv .clk{grid-area:clk}
+#cffb-dv .otc{grid-area:otc;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:20px 28px 8px;min-width:0}
+#cffb-dv .hd>.nxr{grid-area:nx;padding:4px 28px 20px;margin:0}#cffb-dv .hd>.nxr:empty{display:none}
+#cffb-dv .otc .eb{color:var(--gold-l)}#cffb-dv .otc .eb .you{font-style:normal;color:var(--fg)}#cffb-dv .otc [data-dv="otcLab"]{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+#cffb-dv .otc .eb .pk{font-style:normal;font:400 13px/1 Inter,sans-serif;letter-spacing:0;text-transform:none;color:var(--fg2);white-space:nowrap}#cffb-dv .otc .eb .pk b{font-weight:400;color:var(--fg)}#cffb-dv .otc [data-dv="otcMeta"]:empty{display:none}
+#cffb-dv .ot{display:flex;align-items:center;gap:12px;min-width:0;min-height:60px}
+#cffb-dv .ot>b{font:800 32px/.92 'Saira Condensed',sans-serif;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#cffb-dv .tp{display:block;flex:none;width:auto;max-width:100%;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}#cffb-dv .tp.lg{height:60px}#cffb-dv .tp.sm{height:30px}
+#cffb-dv .tpc{flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-family:'Saira Condensed',sans-serif;font-weight:700;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+#cffb-dv .tpc.lg{width:60px;height:60px;font-size:18px}#cffb-dv .tpc.sm{width:30px;height:30px;font-size:10px}
+#cffb-dv .tw{display:flex;align-items:center;gap:8px;min-width:0}
+#cffb-dv .nxr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:2px}
+#cffb-dv .nxr .eb{font-size:10px;color:var(--fg3)}
+#cffb-dv .nx{display:inline-flex;align-items:center;gap:6px;min-width:0}
+#cffb-dv .nx small{font-size:11px;font-weight:600;color:var(--fg2)}
+#cffb-dv .nx b{font-size:12px;font-weight:600;color:var(--fg)}
+#cffb-dv .tp.xs{height:22px}#cffb-dv .tpc.xs{width:22px;height:22px;font-size:8px}
+#cffb-dv .otc span{font-size:13px;color:var(--fg2)}#cffb-dv .otc span em{font-style:normal;color:var(--fg)}
+#cffb-dv .clk{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:20px 28px;background:var(--bg);border-left:1px solid var(--bd);min-width:300px}
+#cffb-dv .clk b{font-size:64px;font-weight:800;letter-spacing:.01em;background:linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F);-webkit-background-clip:text;background-clip:text;color:transparent}
+#cffb-dv .clk.warn b{background:none;color:var(--gold-l)}
+#cffb-dv .clk.pre b{background:none;color:var(--fg)}#cffb-dv .clk.pre .eb{color:var(--tl-l)}#cffb-dv .clk.pre .prog{display:none}
+#cffb-dv .live.off i{background:var(--fg3);box-shadow:none;animation:none}
+#cffb-dv .prebn{display:flex;gap:12px;align-items:flex-start;margin-bottom:20px;padding:14px 16px;border:1px solid rgba(47,166,160,.42);border-radius:8px;background:var(--tl-t)}
+#cffb-dv .prebn i{flex:none;width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--tl-l)}
+#cffb-dv .prebn div{display:flex;flex-direction:column;gap:2px}
+#cffb-dv .prebn b{font:800 18px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-dv .prebn span{font-size:13px;color:var(--fg);text-wrap:pretty}
+#cffb-dv .clk.hot b{background:none;color:#E06A6A}
+#cffb-dv .clk.hot .eb{color:#E06A6A}
+#cffb-dv .prog{height:6px;background:var(--s2);border-radius:2px;overflow:hidden;display:flex}
+#cffb-dv .prog i{display:block;height:100%;background:var(--gold);transition:width .4s}
+#cffb-dv .clk.hot .prog i{background:var(--red)}
+#cffb-dv .clk span{font-size:12px;color:var(--fg2)}
+/* conference bar */
+#cffb-dv .cf{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(96px,1fr);gap:6px;padding:6px;margin:16px 20px 0;background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow-x:auto;scrollbar-width:thin}
+#cffb-dv .cfb{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:10px 8px 8px;text-align:center;border-radius:4px;background:transparent;border:1px solid transparent;color:var(--fg2);transition:background .12s,color .12s,border-color .12s}
+#cffb-dv .cfb img{width:28px;height:28px;object-fit:contain;flex:none;filter:grayscale(1) opacity(.55);transition:filter .12s}
+#cffb-dv .cfb b{font:700 16px/1 'Saira Condensed',sans-serif;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+#cffb-dv .cfb small{font:600 10px/1 Inter,sans-serif;color:var(--fg3);background:#101010;border-radius:999px;padding:3px 8px;white-space:nowrap}
+#cffb-dv .cfb.mine::before{content:"";position:absolute;left:8px;right:8px;top:0;height:3px;border-radius:0 0 2px 2px;background:linear-gradient(90deg,#E8C547,#C9A227 50%,#8B6F1F)}
+#cffb-dv .cfb.mine small::before{content:"YOURS \00B7  ";color:var(--gold-l);font-weight:700;letter-spacing:.08em}
+#cffb-dv .cfb em{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;font-style:normal;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-l);border:1px solid rgba(201,162,39,.35);background:rgba(201,162,39,.1);border-radius:2px;padding:3px 5px}
+#cffb-dv .cfb:hover{color:var(--fg)}#cffb-dv .cfb:hover img{filter:grayscale(.3) opacity(.85)}
+#cffb-dv .cfb:hover{background:color-mix(in srgb,var(--cc) 8%,transparent)}
+#cffb-dv .cfb.on{background:color-mix(in srgb,var(--cc) 20%,#141414);border-color:var(--cc);color:var(--fg);box-shadow:inset 0 -3px 0 var(--cc)}#cffb-dv .cfb.on img{filter:none}#cffb-dv .cfb.on small{color:var(--fg);background:color-mix(in srgb,var(--cc) 35%,#0A0A0A)}
+#cffb-dv .ysel{display:flex;align-items:center;gap:10px}
+#cffb-dv .ysel select{appearance:none;-webkit-appearance:none;height:44px;min-width:112px;padding:0 36px 0 14px;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A9A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid var(--bd);border-radius:4px;color:var(--fg);font:700 14px Inter,sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#cffb-dv .ysel select:focus{outline:none;border-color:var(--gold)}
+#cffb-dv .ysel option{background:#1C1C1C;color:#F5F5F5}
+#cffb-dv .add{margin:0 0 12px;border:1px solid var(--bd);border-radius:4px;background:var(--bg)}
+#cffb-dv .add summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 12px;font-size:12px;color:var(--fg2)}
+#cffb-dv .add summary::-webkit-details-marker{display:none}
+#cffb-dv .add summary:hover{color:var(--fg)}
+#cffb-dv .add summary span{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-l)}
+#cffb-dv .add summary span::after{content:"+";font-size:15px;line-height:1}
+#cffb-dv .add[open] summary span::after{content:"\2212"}
+#cffb-dv .addb{display:flex;flex-direction:column;gap:12px;padding:12px;border-top:1px solid var(--bd)}
+#cffb-dv .steps{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--fg2);text-wrap:pretty}
+#cffb-dv .steps b{color:var(--fg);font-weight:600}
+#cffb-dv .form{display:grid;grid-template-columns:minmax(0,1.6fr) 76px minmax(0,1.2fr) 96px;gap:8px}
+#cffb-dv .form label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3)}
+#cffb-dv .form input,#cffb-dv .form select{height:44px;min-width:0;width:100%;padding:0 10px;background:var(--s1);border:1px solid var(--bd);border-radius:4px;color:var(--fg);font:500 14px Inter,sans-serif;letter-spacing:0;text-transform:none;outline:none}
+#cffb-dv .form input:focus,#cffb-dv .form select:focus{border-color:var(--gold)}
+#cffb-dv .form input::placeholder{color:var(--fg3)}
+#cffb-dv .form option{background:#1C1C1C;color:#F5F5F5}
+#cffb-dv .addf{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#cffb-dv .err{flex:1 1 200px;font-size:12px;color:#E06A6A}
+#cffb-dv .empty button{display:block;margin:8px auto 0;min-height:44px;background:none;border:0;color:var(--gold-l);text-decoration:underline;font:600 13px Inter,sans-serif}
+#cffb-dv .shr{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+#cffb-dv .sw{display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0;background:none;border:0;font:600 12px Inter,sans-serif;color:var(--fg2);white-space:nowrap}
+#cffb-dv .sw:hover{color:var(--fg)}
+#cffb-dv .sw i{position:relative;flex:none;width:30px;height:16px;border-radius:999px;background:var(--s2);border:1px solid var(--bd);transition:background .14s,border-color .14s}
+#cffb-dv .sw i::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:var(--fg3);transition:transform .16s cubic-bezier(.2,.8,.2,1),background .14s}
+#cffb-dv .sw[aria-checked="true"]{color:var(--fg)}
+#cffb-dv .sw[aria-checked="true"] i{background:var(--tl-t);border-color:var(--tl)}
+#cffb-dv .sw[aria-checked="true"] i::after{transform:translateX(14px);background:var(--tl-l)}
+#cffb-dv .cta{display:inline-flex;align-items:center;gap:6px;margin-left:10px;min-height:32px;padding:0 12px;border:0;border-radius:4px;background:var(--gold);color:#0A0A0A;font:800 11px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 0 18px rgba(201,162,39,.35),inset 0 1px 0 rgba(255,255,255,.25);vertical-align:middle}
+#cffb-dv .cta:hover{filter:brightness(1.08)}#cffb-dv .cta b{font-size:13px}
+#cffb-dv .seg button.hot{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(201,162,39,.14);color:var(--gold-l);box-shadow:inset 0 0 0 1px var(--gold)}
+#cffb-dv .seg button.hot.on{background:var(--gold);color:#0A0A0A}
+#cffb-dv .seg button.hot i,#cffb-dv .yp i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:dvPulse 1.4s infinite}
+#cffb-dv .yp{gap:6px}
+#cffb-dv .gpool.hot .act{border-color:var(--gold);background:rgba(201,162,39,.1);box-shadow:0 0 24px rgba(201,162,39,.18)}
+#cffb-dv .gpool.hot .act b{color:var(--gold-l)}
+#cffb-dv .gpool.hot>.scroll:last-of-type{border-color:rgba(201,162,39,.45)}
+#cffb-dv .rule{margin:-4px 0 12px;font-size:12px;color:var(--fg2);text-wrap:pretty}
+#cffb-dv .tgs{display:flex;flex-wrap:wrap;gap:4px}
+#cffb-dv .tsel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+#cffb-dv .tsb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;transition:background .12s}
+#cffb-dv .tsb:hover{background:var(--sh)}
+#cffb-dv .tsb.on{background:var(--s2);border-color:var(--gold)}
+#cffb-dv .tsb .tw b{font-size:12px;font-weight:600}
+#cffb-dv .tsb small{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3)}
+#cffb-dv .tsb small.ok{color:#6FC291}
+#cffb-dv .dec.ro{justify-content:center;align-items:center;min-height:44px}
+#cffb-dv .dec.ro .chip{font-size:11px;padding:6px 12px}
+#cffb-dv .dec.pend{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3)}
+/* tabs */
+#cffb-dv .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;margin:12px 20px 0;padding:4px;background:var(--bg);border:1px solid var(--bd);border-radius:8px}
+#cffb-dv .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:56px;padding:8px 12px;background:var(--s1);border:1px solid var(--bd);border-radius:4px;font:800 16px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);transition:background .12s,border-color .12s}
+#cffb-dv .tab:hover{background:var(--sh);border-color:#3A3A3A}
+#cffb-dv .tab.on{background:linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F);border-color:#C9A227;color:#0A0A0A}
+#cffb-dv .ts{display:inline-flex;align-items:center;gap:5px;font:700 10px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;white-space:nowrap;background:var(--s2);color:var(--fg2)}
+#cffb-dv .ts b{font-weight:inherit}
+#cffb-dv .ts i{width:6px;height:6px;border-radius:50%;background:#6FC291;box-shadow:0 0 8px rgba(45,122,78,.8);animation:dvPulse 1.4s infinite}
+#cffb-dv .ts.live{background:rgba(45,122,78,.22);color:#8FD6AC}
+#cffb-dv .ts.pre{background:var(--tl-t);color:var(--tl-l)}
+#cffb-dv .ts.due{background:rgba(201,162,39,.16);color:var(--gold-l)}
+#cffb-dv .ts.late{background:rgba(184,69,69,.2);color:#E88A8A}
+#cffb-dv .ts.ok{background:rgba(45,122,78,.22);color:#8FD6AC}
+#cffb-dv .tab.on .ts{background:#0A0A0A}
+#cffb-dv .tab.on .ts.live,#cffb-dv .tab.on .ts.ok{color:#8FD6AC}#cffb-dv .tab.on .ts.due,#cffb-dv .tab.on .ts.mut,#cffb-dv .tab.on .ts.done{color:var(--gold-l)}#cffb-dv .tab.on .ts.late{color:#E88A8A}#cffb-dv .tab.on .ts.pre{color:var(--tl-l)}
+#cffb-dv .pnl{padding:24px}
+/* chips */
+#cffb-dv .chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;border-radius:2px;white-space:nowrap;background:var(--s2);color:var(--fg2)}
+#cffb-dv .chip.ret{background:var(--tl-t);color:var(--tl-l);border:1px solid rgba(47,166,160,.42);padding:3px 6px}
+#cffb-dv .chip.prev{background:transparent;color:var(--tl-l);border:1px dashed rgba(47,166,160,.5);padding:3px 6px}
+#cffb-dv .chip.sm{font-size:9px;letter-spacing:.08em;padding:2px 5px}
+#cffb-dv .chip.gold{background:var(--gold);color:#0A0A0A}
+#cffb-dv .chip.red{background:rgba(184,69,69,.16);color:#E06A6A}
+#cffb-dv .chip.grn{background:rgba(45,122,78,.2);color:#6FC291}
+#cffb-dv .pos{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:3px 6px;border-radius:2px;font:700 12px/1.1 'Saira Condensed',sans-serif;letter-spacing:.02em;text-transform:uppercase;color:#0A0A0A}
+#cffb-dv .pos.QB{background:#C9A227}#cffb-dv .pos.RB{background:#3B82C4;color:#F5F5F5}#cffb-dv .pos.WR{background:#7BA4C9}#cffb-dv .pos.TE{background:#8B6F1F;color:#F5F5F5}
+/* section heads */
+#cffb-dv .sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+#cffb-dv .sh h3{margin:0;font:800 24px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+/* draft grid */
+#cffb-dv .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:24px}
+#cffb-dv .seg{display:none;gap:4px;padding:4px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;margin-bottom:16px}
+#cffb-dv .seg button{flex:1;background:none;border:0;border-radius:2px;padding:10px;font:700 12px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--fg2);min-height:44px}
+#cffb-dv .seg button.on{background:var(--s2);color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#cffb-dv .scroll{max-height:620px;overflow-y:auto;border:1px solid var(--bd);border-radius:8px;background:var(--bg);scrollbar-width:thin;scrollbar-color:#2A2A2A transparent}
+#cffb-dv .rh{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:var(--s2);border-bottom:1px solid var(--bd)}
+#cffb-dv .rh b{font:800 15px 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+#cffb-dv .rh span{font-size:11px;color:var(--fg3);letter-spacing:.08em}
+#cffb-dv .pk{position:relative;display:grid;grid-template-columns:52px minmax(0,140px) minmax(0,1.3fr) auto;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--bd);min-height:52px}
+#cffb-dv .pk:last-child{border-bottom:0}
+#cffb-dv .pk .no{font:800 18px 'Saira Condensed',sans-serif;color:var(--fg2)}
+#cffb-dv .pk .tm{min-width:0;display:flex;flex-direction:column}
+#cffb-dv .pk .tm{gap:3px}#cffb-dv .pk .tw b{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .pk .tm small{font-size:11px;color:var(--fg3)}
+#cffb-dv .pk .pl{min-width:0;display:flex;align-items:center;gap:8px}
+#cffb-dv .pk .pl div{min-width:0;display:flex;flex-direction:column}
+#cffb-dv .pk .pl b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .pk .pl small{font-size:11px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .pk .em{color:var(--fg3)}
+#cffb-dv .pk.up .no,#cffb-dv .pk.up .tw b{color:var(--fg3)}#cffb-dv .pk.up .tw{opacity:.6}
+#cffb-dv .pk.ret{background:linear-gradient(90deg,rgba(47,166,160,.08),transparent 60%)}
+#cffb-dv .pk.ret::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--tl)}
+#cffb-dv .pk.cur{background:rgba(201,162,39,.08)}
+#cffb-dv .pk.cur::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#E8C547,#C9A227 50%,#8B6F1F)}
+#cffb-dv .pk.cur .no{color:var(--gold-l)}
+#cffb-dv .pk.me .no{display:flex;flex-direction:column;gap:3px}#cffb-dv .pk.me .no::after{content:"YOU";font:700 9px/1 Inter,sans-serif;letter-spacing:.12em;color:var(--gold-l)}#cffb-dv .pk .tw{max-width:100%;overflow:hidden}
+#cffb-dv .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12px;color:var(--fg2);align-items:center}
+#cffb-dv .legend span{display:inline-flex;align-items:center;gap:6px}
+/* pool */
+#cffb-dv .tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+#cffb-dv .srch{flex:1 1 200px;min-width:0;height:44px;padding:0 14px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--fg);font:500 14px Inter,sans-serif;outline:none}
+#cffb-dv .srch:focus{border-color:var(--gold)}
+#cffb-dv .srch::placeholder{color:var(--fg3)}
+#cffb-dv .fl{display:flex;gap:4px}
+#cffb-dv .fl button{min-width:44px;height:44px;padding:0 10px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;font:700 12px Inter,sans-serif;letter-spacing:.08em;color:var(--fg2)}
+#cffb-dv .fl button.on{background:var(--s2);color:var(--fg);border-color:var(--gold-d);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#cffb-dv .ph{display:grid;grid-template-columns:40px minmax(0,1fr) 88px;gap:12px;padding:8px 16px;background:var(--s2);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:1}
+#cffb-dv .ph span{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg3)}
+#cffb-dv .pr{position:relative;width:100%;display:grid;grid-template-columns:40px minmax(0,1fr) 88px;gap:12px;align-items:center;padding:10px 16px;min-height:56px;background:none;border:0;border-bottom:1px solid var(--bd);text-align:left;font:inherit;transition:background .12s}
+#cffb-dv .pr:hover{background:var(--sh)}
+#cffb-dv .pr::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);transform:scaleY(0);transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+#cffb-dv .pr:hover::before{transform:scaleY(1)}
+#cffb-dv .pr.sel{background:rgba(201,162,39,.1)}
+#cffb-dv .pr.sel::before{transform:scaleY(1);width:3px}
+#cffb-dv .pr .rk{font:800 18px 'Saira Condensed',sans-serif;color:var(--fg2)}
+#cffb-dv .pr .nm{min-width:0;display:flex;flex-direction:column;gap:4px}
+#cffb-dv .pr .nm>div{display:flex;align-items:center;gap:8px;min-width:0}
+#cffb-dv .pr .nm b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .pr .nm small{font-size:11px;color:var(--fg2)}
+#cffb-dv .pr .sc{font-size:13px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .pr .cl{font-size:13px;font-weight:600;color:var(--fg2)}
+#cffb-dv .empty{padding:32px 16px;text-align:center;color:var(--fg3)}
+#cffb-dv .act{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:12px 12px 12px 16px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;min-height:68px}
+#cffb-dv .act>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#cffb-dv .act b{font:800 20px/1 'Saira Condensed',sans-serif;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .act small{font-size:12px;color:var(--fg2)}
+#cffb-dv .btn{flex:none;min-height:44px;padding:0 18px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);font:700 12px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);white-space:nowrap}
+#cffb-dv .btn:hover{filter:brightness(1.08)}
+#cffb-dv .btn.pri{background:var(--gold);border-color:var(--gold);color:#0A0A0A}
+#cffb-dv .btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+/* retention */
+#cffb-dv .rgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:24px;align-items:start}
+#cffb-dv .rc{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(0,2fr);align-items:center;gap:12px 16px;padding:16px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+#cffb-dv .rc+.rc{margin-top:8px}
+#cffb-dv .rc .who{display:flex;align-items:center;gap:10px;min-width:0}
+#cffb-dv .rc .who div{min-width:0;display:flex;flex-direction:column;gap:2px}
+#cffb-dv .rc .who b{font:800 22px/1 'Saira Condensed',sans-serif;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .rc .who small{font-size:12px;color:var(--fg2)}
+#cffb-dv .yrs{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#cffb-dv .pips{display:flex;gap:4px}
+#cffb-dv .pips i{width:22px;height:8px;border-radius:1px;background:var(--s2);border:1px solid var(--bd)}
+#cffb-dv .pips i.f{background:var(--tl);border-color:var(--tl)}
+#cffb-dv .yrs span{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--tl-l)}
+#cffb-dv .rc .who{grid-column:1;grid-row:1}#cffb-dv .rc .yrs{grid-column:3;grid-row:1}
+#cffb-dv .facts{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#cffb-dv .facts div{padding:6px 8px;background:var(--s1);border-radius:4px;display:flex;flex-direction:column;gap:2px;min-width:0}
+#cffb-dv .facts small{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg3);text-transform:uppercase}
+#cffb-dv .facts b{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-dv .facts b.max{color:#E06A6A}#cffb-dv .facts .dn{color:#E06A6A}#cffb-dv .facts .mt{color:var(--fg3);font-weight:500}#cffb-dv .facts b.sl{color:var(--tl-l)}#cffb-dv .rc.nfl{opacity:.6}#cffb-dv .dec button:disabled{opacity:.35;cursor:not-allowed}
+#cffb-dv .dec{grid-column:1/-1;display:flex;gap:4px;padding:4px;background:var(--s1);border:1px solid var(--bd);border-radius:4px}
+#cffb-dv .dec button{flex:1;min-height:44px;background:none;border:0;border-radius:2px;font:700 12px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--fg2)}
+#cffb-dv .dec button:hover{color:var(--fg)}
+#cffb-dv .dec button.on.retain{background:var(--tl);color:#0A0A0A}
+#cffb-dv .dec button.on.release{background:var(--red);color:#F5F5F5}
+#cffb-dv .dec[aria-disabled="true"]{opacity:.55;pointer-events:none}
+#cffb-dv .side{display:flex;flex-direction:column;gap:16px;position:sticky;top:16px}
+#cffb-dv .box{padding:20px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+#cffb-dv .box h4{margin:0 0 4px;font:800 20px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-dv .box p{margin:0;font-size:13px;color:var(--fg2);text-wrap:pretty}
+#cffb-dv .how summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:24px}
+#cffb-dv .how summary::-webkit-details-marker{display:none}
+#cffb-dv .how summary h4{margin:0}
+#cffb-dv .how summary span{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-l)}
+#cffb-dv .how summary span::after{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s}
+#cffb-dv .how[open] summary span::after{transform:rotate(-135deg) translate(-2px,-2px)}
+#cffb-dv .how[open] summary{margin-bottom:8px}
+#cffb-dv .ladder{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column}
+#cffb-dv .ladder li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--bd)}
+#cffb-dv .ladder li>b{font:800 22px/1 'Saira Condensed',sans-serif;white-space:nowrap;color:var(--tl-l);text-align:center}
+#cffb-dv .ladder li>b.x{color:#E06A6A}
+#cffb-dv .ladder li div{display:flex;flex-direction:column;gap:2px}
+#cffb-dv .ladder strong{font-size:13px;font-weight:700}
+#cffb-dv .ladder span{font-size:12px;color:var(--fg2);text-wrap:pretty}
+#cffb-dv .sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+#cffb-dv .sum div{padding:10px;background:var(--s1);border-radius:4px;text-align:center}
+#cffb-dv .sum b{display:block;font:800 28px/1 'Saira Condensed',sans-serif}
+#cffb-dv .sum small{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg2)}
+#cffb-dv .box .btn{width:100%;margin-top:4px}
+#cffb-dv .note{margin-top:8px;font-size:12px;color:var(--fg2)}
+#cffb-dv .note.ok{color:#6FC291}
+#cffb-dv .dl{display:flex;flex-direction:column;gap:4px;margin:12px 0;padding:10px 12px;border:1px solid rgba(184,69,69,.5);border-radius:4px;background:rgba(184,69,69,.12)}
+#cffb-dv .dl b{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#E06A6A}
+#cffb-dv .dl span{font-size:12px;color:var(--fg);text-wrap:pretty}
+#cffb-dv .eb.late{color:#E06A6A}
+/* past */
+#cffb-dv .pstat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:16px}
+#cffb-dv .pstat div{padding:12px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+#cffb-dv .pstat b{display:block;font:800 28px/1 'Saira Condensed',sans-serif}
+#cffb-dv .pstat small{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg2)}
+#cffb-dv .foot{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center;padding:12px 24px;border-top:1px solid var(--bd);font-size:12px;color:var(--fg3)}
+#cffb-dv .foot select{height:32px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--fg);font:500 12px Inter,sans-serif;padding:0 8px}
+#cffb-dv .foot button{background:none;border:0;padding:0;color:var(--fg2);text-decoration:underline;font-size:12px}
+#cffb-dv .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,24px);opacity:0;pointer-events:none;z-index:50;padding:12px 18px;background:var(--s2);border:1px solid var(--gold-d);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:13px;font-weight:600;transition:all .18s cubic-bezier(.2,.8,.2,1);max-width:calc(100vw - 32px)}
+#cffb-dv .toast.show{opacity:1;transform:translate(-50%,0)}
+@keyframes dvPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@container dv (max-width:980px){
+#cffb-dv .hd{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand brand" "otc clk" "nx clk";grid-template-rows:auto 1fr auto}
+#cffb-dv .brand{flex-direction:column;align-items:flex-start;text-align:left;gap:6px;padding:20px 20px 16px;border-right:0;border-bottom:1px solid var(--bd)}
+#cffb-dv .brand b{font-size:34px}
+#cffb-dv .rgrid{grid-template-columns:1fr}
+#cffb-dv .side{position:static}
+}
+@container dv (max-width:760px){
+#cffb-dv .hd{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand brand" "otc clk" "nx nx";grid-template-rows:auto auto auto}
+#cffb-dv .hd>.nxr{padding:10px 16px;border-top:1px solid var(--bd);background:var(--bg)}
+#cffb-dv .otc{justify-content:center}
+#cffb-dv .clk [data-dv="due"]{display:none}
+#cffb-dv .brand{padding:16px}
+#cffb-dv .brand b{font-size:28px}
+#cffb-dv .otc{padding:16px 12px 16px 16px;gap:6px}#cffb-dv .otc .eb{font-size:10px}
+#cffb-dv .otc{overflow:hidden}#cffb-dv .otc [data-dv="otcMeta"]{display:flex;flex-wrap:wrap;align-items:center;gap:6px}#cffb-dv .cta{margin-left:0;min-height:24px;padding:0 8px;gap:4px;font-size:9px;letter-spacing:.08em;box-shadow:none}#cffb-dv .cta b{font-size:11px}#cffb-dv .ot>b{font-size:20px}#cffb-dv .tp.lg{height:auto;max-height:40px;max-width:100%}#cffb-dv .tpc.lg{width:40px;height:40px;font-size:13px}#cffb-dv .ot{min-height:40px;gap:8px}
+#cffb-dv .clk{border-left:1px solid var(--bd);border-top:0;min-width:0;max-width:148px;padding:14px;gap:5px;align-items:flex-end;text-align:right}
+#cffb-dv .clk .eb{font-size:9px;letter-spacing:.08em}
+#cffb-dv .clk b{font-size:30px}
+#cffb-dv .clk .prog,#cffb-dv .clk .h24{display:none}
+#cffb-dv .clk span{font-size:10px;line-height:1.3}
+#cffb-dv .tabs{margin:10px 12px 0}#cffb-dv .cf{margin:12px 12px 0;grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}#cffb-dv .cfb{padding:9px 4px 7px;gap:4px}#cffb-dv .cfb img{width:23px;height:23px}#cffb-dv .cfb b{font-size:13px}#cffb-dv .tsel{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 16px;padding:0 16px;scrollbar-width:none}#cffb-dv .tsb{flex:none}
+#cffb-dv .tab{padding:0 6px;gap:5px;font-size:14px;letter-spacing:.03em;min-height:46px}#cffb-dv .ts{font-size:9px;letter-spacing:.03em;padding:3px 6px;max-width:100%}#cffb-dv .ts .tsx{display:none}#cffb-dv .tab{min-height:54px;padding:7px 4px}
+#cffb-dv .pnl{padding:16px}
+#cffb-dv .grid{grid-template-columns:1fr;gap:0}
+#cffb-dv .seg{display:flex}
+#cffb-dv .grid[data-sub="board"] .gpool,#cffb-dv .grid[data-sub="pool"] .gboard{display:none}
+#cffb-dv .scroll{max-height:70vh}
+#cffb-dv .pk{grid-template-columns:44px minmax(0,1fr) auto;gap:4px 10px;padding:10px 12px}
+#cffb-dv .pk .tm{grid-column:2}
+#cffb-dv .pk .pl{grid-column:2;grid-row:2}
+#cffb-dv .pk .tg{grid-column:3;grid-row:1/3;align-self:center}
+#cffb-dv .pk .no{grid-row:1/3}
+#cffb-dv .pk .tm small{display:none}#cffb-dv .tp.sm{height:24px}#cffb-dv .tpc.sm{width:24px;height:24px;font-size:9px}
+#cffb-dv .ph{display:none}
+#cffb-dv .pr{grid-template-columns:36px minmax(0,1fr) auto;padding:10px 12px}
+#cffb-dv .pr .sc{display:none}
+#cffb-dv .pr .cl,#cffb-dv .pr .nm small.m,#cffb-dv .pk .pl small,#cffb-dv .rc .who small{display:none}
+#cffb-dv .pr{grid-template-columns:36px minmax(0,1fr)}
+#cffb-dv .pr .nm small{display:block}
+#cffb-dv .act{position:sticky;top:8px;z-index:3;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+#cffb-dv .rc{padding:10px 12px;gap:8px 10px;grid-template-columns:minmax(0,1fr)}#cffb-dv .facts{grid-column:1/-1;grid-row:2}#cffb-dv .rc+.rc{margin-top:6px}
+#cffb-dv .rc .who{gap:8px}#cffb-dv .rc .who b{font-size:16px}
+#cffb-dv .rc .yrs .chip{font-size:8.5px;padding:2px 5px}
+#cffb-dv .facts{display:flex;flex-wrap:wrap;gap:4px 12px}
+#cffb-dv .facts div{padding:0;background:none;flex-direction:row;align-items:baseline;gap:4px}
+#cffb-dv .facts div:last-child{grid-column:auto}
+#cffb-dv .facts small{font-size:9px}#cffb-dv .facts b{font-size:11px}#cffb-dv .facts .mt{display:none}
+#cffb-dv .dec{padding:2px;gap:2px}#cffb-dv .dec button{min-height:36px;font-size:10px;letter-spacing:.1em}
+#cffb-dv .dec.ro{min-height:32px}#cffb-dv .dec.ro .chip{font-size:9px;padding:3px 8px}#cffb-dv .dec.pend{font-size:9px}
+#cffb-dv .tsel{margin-bottom:12px}#cffb-dv .box{padding:14px}#cffb-dv .box h4{font-size:17px}#cffb-dv .sum b{font-size:22px}
+#cffb-dv .pstat{grid-template-columns:1fr 1fr}
+#cffb-dv .foot{padding:12px 16px}
+#cffb-dv .sw{min-height:44px}#cffb-dv .form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#cffb-dv .form .fn,#cffb-dv .form .fs{grid-column:1/-1}#cffb-dv .addf .btn{width:100%}
+}
+@container dv (min-width:761px){#cffb-dv .pr .nm small.m{display:none}}
+@media (prefers-reduced-motion:reduce){#cffb-dv *{animation:none!important;transition:none!important}}
+</style>
+<div id="cffb-dv"><div class="shell">
+<div class="hd">
+<div class="brand"><span class="eb" data-dv="season"></span><b class="d">Devy Draft</b><span class="live"><i></i><span data-dv="status"></span></span></div>
+<div class="otc"><span class="eb" data-dv="otcLab">On the clock</span><div class="ot" data-dv="otcTeam"></div><span data-dv="otcMeta"></span></div>
+<div class="clk" data-dv="clkBox"><span class="eb" data-dv="clkLab">Time remaining<span class="h24"> · 24-hr clock</span></span><b class="d n" data-dv="clock">--:--:--</b><div class="prog"><i data-dv="prog"></i></div><span class="n" data-dv="due"></span></div>
+<div class="nxr" data-dv="next"></div>
+</div>
+<div class="cf" data-dv="conf"></div><div class="tabs" role="tablist" data-dv="tabs"></div>
+<div data-dv="panel"></div>
+<div class="foot"><span>Viewing as <select data-dv="as"></select></span><span style="display:flex;gap:16px"><button type="button" data-act="simpre">Simulate pre-draft</button><button type="button" data-act="simpast">Simulate deadline passed</button><button type="button" data-act="reset">Reset demo</button></span></div>
+</div><div class="toast" data-dv="toast"></div></div>
+<script>
+(function(){
+/* ===== LEAGUE CONFIG — edit per season ===== */
+var DV = {
+  season: 2026,
+  me: '0005',                 // fallback if MFL's franchise_id isn't available
+  rounds: 2,                  // rounds per conference draft
+  draftOpens: '2026-09-20T20:00:00', // default open time; override per conference with opens:'…'
+  clockHours: 24,
+  retainDeadline: '2026-10-04T20:00:00',
+  maxRetained: 2,             // one per draft round
+  rebateStep: 5,              // $ off a player's rebate each year he's retained
+  slotOrder: [2,1],           // 1st retained player takes Rd 2, 2nd takes Rd 1
+  // Retention rules — the ladder in the Retention tab reads from here
+  rules: [
+    { n:'\u2713', t:'Who\u2019s eligible', d:'Only devy players who haven\u2019t entered the NFL can be retained.' },
+    { n:'1', t:'First retained player', d:'Takes your Round 2 pick in your conference devy draft.' },
+    { n:'2', t:'Second retained player', d:'Takes your Round 1 pick too. Two is the max \u2014 one per round.' },
+    { n:'\u2212$5', t:'Rebate reduction', d:'Each year a player is retained, his rebate drops by $5.' },
+    { n:'\u21BA', t:'Released', d:'He goes back into your conference\u2019s pool and his rebate resets. Any team that re-drafts him starts fresh at a $20 rebate.' }
+  ],
+  // Each conference runs its own draft. One copy of a player per conference.
+  conferences: [
+    { id:'SEC', name:'SEC',     color:'#C9A227', logo:'assets/conferences/sec.png', order:['0011','0006','0013','0001','0005','0014'] },
+    { id:'B1G', name:'Big Ten', color:'#4A6FA5', logo:'assets/conferences/b1g.png', order:['0008','0015','0002','0016','0004','0019'] },
+    { id:'ACC', name:'ACC',     color:'#8B4A5C', logo:'assets/conferences/acc.png', order:['0009','0012','0003','0017','0020','0018'] },
+    { id:'B12', name:'Big 12',  color:'#B84545', logo:'assets/conferences/big12.png', order:['0021','0022','0023','0024','0025','0026'] },
+    { id:'PAC', name:'Pac-12',  color:'#5C7A6A', logo:'assets/conferences/pac12.png', order:['0027','0010','0028','0029','0030','0031'] },
+    { id:'AAC', name:'AAC',     color:'#6B5C8B', logo:'assets/conferences/aac.png', order:['0032','0007','0033','0034','0035','0036'] }
+  ],
+  // logo = ripped-pill PNG (use hosted https URLs on MFL); omit → colored abbreviation chip
+  teams: {
+    '0001':{name:'Texas',abbr:'TEX',color:'#BF5700',txt:'#F5F5F5',own:'M. Thibodeaux'},
+    '0002':{name:'Ohio State',abbr:'OSU',color:'#BB0000',txt:'#F5F5F5',own:'R. Greer'},
+    '0003':{name:'North Carolina',abbr:'UNC',color:'#4B9CD3',txt:'#0A0A0A',own:'J. Haskell',logo:'assets/teams/north-carolina.png'},
+    '0004':{name:'Oregon',abbr:'ORE',color:'#154733',txt:'#FEE123',own:'T. Brandt'},
+    '0005':{name:'Georgia',abbr:'UGA',color:'#BA0C2F',txt:'#F5F5F5',own:'C. Alvarez',logo:'assets/teams/georgia.png'},
+    '0006':{name:'LSU',abbr:'LSU',color:'#461D7C',txt:'#FDD023',own:'D. Kowalski'},
+    '0007':{name:'Army',abbr:'ARMY',color:'#8C7A4F',txt:'#0A0A0A',own:'B. Pruitt',logo:'assets/teams/army.png'},
+    '0008':{name:'Michigan',abbr:'MICH',color:'#00274C',txt:'#FFCB05',own:'K. Olsen'},
+    '0009':{name:'Clemson',abbr:'CLEM',color:'#F56600',txt:'#0A0A0A',own:'A. Whitlock'},
+    '0010':{name:'Fresno State',abbr:'FRES',color:'#C41230',txt:'#F5F5F5',own:'L. Navarro',logo:'assets/teams/fresno-state.png'},
+    '0011':{name:'Alabama',abbr:'BAMA',color:'#9E1B32',txt:'#F5F5F5',own:'S. Lindqvist'},
+    '0012':{name:'Miami',abbr:'MIA',color:'#005030',txt:'#F47321',own:'P. Boudreaux'},
+    '0013':{name:'Tennessee',abbr:'TENN',color:'#FF8200',txt:'#0A0A0A',own:'W. Coble'},
+    '0014':{name:'Oklahoma',abbr:'OU',color:'#841617',txt:'#F5F5F5',own:'J. Redbird'},
+    '0015':{name:'Penn State',abbr:'PSU',color:'#041E42',txt:'#F5F5F5',own:'E. Marsh'},
+    '0016':{name:'USC',abbr:'USC',color:'#990000',txt:'#FFC72C',own:'G. Tanaka'},
+    '0017':{name:'Florida State',abbr:'FSU',color:'#782F40',txt:'#CEB888',own:'H. Beasley'},
+    '0018':{name:'Louisville',abbr:'LOU',color:'#AD0000',txt:'#F5F5F5',own:'N. Pham'},
+    '0019':{name:'Wisconsin',abbr:'WIS',color:'#C5050C',txt:'#F5F5F5',own:'F. Schultz'},
+    '0020':{name:'Virginia Tech',abbr:'VT',color:'#630031',txt:'#F5F5F5',own:'O. Hairston'},
+    '0021':{name:'Utah',abbr:'UTAH',color:'#CC0000',txt:'#F5F5F5',own:'Q. Sorensen'},
+    '0022':{name:'Kansas State',abbr:'KSU',color:'#512888',txt:'#F5F5F5',own:'V. Dietz'},
+    '0023':{name:'Texas Tech',abbr:'TTU',color:'#CC0000',txt:'#0A0A0A',own:'R. Castillo'},
+    '0024':{name:'BYU',abbr:'BYU',color:'#002E5D',txt:'#F5F5F5',own:'I. Larsen'},
+    '0025':{name:'Arizona State',abbr:'ASU',color:'#8C1D40',txt:'#FFC627',own:'Z. Moreno'},
+    '0026':{name:'Colorado',abbr:'COLO',color:'#CFB87C',txt:'#0A0A0A',own:'T. Okoye'},
+    '0027':{name:'Washington State',abbr:'WSU',color:'#981E32',txt:'#F5F5F5',own:'K. Lindgren'},
+    '0028':{name:'Oregon State',abbr:'ORST',color:'#DC4405',txt:'#0A0A0A',own:'M. Farris'},
+    '0029':{name:'Boise State',abbr:'BSU',color:'#0033A0',txt:'#F5F5F5',own:'A. Kealoha'},
+    '0030':{name:'San Diego State',abbr:'SDSU',color:'#A6192E',txt:'#F5F5F5',own:'P. Villanueva'},
+    '0031':{name:'Colorado State',abbr:'CSU',color:'#1E4D2B',txt:'#C8C372',own:'B. Hendricks'},
+    '0032':{name:'Memphis',abbr:'MEM',color:'#003087',txt:'#F5F5F5',own:'D. Mayfield'},
+    '0033':{name:'Tulane',abbr:'TULN',color:'#006747',txt:'#F5F5F5',own:'L. Fontenot'},
+    '0034':{name:'UTSA',abbr:'UTSA',color:'#0C2340',txt:'#F15A22',own:'E. Salinas'},
+    '0035':{name:'Navy',abbr:'NAVY',color:'#00205B',txt:'#C5B783',own:'G. Whitaker'},
+    '0036':{name:'South Florida',abbr:'USF',color:'#006747',txt:'#CFC493',own:'J. Pruett'}
+  }
+};
+/* ========================================== */
+var root=document.getElementById('cffb-dv'); if(!root) return;
+var $=function(k){return root.querySelector('[data-dv="'+k+'"]');};
+var T=DV.teams, CF=DV.conferences, H=DV.clockHours*3600e3, KEY='cffb-dv5-'+DV.season;
+var pad=function(v){return (v<10?'0':'')+v;};
+var tn=function(id){return T[id]?T[id].name:id;};
+function pill(id,sz){var t=T[id];if(!t) return '';return t.logo?'<img class="tp '+sz+'" src="'+t.logo+'" alt="'+t.name+'">':'<span class="tpc '+sz+'" style="background:'+t.color+';color:'+t.txt+'">'+t.abbr+'</span><b>'+t.name+'</b>';}
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+var F=['Jalen','Cam','Tre','Malik','Bryce','Dylan','Isaiah','Kaden','Marcus','Elijah','Jaylen','Carson','Devin','Xavier','Nico','Trey','Julian','Amari','Brock','Tyson','Zion','Quincy','Rashad','Colton','Micah','Owen','Deshawn','Landon','Cole','Terrell'];
+var L=['Whitfield','Okafor','Brandt','Delacroix','Hollis','Mercer','Tate','Rowe','Castellano','Pryor','Vance','Kimbrough','Lowery','Sutton','Abernathy','Ferrell','Guidry','Haskins','Ingram','Jessup','Keel','Lamar','Monroe','Nash','Ogden','Pettaway','Redd','Stokes','Toussaint','Upshaw'];
+var S=['Georgia','Ohio State','Texas','Alabama','LSU','Oregon','Michigan','Penn State','Miami','Notre Dame','Clemson','USC','Tennessee','Oklahoma','Florida State','Ole Miss'];
+var P=['QB','RB','RB','WR','WR','WR','TE'], C=['FR','RS FR','SO','RS SO','JR'];
+var used={};
+function gen(n,seed){var r=rng(seed),out=[];for(var i=0;i<n;i++){var nm,k=0;do{nm=F[Math.floor(r()*F.length)]+' '+L[Math.floor(r()*L.length)];k++;}while(used[nm]&&k<80);used[nm]=1;out.push({id:seed+'-'+i,n:nm,pos:P[Math.floor(r()*P.length)],sch:S[Math.floor(r()*S.length)],cls:C[Math.floor(r()*C.length)]});}out.forEach(function(p){p.elig=DV.season+({'FR':3,'RS FR':2,'SO':2,'RS SO':1,'JR':1})[p.cls];});return out;}
+var confOf=function(t){for(var i=0;i<CF.length;i++) if(CF[i].order.indexOf(t)>-1) return CF[i];return CF[0];};
+var cById=function(id){return CF.filter(function(c){return c.id===id;})[0]||CF[0];};
+/* demo data */
+var POOL=gen(60,26).map(function(p,i){p.rk=i+1;return p;});
+var PREV={};CF.forEach(function(c,ci){[5+ci,14+ci*2,27+ci].forEach(function(i,j){PREV[c.id+':'+POOL[i].id]={by:c.order[(j*2+1)%c.order.length],yrs:(j%3)+1};});});
+var RETS=[{3:1,9:2,7:1},{6:1,10:3},{2:2,8:1,11:1},{7:1,1:1},{4:2,10:1},{9:1}], CUR=[4,8,1,3,7,10], AGO=[5*3600e3+17*60e3,19*3600e3+2*60e3,100*60e3,3*3600e3,11*3600e3,22*3600e3+30*60e3];
+var RETP=CF.map(function(c,ci){return gen(4,90+ci);});
+var ROST={};Object.keys(T).forEach(function(t,ti){var r=rng(300+ti);ROST[t]=gen(DV.rounds,500+ti).map(function(p,i){p.dy=DV.season-1-Math.floor(r()*3);p.dr=1+Math.floor(r()*DV.rounds);p.yrs=Math.max(0,DV.season-1-p.dy);p.reb=Math.max(0,[25,20,20,15][Math.floor(r()*4)]-DV.rebateStep*p.yrs);p.nfl=i===3&&(t===DV.me||ti%3===0);return p;});});
+(function(){var r=rng(77);Object.keys(ROST).forEach(function(t){ROST[t].forEach(function(p){if(!p.nfl){p.owner=t;POOL.push(p);}});});
+  POOL.forEach(function(p,i){p._w=(p.owner?i*0.35:i)+r()*12;});POOL.sort(function(a,b){return a._w-b._w;});POOL.forEach(function(p,i){p.rk=i+1;});})();
+function held(p,cid,ret){if(!p.owner||confOf(p.owner).id!==cid) return false;return ((ret||st.ret)[p.owner]||{})[p.id]!=='release';}
+function prevInfo(p,cid){var pv=PREV[cid+':'+p.id];if(pv) return pv;if(p.owner&&confOf(p.owner).id===cid&&p.yrs&&(st.ret[p.owner]||{})[p.id]==='release') return {by:p.owner,yrs:p.yrs};return null;}
+function fresh(){
+  var o={c:{},ret:{},sub:{}};
+  CF.forEach(function(c,ci){var N=c.order.length,TOT=N*DV.rounds,picks=[],pi=0,r=rng(7+ci);
+    for(var i=0;i<TOT;i++){var t=c.order[i%N];if(RETS[ci][i]){picks.push({t:t,p:RETP[ci][pi++],ret:RETS[ci][i]});continue;}picks.push({t:t,p:null});}
+    var avail=POOL.filter(function(p){return !(p.owner&&confOf(p.owner).id===c.id);});for(var j=0;j<CUR[ci];j++){if(picks[j].p) continue;var k=Math.min(avail.length-1,Math.floor(r()*4));picks[j].p=avail.splice(k,1)[0];}
+    o.c[c.id]={picks:picks,start:Date.now()-AGO[ci]};});
+  var r=rng(42);Object.keys(T).forEach(function(t){if(t===DV.me||r()<.35) return;var d={},k=0;ROST[t].forEach(function(p){if(p.nfl) return;var x=k<DV.maxRetained&&r()<.6?'retain':'release';if(x==='retain')k++;d[p.id]=x;});o.ret[t]=d;o.sub[t]=pad(8+Math.floor(r()*12))+':'+pad(Math.floor(r()*60))+' \u00B7 Sep '+(20+Math.floor(r()*7));});
+  return o;
+}
+var st; try{st=JSON.parse(localStorage.getItem(KEY));}catch(e){}
+if(!st||!st.c||CF.some(function(c){return !st.c[c.id]||st.c[c.id].picks.length!==c.order.length*DV.rounds;})) st=fresh();
+st.custom=st.custom||[];var BASE=POOL;POOL=BASE.concat(st.custom);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+var me=(typeof franchise_id!=='undefined'&&T[franchise_id])?franchise_id:DV.me;
+var ui={tab:'draft',conf:confOf(me).id,team:me,sub:'board',q:'',pos:'ALL',hidePrev:false,sel:null,yr:DV.season-1};
+var cc=function(){return cById(ui.conf);}, cs=function(id){return st.c[id||ui.conf];};
+var nOf=function(id){return cById(id||ui.conf).order.length;}, totOf=function(id){return nOf(id)*DV.rounds;};
+function curIdx(id){if(isPre(id)) return -2;var p=cs(id).picks;for(var i=0;i<p.length;i++) if(!p[i].p) return i;return -1;}
+function lab(i,id){var N=nOf(id);return (Math.floor(i/N)+1)+'.'+pad(i%N+1);}
+function draftedIn(id){var o={};cs(id).picks.forEach(function(k){if(k.p) o[k.p.id]=1;});return o;}
+function left(id){return Math.max(0,cs(id).start+H-Date.now());}
+function hms(ms){var s=Math.floor(ms/1e3);return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);}
+var myConf=function(){return confOf(me).id;};
+function onClock(){var mc=myConf();if(isPre(mc)) return false;var c=curIdx(mc);return c>-1&&cs(mc).picks[c].t===me;}
+var simOpen=0;function opensAt(cid){return simOpen||new Date(cById(cid).opens||DV.draftOpens).getTime();}
+function isPre(cid){return Date.now()<opensAt(cid||ui.conf);}
+function fmtWhen(ms){var d=new Date(ms);return pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
+function untilTxt(ms){var s2=Math.floor(ms/1e3),dd=Math.floor(s2/86400),h=Math.floor(s2%86400/3600);return dd?dd+'d '+pad(h)+':'+pad(Math.floor(s2%3600/60)):hms(ms);}
+/* past drafts */
+var PAST={};CF.forEach(function(c,ci){PAST[c.id]={};[DV.season-1,DV.season-2,DV.season-3].forEach(function(y,yi){var r=rng(y*7+ci),N=c.order.length,pl=gen(N*DV.rounds,y*10+ci);PAST[c.id][y]=pl.map(function(p,i){var x=r(),s;if(x<.34)s={k:'ret',t:'Retained \u00B7 Yr '+Math.min(3,yi+1)};else if(x<.52)s={k:'pro',t:'Entered NFL'};else if(x<.7)s={k:'rel',t:'Released'};else s=null;return{t:c.order[i%N],p:p,s:s,wasRet:yi<2&&r()<.15?Math.ceil(r()*2):0};});});});
+/* ---------- render ---------- */
+function chipRet(y){return '<span class="chip ret sm" title="Retained \u00B7 year '+y+'">Ret \u00B7 Yr '+y+'</span>';}
+function confBar(){
+  $('conf').innerHTML=CF.map(function(c){var ci=curIdx(c.id),mine=c.id===myConf();
+    return '<button type="button" role="tab" aria-selected="'+(ui.conf===c.id)+'" class="cfb'+(ui.conf===c.id?' on':'')+(mine?' mine':'')+'" data-act="conf" data-v="'+c.id+'" style="--cc:'+c.color+'">'+(c.logo?'<img src="'+c.logo+'" alt="" onerror="this.style.display=\'none\'">':'')+'<b>'+c.name+'</b><small class="n">'+(ci===-2?'Not live':ci<0?'Done':lab(ci,c.id))+'</small>'+(mine?'<em>Your conference</em>':'')+'</button>';}).join('');
+}
+function header(){
+  var c=curIdx(),cf=cc(),TOT=totOf(),N=nOf();$('season').textContent='CFFB \u00B7 '+DV.season+' Season \u00B7 '+cf.name;
+  var ot=c===-2?(cs().picks.filter(function(k){return !k.ret;})[0]||{}).t:c>-1?cs().picks[c].t:null;var pkLab=c===-2?(function(){var ft=cs().picks.filter(function(k){return !k.ret;})[0];return ft?lab(cs().picks.indexOf(ft)):'';})():c>-1?lab(c):'';
+  $('otcLab').innerHTML='<span>'+(c===-2?'First on the clock':'On the clock')+(pkLab?' \u00B7 Pick <span class="n">'+pkLab+'</span>':'')+(ot===me?' <em class="you">\u00B7 You</em>':'')+'</span>';root.querySelector('.live').classList.toggle('off',c===-2);
+  if(c===-2){var ft=cs().picks.filter(function(k){return !k.ret;})[0],fi=cs().picks.indexOf(ft);$('status').textContent='NOT LIVE YET \u00B7 OPENS '+fmtWhen(opensAt(ui.conf)).toUpperCase();$('otcTeam').innerHTML=pill(ft.t,'lg');$('otcMeta').innerHTML='';$('next').innerHTML='';return;}
+  if(c<0){$('status').textContent=cf.name.toUpperCase()+' \u00B7 DRAFT COMPLETE';$('otcTeam').innerHTML='<b>Draft complete</b>';$('otcMeta').textContent=TOT+' picks in';$('next').innerHTML='';return;}
+  var t=cs().picks[c].t;$('status').textContent='LIVE \u00B7 ROUND '+(Math.floor(c/N)+1)+' OF '+DV.rounds;
+  $('otcTeam').innerHTML=pill(t,'lg');
+  $('otcMeta').innerHTML=(t===me&&ui.conf===myConf()?'<button type="button" class="cta" data-act="gopool">Make your pick<b>\u2192</b></button>':'');
+  var nx=[];for(var i=c+1;i<TOT&&nx.length<2;i++) if(!cs().picks[i].p) nx.push('<span class="nx">'+pill(cs().picks[i].t,'xs')+'<small class="n">'+lab(i)+'</small></span>');
+  $('next').innerHTML=nx.length?'<small class="eb">Up next</small>'+nx.join(''):'';
+}
+function tick(){
+  CF.forEach(function(c){var e=root.querySelector('[data-cclk="'+c.id+'"]');if(e) e.textContent=hms(left(c.id));});
+  var c=curIdx(),box=$('clkBox');
+  if(c===-2){var u=opensAt(ui.conf)-Date.now();box.className='clk pre';$('clkLab').textContent='Draft opens in';$('clock').textContent=untilTxt(u);$('prog').style.width='0%';$('due').textContent='Opens '+fmtWhen(opensAt(ui.conf))+' \u00B7 24-hr pick clock';return;}
+  if(c<0){$('clock').textContent='00:00:00';$('prog').style.width='0%';$('due').textContent='';box.className='clk';return;}
+  var l=left(),txt=hms(l);
+  $('clock').textContent=txt;$('prog').style.width=(l/H*100).toFixed(2)+'%';
+  box.className='clk'+(l<3600e3?' hot':l<6*3600e3?' warn':'');
+  $('clkLab').innerHTML=l<=0?'Time expired<span class="h24"> \u00B7 commissioner to resolve</span>':'Time remaining<span class="h24"> \u00B7 24-hr clock</span>';
+  var d=new Date(cs().start+H);$('due').textContent='Pick due '+pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  root.querySelectorAll('[data-clk]').forEach(function(e){e.textContent=txt;});
+}
+function tabs(){
+  var d=st.ret[me]||{},pend=ROST[me].filter(function(p){return !p.nfl&&!d[p.id];}).length,sub=st.sub[me];
+  var dlMs=new Date(DV.retainDeadline).getTime(),late=ui.simPast||Date.now()>dlMs,dd=new Date(dlMs).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  var c=curIdx(),ds=c===-2?{k:'pre',t:'Opens '+new Date(opensAt(ui.conf)).toLocaleDateString('en-US',{month:'short',day:'numeric'})}:c<0?{k:'done',t:'Complete'}:{k:'live',t:(ui.conf===myConf()&&cs().picks[c].t===me)?'Live<b class="tsx"> \u00B7 You\u2019re up</b>':'Live<b class="tsx"> \u00B7 '+lab(c)+'</b>'};
+  var rs=sub?{k:'ok',t:'Submitted'}:late?{k:'late',t:'Deadline passed'}:{k:'due',t:(pend?'<b class="tsx">'+pend+' open \u00B7 </b>':'')+'Due '+dd};
+  var t=[['draft','Live Draft',ds],['ret','Retention',rs],['past','Past Drafts',{k:'mut',t:Object.keys(PAST[ui.conf]).length+' seasons'}]];
+  $('tabs').innerHTML=t.map(function(x){return '<button class="tab'+(ui.tab===x[0]?' on':'')+'" role="tab" data-act="tab" data-v="'+x[0]+'"><span class="tl">'+x[1]+'</span><span class="ts '+x[2].k+'">'+(x[2].k==='live'?'<i></i>':'')+x[2].t+'</span></button>';}).join('');
+}
+function pickRow(k,i,c,past){
+  var cls='pk',tag='',pl;if(c===-2&&!k.ret) k={t:k.t,p:null};
+  if(past){pl='<div class="pl"><span class="pos '+k.p.pos+'">'+k.p.pos+'</span><div><b>'+k.p.n+'</b><small>Elig. '+k.p.elig+'</small></div></div>';
+    if(k.wasRet){cls+=' ret';tag=chipRet(k.wasRet);}
+    else if(k.s) tag='<span class="chip '+(k.s.k==='ret'?'prev':k.s.k==='pro'?'grn':'red')+'">'+k.s.t+'</span>';
+  } else if(k.p){pl='<div class="pl"><span class="pos '+k.p.pos+'">'+k.p.pos+'</span><div><b>'+k.p.n+'</b><small>Elig. '+k.p.elig+'</small></div></div>';
+    if(k.ret){cls+=' ret';tag=chipRet(k.ret);}
+    if(k.ret&&i>c) cls+=' up';
+  } else if(i===c){cls+=' cur';pl='<div class="pl"><span class="chip gold">On the clock</span></div>';tag='<span class="chip n" data-clk></span>';}
+  else {cls+=' up';pl='<div class="pl em">\u2014</div>';}
+  if(k.t===me) cls+=' me';
+  return '<div class="'+cls+'"><span class="no n">'+lab(i)+'</span><div class="tm"><span class="tw">'+pill(k.t,'sm')+'</span></div>'+pl+'<div class="tg">'+tag+'</div></div>';
+}
+function board(list,c,past){
+  var N=nOf(),h='';for(var r=0;r<DV.rounds;r++){var sl=list.slice(r*N,r*N+N),rc=sl.filter(function(k){return past?k.wasRet:k.ret;}).length;
+    h+='<div class="rh"><b>Round '+(r+1)+'</b><span>'+(rc?rc+' retained slot'+(rc>1?'s':''):'')+'</span></div>';
+    sl.forEach(function(k,j){h+=pickRow(k,r*N+j,c,past);});}
+  return h;
+}
+function takenElsewhere(pid){return CF.filter(function(c){return c.id!==ui.conf&&draftedIn(c.id)[pid];}).map(function(c){return c.id;});}
+function poolList(){
+  var mc=myConf(),dr=isPre(mc)?{}:draftedIn(mc),q=ui.q.toLowerCase();
+  return POOL.filter(function(p){var pv=prevInfo(p,mc);return !dr[p.id]&&!held(p,mc)&&(ui.pos==='ALL'||p.pos===ui.pos)&&(!q||(p.n+' '+p.sch).toLowerCase().indexOf(q)>-1);});
+}
+function poolRows(){
+  var l=poolList();if(!l.length) return '<div class="empty">No players match.'+(ui.q?'<button type="button" data-act="openadd">Add “'+ui.q.replace(/</g,'&lt;')+'” as a new player</button>':'')+'</div>';
+  var mc=myConf();return l.map(function(p){var pv=prevInfo(p,mc),tags=(p.add?'<span class="chip">Added · pending review</span>':'');
+    return '<button type="button" class="pr'+(ui.sel===p.id?' sel':'')+'" data-act="sel" data-v="'+p.id+'"><span class="rk n">'+p.rk+'</span><span class="nm"><div><span class="pos '+p.pos+'">'+p.pos+'</span><b>'+p.n+'</b></div>'+(tags?'<div class="tgs">'+tags+'</div>':'')+'<small class="m">Elig. '+p.elig+'</small></span><span class="cl n">'+p.elig+'</span></button>';}).join('');
+}
+function nextMine(){var id=myConf(),p=cs(id).picks;for(var i=Math.max(0,curIdx(id));i<p.length;i++) if(!p[i].p&&p[i].t===me) return lab(i,id);return '';}
+function actBar(){
+  var mc=myConf(),c=curIdx(mc),pk=cs(mc).picks,p=POOL.filter(function(x){return x.id===ui.sel;})[0],onc=c>-1&&pk[c].t===me,away=ui.conf!==mc,mine=onc&&!away,cn=confOf(me).name;
+  if(c===-2) return '<div class="act pre"><div><b>Draft isn\u2019t live yet</b><small>The '+cn+' draft opens '+fmtWhen(opensAt(mc))+'. Scout the pool now \u2014 picks unlock when it opens.</small></div><button type="button" class="btn pri" disabled>Draft player</button></div>';
+  if(c<0) return '<div class="act"><div><b>Draft complete</b><small>All '+totOf(mc)+' '+cn+' picks are in.</small></div></div>';
+  if(onc&&away) return '<div class="act"><div><b>You\u2019re on the clock in the '+cn+'</b><small>Picks can only be made from your own conference. Switch back to draft.</small></div><button type="button" class="btn pri" data-act="conf" data-v="'+mc+'">Go to '+cn+'</button></div>';
+  if(!p) return '<div class="act"><div><b>'+(mine?'You\u2019re on the clock':'Scout the pool')+'</b><small>'+(mine?'Select a player to make '+cn+' pick '+lab(c,mc)+'.':'Your next '+cn+' pick: '+(nextMine()||'none left')+'.')+'</small></div></div>';
+  return '<div class="act"><div><b>'+p.n+'</b><small>'+p.pos+' \u00B7 Elig. '+p.elig+(mine?' \u00B7 '+cn+' pick '+lab(c,mc):' \u00B7 Not your pick')+'</small></div><button type="button" class="btn pri" data-act="draft"'+(mine?'':' disabled')+'>Draft player</button></div>';
+}
+function addBox(){
+  var yrs='';for(var y=DV.season+1;y<=DV.season+4;y++) yrs+='<option value="'+y+'">'+y+'</option>';
+  return '<details class="add" data-dv="add"'+(ui.addOpen?' open':'')+'><summary>Can\u2019t find a player?<span>Add one</span></summary><div class="addb">'+
+  '<ol class="steps"><li>Search first. Try last name only and alternate spellings.</li><li>Enter his name as it appears on the school\u2019s official roster.</li><li>Pick his position and the first NFL draft he\u2019s eligible for.</li><li>Added players show in every conference\u2019s pool, tagged <b>Added</b> until the commissioner verifies. Duplicates get merged.</li></ol>'+
+  '<div class="form"><label class="fn">Player name<input type="text" data-add="n" placeholder="First Last" value="'+(ui.addName||'').replace(/"/g,'&quot;')+'" autocomplete="off"></label>'+
+  '<label>Pos<select data-add="pos"><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label>'+
+  '<label class="fs">School<input type="text" data-add="sch" list="dv-sch" placeholder="e.g. Georgia" autocomplete="off"></label>'+
+  '<label>Draft elig.<select class="n" data-add="elig">'+yrs+'</select></label></div>'+
+  '<datalist id="dv-sch">'+S.map(function(x){return '<option value="'+x+'">';}).join('')+'</datalist>'+
+  '<div class="addf"><span class="err" data-dv="addErr"></span><button type="button" class="btn pri" data-act="addp">Add to pool</button></div></div></details>';
+}
+function pDraft(){
+  var c=curIdx(),TOT=totOf();
+  return '<div class="pnl">'+(c===-2?'<div class="prebn"><i></i><div><b>'+cc().name+' draft isn\u2019t live yet</b><span>Opens '+fmtWhen(opensAt(ui.conf))+'. Each pick then gets a 24-hour clock. Retained players already fill their slots below.</span></div></div>':'')+'<div class="seg" role="tablist"><button type="button" data-act="sub" data-v="board" class="'+(ui.sub==='board'?'on':'')+'">Draft order</button><button type="button" data-act="sub" data-v="pool" class="'+(ui.sub==='pool'?'on':'')+(onClock()?' hot':'')+'">'+(onClock()?'<i></i>Pick from pool':'Player pool')+'</button></div>'+
+  '<div class="grid" data-sub="'+ui.sub+'">'+
+  '<div class="gboard"><div class="sh"><h3>Draft Order</h3><span class="eb n">'+(c===-2?'Opens '+fmtWhen(opensAt(ui.conf)):(c<0?TOT:c)+' of '+TOT+' picks in')+'</span></div><div class="scroll" data-dv="bScroll">'+board(cs().picks,c)+'</div>'+
+  '<div class="legend"><span><span class="chip ret sm">Ret \u00B7 Yr N</span> Slot used by a retained devy player</span></div></div>'+
+  '<div class="gpool'+(onClock()?' hot':'')+'"><div class="sh"><h3>Player Pool</h3>'+(onClock()?'<span class="chip gold yp"><i></i>You\u2019re on the clock</span>':'')+(ui.conf!==myConf()?'<span class="chip gold">Your '+confOf(me).name+' pool</span>':'')+'<div class="shr"><span class="eb n" data-dv="pc">'+poolList().length+' available</span></div></div>'+
+  '<p class="rule">One copy of each player per conference. A player taken in another conference is still available here.</p>'+addBox()+
+  '<div class="tools"><input class="srch" type="search" placeholder="Search player" value="'+ui.q.replace(/"/g,'&quot;')+'" data-dv="q"><div class="fl">'+['ALL','QB','RB','WR','TE'].map(function(x){return '<button type="button" data-act="pos" data-v="'+x+'" class="'+(ui.pos===x?'on':'')+'">'+x+'</button>';}).join('')+'</div>'+
+  '</div>'+
+  '<div data-dv="act">'+actBar()+'</div><div class="scroll"><div class="ph"><span>RK</span><span>PLAYER</span><span>DRAFT ELIG.</span></div><div data-dv="rows">'+poolRows()+'</div></div></div></div></div>';
+}
+function slots(R,d){var o={},k=0;R.forEach(function(p){if(d[p.id]==='retain'){o[p.id]=DV.slotOrder[k]||null;k++;}});return o;}
+function pRet(){
+  var dlPast=ui.simPast||Date.now()>new Date(DV.retainDeadline).getTime(),t=me,edit=t===me,R=ROST[t],d=st.ret[t]||{},sub=st.sub[t],show=edit||sub,sl=slots(R,d),nRet=Object.keys(sl).length,step=DV.rebateStep;
+  var dl=new Date(DV.retainDeadline),dls=pad(dl.getHours())+':'+pad(dl.getMinutes())+' \u00B7 '+dl.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  var picker='<div class="tsel">'+cc().order.map(function(id){var s2=st.sub[id];return '<button type="button" class="tsb'+(id===t?' on':'')+'" data-act="team" data-v="'+id+'"><span class="tw">'+pill(id,'sm')+'</span><small class="'+(s2?'ok':'')+'">'+(id===me?'You \u00B7 ':'')+(s2?'Submitted':'Pending')+'</small></button>';}).join('')+'</div>';
+  var cards=R.map(function(p){var dd=d[p.id],isR=show&&dd==='retain',full=nRet>=DV.maxRetained&&dd!=='retain';
+    var yrs=p.yrs?'Retained '+p.yrs+' yr'+(p.yrs>1?'s':''):'Not yet retained';
+    var dec;
+    if(p.nfl) dec='<div class="dec ro pend">Entered NFL \u00B7 not eligible</div>';
+    else if(edit) dec='<div class="dec" aria-disabled="'+(sub||dlPast?'true':'false')+'"><button type="button" data-act="dec" data-id="'+p.id+'" data-v="retain" class="retain'+(dd==='retain'?' on':'')+'"'+(full?' disabled title="Both pick slots are used"':'')+'>Retain</button><button type="button" data-act="dec" data-id="'+p.id+'" data-v="release" class="release'+(dd==='release'?' on':'')+'">Release</button></div>';
+    else dec=sub&&dd?'<div class="dec ro"><span class="chip '+(dd==='retain'?'ret':'red')+'">'+dd+'</span></div>':'<div class="dec ro pend">Decision pending</div>';
+    return '<div class="rc'+(p.nfl?' nfl':'')+'"><div class="who"><span class="pos '+p.pos+'">'+p.pos+'</span><div><b>'+p.n+'</b><small>Draft eligible '+p.elig+'</small></div></div>'+
+    
+    '<div class="facts"><div><small>Acquired</small><b class="n">'+p.dy+' \u00B7 Rd '+p.dr+'</b></div>'+
+    '<div><small>Rebate</small><b class="n">'+(p.nfl?'\u2014':'$'+p.reb+(isR?' \u2192 <span class="dn">$'+Math.max(0,p.reb-step)+'</span>':' \u00B7 <span class="mt">$'+Math.max(0,p.reb-step)+' if retained</span>'))+'</b></div>'+
+    '<div><small>Pick slot</small><b class="n'+(isR?' sl':'')+'">'+(p.nfl?'\u2014':isR?(sl[p.id]?'Takes Rd '+sl[p.id]+' pick':'No slot left'):full?'Both slots used':'Rd '+DV.slotOrder[Math.min(nRet,DV.slotOrder.length-1)]+' if retained')+'</b></div></div>'+dec+'</div>';}).join('');
+  var nRel=R.filter(function(p){return show&&d[p.id]==='release';}).length,elig=R.filter(function(p){return !p.nfl;}),done=elig.every(function(p){return d[p.id];});
+  var used=Object.keys(sl).map(function(k){return 'Rd '+sl[k];});
+  var late=dlPast&&!sub?'<div class="dl"><b>Retention deadline passed</b><span>'+(edit?'The deadline was '+dls+'. Your decisions are locked and weren\u2019t submitted \u2014 contact the commissioner.':T[t].own+' didn\u2019t submit before the '+dls+' deadline.')+'</span></div>':'';
+  var box=edit?'<div class="box"><h4>Your Decisions</h4>'+late+'<p>'+(sub?(dlPast?'Submitted. The deadline has passed \u2014 contact the commissioner to change anything.':'Submitted. You can edit your decisions until the deadline ('+dls+').'):dlPast?'Decisions can no longer be changed here.':'Retain or release every eligible player, then submit.')+'</p>'
+    :'<div class="box"><h4>'+tn(t)+' Decisions</h4>'+late+'<p>'+(sub?'Submitted by '+T[t].own+'.':'Not submitted yet. Decisions show here once '+T[t].own+' submits.')+'</p>';
+  box+='<div class="sum"><div><b class="n" style="color:var(--tl-l)">'+(show?nRet:0)+'</b><small>RETAIN</small></div><div><b class="n" style="color:#E06A6A">'+nRel+'</b><small>RELEASE</small></div><div><b class="n">'+(show?nRet:0)+'/'+DV.maxRetained+'</b><small>PICKS USED</small></div></div>'+
+  '<p class="n">'+(show&&used.length?'Picks used in the '+DV.season+' '+confOf(t).name+' draft: '+used.join(', ')+'. Rebate reduction: \u2212$'+(step*nRet)+'.':'No picks used.')+'</p>'+
+  (sub?'<div class="note ok n">Submitted '+sub+'</div>'+(edit&&!dlPast?'<button type="button" class="btn" data-act="unsub" style="margin-top:12px;width:100%">Edit decisions</button>':''):edit&&!dlPast?'<button type="button" class="btn pri" data-act="submit"'+(done?'':' disabled')+' style="margin-top:12px">'+(done?'Submit decisions':elig.filter(function(p){return !d[p.id];}).length+' decisions left')+'</button>':'')+'</div>';
+  return '<div class="pnl"><div class="rgrid"><div><div class="sh"><h3>'+(edit?'Your Devy Roster':tn(t)+' Devy Roster')+'</h3><span class="eb n'+(dlPast?' late':'')+'">'+(dlPast?'Deadline passed \u00B7 ':'Decisions due ')+dls+'</span></div>'+cards+'</div>'+
+  '<div class="side">'+box+
+  '<details class="box how" data-dv="how"'+(ui.howOpen?' open':'')+'><summary><h4>How Retention Works</h4><span>'+(ui.howOpen?'Hide':'Show')+'</span></summary><p>Retaining keeps a devy player who hasn\u2019t entered the NFL on your roster without re-drafting him. Each retained player uses one of your conference draft picks, and his rebate drops $'+step+' for every year he\u2019s retained.</p><ol class="ladder">'+
+  DV.rules.map(function(r){return '<li><b class="'+(r.x?'x':'')+'">'+r.n+'</b><div><strong>'+r.t+'</strong><span>'+r.d+'</span></div></li>';}).join('')+'</ol></details></div></div></div>';
+}
+function pPast(){
+  var P2=PAST[ui.conf],yrs=Object.keys(P2).sort().reverse(),l=P2[ui.yr],c={ret:0,pro:0,rel:0},wr=0;l.forEach(function(k){if(k.s)c[k.s.k]++;if(k.wasRet)wr++;});
+  return '<div class="pnl"><div class="sh"><h3>'+ui.yr+' '+cc().name+' Devy Draft</h3><label class="ysel"><span class="eb">Season</span><select class="n" data-dv="yr">'+yrs.map(function(y){return '<option value="'+y+'"'+(+y===+ui.yr?' selected':'')+'>'+y+'</option>';}).join('')+'</select></label></div>'+
+  '<div class="pstat"><div><b class="n">'+l.length+'</b><small>PICKS</small></div><div><b class="n" style="color:var(--tl-l)">'+wr+'</b><small>RETAINED SLOTS</small></div><div><b class="n" style="color:#6FC291">'+c.pro+'</b><small>SINCE ENTERED NFL</small></div><div><b class="n" style="color:#E06A6A">'+c.rel+'</b><small>SINCE RELEASED</small></div></div>'+
+  '<div class="scroll">'+board(l,-1,true)+'</div><div class="legend"><span><span class="chip ret sm">Ret \u00B7 Yr N</span> Slot filled by a retained player</span><span><span class="chip prev">Retained \u00B7 Yr N</span> <span class="chip grn">Entered NFL</span> <span class="chip red">Released</span> What happened next</span></div></div>';
+}
+function render(){
+  confBar();header();tabs();
+  $('panel').innerHTML=ui.tab==='draft'?pDraft():ui.tab==='ret'?pRet():pPast();
+  tick();
+  if(ui.tab==='draft'){var s=$('bScroll'),cu=s&&s.querySelector('.pk.cur');if(cu) s.scrollTop=cu.offsetTop-s.offsetTop-80;}
+}
+function refreshPool(){$('rows').innerHTML=poolRows();$('act').innerHTML=actBar();$('pc').textContent=poolList().length+' available';}
+var tt;function toast(m){var e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){e.classList.remove('show');},2600);}
+root.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b||!root.contains(b)) return;var a=b.getAttribute('data-act'),v=b.getAttribute('data-v');
+  if(a==='tab'){ui.tab=v;render();}
+  else if(a==='conf'){ui.conf=v;ui.sel=null;ui.team=cById(v).order.indexOf(me)>-1?me:cById(v).order[0];render();}
+  else if(a==='team'){ui.team=v;render();}
+  else if(a==='sub'){ui.sub=v;render();}
+  else if(a==='pos'){ui.pos=v;root.querySelectorAll('[data-act="pos"]').forEach(function(x){x.classList.toggle('on',x===b);});refreshPool();}
+  else if(a==='hideprev'){ui.hidePrev=!ui.hidePrev;b.setAttribute('aria-checked',ui.hidePrev);refreshPool();}
+  else if(a==='sel'){ui.sel=ui.sel===v?null:v;refreshPool();}
+  else if(a==='draft'){var mc=myConf(),c=curIdx(mc),p=POOL.filter(function(x){return x.id===ui.sel;})[0];if(ui.conf!==mc||c<0||!p||cs(mc).picks[c].t!==me||draftedIn(mc)[p.id]||held(p,mc)) return;
+    cs(mc).picks[c].p=p;cs(mc).start=Date.now();ui.sel=null;save();render();toast(confOf(me).name+' pick '+lab(c,mc)+' is in: '+p.n+', '+p.pos+'.');}
+  else if(a==='dec'){var dm=st.ret[me]=st.ret[me]||{},id=b.getAttribute('data-id');if(v==='retain'&&dm[id]!=='retain'&&Object.keys(slots(ROST[me],dm)).length>=DV.maxRetained) return;dm[id]=v;save();render();}
+  else if(a==='submit'){var d=new Date();st.sub[me]=pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'});save();render();toast('Retention decisions submitted.');}
+  else if(a==='yr'){ui.yr=+v;render();}
+  else if(a==='openadd'){ui.addOpen=true;ui.addName=ui.q;render();var ni=root.querySelector('[data-add="sch"]');if(ni) ni.focus();}
+  else if(a==='addp'){var g=function(k){return root.querySelector('[data-add="'+k+'"]').value.trim();},n=g('n').replace(/\s+/g,' '),sch=g('sch'),err=$('addErr');
+    if(n.split(' ').length<2){err.textContent='Enter first and last name.';return;}
+    if(!sch){err.textContent='Enter a school.';return;}
+    var dup=POOL.filter(function(p){return p.n.toLowerCase()===n.toLowerCase()&&p.sch.toLowerCase()===sch.toLowerCase();})[0];
+    if(dup){err.textContent=n+' ('+sch+') is already in the pool'+(draftedIn(myConf())[dup.id]||held(dup,myConf())?' and has been drafted in this conference.':'. Clear your filters to find him.');return;}
+    var p={id:'c-'+Date.now(),n:n,pos:g('pos'),sch:sch,elig:+g('elig'),rk:'NEW',add:tn(me)};
+    st.custom.push(p);POOL.push(p);save();ui.q='';ui.pos='ALL';ui.hidePrev=false;ui.addOpen=false;ui.addName='';ui.sel=p.id;ui.sub='pool';render();toast(n+' added to the pool.');}
+  else if(a==='unsub'){delete st.sub[me];save();render();toast('Decisions unlocked \u2014 resubmit when you\u2019re done.');}
+  else if(a==='simpre'){simOpen=simOpen?0:Date.now()+(2*86400e3+5*3600e3+12*60e3);b.textContent=simOpen?'Go live':'Simulate pre-draft';ui.sel=null;render();}
+  else if(a==='simpast'){ui.simPast=!ui.simPast;b.textContent=ui.simPast?'Restore deadline':'Simulate deadline passed';render();}
+  else if(a==='gopool'){ui.tab='draft';ui.sub='pool';ui.conf=myConf();render();var gp=root.querySelector('.gpool'),q=$('q');if(gp){var y=gp.getBoundingClientRect().top+window.pageYOffset-12;window.scrollTo({top:y,behavior:'smooth'});}if(q) q.focus({preventScroll:true});}
+  else if(a==='reset'){st=fresh();st.custom=[];POOL=BASE.slice();ui.sel=null;save();render();toast('Demo reset.');}
+});
+root.addEventListener('toggle',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-dv');if(k==='add') ui.addOpen=e.target.open;if(k==='how'){ui.howOpen=e.target.open;var sp=e.target.querySelector('summary span');if(sp) sp.textContent=ui.howOpen?'Hide':'Show';}},true);
+root.addEventListener('change',function(e){if(e.target.getAttribute('data-dv')==='yr'){ui.yr=+e.target.value;render();}});
+root.addEventListener('input',function(e){if(e.target.getAttribute('data-dv')==='q'){ui.q=e.target.value;refreshPool();}});
+var as=$('as');as.innerHTML=CF.map(function(c){return '<optgroup label="'+c.name+'">'+c.order.map(function(k){return '<option value="'+k+'"'+(k===me?' selected':'')+'>'+T[k].name+'</option>';}).join('')+'</optgroup>';}).join('');
+as.addEventListener('change',function(){me=as.value;ui.sel=null;ui.conf=myConf();ui.team=me;render();});
+render();setInterval(tick,1000);
+})();
+</script>
+<!-- ===== END MFL MESSAGE ===== -->
+</body></html>

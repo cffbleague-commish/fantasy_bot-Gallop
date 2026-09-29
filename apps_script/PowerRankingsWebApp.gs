@@ -99,7 +99,13 @@ function buildPowerRankingsPayload(overrideYear) {
   const historyByFranchise  = readPowerRankingsHistory(year); // id -> { rankHist, moves }
   const scheduleByFranchise = readScheduleResultsForYear(year); // id -> [{ week, ... }]
 
-  const latestWeek = detectLatestPlayedWeek(rankingsByFranchise, scheduleByFranchise);
+  // "weeks played" = the last week whose games are genuinely FINAL, NOT the
+  // latest published ranking week. Under the "entering the week" convention a
+  // ranking labeled Week N is built from data through Week N-1, so keying off
+  // the ranking week would count the in-progress week N as played (its schedule
+  // row exists but carries no result/score). Only completed games feed W/L,
+  // points, and points-per-game below.
+  const latestWeek = detectLatestCompletedWeek(scheduleByFranchise);
   const weeksTotal = 14; // regular season + playoffs display window
 
   let unknownOppCount = 0;
@@ -115,29 +121,52 @@ function buildPowerRankingsPayload(overrideYear) {
     rows.forEach(function (row) {
       const oppId = normalizeId(row.opponentId);
       const oppKnown = oppId && franchises[oppId];
-      if (row.week <= latestWeek) {
-        // Treat "BYE" or missing/unknown opponent as a bye. Rendering an
-        // "opp" that isn't in FranchiseLookup would crash SchedRow.
-        if (row.gameResult === "BYE" || !oppKnown) {
+      // Treat "BYE" or missing/unknown opponent as a bye. Rendering an "opp"
+      // that isn't in FranchiseLookup would crash SchedRow.
+      const isBye = row.gameResult === "BYE" || !oppKnown;
+
+      // A game only counts once it is genuinely FINAL: a real result (W/L/T)
+      // AND a real score. MFL's schedule feed publishes provisional W/L and
+      // partial scores while a week is still being played, so in-progress rows
+      // arrive with a blank result and/or a zero TeamScore. Those must NOT feed
+      // W/L, points, or points-per-game — they surface as "upcoming" instead.
+      // Mirrors the hasRealScore gate in Rankings.gs (populateScheduleResults /
+      // getCurrentNFLWeek).
+      const hasRealScore = row.teamScore !== "" && row.teamScore != null && Number(row.teamScore) > 0;
+      const isCompleted = (row.gameResult === "W" || row.gameResult === "L" || row.gameResult === "T") && hasRealScore;
+
+      if (isBye) {
+        // Only show a bye once its week is complete; a bye in the current
+        // in-progress (or a future) week is upcoming.
+        if (row.week <= latestWeek) {
           if (!oppKnown && row.gameResult !== "BYE") unknownOppCount++;
           games.push({ week: row.week, bye: true });
         } else {
-          games.push({
+          upcoming.push({
             week: row.week,
-            opp: oppId,
-            my: round1(row.teamScore),
-            ov: round1(row.opponentScore),
-            win: row.gameResult === "W",
-            result: row.gameResult,   // "W" | "L" | "T"
-            oppRank: row.opponentRank,
+            opp: null,
             conf: row.isConference,
-            ap: allPlayPercent(row.weeklyAllPlayWins, row.weeklyAllPlayLosses, row.weeklyAllPlayTies),
-            oppAp: allPlayPercent(row.weeklyOppAllPlayWins, row.weeklyOppAllPlayLosses, row.weeklyOppAllPlayTies),
             rivalry: row.isRivalry,
             gameday: row.isGameday
           });
         }
+      } else if (isCompleted) {
+        games.push({
+          week: row.week,
+          opp: oppId,
+          my: round1(row.teamScore),
+          ov: round1(row.opponentScore),
+          win: row.gameResult === "W",
+          result: row.gameResult,   // "W" | "L" | "T"
+          oppRank: row.opponentRank,
+          conf: row.isConference,
+          ap: allPlayPercent(row.weeklyAllPlayWins, row.weeklyAllPlayLosses, row.weeklyAllPlayTies),
+          oppAp: allPlayPercent(row.weeklyOppAllPlayWins, row.weeklyOppAllPlayLosses, row.weeklyOppAllPlayTies),
+          rivalry: row.isRivalry,
+          gameday: row.isGameday
+        });
       } else {
+        // Not final yet (in-progress or a future week) — schedule only, no scores.
         upcoming.push({
           week: row.week,
           opp: oppKnown ? oppId : null,
@@ -408,17 +437,22 @@ function detectLatestYearInPowerRankings() {
   return latest;
 }
 
-function detectLatestPlayedWeek(rankingsMap, scheduleMap) {
+/**
+ * The latest week whose games are genuinely FINAL — has a real result (W/L/T)
+ * AND a real score (> 0). Deliberately scans ScheduleResults, NOT the published
+ * ranking week: the schedule feed publishes provisional W/L and partial scores
+ * while a week is in progress, so this gate keeps an unfinished week from being
+ * counted as played. Mirrors the hasRealScore check in Rankings.gs.
+ */
+function detectLatestCompletedWeek(scheduleMap) {
   let latest = 0;
-  Object.keys(rankingsMap).forEach(function (fid) {
-    const w = rankingsMap[fid].week || 0;
-    if (w > latest) latest = w;
-  });
-  if (latest) return latest;
-  // Fallback: scan schedule for weeks with non-empty scores
   Object.keys(scheduleMap).forEach(function (fid) {
     scheduleMap[fid].forEach(function (row) {
-      if (row.gameResult && row.gameResult !== "" && row.week > latest) latest = row.week;
+      const res = row.gameResult;
+      const hasRealScore = row.teamScore !== "" && row.teamScore != null && Number(row.teamScore) > 0;
+      if ((res === "W" || res === "L" || res === "T") && hasRealScore && row.week > latest) {
+        latest = row.week;
+      }
     });
   });
   return latest;
