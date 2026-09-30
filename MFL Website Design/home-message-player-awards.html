@@ -1619,6 +1619,13 @@ class Component extends DCLogic {
   }
 
   buildLeader(award, highlight) {
+    if (!award || !award.finalists || !award.finalists.length) {
+      return {
+        name: '—', cls: '', teamAbbr: '', teamColor: 'var(--border-strong)', teamTxt: 'var(--fg-primary)',
+        subline: 'Awaiting results', badgeLabel: '', badge: '', cushionVal: '', cushionLabel: '',
+        score: 0, formulaExpr: '', formulaParts: [], metrics: [],
+      };
+    }
     const f = award.finalists[0], nx = award.finalists[1];
     if (award.isCoach) {
       const lead = nx ? f.teamPts - nx.teamPts : 0;
@@ -1932,12 +1939,19 @@ class Component extends DCLogic {
     const rec = this.buildRecruiting(R, D);
     const drf = this.buildDraft(N, R, D);
 
-    const awardKey = this.state.award, confKey = this.state.conf, tier = this.state.tier;
+    const tier = this.state.tier;
+    // Feed completeness varies (early season may lack national finalists and/or
+    // all-conference tiers). Fall back to whatever data exists so a sparse feed
+    // renders empty sections instead of crashing renderVals.
+    const national = D.national || {};
+    const nationalOrder = (D.nationalOrder || Object.keys(national)).filter((k) => national[k]);
+    const hasFinalists = (k) => national[k] && national[k].finalists && national[k].finalists.length;
+    const awardKey = hasFinalists(this.state.award) ? this.state.award : (nationalOrder.find(hasFinalists) || this.state.award);
 
-    const awardTabs = D.nationalOrder.map((k) => {
-      const a = D.national[k], active = k === awardKey;
+    const awardTabs = nationalOrder.map((k) => {
+      const a = national[k] || { name: k, honors: '', finalists: [] }, active = k === awardKey;
       return {
-        key: k, name: a.name, honors: a.honors, leader: a.finalists[0].name,
+        key: k, name: a.name, honors: a.honors, leader: (a.finalists && a.finalists[0] ? a.finalists[0].name : '—'),
         honorsColor: active ? 'var(--gold)' : 'var(--fg-tertiary)',
         activeStyle: active
           ? 'background:var(--bg-surface-elev);border:1px solid rgba(201,162,39,.5);box-shadow:inset 0 2px 0 var(--gold),0 0 20px rgba(201,162,39,.14);color:var(--fg-primary);'
@@ -1946,16 +1960,19 @@ class Component extends DCLogic {
       };
     });
 
-    const award = D.national[awardKey];
+    const award = national[awardKey] || { name: '', honors: '', finalists: [] };
     const leader = this.buildLeader(award, highlight);
-    leader.teamColor = leader.teamColor; leader.teamTxt = leader.teamTxt;
-    const finalists = award.finalists.slice(1, 1 + maxF).map((f) => ({ ...this.buildFinalist(f, !!award.isCoach), confAccent: (D.conferences[f.team.conf] || {}).accent || 'var(--gold)' }));
+    const finalists = (award.finalists || []).slice(1, 1 + maxF).map((f) => ({ ...this.buildFinalist(f, !!award.isCoach), confAccent: (D.conferences[f.team.conf] || {}).accent || 'var(--gold)' }));
 
-    const confLogos = { sec: 'sec', b1g: 'b1g', acc: 'acc', big12: 'big12', aac: 'aac', pac: 'pac12' };
-    const conf = D.conferences[confKey];
-    const confTabs = D.confOrder.map((k) => {
-      const c = D.conferences[k], active = k === confKey;
-      const tiers = D.confTiers[k] || {};
+    const confTiers = D.confTiers || {};
+    const confOrder = D.confOrder || Object.keys(D.conferences || {});
+    // Prefer the selected conference; else the first with all-conference data; else the first at all.
+    const confKey = confTiers[this.state.conf] ? this.state.conf
+      : (confOrder.find((k) => confTiers[k]) || confOrder[0] || this.state.conf);
+    const conf = D.conferences[confKey] || { accent: 'var(--gold)', tint: 'rgba(201,162,39,0.14)', label: String(confKey || '').toUpperCase() };
+    const confTabs = confOrder.map((k) => {
+      const c = D.conferences[k] || { label: String(k || '').toUpperCase() }, active = k === confKey;
+      const tiers = confTiers[k] || {};
       const count = (tiers.first || []).length + (tiers.second || []).length + (tiers.third || []).length;
       return {
         key: k, label: c.label, count,
@@ -1978,7 +1995,7 @@ class Component extends DCLogic {
     });
     const tierLabel = (tierMeta.find((t) => t[0] === tier) || ['', ''])[1];
 
-    const roster = (D.confTiers[confKey][tier] || []).map((p) => {
+    const roster = ((confTiers[confKey] || {})[tier] || []).map((p) => {
       const [pc, pt] = this.posColor(p.pos);
       return {
         pos: p.pos, posColor: pc, posTxt: pt,
@@ -1989,7 +2006,7 @@ class Component extends DCLogic {
 
     return {
       isAwards, isRecruiting, isDraft, viewTabs, ...drf,
-      raceAnim: this.state.narrow ? null : (() => { const hz = D.national.heisman, f = hz && hz.finalists[0]; return this.bannerAnim('The Race for ', 'the Heisman', f ? f.name + ' (' + f.team.abbr + ') leads \u00B7 Week ' + D.week : 'Week ' + D.week); })(),
+      raceAnim: this.state.narrow ? null : (() => { const hz = D.national && D.national.heisman, f = hz && hz.finalists && hz.finalists[0]; return this.bannerAnim('The Race for ', 'the Heisman', f && f.team ? f.name + ' (' + f.team.abbr + ') leads \u00B7 Week ' + D.week : 'Week ' + D.week); })(),
       showSpotlight: spot, highlightLeader: highlight,
       seasonLine: 'Season ' + D.season + ' · Through Week ' + D.week, week: D.week,
       awardTabs, leader, finalists, awardName: award.name,
