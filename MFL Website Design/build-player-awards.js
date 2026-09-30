@@ -104,28 +104,70 @@ Object.keys(CONF_LOGO_FILES).forEach((conf) => {
 const ASSET_DIR = path.join(DIR, 'assets');
 const TRANSPARENT_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
+// Accept any common image extension for a given basename — the expected name is
+// `heisman-stage.png`, but a `heisman-stage.jpg` / `.webp` dropped in assets/
+// should resolve too.
+const ASSET_EXTS = ['.png', '.webp', '.jpg', '.jpeg', '.svg', '.gif', '.avif'];
+function resolveAssetPath(absPath) {
+  if (!absPath) return null;
+  if (fs.existsSync(absPath)) return absPath;
+  const dir = path.dirname(absPath);
+  const base = path.basename(absPath, path.extname(absPath));
+  for (const e of ASSET_EXTS) {
+    const p = path.join(dir, base + e);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 function fileDataUri(absPath) {
-  if (!absPath || !fs.existsSync(absPath)) return null;
-  const ext = path.extname(absPath).toLowerCase();
+  const p = resolveAssetPath(absPath);
+  if (!p) return null;
+  const ext = path.extname(p).toLowerCase();
   const mime = ext === '.svg' ? 'image/svg+xml'
     : ext === '.png' ? 'image/png'
     : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg'
     : ext === '.webp' ? 'image/webp'
+    : ext === '.avif' ? 'image/avif'
+    : ext === '.gif' ? 'image/gif'
     : 'application/octet-stream';
-  return 'data:' + mime + ';base64,' + fs.readFileSync(absPath).toString('base64');
+  return 'data:' + mime + ';base64,' + fs.readFileSync(p).toString('base64');
 }
 
 // Hero banner backgrounds -> CSS-class overrides of the selectors the component
-// declares (later declaration wins over the dev relative-url rule).
-const bannerCss = [];
-[
+// declares (later declaration wins over the dev relative-url rule). Banners are
+// large photos, so they're resized + recompressed (via sharp) to keep the whole
+// inlined message under MFL's 768 KB limit. Any extension resolves (see
+// resolveAssetPath). Computed async in main() below; the marker is replaced then.
+const BANNER_MARK = '/*__PA_BANNER_CSS__*/';
+const BANNER_SPECS = [
   ['pa-hero--awards', 'heisman-stage.png',   '#0B0906', '72% 8%/cover no-repeat'],
   ['pa-hero--draft',  'nfl-draft-stage.png', '#07101F', 'center 38%/cover no-repeat'],
-].forEach((b) => {
-  const uri = fileDataUri(path.join(ASSET_DIR, b[1]));
-  if (uri) bannerCss.push('.' + b[0] + '{background:' + b[2] + ' url(' + uri + ') ' + b[3] + '}');
-  else console.warn('warn: banner asset not found: assets/' + b[1] + ' (hero keeps its solid color)');
-});
+];
+const BANNER_MAX_W = 1400;   // hero displays ≤1280 CSS px; a little retina headroom
+const BANNER_JPEG_Q = 70;
+
+async function buildBannerCss() {
+  let sharp = null;
+  try { sharp = require('sharp'); } catch (e) { console.warn('warn: sharp not installed — banners inlined raw (may exceed size limit). Run: npm install sharp'); }
+  const rules = [];
+  for (const [cls, name, color, pos] of BANNER_SPECS) {
+    const p = resolveAssetPath(path.join(ASSET_DIR, name));
+    if (!p) { console.warn('warn: banner asset not found: assets/' + name + ' (hero keeps its solid color)'); continue; }
+    let uri;
+    if (sharp) {
+      try {
+        const buf = await sharp(p).rotate().resize({ width: BANNER_MAX_W, withoutEnlargement: true }).jpeg({ quality: BANNER_JPEG_Q, mozjpeg: true }).toBuffer();
+        uri = 'data:image/jpeg;base64,' + buf.toString('base64');
+        console.log('  banner ' + name + ' -> ' + (buf.length / 1024).toFixed(0) + ' KB (from ' + (fs.statSync(p).size / 1024).toFixed(0) + ' KB)');
+      } catch (e) { console.warn('warn: could not process banner ' + name + ' (' + e.message + '); inlining raw'); uri = fileDataUri(p); }
+    } else {
+      uri = fileDataUri(p);
+    }
+    if (uri) rules.push('.' + cls + '{background:' + color + ' url(' + uri + ') ' + pos + '}');
+  }
+  return rules;
+}
 
 // <img src> / string-literal asset paths -> data URIs (replaced in the assembled
 // output below).
@@ -203,7 +245,7 @@ const logoCss = [
 const extraCss = [
   '.cffb-boot{padding:40px;text-align:center;color:var(--fg-secondary,#9A9A96);font-family:var(--font-body,sans-serif)}',
   logoCss,
-  bannerCss.join('\n'),
+  BANNER_MARK,   // replaced with the resized banner CSS in main()
 ].join('\n');
 
 // ---------------------------------------------------------------------------
@@ -270,23 +312,32 @@ Object.keys(IMG_ASSETS).forEach((ref) => {
   out = out.split(ref).join(uri || TRANSPARENT_PNG);
 });
 
-// Sanity check: never ship a tag MFL rejects.
-const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
-if (banned.test(out)) {
-  const m = out.match(banned)[0];
-  const idx = out.search(banned);
-  console.error('ERROR: output contains a banned MFL tag: ' + m);
-  console.error('       …' + out.slice(Math.max(0, idx - 60), idx + 60).replace(/\n/g, ' ') + '…');
-  process.exit(1);
+main().catch((e) => { console.error(e); process.exit(1); });
+
+async function main() {
+  // Resize/recompress the hero banners (async) and inject their CSS.
+  const bannerRules = await buildBannerCss();
+  out = out.replace(BANNER_MARK, bannerRules.join('\n'));
+
+  // Sanity check: never ship a tag MFL rejects.
+  const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
+  if (banned.test(out)) {
+    const m = out.match(banned)[0];
+    const idx = out.search(banned);
+    console.error('ERROR: output contains a banned MFL tag: ' + m);
+    console.error('       …' + out.slice(Math.max(0, idx - 60), idx + 60).replace(/\n/g, ' ') + '…');
+    process.exit(1);
+  }
+
+  fs.writeFileSync(OUT_PATH, out, 'utf-8');
+
+  const bytes = Buffer.byteLength(out, 'utf-8');
+  console.log('home-message-player-awards.html generated.');
+  console.log('  Path: ' + OUT_PATH);
+  console.log('  Feed: ' + WEBAPP_URL + '?feed=awards');
+  console.log('  Logos inlined: ' + Object.keys(confLogos).join(', '));
+  console.log('  Banners inlined: ' + bannerRules.length + '/2');
+  console.log('  Draft logo: ' + (draftLogoUri ? 'inlined' : 'placeholder fallback'));
+  console.log('  Size: ' + bytes + ' bytes (' + (bytes / 1024).toFixed(1) + ' KB) — MFL limit is 768 KB');
+  if (bytes > 768 * 1024) console.warn('  ⚠ OVER the 768 KB MFL limit — lower BANNER_MAX_W / BANNER_JPEG_Q or provide smaller art.');
 }
-
-fs.writeFileSync(OUT_PATH, out, 'utf-8');
-
-const bytes = Buffer.byteLength(out, 'utf-8');
-console.log('home-message-player-awards.html generated.');
-console.log('  Path: ' + OUT_PATH);
-console.log('  Feed: ' + WEBAPP_URL + '?feed=awards');
-console.log('  Logos inlined: ' + Object.keys(confLogos).join(', '));
-console.log('  Banners inlined: ' + (bannerCss.length ? bannerCss.length + '/2' : 'none (assets/ empty)'));
-console.log('  Draft logo: ' + (draftLogoUri ? 'inlined' : 'placeholder fallback'));
-console.log('  Size: ' + bytes + ' bytes (' + (bytes / 1024).toFixed(1) + ' KB) — MFL limit is 768 KB');

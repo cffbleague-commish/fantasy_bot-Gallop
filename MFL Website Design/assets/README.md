@@ -1,10 +1,20 @@
 # Player Awards — banner & icon assets
 
 `build-player-awards.js` inlines these files as data URIs into
-`home-message-player-awards.html`. Drop the real art here (exact names/paths),
-then re-run `node build-player-awards.js`. Missing files are non-fatal — banners
-fall back to their solid color and `<img>` icons to a transparent pixel — so the
-build always succeeds; it just logs what's missing.
+`home-message-player-awards.html`. Drop the real art here, then re-run
+`node build-player-awards.js`. Missing files are non-fatal — banners fall back to
+their solid color and `<img>` icons to a transparent pixel — so the build always
+succeeds; it just logs what's missing.
+
+**Naming:** use the basenames below; **any image extension works** (`.png`,
+`.jpg`, `.webp`, …) — e.g. `heisman-stage.jpg` resolves for the `heisman-stage`
+banner. The file must be named the basename, though: a file called
+`My-Cool-Heisman-Photo.jpg` will NOT be picked up — rename it to `heisman-stage.jpg`.
+
+**Banners are auto-optimized:** the two hero banners are resized to ≤1400px wide
+and recompressed to JPEG (via `sharp`) so the whole message stays under MFL's
+768 KB limit. Drop in full-res art; the build shrinks it. (Requires `sharp` —
+already installed; `npm install sharp` if a fresh checkout complains.)
 
 Expected files (paths are relative to this `assets/` folder):
 
