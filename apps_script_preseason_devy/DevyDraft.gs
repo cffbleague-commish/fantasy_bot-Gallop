@@ -549,7 +549,13 @@ function getDevyDraftSettingsSheet() {
       ["CurrentPick", "1"],
       ["PickDeadlineHours", "24"],
       ["CurrentPickDeadline", ""],
-      ["TotalRounds", "2"]
+      ["TotalRounds", "2"],
+      // Cycle-stage board (see the CYCLE STAGE section). Per-conference
+      // Status_<CONF> keys are created lazily when a conference starts.
+      ["CyclePhase", "not_started"],
+      ["CyclePhaseLabel", "Not started"],
+      ["CyclePhaseUpdated", ""],
+      ["SkipGraceHours", "24"]
     ];
     sheet.getRange(2, 1, defaultSettings.length, 2).setValues(defaultSettings);
   }
@@ -1985,6 +1991,9 @@ function startDevyDraft(conference) {
     setDevyDraftSetting("DraftStatus", "completed");
     setDevyDraftSetting("CurrentConference", conference);
     setDevyDraftSetting("CurrentPickDeadline", "");
+    setDevyConfStatus(conference, "completed");
+    setDevyCyclePhase("DRAFTING");
+    reevaluateDevyCyclePhase();
     return {
       success: true,
       draftComplete: true,
@@ -1999,6 +2008,8 @@ function startDevyDraft(conference) {
   setDevyDraftSetting("CurrentConference", conference);
   setDevyDraftSetting("CurrentRound", String(firstOpen[colMap["Round"]]));
   setDevyDraftSetting("CurrentPick", String(firstOpen[colMap["Pick"]]));
+  setDevyCyclePhase("DRAFTING");
+  setDevyConfStatus(conference, "in_progress");
 
   // Set initial pick deadline
   const deadlineHours = parseInt(settings["PickDeadlineHours"]) || 24;
@@ -2255,14 +2266,9 @@ function advanceDevyDraft(conference) {
   }
 
   if (nextIndex >= conferencePicks.length) {
-    // Draft complete for this conference
-    setDevyDraftSetting("DraftStatus", "completed");
-    setDevyDraftSetting("CurrentPickDeadline", "");
-
-    return {
-      draftComplete: true,
-      message: `Devy draft complete for ${conference}`
-    };
+    // Walked off the end of the order. If owed SKIPPED slots remain, hold in
+    // awaiting_makeups; otherwise mark the conference complete.
+    return finalizeDevyConferenceIfComplete(conference);
   }
 
   // Move to next open pick
@@ -2410,6 +2416,15 @@ function handleDevyDraftRequest(action, params) {
 
       case "makePick":
         return makeDevyPick(params.conference, params.franchiseId, params.playerId);
+
+      case "makeupPick":
+        return makeDevyMakeupPick(params.conference, params.franchiseId, params.playerId);
+
+      case "skipCurrentPick":
+        return skipDevyCurrentPick(params.conference);
+
+      case "autoPickSkips":
+        return autoPickExpiredDevySkips(params.conference);
 
       case "getAvailablePlayers":
         // Now requires conference parameter for conference-specific pools
@@ -2583,6 +2598,38 @@ function bulkImportDevyPlayers(playersArray) {
  * TEST 1: Initialize all sheets
  * Run this first to create all required sheets
  */
+/**
+ * TEST: exercise the stage/skip/make-up/auto-pick engine end to end and log the
+ * result. Run from the Apps Script editor after a conference draft is started
+ * (Run → TEST_DEVY_SkipMakeupFlow, then View → Logs). Non-destructive beyond the
+ * conference you pass; it drives real writes, so use a scratch/test conference.
+ */
+function TEST_DEVY_SkipMakeupFlow(conference) {
+  conference = (conference || "SEC").toUpperCase();
+  var year = Number(getDevyDraftSetting("DraftYear"));
+  Logger.log("Conference=%s Year=%s CyclePhase=%s Status_%s=%s",
+    conference, year, getDevyCyclePhase(), conference, getDevyConfStatus(conference));
+
+  var cur = getCurrentDevyPick(conference);
+  if (!cur.success) { Logger.log("No live pick (%s). Start the draft first.", cur.message); return; }
+  Logger.log("On the clock: %s R%s.%s (fid %s)", cur.teamName, cur.round, cur.pick, cur.franchiseId);
+
+  var skip = skipDevyCurrentPick(conference);
+  Logger.log("skip -> %s | owed now: %s", JSON.stringify(skip),
+    JSON.stringify(getOwedDevySlots(conference, year).map(function (s) { return s.round + "." + s.pick; })));
+
+  var auto = autoPickExpiredDevySkips(conference); // fills only slots past SkipGraceHours
+  Logger.log("autopick (grace-gated) -> %s", JSON.stringify(auto));
+  Logger.log("Status_%s now: %s | remaining owed: %d",
+    conference, getDevyConfStatus(conference), getOwedDevySlots(conference, year).length);
+}
+
+/** TEST: dump the web-feed payload for a franchise so you can eyeball what the
+ * widget will receive (run from the DevyDraftWebApp.gs project). */
+function TEST_DEVY_Feed(fid) {
+  Logger.log(JSON.stringify(buildDevyFeed(devyPad4(fid || "5")), null, 2));
+}
+
 function TEST_1_InitializeSheets() {
   Logger.log("Creating DevyPlayerPool sheet...");
   getDevyPlayerPoolSheet();
@@ -3145,6 +3192,7 @@ function generateDraftOrderFromStandings(draftYear, conferences = null) {
 
   // Update DraftYear setting so startDevyDraft knows what year to use
   setDevyDraftSetting("DraftYear", draftYear);
+  setDevyCyclePhase("ORDER_READY");
 
   return {
     success: true,
@@ -3249,6 +3297,7 @@ function applyRetentionsToDraft(draftYear, conferences = null) {
     applied.push(`${row[rc["PlayerName"]]} → ${conference} R${round}.${slot.pick}`);
   }
 
+  setDevyCyclePhase("RETENTIONS_APPLIED");
   return {
     success: true,
     message: `Applied ${applied.length} retention(s) to the ${year} draft; skipped ${skipped.length}.`,
@@ -3371,6 +3420,7 @@ function openRetentionWindow(year, conference) {
     retSheet.getRange(lastRow + 1, 1, newRows.length, DEVY_RETENTION_HISTORY_HEADERS.length).setValues(newRows);
   }
 
+  setDevyCyclePhase("RETENTION_OPEN");
   return {
     success: true,
     message: `Opened retention window for ${year}: seeded ${newRows.length} PENDING decision(s).`,
@@ -3486,6 +3536,7 @@ function finalizeDevyRetention(year, conference) {
     }
   }
 
+  setDevyCyclePhase("RETENTION_CLOSED");
   return {
     success: true,
     message: `Finalized ${year}: auto-retained ${retained.length}, auto-released ${released.length}.`,
@@ -3635,4 +3686,265 @@ function menuClearDraftOrder() {
     `Deleted ${deleted} picks from ${conference} draft order.`,
     ui.ButtonSet.OK
   );
+}
+
+// ============================================================================
+// CYCLE STAGE + PER-CONFERENCE STATUS  (Part 4 of the Devy web/bot plan)
+// ============================================================================
+//
+// TWO-ENGINE PARITY — these DevyDraftSettings keys are written by BOTH this
+// Apps Script project and the Python bot (fantasy_bot.py). If you change a key
+// name or an allowed value here, mirror it there (and vice-versa). Canonical set:
+//
+//   CyclePhase         not_started | RETENTION_OPEN | RETENTION_CLOSED |
+//                      ORDER_READY | RETENTIONS_APPLIED | DRAFTING | COMPLETE
+//   CyclePhaseLabel    human-readable label for the current phase (display only)
+//   CyclePhaseUpdated  ISO timestamp of the last phase change
+//   Status_<CONF>      not_started | in_progress | awaiting_makeups | completed
+//   SkipGraceHours     hours a SKIPPED (owed) slot waits before best-available
+//                      auto-pick (default 24)
+//
+// A SKIPPED slot is a DevyDraftHistory row whose PlayerID is DEVY_SKIPPED_PLAYER_ID
+// (a placeholder written when a team's clock expires). getFilledSlotSet treats it
+// as "consumed" so the live draft advances past it, but the slot is still "owed"
+// until the team makes it up (or grace auto-pick fills it).
+
+const DEVY_SKIPPED_PLAYER_ID = "__SKIPPED__";
+
+const DEVY_CYCLE_PHASE_LABELS = {
+  not_started:        "Not started",
+  RETENTION_OPEN:     "Retention window open",
+  RETENTION_CLOSED:   "Retention finalized",
+  ORDER_READY:        "Draft order generated",
+  RETENTIONS_APPLIED: "Retentions applied to draft",
+  DRAFTING:           "Draft in progress",
+  COMPLETE:           "Draft complete"
+};
+
+/** Set the cycle phase + its label + an updated timestamp in one call. */
+function setDevyCyclePhase(phase) {
+  setDevyDraftSetting("CyclePhase", phase);
+  setDevyDraftSetting("CyclePhaseLabel", DEVY_CYCLE_PHASE_LABELS[phase] || phase);
+  setDevyDraftSetting("CyclePhaseUpdated", new Date().toISOString());
+}
+
+function getDevyCyclePhase() {
+  return getDevyDraftSetting("CyclePhase") || "not_started";
+}
+
+/** Per-conference status key (Status_SEC, Status_B1G, …). Created lazily. */
+function setDevyConfStatus(conference, status) {
+  setDevyDraftSetting("Status_" + String(conference).toUpperCase(), status);
+}
+
+function getDevyConfStatus(conference) {
+  return getDevyDraftSetting("Status_" + String(conference).toUpperCase()) || "not_started";
+}
+
+/**
+ * Bump CyclePhase to COMPLETE only once every conference that has started
+ * (Status_<CONF> is not "not_started") has reached "completed" — i.e. none are
+ * "in_progress" or "awaiting_makeups".
+ */
+function reevaluateDevyCyclePhase() {
+  const settings = getAllDevyDraftSettings();
+  let anyStarted = false, anyIncomplete = false;
+  Object.keys(settings).forEach(function (k) {
+    if (k.indexOf("Status_") === 0) {
+      const v = settings[k];
+      if (v && v !== "not_started") anyStarted = true;
+      if (v === "in_progress" || v === "awaiting_makeups") anyIncomplete = true;
+    }
+  });
+  if (anyStarted && !anyIncomplete) setDevyCyclePhase("COMPLETE");
+}
+
+// ============================================================================
+// SKIP / MAKE-UP MODEL  (Part 5.3)
+// ============================================================================
+
+/**
+ * Owed (SKIPPED) slots for a conference/year — DevyDraftHistory rows whose
+ * PlayerID is the SKIPPED sentinel, i.e. a team's clock expired and the pick is
+ * still owed. Sorted by overall pick.
+ */
+function getOwedDevySlots(conference, year) {
+  const sheet = getDevyDraftHistorySheet();
+  const data = sheet.getDataRange().getValues();
+  const c = {};
+  data[0].forEach((h, i) => c[h] = i);
+
+  const owed = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (Number(row[c["Year"]]) === Number(year) &&
+        row[c["Conference"]] === conference &&
+        row[c["PlayerID"]] === DEVY_SKIPPED_PLAYER_ID) {
+      owed.push({
+        rowIndex: i + 1, // 1-based sheet row (for in-place overwrite)
+        round: row[c["Round"]],
+        pick: row[c["Pick"]],
+        overallPick: row[c["OverallPick"]],
+        franchiseId: String(row[c["FranchiseID"]]).padStart(3, "0"),
+        teamName: row[c["TeamName"]],
+        skippedAt: row[c["Timestamp"]]
+      });
+    }
+  }
+  return owed.sort((a, b) => a.overallPick - b.overallPick);
+}
+
+/**
+ * When advanceDevyDraft walks off the end of the order: if owed SKIPPED slots
+ * remain, hold the conference in "awaiting_makeups" (clock cleared, make-up
+ * window open); otherwise mark it completed and re-evaluate the global phase.
+ */
+function finalizeDevyConferenceIfComplete(conference) {
+  const draftYear = Number(getDevyDraftSetting("DraftYear"));
+  const owed = getOwedDevySlots(conference, draftYear);
+  setDevyDraftSetting("CurrentPickDeadline", "");
+
+  if (owed.length > 0) {
+    setDevyConfStatus(conference, "awaiting_makeups");
+    // The live clock is meaningless while only owed slots remain — make-up picks
+    // fill their original slot directly and don't consult CurrentRound/Pick.
+    setDevyDraftSetting("CurrentRound", "");
+    setDevyDraftSetting("CurrentPick", "");
+    return {
+      draftComplete: false,
+      awaitingMakeups: true,
+      owedCount: owed.length,
+      message: `${conference}: draft order exhausted; ${owed.length} owed pick(s) awaiting make-up.`
+    };
+  }
+
+  setDevyConfStatus(conference, "completed");
+  setDevyDraftSetting("DraftStatus", "completed"); // back-compat global flag
+  reevaluateDevyCyclePhase();
+  return { draftComplete: true, message: `Devy draft complete for ${conference}` };
+}
+
+/**
+ * Skip the pick currently on the clock: write a SKIPPED placeholder for that
+ * exact slot and advance. The draft keeps moving; the owed team can make it up.
+ * Called by the bot's watcher when now > CurrentPickDeadline.
+ */
+function skipDevyCurrentPick(conference) {
+  const current = getCurrentDevyPick(conference);
+  if (!current.success) return current;
+
+  const draftYear = Number(getDevyDraftSetting("DraftYear"));
+  const historySheet = getDevyDraftHistorySheet();
+
+  // Guard: don't double-skip a slot that already has a history row.
+  const filled = getFilledSlotSet(draftYear, conference);
+  if (filled.has(`${current.round}-${current.pick}`)) {
+    return { success: false, message: "Current slot already recorded; nothing to skip." };
+  }
+
+  // Order matches DEVY_DRAFT_HISTORY_HEADERS; PlayerID = sentinel marks it owed.
+  const row = [
+    draftYear, conference, current.round, current.pick, current.overallPick,
+    current.franchiseId, current.teamName,
+    DEVY_SKIPPED_PLAYER_ID, "SKIPPED", "", "", "", "", new Date().toISOString()
+  ];
+  historySheet.getRange(historySheet.getLastRow() + 1, 1, 1, DEVY_DRAFT_HISTORY_HEADERS.length).setValues([row]);
+
+  const adv = advanceDevyDraft(conference);
+  return {
+    success: true,
+    skipped: {
+      round: current.round, pick: current.pick,
+      franchiseId: current.franchiseId, teamName: current.teamName
+    },
+    nextPick: adv.nextPick,
+    draftComplete: adv.draftComplete,
+    awaitingMakeups: adv.awaitingMakeups
+  };
+}
+
+/**
+ * Make-up pick: a team that was skipped fills its owed slot. Overwrites the
+ * SKIPPED placeholder row in place (matched by its earliest owed overall pick)
+ * with a real selection from the currently-available pool. Does NOT touch the
+ * live clock, so it can never preempt or reorder the team currently on the clock.
+ */
+function makeDevyMakeupPick(conference, franchiseId, playerId) {
+  const draftYear = Number(getDevyDraftSetting("DraftYear"));
+  const normFid = String(franchiseId).padStart(3, "0");
+
+  const owed = getOwedDevySlots(conference, draftYear).filter(s => s.franchiseId === normFid);
+  if (owed.length === 0) {
+    return { success: false, message: `You have no owed make-up pick in ${conference}.` };
+  }
+  const slot = owed[0]; // earliest owed slot
+
+  const player = getAvailableDevyPlayers(conference).find(p => p.playerId === playerId);
+  if (!player) {
+    return { success: false, message: "Player not found in this conference or already drafted" };
+  }
+  if (player.conference !== conference) {
+    return { success: false, message: `Player belongs to ${player.conference}, not ${conference}` };
+  }
+
+  const historySheet = getDevyDraftHistorySheet();
+  const playerNameMFL = `${player.lastName}, ${player.firstName}`;
+  const row = [
+    draftYear, conference, slot.round, slot.pick, slot.overallPick,
+    normFid, slot.teamName, player.playerId, playerNameMFL,
+    player.firstName, player.lastName, player.position, "", new Date().toISOString()
+  ];
+  // Overwrite the SKIPPED placeholder row in place.
+  historySheet.getRange(slot.rowIndex, 1, 1, DEVY_DRAFT_HISTORY_HEADERS.length).setValues([row]);
+  markPlayerDrafted(playerId, normFid, draftYear);
+
+  // If that closed the last owed slot for a conference awaiting make-ups, finish it.
+  const remaining = getOwedDevySlots(conference, draftYear);
+  if (remaining.length === 0 && getDevyConfStatus(conference) === "awaiting_makeups") {
+    setDevyConfStatus(conference, "completed");
+    reevaluateDevyCyclePhase();
+  }
+
+  return {
+    success: true,
+    makeup: true,
+    message: `${slot.teamName} made up pick ${slot.round}.${slot.pick}: ${player.firstName} ${player.lastName} (${player.position})`,
+    pick: {
+      round: slot.round, pick: slot.pick, overallPick: slot.overallPick,
+      player: `${player.firstName} ${player.lastName}`, position: player.position
+    },
+    conferenceComplete: remaining.length === 0
+  };
+}
+
+/**
+ * Grace-period auto-pick: fill any owed slot older than SkipGraceHours with the
+ * best-available player (top of the conference pool, which is stored in KTC rank
+ * order). Re-reads owed slots each iteration so it stays correct as it fills them.
+ * Called by the bot's watcher on each tick.
+ */
+function autoPickExpiredDevySkips(conference) {
+  const graceHours = Number(getDevyDraftSetting("SkipGraceHours")) || 24;
+  const draftYear = Number(getDevyDraftSetting("DraftYear"));
+  const now = new Date().getTime();
+  const results = [];
+
+  let guard = 0;
+  while (guard++ < 100) {
+    const owed = getOwedDevySlots(conference, draftYear).filter(function (s) {
+      const t = Date.parse(s.skippedAt);
+      return !isNaN(t) && (now - t) >= graceHours * 3600 * 1000;
+    });
+    if (!owed.length) break;
+
+    // Best available = top of the KTC-ranked pool, excluding owned/Retained rows.
+    const avail = getAvailableDevyPlayers(conference).filter(p => p.status === "Available");
+    if (!avail.length) break;
+
+    const slot = owed[0]; // earliest expired owed slot
+    const res = makeDevyMakeupPick(conference, slot.franchiseId, avail[0].playerId);
+    if (!res.success) break;
+    results.push(res.message);
+  }
+  return { success: true, autoPicked: results };
 }

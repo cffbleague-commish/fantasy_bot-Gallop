@@ -4,10 +4,12 @@ from discord.ext import commands, tasks
 from collections import defaultdict
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import os
+import json
 import asyncio
 import traceback
+import urllib.request
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -844,6 +846,28 @@ DEVY_CHANNEL_IDS = {
 print(f"[DEBUG] Loaded conference channel IDs: {CONF_CHANNEL_IDS}")
 print(f"[DEBUG] Loaded devy channel IDs: {DEVY_CHANNEL_IDS}")
 print(f"[DEBUG] Fallback DRAFT_CHANNEL_ID: {DRAFT_CHANNEL_ID}")
+
+# ---- Devy web endpoint (single writer for skip / grace auto-pick + used by the
+# on-the-clock watcher). Point at the DevyDraftWebApp.gs /exec deployment. ----
+DEVY_WEBAPP_URL = os.getenv("DEVY_WEBAPP_URL")
+
+# Cycle-stage vocabulary written to DevyDraftSettings — MUST mirror DevyDraft.gs
+# (two-engine parity: change one, change both).
+DEVY_CYCLE_PHASE_LABELS = {
+    "not_started": "Not started",
+    "RETENTION_OPEN": "Retention window open",
+    "RETENTION_CLOSED": "Retention finalized",
+    "ORDER_READY": "Draft order generated",
+    "RETENTIONS_APPLIED": "Retentions applied to draft",
+    "DRAFTING": "Draft in progress",
+    "COMPLETE": "Draft complete",
+}
+DEVY_SKIPPED_PLAYER_ID = "__SKIPPED__"
+
+# Conferences the on-the-clock watcher is polling (turned on by /devy start,
+# turned off when a conference completes). Resumed on_ready if mid-draft.
+devy_watch_conferences = set()
+devy_watch_seen = {}  # conference -> fingerprint of last state the bot has seen
 
 # Track last posted Heisman leader to detect changes
 last_posted_heisman = None
@@ -6909,6 +6933,83 @@ def set_devy_draft_setting(key: str, value):
         print(f"Error setting devy draft setting: {e}")
         return False
 
+# ---- Cycle-stage helpers (mirror DevyDraft.gs — keep the two engines in parity) ----
+def set_devy_cycle_phase(phase: str):
+    set_devy_draft_setting("CyclePhase", phase)
+    set_devy_draft_setting("CyclePhaseLabel", DEVY_CYCLE_PHASE_LABELS.get(phase, phase))
+    set_devy_draft_setting("CyclePhaseUpdated", datetime.now().isoformat())
+
+def get_devy_cycle_phase():
+    return get_devy_draft_setting("CyclePhase") or "not_started"
+
+def set_devy_conf_status(conference: str, status: str):
+    set_devy_draft_setting(f"Status_{str(conference).upper()}", status)
+
+def get_devy_conf_status(conference: str):
+    return get_devy_draft_setting(f"Status_{str(conference).upper()}") or "not_started"
+
+def reevaluate_devy_cycle_phase():
+    """Bump CyclePhase to COMPLETE once every started conference is completed."""
+    if devy_draft_settings_ws is None:
+        return
+    try:
+        data = devy_draft_settings_ws.get_all_records(expected_headers=[])
+    except Exception:
+        return
+    any_started = any_incomplete = False
+    for row in data:
+        if str(row.get("SettingKey", "")).startswith("Status_"):
+            v = row.get("SettingValue")
+            if v and v != "not_started":
+                any_started = True
+            if v in ("in_progress", "awaiting_makeups"):
+                any_incomplete = True
+    if any_started and not any_incomplete:
+        set_devy_cycle_phase("COMPLETE")
+
+def get_owed_devy_slots(conference: str, year: int):
+    """DevyDraftHistory SKIPPED placeholders still owed (mirror of DevyDraft.gs)."""
+    if devy_draft_history_ws is None:
+        return []
+    try:
+        data = devy_draft_history_ws.get_all_records(expected_headers=[])
+    except Exception:
+        return []
+    owed = []
+    for row in data:
+        if (row.get("Year") == int(year) and row.get("Conference") == conference
+                and row.get("PlayerID") == DEVY_SKIPPED_PLAYER_ID):
+            owed.append({
+                "round": row.get("Round"), "pick": row.get("Pick"),
+                "overallPick": row.get("OverallPick"),
+                "franchiseId": str(row.get("FranchiseID")).zfill(3),
+                "teamName": row.get("TeamName"),
+            })
+    return sorted(owed, key=lambda s: s.get("overallPick") or 0)
+
+def _devy_endpoint_call(payload=None):
+    """POST payload (or GET when None) to the devy web endpoint. Sync — wrap in
+    asyncio.to_thread so it doesn't block the event loop."""
+    if not DEVY_WEBAPP_URL:
+        return {"success": False, "message": "DEVY_WEBAPP_URL not configured"}
+    try:
+        if payload is None:
+            req = urllib.request.Request(DEVY_WEBAPP_URL)
+        else:
+            req = urllib.request.Request(
+                DEVY_WEBAPP_URL,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "text/plain;charset=utf-8"},
+                method="POST",
+            )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return {"success": False, "message": f"endpoint error: {e}"}
+
+async def devy_endpoint_post(payload):
+    return await asyncio.to_thread(_devy_endpoint_call, payload)
+
 def get_available_devy_players(conference: str = None):
     """Get list of available (undrafted) devy players for a specific conference.
 
@@ -7608,9 +7709,19 @@ def advance_devy_draft(conference: str):
             next_idx += 1
 
         if current_idx is None or next_idx >= len(conf_picks):
-            # Draft complete
-            set_devy_draft_setting("DraftStatus", "completed")
+            # Reached the end of the order. If owed SKIPPED slots remain, hold in
+            # awaiting_makeups; otherwise complete (mirror of DevyDraft.gs).
             set_devy_draft_setting("CurrentPickDeadline", "")
+            owed = get_owed_devy_slots(draft_year, conference)
+            if owed:
+                set_devy_conf_status(conference, "awaiting_makeups")
+                set_devy_draft_setting("CurrentRound", "")
+                set_devy_draft_setting("CurrentPick", "")
+                return {"draftComplete": False, "awaitingMakeups": True, "owedCount": len(owed),
+                        "message": f"{conference}: {len(owed)} owed pick(s) awaiting make-up."}
+            set_devy_conf_status(conference, "completed")
+            set_devy_draft_setting("DraftStatus", "completed")
+            reevaluate_devy_cycle_phase()
             return {"draftComplete": True, "message": f"Devy draft complete for {conference}"}
 
         # Move to next open pick
@@ -7620,8 +7731,7 @@ def advance_devy_draft(conference: str):
 
         # Reset pick deadline (24 hours)
         deadline_hours = int(get_devy_draft_setting("PickDeadlineHours") or 24)
-        deadline = datetime.now()
-        deadline = deadline.replace(hour=deadline.hour + deadline_hours)
+        deadline = datetime.now() + timedelta(hours=deadline_hours)
         set_devy_draft_setting("CurrentPickDeadline", deadline.isoformat())
 
         return {
@@ -8067,6 +8177,14 @@ async def devy_pick(
     if next_user_mention and not result.get("draftComplete"):
         await interaction.channel.send(f"{next_user_mention} You're on the clock for the devy draft!")
 
+    # This pick was made through the bot and just announced above — update the
+    # watcher's fingerprint so it doesn't re-announce the same state as if it were
+    # a widget pick.
+    try:
+        devy_watch_seen[str(conference).upper()] = _devy_watch_key(str(conference).upper())
+    except Exception:
+        pass
+
 @devy_pick.autocomplete('player')
 async def devy_pick_autocomplete(interaction: discord.Interaction, current: str):
     """Autocomplete for devy pick - searches available players by name."""
@@ -8331,6 +8449,9 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
         # Every slot is already filled by retentions - nothing to draft.
         set_devy_draft_setting("DraftStatus", "completed")
         set_devy_draft_setting("CurrentPickDeadline", "")
+        set_devy_conf_status(conference.upper(), "completed")
+        set_devy_cycle_phase("DRAFTING")
+        reevaluate_devy_cycle_phase()
         await interaction.followup.send(f"All picks for {conference.upper()} ({draft_year}) are already filled by retentions.")
         return
 
@@ -8338,6 +8459,11 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
     set_devy_draft_setting("DraftStatus", "in_progress")
     set_devy_draft_setting("CurrentRound", str(first_open.get("Round")))
     set_devy_draft_setting("CurrentPick", str(first_open.get("Pick")))
+    set_devy_cycle_phase("DRAFTING")
+    set_devy_conf_status(conference.upper(), "in_progress")
+    # Turn on the on-the-clock watcher for this conference (announces widget picks,
+    # enforces the soft clock, grace auto-picks owed slots; stops when complete).
+    start_devy_watch(conference.upper())
 
     deadline_hours = int(get_devy_draft_setting("PickDeadlineHours") or 24)
     deadline = datetime.now()
@@ -9010,6 +9136,10 @@ async def devy_retention_start(interaction: discord.Interaction, year: int, conf
             status_lines.append(f"❌ {team_name} ({conf}): Error - {str(e)[:50]}")
             failed_count += 1
 
+    # A real (non-test) start opens the retention-window stage.
+    if not dm_to_me:
+        set_devy_cycle_phase("RETENTION_OPEN")
+
     # Send summary to commissioner
     title = "🧪 Devy Retention TEST" if dm_to_me else "🏈 Devy Retention Process Started"
     embed = discord.Embed(
@@ -9223,6 +9353,7 @@ async def devy_retention_finalize(interaction: discord.Interaction, year: int, c
         await interaction.followup.send(f"❌ {result.get('message')}")
         return
 
+    set_devy_cycle_phase("RETENTION_CLOSED")
     embed = discord.Embed(
         title="🔒 Retention Finalized",
         description=result["message"],
@@ -9254,6 +9385,7 @@ async def devy_retention_apply(interaction: discord.Interaction, year: int, conf
         await interaction.followup.send(f"❌ {result.get('message')}")
         return
 
+    set_devy_cycle_phase("RETENTIONS_APPLIED")
     embed = discord.Embed(
         title="📋 Retentions Applied to Draft",
         description=result["message"],
@@ -9448,6 +9580,108 @@ async def before_tuesday_rankings():
     """Wait until the bot is ready before starting the loop"""
     await bot.wait_until_ready()
 
+# ----------------- Devy on-the-clock watcher -----------------
+def _devy_parse_deadline(s):
+    """Parse a pick deadline written by either engine (Apps Script toISOString
+    ends in 'Z'; Python isoformat is naive). Returns a naive local datetime."""
+    if not s:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+        if dt.tzinfo is not None:
+            dt = dt.astimezone().replace(tzinfo=None)
+        return dt
+    except Exception:
+        return None
+
+def _devy_watch_key(conference):
+    """Fingerprint of a conference's state so the watcher only announces genuine
+    changes (e.g. a widget pick the bot didn't make itself)."""
+    cur = get_current_devy_pick(conference)
+    op = cur.get("overallPick") if cur else -1
+    n = 0
+    if devy_draft_history_ws is not None:
+        try:
+            data = devy_draft_history_ws.get_all_records(expected_headers=[])
+            n = sum(1 for r in data if r.get("Conference") == conference)
+        except Exception:
+            pass
+    return (op, n, get_devy_conf_status(conference))
+
+async def announce_devy_on_the_clock(conference, note=None):
+    """Post the standard on-the-clock ping to a conference's devy channel — the
+    single message format used whether a pick came from a slash command or the
+    widget."""
+    ch_id = DEVY_CHANNEL_IDS.get(str(conference).upper())
+    channel = bot.get_channel(ch_id) if ch_id else None
+    if channel is None:
+        return
+    cur = get_current_devy_pick(conference)
+    if not cur:
+        if get_devy_conf_status(conference) == "completed":
+            await channel.send(f"✅ **{conference} devy draft complete!**")
+        return
+    emoji_map = get_team_emoji_map()
+    owner_map = get_franchise_owner_map()
+    fid = cur["franchiseId"]
+    mention = f"<@{owner_map.get(fid)}>" if owner_map.get(fid) else ""
+    emoji = emoji_map.get(fid, "")
+    prefix = (note + "\n") if note else ""
+    msg = f"{prefix}🕐 {emoji} **{cur['teamName']}** is on the clock (R{cur['round']}P{cur['pick']}). {mention} 24 hours to make your pick."
+    await channel.send(msg.strip())
+
+@tasks.loop(seconds=30)
+async def devy_watch_loop():
+    """Runs only while a draft is live. Announces picks made outside the bot,
+    enforces the soft clock (auto-skip via the single-writer endpoint), grace
+    auto-picks owed slots, and stops itself once every watched conference ends."""
+    if not devy_watch_conferences:
+        devy_watch_loop.stop()
+        return
+    for conference in list(devy_watch_conferences):
+        try:
+            if get_devy_conf_status(conference) == "completed":
+                devy_watch_conferences.discard(conference)
+                devy_watch_seen.pop(conference, None)
+                await announce_devy_on_the_clock(conference)  # posts the complete message
+                continue
+            year = int(get_devy_draft_setting("DraftYear") or 0)
+            if DEVY_WEBAPP_URL:
+                # Grace auto-pick any owed slot past its window (endpoint = single writer).
+                if get_owed_devy_slots(conference, year):
+                    await devy_endpoint_post({"action": "autopick", "conference": conference})
+                # Soft clock: if the current pick's deadline has passed, skip it.
+                cur = get_current_devy_pick(conference)
+                dl = _devy_parse_deadline(cur.get("pickDeadline")) if cur else None
+                if dl and datetime.now() >= dl:
+                    res = await devy_endpoint_post({"action": "skip", "conference": conference})
+                    if res.get("success"):
+                        devy_watch_seen[conference] = _devy_watch_key(conference)
+                        await announce_devy_on_the_clock(conference, note="⏰ Clock expired — pick skipped (owed as a make-up).")
+                        continue
+            # Announce any state change the bot didn't just make (e.g. a widget pick).
+            key = _devy_watch_key(conference)
+            if devy_watch_seen.get(conference) != key:
+                devy_watch_seen[conference] = key
+                await announce_devy_on_the_clock(conference)
+        except Exception as e:
+            print(f"[devy_watch] {conference}: {e}")
+
+@devy_watch_loop.before_loop
+async def before_devy_watch():
+    await bot.wait_until_ready()
+
+def start_devy_watch(conference):
+    """Add a conference to the watcher (idempotent) and start the loop if idle."""
+    conference = str(conference).upper()
+    devy_watch_conferences.add(conference)
+    try:
+        devy_watch_seen[conference] = _devy_watch_key(conference)
+    except Exception:
+        pass
+    if not devy_watch_loop.is_running():
+        devy_watch_loop.start()
+
 # ----------------- Bot Ready Event & Guild Sync -----------------
 @bot.event
 async def on_ready():
@@ -9463,6 +9697,16 @@ async def on_ready():
     # Start the scheduled Tuesday rankings task
     if not post_tuesday_rankings.is_running():
         post_tuesday_rankings.start()
+
+    # Resume the devy on-the-clock watcher if a conference draft is mid-flight.
+    try:
+        if devy_draft_settings_ws is not None:
+            for row in devy_draft_settings_ws.get_all_records(expected_headers=[]):
+                k = str(row.get("SettingKey", ""))
+                if k.startswith("Status_") and row.get("SettingValue") in ("in_progress", "awaiting_makeups"):
+                    start_devy_watch(k[len("Status_"):])
+    except Exception as e:
+        print(f"[devy_watch] resume failed: {e}")
 
     guild = discord.Object(id=GUILD_ID)
 

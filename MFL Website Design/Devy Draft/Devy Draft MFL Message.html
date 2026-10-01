@@ -339,7 +339,7 @@
 </div>
 <div class="cf" data-dv="conf"></div><div class="tabs" role="tablist" data-dv="tabs"></div>
 <div data-dv="panel"></div>
-<div class="foot"><span>Viewing as <select data-dv="as"></select></span><span style="display:flex;gap:16px"><button type="button" data-act="simpre">Simulate pre-draft</button><button type="button" data-act="simpast">Simulate deadline passed</button><button type="button" data-act="reset">Reset demo</button></span></div>
+<div class="foot"><span data-dv="whoami">Signed in via MyFantasyLeague</span><span style="display:flex;gap:16px"><button type="button" data-act="refresh">Refresh</button></span></div>
 </div><div class="toast" data-dv="toast"></div></div>
 <script>
 (function(){
@@ -414,59 +414,91 @@ var DV = {
 /* ========================================== */
 var root=document.getElementById('cffb-dv'); if(!root) return;
 var $=function(k){return root.querySelector('[data-dv="'+k+'"]');};
-var T=DV.teams, CF=DV.conferences, H=DV.clockHours*3600e3, KEY='cffb-dv5-'+DV.season;
+/* ===== LIVE ENDPOINT \u2014 set at deploy (paste the Apps Script /exec URL, or let
+   build-devy-draft.js substitute the __DEVY_WEBAPP_URL__ token). The ?api= /
+   ?fid= query overrides are for LOCAL TESTING only; on MFL the injected
+   franchise_id global wins for identity and no such params are present. ===== */
+var DVQP=(function(){try{return new URLSearchParams(location.search);}catch(e){return {get:function(){return null;}};}})();
+var WEBAPP_URL = DVQP.get('api') || "__DEVY_WEBAPP_URL__";
+
+var T=DV.teams, CF=DV.conferences, H=DV.clockHours*3600e3;
 var pad=function(v){return (v<10?'0':'')+v;};
+var pad4=function(x){x=String(x==null?'':x).replace(/[^0-9]/g,'');if(!x) return '';while(x.length<4) x='0'+x;return x;};
 var tn=function(id){return T[id]?T[id].name:id;};
-function pill(id,sz){var t=T[id];if(!t) return '';return t.logo?'<img class="tp '+sz+'" src="'+t.logo+'" alt="'+t.name+'">':'<span class="tpc '+sz+'" style="background:'+t.color+';color:'+t.txt+'">'+t.abbr+'</span><b>'+t.name+'</b>';}
-function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-var F=['Jalen','Cam','Tre','Malik','Bryce','Dylan','Isaiah','Kaden','Marcus','Elijah','Jaylen','Carson','Devin','Xavier','Nico','Trey','Julian','Amari','Brock','Tyson','Zion','Quincy','Rashad','Colton','Micah','Owen','Deshawn','Landon','Cole','Terrell'];
-var L=['Whitfield','Okafor','Brandt','Delacroix','Hollis','Mercer','Tate','Rowe','Castellano','Pryor','Vance','Kimbrough','Lowery','Sutton','Abernathy','Ferrell','Guidry','Haskins','Ingram','Jessup','Keel','Lamar','Monroe','Nash','Ogden','Pettaway','Redd','Stokes','Toussaint','Upshaw'];
-var S=['Georgia','Ohio State','Texas','Alabama','LSU','Oregon','Michigan','Penn State','Miami','Notre Dame','Clemson','USC','Tennessee','Oklahoma','Florida State','Ole Miss'];
-var P=['QB','RB','RB','WR','WR','WR','TE'], C=['FR','RS FR','SO','RS SO','JR'];
-var used={};
-function gen(n,seed){var r=rng(seed),out=[];for(var i=0;i<n;i++){var nm,k=0;do{nm=F[Math.floor(r()*F.length)]+' '+L[Math.floor(r()*L.length)];k++;}while(used[nm]&&k<80);used[nm]=1;out.push({id:seed+'-'+i,n:nm,pos:P[Math.floor(r()*P.length)],sch:S[Math.floor(r()*S.length)],cls:C[Math.floor(r()*C.length)]});}out.forEach(function(p){p.elig=DV.season+({'FR':3,'RS FR':2,'SO':2,'RS SO':1,'JR':1})[p.cls];});return out;}
+function pill(id,sz){var t=T[id];if(!t) return '<span class="tpc '+sz+'" style="background:#2A2A2A;color:#F5F5F5">'+String(id)+'</span>';return t.logo?'<img class="tp '+sz+'" src="'+t.logo+'" alt="'+t.name+'">':'<span class="tpc '+sz+'" style="background:'+t.color+';color:'+t.txt+'">'+t.abbr+'</span><b>'+t.name+'</b>';}
 var confOf=function(t){for(var i=0;i<CF.length;i++) if(CF[i].order.indexOf(t)>-1) return CF[i];return CF[0];};
 var cById=function(id){return CF.filter(function(c){return c.id===id;})[0]||CF[0];};
-/* demo data */
-var POOL=gen(60,26).map(function(p,i){p.rk=i+1;return p;});
-var PREV={};CF.forEach(function(c,ci){[5+ci,14+ci*2,27+ci].forEach(function(i,j){PREV[c.id+':'+POOL[i].id]={by:c.order[(j*2+1)%c.order.length],yrs:(j%3)+1};});});
-var RETS=[{3:1,9:2,7:1},{6:1,10:3},{2:2,8:1,11:1},{7:1,1:1},{4:2,10:1},{9:1}], CUR=[4,8,1,3,7,10], AGO=[5*3600e3+17*60e3,19*3600e3+2*60e3,100*60e3,3*3600e3,11*3600e3,22*3600e3+30*60e3];
-var RETP=CF.map(function(c,ci){return gen(4,90+ci);});
-var ROST={};Object.keys(T).forEach(function(t,ti){var r=rng(300+ti);ROST[t]=gen(DV.rounds,500+ti).map(function(p,i){p.dy=DV.season-1-Math.floor(r()*3);p.dr=1+Math.floor(r()*DV.rounds);p.yrs=Math.max(0,DV.season-1-p.dy);p.reb=Math.max(0,[25,20,20,15][Math.floor(r()*4)]-DV.rebateStep*p.yrs);p.nfl=i===3&&(t===DV.me||ti%3===0);return p;});});
-(function(){var r=rng(77);Object.keys(ROST).forEach(function(t){ROST[t].forEach(function(p){if(!p.nfl){p.owner=t;POOL.push(p);}});});
-  POOL.forEach(function(p,i){p._w=(p.owner?i*0.35:i)+r()*12;});POOL.sort(function(a,b){return a._w-b._w;});POOL.forEach(function(p,i){p.rk=i+1;});})();
-function held(p,cid,ret){if(!p.owner||confOf(p.owner).id!==cid) return false;return ((ret||st.ret)[p.owner]||{})[p.id]!=='release';}
-function prevInfo(p,cid){var pv=PREV[cid+':'+p.id];if(pv) return pv;if(p.owner&&confOf(p.owner).id===cid&&p.yrs&&(st.ret[p.owner]||{})[p.id]==='release') return {by:p.owner,yrs:p.yrs};return null;}
-function fresh(){
-  var o={c:{},ret:{},sub:{}};
-  CF.forEach(function(c,ci){var N=c.order.length,TOT=N*DV.rounds,picks=[],pi=0,r=rng(7+ci);
-    for(var i=0;i<TOT;i++){var t=c.order[i%N];if(RETS[ci][i]){picks.push({t:t,p:RETP[ci][pi++],ret:RETS[ci][i]});continue;}picks.push({t:t,p:null});}
-    var avail=POOL.filter(function(p){return !(p.owner&&confOf(p.owner).id===c.id);});for(var j=0;j<CUR[ci];j++){if(picks[j].p) continue;var k=Math.min(avail.length-1,Math.floor(r()*4));picks[j].p=avail.splice(k,1)[0];}
-    o.c[c.id]={picks:picks,start:Date.now()-AGO[ci]};});
-  var r=rng(42);Object.keys(T).forEach(function(t){if(t===DV.me||r()<.35) return;var d={},k=0;ROST[t].forEach(function(p){if(p.nfl) return;var x=k<DV.maxRetained&&r()<.6?'retain':'release';if(x==='retain')k++;d[p.id]=x;});o.ret[t]=d;o.sub[t]=pad(8+Math.floor(r()*12))+':'+pad(Math.floor(r()*60))+' \u00B7 Sep '+(20+Math.floor(r()*7));});
-  return o;
+/* style lookup so the widget's colors/logos survive even if the sheet's
+   conference codes differ from the presentation ids (B10↔B1G, P12↔PAC, etc.) */
+var DVCONF={};DV.conferences.forEach(function(c){DVCONF[c.id]=c;});
+var CONF_ALIAS={SEC:'SEC',B1G:'B1G',B10:'B1G',BIG10:'B1G',ACC:'ACC',B12:'B12',BIG12:'B12',PAC:'PAC',P12:'PAC',AAC:'AAC'};
+function confStyle(id){var key=CONF_ALIAS[String(id).toUpperCase()]||String(id).toUpperCase();return DVCONF[key]||{color:'#5A5A5A',logo:''};}
+
+/* ===== live state, built from the ?feed=devy payload ===== */
+var FEED=null, ST={}, POOLBY={}, WORK=[], ROSTV=[], PASTF=[], me=DV.me, LOADED=false, LOADERR='', BUSY=false;
+function feedConf(id){return (FEED&&FEED.conferences||[]).filter(function(c){return c.id===id;})[0]||null;}
+function buildState(feed){
+  FEED=feed;
+  if(feed.season) DV.season=feed.season;
+  var s=feed.settings||{};
+  if(s.clockHours){DV.clockHours=s.clockHours;H=DV.clockHours*3600e3;}
+  if(s.maxRetained) DV.maxRetained=s.maxRetained;
+  if(s.rebateStep!=null) DV.rebateStep=s.rebateStep;
+  if(s.slotOrder) DV.slotOrder=s.slotOrder;
+  var ft=feed.teams||{};
+  Object.keys(ft).forEach(function(k){var f=ft[k];if(!T[k]) T[k]={name:f.name||k,abbr:f.abbr||k,color:f.color||'#2A2A2A',txt:f.txt||'#F5F5F5'};if(f.owner) T[k].own=f.owner;if(f.logo) T[k].logo=f.logo;if(f.abbr) T[k].abbr=T[k].abbr||f.abbr;});
+  ST={};POOLBY={};
+  // Rebuild the conference list from the feed (codes are authoritative); style
+  // from the presentation defaults via confStyle so colors/logos still apply.
+  if(feed.conferences&&feed.conferences.length){
+    CF=feed.conferences.map(function(fc){
+      var stl=confStyle(fc.id);
+      var r1=(fc.order||[]).slice().sort(function(a,b){return a.overallPick-b.overallPick;}).filter(function(o){return o.round===1;}).map(function(o){return o.franchiseId;});
+      return {id:fc.id,name:fc.label||fc.id,color:stl.color,logo:stl.logo,order:r1.length?r1:(stl.order||[])};
+    });
+  }
+  (feed.conferences||[]).forEach(function(fc){
+    var ord=(fc.order||[]).slice().sort(function(a,b){return a.overallPick-b.overallPick;});
+    var byRP={};(fc.picks||[]).forEach(function(pk){byRP[pk.round+'-'+pk.pick]=pk;});
+    var picks=ord.map(function(o){
+      var pk=byRP[o.round+'-'+o.pick];
+      if(pk&&pk.owed) return {t:o.franchiseId,p:null,owed:true};
+      if(pk&&pk.player) return {t:o.franchiseId,p:{id:pk.playerId,n:pk.player,pos:pk.position,elig:''},ret:pk.retention||0};
+      return {t:o.franchiseId,p:null};
+    });
+    var status=fc.status||'not_started', curIndex=-1;
+    if(status==='not_started') curIndex=-2;
+    else if(fc.current){for(var i=0;i<ord.length;i++){if(ord[i].round===fc.current.round&&ord[i].pick===fc.current.pick){curIndex=i;break;}}}
+    ST[fc.id]={picks:picks,curIndex:curIndex,status:status,current:fc.current||null,
+      deadline:(fc.current&&fc.current.pickDeadline)?Date.parse(fc.current.pickDeadline):0,
+      owed:(fc.owed||[])};
+    POOLBY[fc.id]=(fc.pool||[]).map(function(p){return {id:p.playerId,n:p.name,pos:p.pos,sch:'',elig:p.year,rk:p.rank};});
+  });
+  WORK=(feed.viewer&&feed.viewer.retentionWorklist)||[];
+  ROSTV=(feed.viewer&&feed.viewer.roster)||[];
+  PASTF=feed.past||[];
 }
-var st; try{st=JSON.parse(localStorage.getItem(KEY));}catch(e){}
-if(!st||!st.c||CF.some(function(c){return !st.c[c.id]||st.c[c.id].picks.length!==c.order.length*DV.rounds;})) st=fresh();
-st.custom=st.custom||[];var BASE=POOL;POOL=BASE.concat(st.custom);
-function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
-var me=(typeof franchise_id!=='undefined'&&T[franchise_id])?franchise_id:DV.me;
-var ui={tab:'draft',conf:confOf(me).id,team:me,sub:'board',q:'',pos:'ALL',hidePrev:false,sel:null,yr:DV.season-1};
-var cc=function(){return cById(ui.conf);}, cs=function(id){return st.c[id||ui.conf];};
+var ui={tab:'draft',conf:'',team:'',sub:'board',q:'',pos:'ALL',sel:null,yr:0};
+var cc=function(){return cById(ui.conf);}, cs=function(id){return ST[id||ui.conf]||{picks:[],curIndex:-2,status:'not_started',deadline:0,owed:[]};};
 var nOf=function(id){return cById(id||ui.conf).order.length;}, totOf=function(id){return nOf(id)*DV.rounds;};
-function curIdx(id){if(isPre(id)) return -2;var p=cs(id).picks;for(var i=0;i<p.length;i++) if(!p[i].p) return i;return -1;}
+function curIdx(id){return cs(id).curIndex;}
 function lab(i,id){var N=nOf(id);return (Math.floor(i/N)+1)+'.'+pad(i%N+1);}
 function draftedIn(id){var o={};cs(id).picks.forEach(function(k){if(k.p) o[k.p.id]=1;});return o;}
-function left(id){return Math.max(0,cs(id).start+H-Date.now());}
+function left(id){var d=cs(id).deadline;return d?Math.max(0,d-Date.now()):0;}
 function hms(ms){var s=Math.floor(ms/1e3);return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);}
-var myConf=function(){return confOf(me).id;};
-function onClock(){var mc=myConf();if(isPre(mc)) return false;var c=curIdx(mc);return c>-1&&cs(mc).picks[c].t===me;}
-var simOpen=0;function opensAt(cid){return simOpen||new Date(cById(cid).opens||DV.draftOpens).getTime();}
-function isPre(cid){return Date.now()<opensAt(cid||ui.conf);}
+var myConf=function(){return (FEED&&FEED.viewer&&FEED.viewer.conference)||confOf(me).id;};
+function onClock(){return !!(FEED&&FEED.viewer&&FEED.viewer.onClock);}
+function myOwed(){return (FEED&&FEED.viewer&&FEED.viewer.owedSlots)||[];}
+function canPick(id){return id===myConf()&&(onClock()||myOwed().length>0);}
+function isPre(id){return cs(id).status==='not_started';}
+function retentionOpen(){return !!(FEED&&FEED.settings&&FEED.settings.cyclePhase==='RETENTION_OPEN');}
 function fmtWhen(ms){var d=new Date(ms);return pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
 function untilTxt(ms){var s2=Math.floor(ms/1e3),dd=Math.floor(s2/86400),h=Math.floor(s2%86400/3600);return dd?dd+'d '+pad(h)+':'+pad(Math.floor(s2%3600/60)):hms(ms);}
-/* past drafts */
-var PAST={};CF.forEach(function(c,ci){PAST[c.id]={};[DV.season-1,DV.season-2,DV.season-3].forEach(function(y,yi){var r=rng(y*7+ci),N=c.order.length,pl=gen(N*DV.rounds,y*10+ci);PAST[c.id][y]=pl.map(function(p,i){var x=r(),s;if(x<.34)s={k:'ret',t:'Retained \u00B7 Yr '+Math.min(3,yi+1)};else if(x<.52)s={k:'pro',t:'Entered NFL'};else if(x<.7)s={k:'rel',t:'Released'};else s=null;return{t:c.order[i%N],p:p,s:s,wasRet:yi<2&&r()<.15?Math.ceil(r()*2):0};});});});
+/* endpoint I/O */
+function feedUrl(nc){return WEBAPP_URL+(WEBAPP_URL.indexOf('?')>=0?'&':'?')+'feed=devy&fid='+encodeURIComponent(me)+(nc?'&nocache=1':'');}
+function postAction(payload){payload.franchiseId=me;return fetch(WEBAPP_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
+function reload(nc,cb){return fetch(feedUrl(nc),{credentials:'omit'}).then(function(r){return r.json();}).then(function(feed){if(feed&&feed.error) throw new Error(feed.error);buildState(feed);LOADED=true;LOADERR='';if(!ui.conf||!CF.some(function(c){return c.id===ui.conf;})) ui.conf=myConf();if(!ui.yr) ui.yr=(PASTF[0]&&PASTF[0].year)||DV.season-1;if(cb) cb();render();}).catch(function(e){LOADED=true;LOADERR=String(e&&e.message||e);render();});}
+function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(function(res){BUSY=false;if(res&&res.success){reload(true);toast(okMsg||res.message||'Done.');}else{reload(true);toast((res&&res.message)||'That action was rejected.');}}).catch(function(e){BUSY=false;toast('Network error \u2014 try again.');});}
 /* ---------- render ---------- */
 function chipRet(y){return '<span class="chip ret sm" title="Retained \u00B7 year '+y+'">Ret \u00B7 Yr '+y+'</span>';}
 function confBar(){
@@ -474,35 +506,44 @@ function confBar(){
     return '<button type="button" role="tab" aria-selected="'+(ui.conf===c.id)+'" class="cfb'+(ui.conf===c.id?' on':'')+(mine?' mine':'')+'" data-act="conf" data-v="'+c.id+'" style="--cc:'+c.color+'">'+(c.logo?'<img src="'+c.logo+'" alt="" onerror="this.style.display=\'none\'">':'')+'<b>'+c.name+'</b><small class="n">'+(ci===-2?'Not live':ci<0?'Done':lab(ci,c.id))+'</small>'+(mine?'<em>Your conference</em>':'')+'</button>';}).join('');
 }
 function header(){
-  var c=curIdx(),cf=cc(),TOT=totOf(),N=nOf();$('season').textContent='CFFB \u00B7 '+DV.season+' Season \u00B7 '+cf.name;
-  var ot=c===-2?(cs().picks.filter(function(k){return !k.ret;})[0]||{}).t:c>-1?cs().picks[c].t:null;var pkLab=c===-2?(function(){var ft=cs().picks.filter(function(k){return !k.ret;})[0];return ft?lab(cs().picks.indexOf(ft)):'';})():c>-1?lab(c):'';
-  $('otcLab').innerHTML='<span>'+(c===-2?'First on the clock':'On the clock')+(pkLab?' \u00B7 Pick <span class="n">'+pkLab+'</span>':'')+(ot===me?' <em class="you">\u00B7 You</em>':'')+'</span>';root.querySelector('.live').classList.toggle('off',c===-2);
-  if(c===-2){var ft=cs().picks.filter(function(k){return !k.ret;})[0],fi=cs().picks.indexOf(ft);$('status').textContent='NOT LIVE YET \u00B7 OPENS '+fmtWhen(opensAt(ui.conf)).toUpperCase();$('otcTeam').innerHTML=pill(ft.t,'lg');$('otcMeta').innerHTML='';$('next').innerHTML='';return;}
-  if(c<0){$('status').textContent=cf.name.toUpperCase()+' \u00B7 DRAFT COMPLETE';$('otcTeam').innerHTML='<b>Draft complete</b>';$('otcMeta').textContent=TOT+' picks in';$('next').innerHTML='';return;}
-  var t=cs().picks[c].t;$('status').textContent='LIVE \u00B7 ROUND '+(Math.floor(c/N)+1)+' OF '+DV.rounds;
+  var c=curIdx(),cf=cc(),TOT=totOf(),N=nOf(),status=cs().status,live=root.querySelector('.live');
+  $('season').textContent='CFFB \u00B7 '+DV.season+' Season \u00B7 '+cf.name;
+  if(status==='not_started'){var ft=cs().picks[0]||{t:''};
+    $('otcLab').innerHTML='<span>First on the clock'+(ft.t===me?' <em class="you">\u00B7 You</em>':'')+'</span>';if(live) live.classList.add('off');
+    $('status').textContent=cf.name.toUpperCase()+' \u00B7 NOT LIVE YET';$('otcTeam').innerHTML=ft.t?pill(ft.t,'lg'):'<b>\u2014</b>';$('otcMeta').innerHTML='';$('next').innerHTML='';return;}
+  if(live) live.classList.remove('off');
+  if(status==='awaiting_makeups'){var ow=cs().owed.length;
+    $('otcLab').innerHTML='<span>Awaiting make-up picks</span>';$('status').textContent=cf.name.toUpperCase()+' \u00B7 MAKE-UP WINDOW';
+    $('otcTeam').innerHTML='<b>'+ow+' pick'+(ow!==1?'s':'')+' owed</b>';
+    $('otcMeta').innerHTML=(canPick(ui.conf)?'<button type="button" class="cta" data-act="gopool">Make up your pick<b>\u2192</b></button>':'');$('next').innerHTML='';return;}
+  if(c<0){$('otcLab').innerHTML='<span>On the clock</span>';$('status').textContent=cf.name.toUpperCase()+' \u00B7 DRAFT COMPLETE';$('otcTeam').innerHTML='<b>Draft complete</b>';$('otcMeta').textContent=TOT+' picks in';$('next').innerHTML='';return;}
+  var t=cs().picks[c].t;
+  $('otcLab').innerHTML='<span>On the clock \u00B7 Pick <span class="n">'+lab(c)+'</span>'+(t===me?' <em class="you">\u00B7 You</em>':'')+'</span>';
+  $('status').textContent='LIVE \u00B7 ROUND '+(Math.floor(c/N)+1)+' OF '+DV.rounds;
   $('otcTeam').innerHTML=pill(t,'lg');
   $('otcMeta').innerHTML=(t===me&&ui.conf===myConf()?'<button type="button" class="cta" data-act="gopool">Make your pick<b>\u2192</b></button>':'');
   var nx=[];for(var i=c+1;i<TOT&&nx.length<2;i++) if(!cs().picks[i].p) nx.push('<span class="nx">'+pill(cs().picks[i].t,'xs')+'<small class="n">'+lab(i)+'</small></span>');
   $('next').innerHTML=nx.length?'<small class="eb">Up next</small>'+nx.join(''):'';
 }
 function tick(){
-  CF.forEach(function(c){var e=root.querySelector('[data-cclk="'+c.id+'"]');if(e) e.textContent=hms(left(c.id));});
-  var c=curIdx(),box=$('clkBox');
-  if(c===-2){var u=opensAt(ui.conf)-Date.now();box.className='clk pre';$('clkLab').textContent='Draft opens in';$('clock').textContent=untilTxt(u);$('prog').style.width='0%';$('due').textContent='Opens '+fmtWhen(opensAt(ui.conf))+' \u00B7 24-hr pick clock';return;}
-  if(c<0){$('clock').textContent='00:00:00';$('prog').style.width='0%';$('due').textContent='';box.className='clk';return;}
+  if(!LOADED||LOADERR) return;
+  var c=curIdx(),box=$('clkBox'),status=cs().status;if(!box) return;
+  if(status==='not_started'){box.className='clk pre';$('clkLab').textContent='Not live yet';$('clock').textContent='--:--:--';$('prog').style.width='0%';$('due').textContent='The commissioner starts each conference draft.';return;}
+  if(status==='awaiting_makeups'){box.className='clk';$('clkLab').textContent='Make-up window';$('clock').textContent=String(cs().owed.length);$('prog').style.width='0%';$('due').textContent='Owed pick'+(cs().owed.length!==1?'s':'')+' can still be made.';return;}
+  if(c<0){$('clkLab').textContent='';$('clock').textContent='00:00:00';$('prog').style.width='0%';$('due').textContent='';box.className='clk';return;}
   var l=left(),txt=hms(l);
   $('clock').textContent=txt;$('prog').style.width=(l/H*100).toFixed(2)+'%';
   box.className='clk'+(l<3600e3?' hot':l<6*3600e3?' warn':'');
-  $('clkLab').innerHTML=l<=0?'Time expired<span class="h24"> \u00B7 commissioner to resolve</span>':'Time remaining<span class="h24"> \u00B7 24-hr clock</span>';
-  var d=new Date(cs().start+H);$('due').textContent='Pick due '+pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  $('clkLab').innerHTML=l<=0?'Time expired<span class="h24"> \u00B7 auto-advances soon</span>':'Time remaining<span class="h24"> \u00B7 24-hr clock</span>';
+  var dl=cs().deadline;if(dl){var d=new Date(dl);$('due').textContent='Pick due '+pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}else $('due').textContent='';
   root.querySelectorAll('[data-clk]').forEach(function(e){e.textContent=txt;});
 }
 function tabs(){
-  var d=st.ret[me]||{},pend=ROST[me].filter(function(p){return !p.nfl&&!d[p.id];}).length,sub=st.sub[me];
-  var dlMs=new Date(DV.retainDeadline).getTime(),late=ui.simPast||Date.now()>dlMs,dd=new Date(dlMs).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  var c=curIdx(),ds=c===-2?{k:'pre',t:'Opens '+new Date(opensAt(ui.conf)).toLocaleDateString('en-US',{month:'short',day:'numeric'})}:c<0?{k:'done',t:'Complete'}:{k:'live',t:(ui.conf===myConf()&&cs().picks[c].t===me)?'Live<b class="tsx"> \u00B7 You\u2019re up</b>':'Live<b class="tsx"> \u00B7 '+lab(c)+'</b>'};
-  var rs=sub?{k:'ok',t:'Submitted'}:late?{k:'late',t:'Deadline passed'}:{k:'due',t:(pend?'<b class="tsx">'+pend+' open \u00B7 </b>':'')+'Due '+dd};
-  var t=[['draft','Live Draft',ds],['ret','Retention',rs],['past','Past Drafts',{k:'mut',t:Object.keys(PAST[ui.conf]).length+' seasons'}]];
+  var pend=WORK.filter(function(w){return w.decision==='PENDING';}).length,rOpen=retentionOpen();
+  var c=curIdx(),status=cs().status;
+  var ds=status==='not_started'?{k:'pre',t:'Not live'}:status==='awaiting_makeups'?{k:'due',t:'Make-ups'}:c<0?{k:'done',t:'Complete'}:{k:'live',t:(ui.conf===myConf()&&cs().picks[c].t===me)?'Live<b class="tsx"> \u00B7 You\u2019re up</b>':'Live<b class="tsx"> \u00B7 '+lab(c)+'</b>'};
+  var rs=!WORK.length?{k:'mut',t:'\u2014'}:rOpen?(pend?{k:'due',t:'<b class="tsx">'+pend+' open \u00B7 </b>Due'}:{k:'ok',t:'All set'}):{k:'done',t:'Closed'};
+  var t=[['draft','Live Draft',ds],['ret','Retention',rs],['past','Past Drafts',{k:'mut',t:PASTF.length+' seasons'}]];
   $('tabs').innerHTML=t.map(function(x){return '<button class="tab'+(ui.tab===x[0]?' on':'')+'" role="tab" data-act="tab" data-v="'+x[0]+'"><span class="tl">'+x[1]+'</span><span class="ts '+x[2].k+'">'+(x[2].k==='live'?'<i></i>':'')+x[2].t+'</span></button>';}).join('');
 }
 function pickRow(k,i,c,past){
@@ -514,6 +555,7 @@ function pickRow(k,i,c,past){
     if(k.ret){cls+=' ret';tag=chipRet(k.ret);}
     if(k.ret&&i>c) cls+=' up';
   } else if(i===c){cls+=' cur';pl='<div class="pl"><span class="chip gold">On the clock</span></div>';tag='<span class="chip n" data-clk></span>';}
+  else if(k.owed){cls+=' up';pl='<div class="pl"><span class="chip red">Skipped \u00b7 owed</span></div>';}
   else {cls+=' up';pl='<div class="pl em">\u2014</div>';}
   if(k.t===me) cls+=' me';
   return '<div class="'+cls+'"><span class="no n">'+lab(i)+'</span><div class="tm"><span class="tw">'+pill(k.t,'sm')+'</span></div>'+pl+'<div class="tg">'+tag+'</div></div>';
@@ -526,83 +568,75 @@ function board(list,c,past){
 }
 function takenElsewhere(pid){return CF.filter(function(c){return c.id!==ui.conf&&draftedIn(c.id)[pid];}).map(function(c){return c.id;});}
 function poolList(){
-  var mc=myConf(),dr=isPre(mc)?{}:draftedIn(mc),q=ui.q.toLowerCase();
-  return POOL.filter(function(p){var pv=prevInfo(p,mc);return !dr[p.id]&&!held(p,mc)&&(ui.pos==='ALL'||p.pos===ui.pos)&&(!q||(p.n+' '+p.sch).toLowerCase().indexOf(q)>-1);});
+  var mc=myConf(),arr=POOLBY[mc]||[],q=ui.q.toLowerCase();
+  return arr.filter(function(p){return (ui.pos==='ALL'||p.pos===ui.pos)&&(!q||(p.n+' '+(p.sch||'')).toLowerCase().indexOf(q)>-1);});
 }
 function poolRows(){
-  var l=poolList();if(!l.length) return '<div class="empty">No players match.'+(ui.q?'<button type="button" data-act="openadd">Add “'+ui.q.replace(/</g,'&lt;')+'” as a new player</button>':'')+'</div>';
-  var mc=myConf();return l.map(function(p){var pv=prevInfo(p,mc),tags=(p.add?'<span class="chip">Added · pending review</span>':'');
-    return '<button type="button" class="pr'+(ui.sel===p.id?' sel':'')+'" data-act="sel" data-v="'+p.id+'"><span class="rk n">'+p.rk+'</span><span class="nm"><div><span class="pos '+p.pos+'">'+p.pos+'</span><b>'+p.n+'</b></div>'+(tags?'<div class="tgs">'+tags+'</div>':'')+'<small class="m">Elig. '+p.elig+'</small></span><span class="cl n">'+p.elig+'</span></button>';}).join('');
+  var l=poolList();if(!l.length) return '<div class="empty">No available players match.</div>';
+  return l.map(function(p){
+    return '<button type="button" class="pr'+(ui.sel===p.id?' sel':'')+'" data-act="sel" data-v="'+String(p.id).replace(/"/g,'&quot;')+'"><span class="rk n">'+p.rk+'</span><span class="nm"><div><span class="pos '+p.pos+'">'+p.pos+'</span><b>'+p.n+'</b></div><small class="m">Elig. '+(p.elig||'—')+'</small></span><span class="cl n">'+(p.elig||'—')+'</span></button>';}).join('');
 }
 function nextMine(){var id=myConf(),p=cs(id).picks;for(var i=Math.max(0,curIdx(id));i<p.length;i++) if(!p[i].p&&p[i].t===me) return lab(i,id);return '';}
 function actBar(){
-  var mc=myConf(),c=curIdx(mc),pk=cs(mc).picks,p=POOL.filter(function(x){return x.id===ui.sel;})[0],onc=c>-1&&pk[c].t===me,away=ui.conf!==mc,mine=onc&&!away,cn=confOf(me).name;
-  if(c===-2) return '<div class="act pre"><div><b>Draft isn\u2019t live yet</b><small>The '+cn+' draft opens '+fmtWhen(opensAt(mc))+'. Scout the pool now \u2014 picks unlock when it opens.</small></div><button type="button" class="btn pri" disabled>Draft player</button></div>';
-  if(c<0) return '<div class="act"><div><b>Draft complete</b><small>All '+totOf(mc)+' '+cn+' picks are in.</small></div></div>';
-  if(onc&&away) return '<div class="act"><div><b>You\u2019re on the clock in the '+cn+'</b><small>Picks can only be made from your own conference. Switch back to draft.</small></div><button type="button" class="btn pri" data-act="conf" data-v="'+mc+'">Go to '+cn+'</button></div>';
-  if(!p) return '<div class="act"><div><b>'+(mine?'You\u2019re on the clock':'Scout the pool')+'</b><small>'+(mine?'Select a player to make '+cn+' pick '+lab(c,mc)+'.':'Your next '+cn+' pick: '+(nextMine()||'none left')+'.')+'</small></div></div>';
-  return '<div class="act"><div><b>'+p.n+'</b><small>'+p.pos+' \u00B7 Elig. '+p.elig+(mine?' \u00B7 '+cn+' pick '+lab(c,mc):' \u00B7 Not your pick')+'</small></div><button type="button" class="btn pri" data-act="draft"'+(mine?'':' disabled')+'>Draft player</button></div>';
-}
-function addBox(){
-  var yrs='';for(var y=DV.season+1;y<=DV.season+4;y++) yrs+='<option value="'+y+'">'+y+'</option>';
-  return '<details class="add" data-dv="add"'+(ui.addOpen?' open':'')+'><summary>Can\u2019t find a player?<span>Add one</span></summary><div class="addb">'+
-  '<ol class="steps"><li>Search first. Try last name only and alternate spellings.</li><li>Enter his name as it appears on the school\u2019s official roster.</li><li>Pick his position and the first NFL draft he\u2019s eligible for.</li><li>Added players show in every conference\u2019s pool, tagged <b>Added</b> until the commissioner verifies. Duplicates get merged.</li></ol>'+
-  '<div class="form"><label class="fn">Player name<input type="text" data-add="n" placeholder="First Last" value="'+(ui.addName||'').replace(/"/g,'&quot;')+'" autocomplete="off"></label>'+
-  '<label>Pos<select data-add="pos"><option>QB</option><option>RB</option><option>WR</option><option>TE</option></select></label>'+
-  '<label class="fs">School<input type="text" data-add="sch" list="dv-sch" placeholder="e.g. Georgia" autocomplete="off"></label>'+
-  '<label>Draft elig.<select class="n" data-add="elig">'+yrs+'</select></label></div>'+
-  '<datalist id="dv-sch">'+S.map(function(x){return '<option value="'+x+'">';}).join('')+'</datalist>'+
-  '<div class="addf"><span class="err" data-dv="addErr"></span><button type="button" class="btn pri" data-act="addp">Add to pool</button></div></div></details>';
+  var mc=myConf(),c=curIdx(mc),status=cs(mc).status,p=(POOLBY[ui.conf]||[]).filter(function(x){return x.id===ui.sel;})[0],cn=confOf(me).name,owed=myOwed().length,onc=onClock();
+  if(ui.conf!==mc) return '<div class="act"><div><b>Scouting '+cc().name+'</b><small>You can only draft from your own conference ('+cn+'). Switch back to make a pick.</small></div><button type="button" class="btn" data-act="conf" data-v="'+mc+'">Go to '+cn+'</button></div>';
+  if(status==='not_started') return '<div class="act pre"><div><b>Draft isn\u2019t live yet</b><small>The '+cn+' draft opens when the commissioner starts it. Scout the pool now.</small></div><button type="button" class="btn pri" disabled>Draft player</button></div>';
+  if(c<0&&status!=='awaiting_makeups') return '<div class="act"><div><b>Draft complete</b><small>All '+totOf(mc)+' '+cn+' picks are in.</small></div></div>';
+  var mine=onc||owed>0, slotLab=owed>0&&!onc?'make-up pick':(cn+' pick '+(c>-1?lab(c,mc):''));
+  if(!mine) return '<div class="act"><div><b>Scout the pool</b><small>Your next '+cn+' pick: '+(nextMine()||'none left')+'.</small></div></div>';
+  if(!p) return '<div class="act"><div><b>'+(owed>0&&!onc?'You owe a make-up pick':'You\u2019re on the clock')+'</b><small>Select a player to make your '+slotLab+'.</small></div></div>';
+  return '<div class="act"><div><b>'+p.n+'</b><small>'+p.pos+' \u00B7 Elig. '+(p.elig||'\u2014')+' \u00B7 '+slotLab+'</small></div><button type="button" class="btn pri" data-act="draft"'+(BUSY?' disabled':'')+'>'+(owed>0&&!onc?'Make up pick':'Draft player')+'</button></div>';
 }
 function pDraft(){
-  var c=curIdx(),TOT=totOf();
-  return '<div class="pnl">'+(c===-2?'<div class="prebn"><i></i><div><b>'+cc().name+' draft isn\u2019t live yet</b><span>Opens '+fmtWhen(opensAt(ui.conf))+'. Each pick then gets a 24-hour clock. Retained players already fill their slots below.</span></div></div>':'')+'<div class="seg" role="tablist"><button type="button" data-act="sub" data-v="board" class="'+(ui.sub==='board'?'on':'')+'">Draft order</button><button type="button" data-act="sub" data-v="pool" class="'+(ui.sub==='pool'?'on':'')+(onClock()?' hot':'')+'">'+(onClock()?'<i></i>Pick from pool':'Player pool')+'</button></div>'+
+  var c=curIdx(),TOT=totOf(),status=cs().status,pre=status==='not_started',hot=canPick(ui.conf);
+  return '<div class="pnl">'+(pre?'<div class="prebn"><i></i><div><b>'+cc().name+' draft isn\u2019t live yet</b><span>The commissioner starts each conference draft. Retained players already fill their slots below. Each pick then gets a 24-hour clock.</span></div></div>':'')+'<div class="seg" role="tablist"><button type="button" data-act="sub" data-v="board" class="'+(ui.sub==='board'?'on':'')+'">Draft order</button><button type="button" data-act="sub" data-v="pool" class="'+(ui.sub==='pool'?'on':'')+(hot?' hot':'')+'">'+(hot?'<i></i>Pick from pool':'Player pool')+'</button></div>'+
   '<div class="grid" data-sub="'+ui.sub+'">'+
-  '<div class="gboard"><div class="sh"><h3>Draft Order</h3><span class="eb n">'+(c===-2?'Opens '+fmtWhen(opensAt(ui.conf)):(c<0?TOT:c)+' of '+TOT+' picks in')+'</span></div><div class="scroll" data-dv="bScroll">'+board(cs().picks,c)+'</div>'+
+  '<div class="gboard"><div class="sh"><h3>Draft Order</h3><span class="eb n">'+(pre?'Not live yet':(c<0?TOT:c)+' of '+TOT+' picks in')+'</span></div><div class="scroll" data-dv="bScroll">'+board(cs().picks,c)+'</div>'+
   '<div class="legend"><span><span class="chip ret sm">Ret \u00B7 Yr N</span> Slot used by a retained devy player</span></div></div>'+
-  '<div class="gpool'+(onClock()?' hot':'')+'"><div class="sh"><h3>Player Pool</h3>'+(onClock()?'<span class="chip gold yp"><i></i>You\u2019re on the clock</span>':'')+(ui.conf!==myConf()?'<span class="chip gold">Your '+confOf(me).name+' pool</span>':'')+'<div class="shr"><span class="eb n" data-dv="pc">'+poolList().length+' available</span></div></div>'+
-  '<p class="rule">One copy of each player per conference. A player taken in another conference is still available here.</p>'+addBox()+
+  '<div class="gpool'+(hot?' hot':'')+'"><div class="sh"><h3>Player Pool</h3>'+(hot?'<span class="chip gold yp"><i></i>You\u2019re up</span>':'')+(ui.conf!==myConf()?'<span class="chip gold">Scouting only</span>':'')+'<div class="shr"><span class="eb n" data-dv="pc">'+poolList().length+' available</span></div></div>'+
+  '<p class="rule">One copy of each player per conference. A player taken in another conference is still available here.</p>'+
   '<div class="tools"><input class="srch" type="search" placeholder="Search player" value="'+ui.q.replace(/"/g,'&quot;')+'" data-dv="q"><div class="fl">'+['ALL','QB','RB','WR','TE'].map(function(x){return '<button type="button" data-act="pos" data-v="'+x+'" class="'+(ui.pos===x?'on':'')+'">'+x+'</button>';}).join('')+'</div>'+
   '</div>'+
   '<div data-dv="act">'+actBar()+'</div><div class="scroll"><div class="ph"><span>RK</span><span>PLAYER</span><span>DRAFT ELIG.</span></div><div data-dv="rows">'+poolRows()+'</div></div></div></div></div>';
 }
-function slots(R,d){var o={},k=0;R.forEach(function(p){if(d[p.id]==='retain'){o[p.id]=DV.slotOrder[k]||null;k++;}});return o;}
 function pRet(){
-  var dlPast=ui.simPast||Date.now()>new Date(DV.retainDeadline).getTime(),t=me,edit=t===me,R=ROST[t],d=st.ret[t]||{},sub=st.sub[t],show=edit||sub,sl=slots(R,d),nRet=Object.keys(sl).length,step=DV.rebateStep;
-  var dl=new Date(DV.retainDeadline),dls=pad(dl.getHours())+':'+pad(dl.getMinutes())+' \u00B7 '+dl.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  var picker='<div class="tsel">'+cc().order.map(function(id){var s2=st.sub[id];return '<button type="button" class="tsb'+(id===t?' on':'')+'" data-act="team" data-v="'+id+'"><span class="tw">'+pill(id,'sm')+'</span><small class="'+(s2?'ok':'')+'">'+(id===me?'You \u00B7 ':'')+(s2?'Submitted':'Pending')+'</small></button>';}).join('')+'</div>';
-  var cards=R.map(function(p){var dd=d[p.id],isR=show&&dd==='retain',full=nRet>=DV.maxRetained&&dd!=='retain';
-    var yrs=p.yrs?'Retained '+p.yrs+' yr'+(p.yrs>1?'s':''):'Not yet retained';
+  var rOpen=retentionOpen(),cn=confOf(me).name,step=DV.rebateStep;
+  var nRet=WORK.filter(function(w){return w.decision==='RETAIN';}).length;
+  var nRel=WORK.filter(function(w){return w.decision==='RELEASE';}).length;
+  var pend=WORK.filter(function(w){return w.decision==='PENDING';}).length;
+  var cards=WORK.length?WORK.map(function(w){
+    var isR=w.decision==='RETAIN',isRel=w.decision==='RELEASE',full=nRet>=DV.maxRetained&&!isR;
     var dec;
-    if(p.nfl) dec='<div class="dec ro pend">Entered NFL \u00B7 not eligible</div>';
-    else if(edit) dec='<div class="dec" aria-disabled="'+(sub||dlPast?'true':'false')+'"><button type="button" data-act="dec" data-id="'+p.id+'" data-v="retain" class="retain'+(dd==='retain'?' on':'')+'"'+(full?' disabled title="Both pick slots are used"':'')+'>Retain</button><button type="button" data-act="dec" data-id="'+p.id+'" data-v="release" class="release'+(dd==='release'?' on':'')+'">Release</button></div>';
-    else dec=sub&&dd?'<div class="dec ro"><span class="chip '+(dd==='retain'?'ret':'red')+'">'+dd+'</span></div>':'<div class="dec ro pend">Decision pending</div>';
-    return '<div class="rc'+(p.nfl?' nfl':'')+'"><div class="who"><span class="pos '+p.pos+'">'+p.pos+'</span><div><b>'+p.n+'</b><small>Draft eligible '+p.elig+'</small></div></div>'+
-    
-    '<div class="facts"><div><small>Acquired</small><b class="n">'+p.dy+' \u00B7 Rd '+p.dr+'</b></div>'+
-    '<div><small>Rebate</small><b class="n">'+(p.nfl?'\u2014':'$'+p.reb+(isR?' \u2192 <span class="dn">$'+Math.max(0,p.reb-step)+'</span>':' \u00B7 <span class="mt">$'+Math.max(0,p.reb-step)+' if retained</span>'))+'</b></div>'+
-    '<div><small>Pick slot</small><b class="n'+(isR?' sl':'')+'">'+(p.nfl?'\u2014':isR?(sl[p.id]?'Takes Rd '+sl[p.id]+' pick':'No slot left'):full?'Both slots used':'Rd '+DV.slotOrder[Math.min(nRet,DV.slotOrder.length-1)]+' if retained')+'</b></div></div>'+dec+'</div>';}).join('');
-  var nRel=R.filter(function(p){return show&&d[p.id]==='release';}).length,elig=R.filter(function(p){return !p.nfl;}),done=elig.every(function(p){return d[p.id];});
-  var used=Object.keys(sl).map(function(k){return 'Rd '+sl[k];});
-  var late=dlPast&&!sub?'<div class="dl"><b>Retention deadline passed</b><span>'+(edit?'The deadline was '+dls+'. Your decisions are locked and weren\u2019t submitted \u2014 contact the commissioner.':T[t].own+' didn\u2019t submit before the '+dls+' deadline.')+'</span></div>':'';
-  var box=edit?'<div class="box"><h4>Your Decisions</h4>'+late+'<p>'+(sub?(dlPast?'Submitted. The deadline has passed \u2014 contact the commissioner to change anything.':'Submitted. You can edit your decisions until the deadline ('+dls+').'):dlPast?'Decisions can no longer be changed here.':'Retain or release every eligible player, then submit.')+'</p>'
-    :'<div class="box"><h4>'+tn(t)+' Decisions</h4>'+late+'<p>'+(sub?'Submitted by '+T[t].own+'.':'Not submitted yet. Decisions show here once '+T[t].own+' submits.')+'</p>';
-  box+='<div class="sum"><div><b class="n" style="color:var(--tl-l)">'+(show?nRet:0)+'</b><small>RETAIN</small></div><div><b class="n" style="color:#E06A6A">'+nRel+'</b><small>RELEASE</small></div><div><b class="n">'+(show?nRet:0)+'/'+DV.maxRetained+'</b><small>PICKS USED</small></div></div>'+
-  '<p class="n">'+(show&&used.length?'Picks used in the '+DV.season+' '+confOf(t).name+' draft: '+used.join(', ')+'. Rebate reduction: \u2212$'+(step*nRet)+'.':'No picks used.')+'</p>'+
-  (sub?'<div class="note ok n">Submitted '+sub+'</div>'+(edit&&!dlPast?'<button type="button" class="btn" data-act="unsub" style="margin-top:12px;width:100%">Edit decisions</button>':''):edit&&!dlPast?'<button type="button" class="btn pri" data-act="submit"'+(done?'':' disabled')+' style="margin-top:12px">'+(done?'Submit decisions':elig.filter(function(p){return !d[p.id];}).length+' decisions left')+'</button>':'')+'</div>';
-  return '<div class="pnl"><div class="rgrid"><div><div class="sh"><h3>'+(edit?'Your Devy Roster':tn(t)+' Devy Roster')+'</h3><span class="eb n'+(dlPast?' late':'')+'">'+(dlPast?'Deadline passed \u00B7 ':'Decisions due ')+dls+'</span></div>'+cards+'</div>'+
+    if(!rOpen) dec='<div class="dec ro"><span class="chip '+(isR?'ret':isRel?'red':'')+'">'+(isR?'Retained':isRel?'Released':'No decision')+'</span></div>';
+    else dec='<div class="dec"><button type="button" data-act="dec" data-id="'+String(w.playerId).replace(/"/g,'&quot;')+'" data-v="retain" class="retain'+(isR?' on':'')+'"'+(full?' disabled title="Both pick slots are used"':'')+'>Retain</button><button type="button" data-act="dec" data-id="'+String(w.playerId).replace(/"/g,'&quot;')+'" data-v="release" class="release'+(isRel?' on':'')+'">Release</button></div>';
+    return '<div class="rc"><div class="who"><span class="pos '+w.pos+'">'+w.pos+'</span><div><b>'+w.name+'</b><small>'+(w.conference||cn)+'</small></div></div>'+
+    '<div class="facts"><div><small>Kept</small><b class="n">'+(w.consecutiveYear?'Yr '+w.consecutiveYear:'\u2014')+'</b></div>'+
+    '<div><small>Rebate</small><b class="n'+(isR?' sl':'')+'">'+((w.rebateRemaining!==''&&w.rebateRemaining!=null)?'$'+w.rebateRemaining:'\u2014')+'</b></div>'+
+    '<div><small>Pick slot</small><b class="n'+(isR?' sl':'')+'">'+(w.pickUsed||(isR?'\u2014':''))+'</b></div></div>'+dec+'</div>';}).join(''):'<div class="empty">No devy players to decide on'+(rOpen?'':' \u2014 the retention window isn\u2019t open')+'.</div>';
+  var box='<div class="box"><h4>Your Decisions</h4><p>'+(rOpen?'Retain or release each devy player. Each choice saves immediately and can be changed until the window closes.':'The retention window is closed. These are your recorded decisions \u2014 contact the commissioner to change anything.')+'</p>'+
+    '<div class="sum"><div><b class="n" style="color:var(--tl-l)">'+nRet+'</b><small>RETAIN</small></div><div><b class="n" style="color:#E06A6A">'+nRel+'</b><small>RELEASE</small></div><div><b class="n">'+nRet+'/'+DV.maxRetained+'</b><small>PICKS USED</small></div></div>'+
+    (rOpen&&pend?'<div class="note">'+pend+' still undecided. Undecided players are auto-retained (up to '+DV.maxRetained+') when the window closes.</div>':'')+'</div>';
+  return '<div class="pnl"><div class="rgrid"><div><div class="sh"><h3>Your Devy Roster</h3><span class="eb n">'+(rOpen?'Window open':'Window closed')+'</span></div>'+cards+'</div>'+
   '<div class="side">'+box+
   '<details class="box how" data-dv="how"'+(ui.howOpen?' open':'')+'><summary><h4>How Retention Works</h4><span>'+(ui.howOpen?'Hide':'Show')+'</span></summary><p>Retaining keeps a devy player who hasn\u2019t entered the NFL on your roster without re-drafting him. Each retained player uses one of your conference draft picks, and his rebate drops $'+step+' for every year he\u2019s retained.</p><ol class="ladder">'+
   DV.rules.map(function(r){return '<li><b class="'+(r.x?'x':'')+'">'+r.n+'</b><div><strong>'+r.t+'</strong><span>'+r.d+'</span></div></li>';}).join('')+'</ol></details></div></div></div>';
 }
 function pPast(){
-  var P2=PAST[ui.conf],yrs=Object.keys(P2).sort().reverse(),l=P2[ui.yr],c={ret:0,pro:0,rel:0},wr=0;l.forEach(function(k){if(k.s)c[k.s.k]++;if(k.wasRet)wr++;});
-  return '<div class="pnl"><div class="sh"><h3>'+ui.yr+' '+cc().name+' Devy Draft</h3><label class="ysel"><span class="eb">Season</span><select class="n" data-dv="yr">'+yrs.map(function(y){return '<option value="'+y+'"'+(+y===+ui.yr?' selected':'')+'>'+y+'</option>';}).join('')+'</select></label></div>'+
-  '<div class="pstat"><div><b class="n">'+l.length+'</b><small>PICKS</small></div><div><b class="n" style="color:var(--tl-l)">'+wr+'</b><small>RETAINED SLOTS</small></div><div><b class="n" style="color:#6FC291">'+c.pro+'</b><small>SINCE ENTERED NFL</small></div><div><b class="n" style="color:#E06A6A">'+c.rel+'</b><small>SINCE RELEASED</small></div></div>'+
-  '<div class="scroll">'+board(l,-1,true)+'</div><div class="legend"><span><span class="chip ret sm">Ret \u00B7 Yr N</span> Slot filled by a retained player</span><span><span class="chip prev">Retained \u00B7 Yr N</span> <span class="chip grn">Entered NFL</span> <span class="chip red">Released</span> What happened next</span></div></div>';
+  var yrs=PASTF.map(function(p){return p.year;});
+  var yearObj=PASTF.filter(function(p){return +p.year===+ui.yr;})[0]||PASTF[0];
+  if(!yearObj) return '<div class="pnl"><div class="empty">No past drafts recorded yet.</div></div>';
+  var confObj=(yearObj.conferences||[]).filter(function(c){return c.id===ui.conf;})[0]||(yearObj.conferences||[])[0];
+  var picks=confObj?confObj.picks:[];
+  var list=picks.map(function(pk){return {t:pk.franchiseId,p:{n:pk.player,pos:pk.position,elig:''},ret:0};});
+  return '<div class="pnl"><div class="sh"><h3>'+yearObj.year+' '+(confObj?(confObj.label||confObj.id):cc().name)+' Devy Draft</h3><label class="ysel"><span class="eb">Season</span><select class="n" data-dv="yr">'+yrs.map(function(y){return '<option value="'+y+'"'+(+y===+ui.yr?' selected':'')+'>'+y+'</option>';}).join('')+'</select></label></div>'+
+  '<div class="pstat"><div><b class="n">'+picks.length+'</b><small>PICKS</small></div></div>'+
+  '<div class="scroll">'+board(list,-1,false)+'</div></div>';
 }
 function render(){
+  if(LOADERR){$('panel').innerHTML='<div class="pnl"><div class="empty">Couldn\u2019t load the devy draft.<br><small>'+String(LOADERR).replace(/</g,'&lt;')+'</small></div></div>';return;}
+  if(!LOADED){$('panel').innerHTML='<div class="pnl"><div class="empty">Loading devy draft\u2026</div></div>';return;}
   confBar();header();tabs();
+  var w=$('whoami');if(w) w.textContent='Signed in as '+(T[me]?T[me].name:me)+(FEED&&FEED.settings&&FEED.settings.cyclePhaseLabel?' · '+FEED.settings.cyclePhaseLabel:'');
   $('panel').innerHTML=ui.tab==='draft'?pDraft():ui.tab==='ret'?pRet():pPast();
   tick();
   if(ui.tab==='draft'){var s=$('bScroll'),cu=s&&s.querySelector('.pk.cur');if(cu) s.scrollTop=cu.offsetTop-s.offsetTop-80;}
@@ -612,37 +646,26 @@ var tt;function toast(m){var e=$('toast');e.textContent=m;e.classList.add('show'
 root.addEventListener('click',function(e){
   var b=e.target.closest('[data-act]');if(!b||!root.contains(b)) return;var a=b.getAttribute('data-act'),v=b.getAttribute('data-v');
   if(a==='tab'){ui.tab=v;render();}
-  else if(a==='conf'){ui.conf=v;ui.sel=null;ui.team=cById(v).order.indexOf(me)>-1?me:cById(v).order[0];render();}
-  else if(a==='team'){ui.team=v;render();}
+  else if(a==='conf'){ui.conf=v;ui.sel=null;render();}
   else if(a==='sub'){ui.sub=v;render();}
   else if(a==='pos'){ui.pos=v;root.querySelectorAll('[data-act="pos"]').forEach(function(x){x.classList.toggle('on',x===b);});refreshPool();}
-  else if(a==='hideprev'){ui.hidePrev=!ui.hidePrev;b.setAttribute('aria-checked',ui.hidePrev);refreshPool();}
   else if(a==='sel'){ui.sel=ui.sel===v?null:v;refreshPool();}
-  else if(a==='draft'){var mc=myConf(),c=curIdx(mc),p=POOL.filter(function(x){return x.id===ui.sel;})[0];if(ui.conf!==mc||c<0||!p||cs(mc).picks[c].t!==me||draftedIn(mc)[p.id]||held(p,mc)) return;
-    cs(mc).picks[c].p=p;cs(mc).start=Date.now();ui.sel=null;save();render();toast(confOf(me).name+' pick '+lab(c,mc)+' is in: '+p.n+', '+p.pos+'.');}
-  else if(a==='dec'){var dm=st.ret[me]=st.ret[me]||{},id=b.getAttribute('data-id');if(v==='retain'&&dm[id]!=='retain'&&Object.keys(slots(ROST[me],dm)).length>=DV.maxRetained) return;dm[id]=v;save();render();}
-  else if(a==='submit'){var d=new Date();st.sub[me]=pad(d.getHours())+':'+pad(d.getMinutes())+' \u00B7 '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'});save();render();toast('Retention decisions submitted.');}
+  else if(a==='draft'){var mc=myConf();if(ui.conf!==mc||!ui.sel||!canPick(mc)||BUSY) return;var sel=ui.sel;ui.sel=null;act({action:'pick',conference:mc,playerId:sel});}
+  else if(a==='dec'){if(!retentionOpen()||BUSY) return;act({action:(v==='retain'?'retain':'release'),conference:myConf(),playerId:b.getAttribute('data-id')});}
   else if(a==='yr'){ui.yr=+v;render();}
-  else if(a==='openadd'){ui.addOpen=true;ui.addName=ui.q;render();var ni=root.querySelector('[data-add="sch"]');if(ni) ni.focus();}
-  else if(a==='addp'){var g=function(k){return root.querySelector('[data-add="'+k+'"]').value.trim();},n=g('n').replace(/\s+/g,' '),sch=g('sch'),err=$('addErr');
-    if(n.split(' ').length<2){err.textContent='Enter first and last name.';return;}
-    if(!sch){err.textContent='Enter a school.';return;}
-    var dup=POOL.filter(function(p){return p.n.toLowerCase()===n.toLowerCase()&&p.sch.toLowerCase()===sch.toLowerCase();})[0];
-    if(dup){err.textContent=n+' ('+sch+') is already in the pool'+(draftedIn(myConf())[dup.id]||held(dup,myConf())?' and has been drafted in this conference.':'. Clear your filters to find him.');return;}
-    var p={id:'c-'+Date.now(),n:n,pos:g('pos'),sch:sch,elig:+g('elig'),rk:'NEW',add:tn(me)};
-    st.custom.push(p);POOL.push(p);save();ui.q='';ui.pos='ALL';ui.hidePrev=false;ui.addOpen=false;ui.addName='';ui.sel=p.id;ui.sub='pool';render();toast(n+' added to the pool.');}
-  else if(a==='unsub'){delete st.sub[me];save();render();toast('Decisions unlocked \u2014 resubmit when you\u2019re done.');}
-  else if(a==='simpre'){simOpen=simOpen?0:Date.now()+(2*86400e3+5*3600e3+12*60e3);b.textContent=simOpen?'Go live':'Simulate pre-draft';ui.sel=null;render();}
-  else if(a==='simpast'){ui.simPast=!ui.simPast;b.textContent=ui.simPast?'Restore deadline':'Simulate deadline passed';render();}
+  else if(a==='refresh'){reload(true);toast('Refreshed.');}
   else if(a==='gopool'){ui.tab='draft';ui.sub='pool';ui.conf=myConf();render();var gp=root.querySelector('.gpool'),q=$('q');if(gp){var y=gp.getBoundingClientRect().top+window.pageYOffset-12;window.scrollTo({top:y,behavior:'smooth'});}if(q) q.focus({preventScroll:true});}
-  else if(a==='reset'){st=fresh();st.custom=[];POOL=BASE.slice();ui.sel=null;save();render();toast('Demo reset.');}
 });
-root.addEventListener('toggle',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-dv');if(k==='add') ui.addOpen=e.target.open;if(k==='how'){ui.howOpen=e.target.open;var sp=e.target.querySelector('summary span');if(sp) sp.textContent=ui.howOpen?'Hide':'Show';}},true);
+root.addEventListener('toggle',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-dv');if(k==='how'){ui.howOpen=e.target.open;var sp=e.target.querySelector('summary span');if(sp) sp.textContent=ui.howOpen?'Hide':'Show';}},true);
 root.addEventListener('change',function(e){if(e.target.getAttribute('data-dv')==='yr'){ui.yr=+e.target.value;render();}});
 root.addEventListener('input',function(e){if(e.target.getAttribute('data-dv')==='q'){ui.q=e.target.value;refreshPool();}});
-var as=$('as');as.innerHTML=CF.map(function(c){return '<optgroup label="'+c.name+'">'+c.order.map(function(k){return '<option value="'+k+'"'+(k===me?' selected':'')+'>'+T[k].name+'</option>';}).join('')+'</optgroup>';}).join('');
-as.addEventListener('change',function(){me=as.value;ui.sel=null;ui.conf=myConf();ui.team=me;render();});
-render();setInterval(tick,1000);
+/* identity + boot */
+me=pad4((typeof franchise_id!=='undefined'&&franchise_id)?franchise_id:(DVQP.get('fid')||DV.me))||DV.me;
+ui.conf=confOf(me).id;ui.team=me;
+render();       // shows loading state
+reload(false);  // first fetch (cache ok)
+setInterval(function(){if(LOADED&&!LOADERR) tick();},1000);
+setInterval(function(){if(!BUSY&&document.visibilityState!=='hidden') reload(true);},30000);
 })();
 </script>
 <!-- ===== END MFL MESSAGE ===== -->

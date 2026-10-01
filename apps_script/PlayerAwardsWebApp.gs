@@ -19,7 +19,7 @@
  * Redeploy after editing this file (deployments are frozen at deploy time).
  */
 
-const AW_CACHE_KEY = "awards_payload_v2";
+const AW_CACHE_KEY = "awards_payload_v3";
 const AW_CACHE_TTL_SECONDS = 600; // 10 minutes
 
 // ============================================================================
@@ -75,7 +75,8 @@ function buildAwardsPayload(overrideYear) {
       txt: m.fg || "#FFFFFF",
       conf: awardsConfId(m.conf || ""),
       owner: m.owner || "",
-      logo: m.logo || ""   // FranchiseLookup logo URL (same field PR's pill uses)
+      logo: m.logo || "",   // FranchiseLookup pill-icon URL (same field PR's pill uses)
+      squareLogo: m.squareLogo || ""   // optional square team logo (beeswarm dots)
     };
   };
 
@@ -293,7 +294,7 @@ function buildRecruiting(year, teamOf) {
     const team = teamOf(fid);
     out.teams[fid] = {
       name: team.name, abbr: team.abbr, color: team.color, txt: team.txt,
-      conf: team.conf, owner: team.owner, logo: team.logo,
+      conf: team.conf, owner: team.owner, logo: team.logo, squareLogo: team.squareLogo,
       total: total, wins: wins, awards: awardsD, rivalryNet: rivalryNet, draftNet: draftNet,
       raw: {
         regSeason: g(row, "RegSeasonDollars"), postseason: g(row, "PostseasonDollars"),

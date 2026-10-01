@@ -57,14 +57,17 @@
     var byId = {};
     teams.forEach(function (t) { byId[String(t.id)] = t; });
 
-    // Current week = the highest week appearing in any team's games[] (the week
-    // that has been rolled into the standings — i.e. live/just-finished). Future
-    // weeks live in upcoming[]. Fall back to weeksPlayed if games[] is empty.
+    // GameDay previews the week we are GOING INTO, not the one just finished.
+    // In the payload, games[] holds only completed games and weeksPlayed is the
+    // last completed week; the in-progress/upcoming matchups live in upcoming[]
+    // (see detectLatestCompletedWeek in PowerRankingsWebApp.gs). So the target
+    // week is the lowest week appearing in any team's upcoming[] — i.e. the
+    // in-progress week — falling back to weeksPlayed + 1 when upcoming[] is empty.
     var week = 0;
     teams.forEach(function (t) {
-      (t.games || []).forEach(function (g) { var w = num(g.week); if (w > week) week = w; });
+      (t.upcoming || []).forEach(function (g) { var w = num(g.week); if (w && (!week || w < week)) week = w; });
     });
-    if (!week) week = num(d && d.weeksPlayed) || 1;
+    if (!week) week = (num(d && d.weeksPlayed) || 0) + 1;
 
     var rankOf = function (id) { var r = num(byId[id] && byId[id].rank); return r > 0 ? r : null; };
 

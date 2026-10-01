@@ -244,7 +244,7 @@
           </sc-for>
           <sc-for list="{{ swarmDots }}" as="sd" hint-placeholder-count="12">
             <span onMouseEnter="{{ sd.onEnter }}" onMouseLeave="{{ sd.onLeave }}" onClick="{{ sd.onSelect }}" style="position:absolute;transform:translate(-50%,-50%);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-sizing:border-box;background:#161616;border:2px solid var(--border-strong);transition:opacity var(--dur-fast) var(--ease-out);{{ sd.style }};">
-              <span style="width:72%;height:72%;border-radius:50%;display:flex;align-items:center;justify-content:center;outline:1px dashed rgba(255,255,255,.28);outline-offset:-3px;font-family:var(--font-display);font-weight:700;font-size:10px;letter-spacing:.02em;color:var(--fg-primary);{{ sd.markStyle }};">{{ sd.mono }}</span>
+              <span style="width:72%;height:72%;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;outline:1px dashed rgba(255,255,255,.28);outline-offset:-3px;font-family:var(--font-display);font-weight:700;font-size:10px;letter-spacing:.02em;color:var(--fg-primary);{{ sd.markStyle }};"><sc-if value="{{ sd.noLogo }}" hint-placeholder-val="{{ true }}">{{ sd.mono }}</sc-if><sc-if value="{{ sd.hasLogo }}" hint-placeholder-val="{{ false }}"><img src="{{ sd.logo }}" alt="" style="width:92%;height:92%;object-fit:contain;display:block;"/></sc-if></span>
             </span>
           </sc-for>
           <sc-if value="{{ hasDotTip }}" hint-placeholder-val="{{ false }}">
@@ -606,9 +606,8 @@ class Component extends DCLogic {
       onSelect: () => this.setState({ dRound: r }),
     }));
     const shown = confPicks.filter((p) => rnd === 'all' || p.round === rnd);
-    const LOGOS = { UGA: '../../assets/teams/logos/georgia.png' };
     const ownerVals = (o) => {
-      const t = T[o] || { name: o, color: '#2A2A2A', txt: '#F5F5F5' }, logo = LOGOS[o];
+      const t = T[o] || { name: o, color: '#2A2A2A', txt: '#F5F5F5' }, logo = t.logo || '';
       return {
         key: t.abbr || o, name: t.name, logo: logo || '', hasLogo: !!logo, noLogo: !logo,
         ringStyle: 'border-color:' + accent(o) + (focus && focus !== o ? ';opacity:.35' : focus === o ? ';box-shadow:0 0 0 2px var(--bg-surface),0 0 0 4px var(--gold);z-index:3' : ''),
@@ -650,7 +649,7 @@ class Component extends DCLogic {
       };
     });
     const top = board[0], topT = top && T[top.key];
-    const PILLS = { UGA: 'georgia', ARMY: 'army', FRES: 'fresno-state', UNC: 'north-carolina' };
+    const topLogo = (topT && topT.logo) || '';
     return {
       pickIn: this.state.narrow ? null : this.pickIn(confPicks.length),
       draftYear: N.year, draftLogo: N.logo || './nfl-draft-placeholder.svg',
@@ -659,7 +658,7 @@ class Component extends DCLogic {
         r1: confPicks.filter((p) => p.round === 1).length, r1Share: (confPicks.length ? Math.round(confPicks.filter((p) => p.round === 1).length / confPicks.length * 100) : 0) + '%',
         bonus: confPicks.reduce((a, p) => a + p.bonus * ownIn(p).length, 0),
         topName: topT ? topT.name : '—', topKey: top ? ((topT && topT.abbr) || top.key) : '—',
-        topPill: top && PILLS[top.key] ? '../../assets/teams/' + PILLS[top.key] + '.png' : '', topHasPill: !!(top && PILLS[top.key]), topNoPill: !(top && PILLS[top.key]),
+        topPill: topLogo, topHasPill: !!topLogo, topNoPill: !topLogo,
         topChip: topT ? 'background:' + topT.color + ';color:' + topT.txt : '', topConfBar: top ? 'background:' + accent(top.key) : '',
         topLine: top ? '$' + top.bonus + ' · ' + top.count + ' picks · ' + top.r1 + ' in Rd 1' : '',
       },
@@ -729,9 +728,13 @@ class Component extends DCLogic {
       const size = narrow ? (hi ? 30 : 22) : (hi ? 36 : 27);
       const below = yy < CH / 2;
       const tip = { head: (t.abbr || t.key) + ' · $' + t.total, body: '#' + t.rank + ' · ' + t.name, pos: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(below ? yy + size / 2 + 10 : yy - size / 2 - 10) + 'px;' + (below ? '' : 'transform:translate(-50%,-100%);') };
+      // Beeswarm dots prefer the square team logo (fills the round dot cleanly);
+      // fall back to the pill icon, then the 2-letter colored chip. Contain on a
+      // white fill so any logo shape sits nicely inside the circle.
+      const logo = t.squareLogo || t.logo || '';
       return {
-        mono: String(t.abbr || t.key).slice(0, 2),
-        markStyle: 'background:' + t.color + ';color:' + t.txt + ';',
+        mono: String(t.abbr || t.key).slice(0, 2), logo: logo, hasLogo: !!logo, noLogo: !logo,
+        markStyle: logo ? 'background:#F5F5F5;' : 'background:' + t.color + ';color:' + t.txt + ';',
         style: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(yy) + 'px;width:' + size + 'px;height:' + size + 'px;border-color:' + t.color + ';' + (hi ? 'z-index:3;box-shadow:0 0 0 2px rgba(201,162,39,.4),0 4px 14px rgba(0,0,0,.55);' : 'opacity:.8;'),
         onEnter: () => this.setState({ recHover: t.key, dotTip: tip }),
         onLeave: () => this.setState({ recHover: null, dotTip: null }),

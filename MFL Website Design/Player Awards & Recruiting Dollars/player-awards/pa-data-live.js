@@ -129,7 +129,9 @@
     var rec = feed.recruiting || { teams: {} };
     var recTeams = rec.teams || {};
     Object.keys(recTeams).forEach(function (fid) {
-      if (recTeams[fid]) recTeams[fid].logo = imgurDirect(recTeams[fid].logo);
+      if (!recTeams[fid]) return;
+      recTeams[fid].logo = imgurDirect(recTeams[fid].logo);
+      recTeams[fid].squareLogo = imgurDirect(recTeams[fid].squareLogo);
     });
     window.CFFB_RECRUITING = {
       season: Number(feed.season),
