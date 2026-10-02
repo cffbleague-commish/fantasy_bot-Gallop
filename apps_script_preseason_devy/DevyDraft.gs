@@ -90,13 +90,13 @@ function menuViewDraftStatus() {
   const ui = SpreadsheetApp.getUi();
 
   let message = `Draft Year: ${status.draftYear || 'Not set'}\n`;
-  message += `Status: ${status.status || 'Not started'}\n`;
-  message += `Conference: ${status.currentConference || 'N/A'}\n`;
+  message += `Cycle Phase: ${status.cyclePhaseLabel || status.cyclePhase || 'Not started'}\n\n`;
 
-  if (status.status === 'in_progress') {
-    message += `\nCurrent Pick: Round ${status.currentRound}, Pick ${status.currentPick}\n`;
-    message += `Deadline: ${status.pickDeadline || 'N/A'}`;
-  }
+  status.conferences.forEach(function (c) {
+    let line = `${c.conference}: ${String(c.status).replace(/_/g, ' ')}`;
+    if (c.current) line += ` — ${c.current.teamName} (R${c.current.round} P${c.current.pick})`;
+    message += line + "\n";
+  });
 
   ui.alert("Devy Draft Status", message, ui.ButtonSet.OK);
 }
@@ -1988,10 +1988,10 @@ function startDevyDraft(conference) {
 
   if (!firstOpen) {
     // Every slot is already filled (e.g., all retentions) - nothing to draft.
-    setDevyDraftSetting("DraftStatus", "completed");
-    setDevyDraftSetting("CurrentConference", conference);
-    setDevyDraftSetting("CurrentPickDeadline", "");
+    // Only mark THIS conference complete — never the global DraftStatus, since
+    // other conferences may be drafting simultaneously.
     setDevyConfStatus(conference, "completed");
+    setDevyCurrentDeadline(conference, "");
     setDevyCyclePhase("DRAFTING");
     reevaluateDevyCyclePhase();
     return {
@@ -2003,19 +2003,19 @@ function startDevyDraft(conference) {
     };
   }
 
-  // Set draft in progress at the first open slot
+  // Set this conference in progress at its first open slot. DraftStatus stays a
+  // coarse "at least one conference is live" flag; Status_<CONF> + the per-conf
+  // Current_<CONF>_* keys are the authoritative per-conference state.
   setDevyDraftSetting("DraftStatus", "in_progress");
-  setDevyDraftSetting("CurrentConference", conference);
-  setDevyDraftSetting("CurrentRound", String(firstOpen[colMap["Round"]]));
-  setDevyDraftSetting("CurrentPick", String(firstOpen[colMap["Pick"]]));
+  setDevyCurrentPick(conference, firstOpen[colMap["Round"]], firstOpen[colMap["Pick"]]);
   setDevyCyclePhase("DRAFTING");
   setDevyConfStatus(conference, "in_progress");
 
-  // Set initial pick deadline
+  // Set initial pick deadline (per conference)
   const deadlineHours = parseInt(settings["PickDeadlineHours"]) || 24;
   const deadline = new Date();
   deadline.setHours(deadline.getHours() + deadlineHours);
-  setDevyDraftSetting("CurrentPickDeadline", deadline.toISOString());
+  setDevyCurrentDeadline(conference, deadline.toISOString());
 
   return {
     success: true,
@@ -2054,23 +2054,18 @@ function getFilledSlotSet(year, conference) {
 function getCurrentDevyPick(conference) {
   const settings = getAllDevyDraftSettings();
 
-  if (settings["DraftStatus"] !== "in_progress") {
+  // Per-conference liveness: all conferences can draft simultaneously, so gate on
+  // Status_<CONF> rather than the single global CurrentConference/DraftStatus.
+  if (getDevyConfStatus(conference) !== "in_progress") {
     return {
       success: false,
-      message: "Draft is not in progress"
-    };
-  }
-
-  if (settings["CurrentConference"] !== conference) {
-    return {
-      success: false,
-      message: `Draft is currently running for ${settings["CurrentConference"]}, not ${conference}`
+      message: `Draft is not in progress for ${conference}`
     };
   }
 
   const draftYear = Number(settings["DraftYear"]);
-  const currentRound = Number(settings["CurrentRound"]);
-  const currentPick = Number(settings["CurrentPick"]);
+  const currentRound = Number(settings[devyCurKey(conference, "Round")]);
+  const currentPick = Number(settings[devyCurKey(conference, "Pick")]);
 
   // Get the team on the clock
   const orderSheet = getDevyDraftOrderSheet();
@@ -2110,7 +2105,7 @@ function getCurrentDevyPick(conference) {
     draftYear,
     conference,
     ...onTheClock,
-    pickDeadline: settings["CurrentPickDeadline"]
+    pickDeadline: settings[devyCurKey(conference, "Deadline")]
   };
 }
 
@@ -2119,20 +2114,11 @@ function getCurrentDevyPick(conference) {
  * Players are conference-specific, so only players available in that conference can be drafted
  */
 function makeDevyPick(conference, franchiseId, playerId) {
-  const settings = getAllDevyDraftSettings();
-
-  // Validate draft is in progress for this conference
-  if (settings["DraftStatus"] !== "in_progress") {
+  // Per-conference liveness gate (all conferences can draft at once).
+  if (getDevyConfStatus(conference) !== "in_progress") {
     return {
       success: false,
-      message: "Draft is not in progress"
-    };
-  }
-
-  if (settings["CurrentConference"] !== conference) {
-    return {
-      success: false,
-      message: `Draft is currently running for ${settings["CurrentConference"]}, not ${conference}`
+      message: `Draft is not in progress for ${conference}`
     };
   }
 
@@ -2171,7 +2157,7 @@ function makeDevyPick(conference, franchiseId, playerId) {
   }
 
   // Record the pick
-  const draftYear = Number(settings["DraftYear"]);
+  const draftYear = Number(getDevyDraftSetting("DraftYear"));
   const historySheet = getDevyDraftHistorySheet();
   const timestamp = new Date().toISOString();
 
@@ -2225,8 +2211,8 @@ function makeDevyPick(conference, franchiseId, playerId) {
 function advanceDevyDraft(conference) {
   const settings = getAllDevyDraftSettings();
   const draftYear = Number(settings["DraftYear"]);
-  const currentRound = Number(settings["CurrentRound"]);
-  const currentPick = Number(settings["CurrentPick"]);
+  const currentRound = Number(settings[devyCurKey(conference, "Round")]);
+  const currentPick = Number(settings[devyCurKey(conference, "Pick")]);
   const totalRounds = Number(settings["TotalRounds"]) || 2;
 
   // Get draft order to find next pick
@@ -2276,14 +2262,13 @@ function advanceDevyDraft(conference) {
   const nextRound = nextPickRow[colMap["Round"]];
   const nextPick = nextPickRow[colMap["Pick"]];
 
-  setDevyDraftSetting("CurrentRound", String(nextRound));
-  setDevyDraftSetting("CurrentPick", String(nextPick));
+  setDevyCurrentPick(conference, nextRound, nextPick);
 
-  // Reset pick deadline
+  // Reset pick deadline (per conference)
   const deadlineHours = parseInt(settings["PickDeadlineHours"]) || 24;
   const deadline = new Date();
   deadline.setHours(deadline.getHours() + deadlineHours);
-  setDevyDraftSetting("CurrentPickDeadline", deadline.toISOString());
+  setDevyCurrentDeadline(conference, deadline.toISOString());
 
   // Get Discord ID for next picker
   const nextFranchiseId = String(nextPickRow[colMap["FranchiseID"]]).padStart(3, "0");
@@ -2386,14 +2371,26 @@ function getDevyDraftOrderWithStatus(conference, year) {
 function getDevyDraftStatus() {
   const settings = getAllDevyDraftSettings();
 
+  // Every conference can draft at once, so report per-conference status rather
+  // than a single current conference/pick.
+  const conferences = getAllConferences().map(function (code) {
+    const st = getDevyConfStatus(code);
+    let current = null;
+    if (st === "in_progress") {
+      const c = getCurrentDevyPick(code);
+      if (c && c.success) {
+        current = { round: c.round, pick: c.pick, teamName: c.teamName, pickDeadline: c.pickDeadline };
+      }
+    }
+    return { conference: code, status: st, current: current };
+  });
+
   return {
     draftYear: settings["DraftYear"],
-    status: settings["DraftStatus"],
-    currentConference: settings["CurrentConference"],
-    currentRound: settings["CurrentRound"],
-    currentPick: settings["CurrentPick"],
-    pickDeadline: settings["CurrentPickDeadline"],
-    totalRounds: settings["TotalRounds"]
+    cyclePhase: settings["CyclePhase"] || "not_started",
+    cyclePhaseLabel: settings["CyclePhaseLabel"] || "",
+    totalRounds: settings["TotalRounds"],
+    conferences: conferences
   };
 }
 
@@ -2535,13 +2532,12 @@ function resetDevyDraft(conference, year) {
     }
   }
 
-  // Reset settings if this was the active conference
+  // Reset this conference's per-conference state (status + live-pick keys).
   const settings = getAllDevyDraftSettings();
-  if (settings["CurrentConference"] === conference && Number(settings["DraftYear"]) === year) {
-    setDevyDraftSetting("DraftStatus", "not_started");
-    setDevyDraftSetting("CurrentRound", "1");
-    setDevyDraftSetting("CurrentPick", "1");
-    setDevyDraftSetting("CurrentPickDeadline", "");
+  if (Number(settings["DraftYear"]) === year) {
+    setDevyConfStatus(conference, "not_started");
+    setDevyCurrentPick(conference, "", "");
+    setDevyCurrentDeadline(conference, "");
   }
 
   return {
@@ -3742,6 +3738,24 @@ function getDevyConfStatus(conference) {
 }
 
 /**
+ * Per-conference live-pick state. Every conference can be mid-draft at once, so
+ * the "who's on the clock" round/pick/deadline is stored per conference under
+ * Current_<CONF>_Round / _Pick / _Deadline (mirrors the Status_<CONF> pattern)
+ * instead of the single legacy CurrentConference/CurrentRound/CurrentPick keys.
+ * Keys self-create on first write.
+ */
+function devyCurKey(conference, field) {
+  return "Current_" + String(conference).toUpperCase() + "_" + field;
+}
+function setDevyCurrentPick(conference, round, pick) {
+  setDevyDraftSetting(devyCurKey(conference, "Round"), round == null ? "" : String(round));
+  setDevyDraftSetting(devyCurKey(conference, "Pick"), pick == null ? "" : String(pick));
+}
+function setDevyCurrentDeadline(conference, iso) {
+  setDevyDraftSetting(devyCurKey(conference, "Deadline"), iso || "");
+}
+
+/**
  * Bump CyclePhase to COMPLETE only once every conference that has started
  * (Status_<CONF> is not "not_started") has reached "completed" — i.e. none are
  * "in_progress" or "awaiting_makeups".
@@ -3802,14 +3816,13 @@ function getOwedDevySlots(conference, year) {
 function finalizeDevyConferenceIfComplete(conference) {
   const draftYear = Number(getDevyDraftSetting("DraftYear"));
   const owed = getOwedDevySlots(conference, draftYear);
-  setDevyDraftSetting("CurrentPickDeadline", "");
+  setDevyCurrentDeadline(conference, "");
 
   if (owed.length > 0) {
     setDevyConfStatus(conference, "awaiting_makeups");
     // The live clock is meaningless while only owed slots remain — make-up picks
-    // fill their original slot directly and don't consult CurrentRound/Pick.
-    setDevyDraftSetting("CurrentRound", "");
-    setDevyDraftSetting("CurrentPick", "");
+    // fill their original slot directly and don't consult the current round/pick.
+    setDevyCurrentPick(conference, "", "");
     return {
       draftComplete: false,
       awaitingMakeups: true,
@@ -3818,8 +3831,10 @@ function finalizeDevyConferenceIfComplete(conference) {
     };
   }
 
+  // Mark only THIS conference complete; the global DraftStatus is not flipped so
+  // simultaneous conferences keep running. reevaluateDevyCyclePhase() moves
+  // CyclePhase to COMPLETE once every started conference is done.
   setDevyConfStatus(conference, "completed");
-  setDevyDraftSetting("DraftStatus", "completed"); // back-compat global flag
   reevaluateDevyCyclePhase();
   return { draftComplete: true, message: `Devy draft complete for ${conference}` };
 }

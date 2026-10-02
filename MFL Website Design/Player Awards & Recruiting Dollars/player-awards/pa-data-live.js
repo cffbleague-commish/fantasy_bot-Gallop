@@ -29,7 +29,8 @@
     if (!t) return t;
     return {
       abbr: t.abbr, name: t.name, color: t.color, txt: t.txt, conf: t.conf,
-      owner: t.owner || "", logo: imgurDirect(t.logo)
+      owner: t.owner || "", logo: imgurDirect(t.logo),
+      squareLogo: imgurDirect(t.squareLogo)   // square team icon — used for round badges (front-runner chip)
     };
   }
 

@@ -6948,6 +6948,19 @@ def set_devy_conf_status(conference: str, status: str):
 def get_devy_conf_status(conference: str):
     return get_devy_draft_setting(f"Status_{str(conference).upper()}") or "not_started"
 
+# Per-conference live-pick state (all conferences can draft at once). Mirrors
+# DevyDraft.gs: Current_<CONF>_Round / _Pick / _Deadline, keyed per conference
+# instead of the single legacy CurrentConference/CurrentRound/CurrentPick keys.
+def _devy_cur_key(conference: str, field: str) -> str:
+    return f"Current_{str(conference).upper()}_{field}"
+
+def set_devy_current_pick(conference, round_, pick):
+    set_devy_draft_setting(_devy_cur_key(conference, "Round"), "" if round_ is None else str(round_))
+    set_devy_draft_setting(_devy_cur_key(conference, "Pick"), "" if pick is None else str(pick))
+
+def set_devy_current_deadline(conference, iso):
+    set_devy_draft_setting(_devy_cur_key(conference, "Deadline"), iso or "")
+
 def reevaluate_devy_cycle_phase():
     """Bump CyclePhase to COMPLETE once every started conference is completed."""
     if devy_draft_settings_ws is None:
@@ -7401,17 +7414,14 @@ def get_current_devy_pick(conference: str):
     if devy_draft_settings_ws is None or devy_draft_order_ws is None:
         return None
 
-    status = get_devy_draft_setting("DraftStatus")
-    if status != "in_progress":
-        return None
-
-    current_conf = get_devy_draft_setting("CurrentConference")
-    if current_conf != conference:
+    # Per-conference liveness: all conferences can draft at once, so gate on
+    # Status_<CONF> rather than the single global CurrentConference/DraftStatus.
+    if get_devy_conf_status(conference) != "in_progress":
         return None
 
     draft_year = get_devy_draft_setting("DraftYear")
-    current_round = int(get_devy_draft_setting("CurrentRound") or 1)
-    current_pick = int(get_devy_draft_setting("CurrentPick") or 1)
+    current_round = int(get_devy_draft_setting(_devy_cur_key(conference, "Round")) or 1)
+    current_pick = int(get_devy_draft_setting(_devy_cur_key(conference, "Pick")) or 1)
 
     try:
         order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
@@ -7426,7 +7436,7 @@ def get_current_devy_pick(conference: str):
                     "round": current_round,
                     "pick": current_pick,
                     "overallPick": row.get("OverallPick"),
-                    "pickDeadline": get_devy_draft_setting("CurrentPickDeadline")
+                    "pickDeadline": get_devy_draft_setting(_devy_cur_key(conference, "Deadline"))
                 }
         return None
     except Exception as e:
@@ -7486,14 +7496,9 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
     if not all([devy_draft_settings_ws, devy_draft_order_ws, devy_draft_history_ws, devy_player_pool_ws]):
         return {"success": False, "message": "Devy draft sheets not configured"}
 
-    # Validate draft is in progress
-    status = get_devy_draft_setting("DraftStatus")
-    if status != "in_progress":
-        return {"success": False, "message": "Draft is not in progress"}
-
-    current_conf = get_devy_draft_setting("CurrentConference")
-    if current_conf != conference:
-        return {"success": False, "message": f"Draft is currently running for {current_conf}, not {conference}"}
+    # Per-conference liveness gate (all conferences can draft at once).
+    if get_devy_conf_status(conference) != "in_progress":
+        return {"success": False, "message": f"Draft is not in progress for {conference}"}
 
     # Get current pick
     current_pick_info = get_current_devy_pick(conference)
@@ -7680,8 +7685,8 @@ def get_filled_devy_slots(year, conference):
 def advance_devy_draft(conference: str):
     """Advance to the next pick in the draft."""
     draft_year = int(get_devy_draft_setting("DraftYear"))
-    current_round = int(get_devy_draft_setting("CurrentRound") or 1)
-    current_pick = int(get_devy_draft_setting("CurrentPick") or 1)
+    current_round = int(get_devy_draft_setting(_devy_cur_key(conference, "Round")) or 1)
+    current_pick = int(get_devy_draft_setting(_devy_cur_key(conference, "Pick")) or 1)
 
     try:
         order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
@@ -7710,29 +7715,28 @@ def advance_devy_draft(conference: str):
 
         if current_idx is None or next_idx >= len(conf_picks):
             # Reached the end of the order. If owed SKIPPED slots remain, hold in
-            # awaiting_makeups; otherwise complete (mirror of DevyDraft.gs).
-            set_devy_draft_setting("CurrentPickDeadline", "")
+            # awaiting_makeups; otherwise complete (mirror of DevyDraft.gs). Only
+            # THIS conference's status flips — never the global DraftStatus, since
+            # other conferences may still be drafting.
+            set_devy_current_deadline(conference, "")
             owed = get_owed_devy_slots(draft_year, conference)
             if owed:
                 set_devy_conf_status(conference, "awaiting_makeups")
-                set_devy_draft_setting("CurrentRound", "")
-                set_devy_draft_setting("CurrentPick", "")
+                set_devy_current_pick(conference, "", "")
                 return {"draftComplete": False, "awaitingMakeups": True, "owedCount": len(owed),
                         "message": f"{conference}: {len(owed)} owed pick(s) awaiting make-up."}
             set_devy_conf_status(conference, "completed")
-            set_devy_draft_setting("DraftStatus", "completed")
             reevaluate_devy_cycle_phase()
             return {"draftComplete": True, "message": f"Devy draft complete for {conference}"}
 
-        # Move to next open pick
+        # Move to next open pick (per conference)
         next_pick_row = conf_picks[next_idx]
-        set_devy_draft_setting("CurrentRound", str(next_pick_row.get("Round")))
-        set_devy_draft_setting("CurrentPick", str(next_pick_row.get("Pick")))
+        set_devy_current_pick(conference, next_pick_row.get("Round"), next_pick_row.get("Pick"))
 
-        # Reset pick deadline (24 hours)
+        # Reset pick deadline (per conference)
         deadline_hours = int(get_devy_draft_setting("PickDeadlineHours") or 24)
         deadline = datetime.now() + timedelta(hours=deadline_hours)
-        set_devy_draft_setting("CurrentPickDeadline", deadline.isoformat())
+        set_devy_current_deadline(conference, deadline.isoformat())
 
         return {
             "draftComplete": False,
@@ -7919,29 +7923,34 @@ async def devy_status(interaction: discord.Interaction):
         await interaction.followup.send("Devy draft sheets not configured.")
         return
 
-    status = get_devy_draft_setting("DraftStatus") or "not_started"
     draft_year = get_devy_draft_setting("DraftYear") or "N/A"
-    conference = get_devy_draft_setting("CurrentConference") or "N/A"
+    phase = get_devy_cycle_phase()
 
     embed = discord.Embed(
         title="🏈 Devy Draft Status",
         color=discord.Color.blue()
     )
-
     embed.add_field(name="Draft Year", value=str(draft_year), inline=True)
-    embed.add_field(name="Status", value=status.replace("_", " ").title(), inline=True)
+    embed.add_field(name="Cycle Phase", value=str(phase).replace("_", " ").title(), inline=True)
 
-    if status == "in_progress":
-        current_pick = get_current_devy_pick(conference)
-        if current_pick:
-            embed.add_field(name="Conference", value=conference, inline=True)
-            embed.add_field(
-                name="On The Clock",
-                value=f"**{current_pick['teamName']}**\nRound {current_pick['round']}, Pick {current_pick['pick']}",
-                inline=False
-            )
-            if current_pick.get("pickDeadline"):
-                embed.add_field(name="Pick Deadline", value=current_pick["pickDeadline"], inline=True)
+    # Every conference can draft at once — list each conference's state.
+    try:
+        rows = devy_draft_settings_ws.get_all_records(expected_headers=[])
+    except Exception:
+        rows = []
+    conf_statuses = sorted(
+        (str(r.get("SettingKey", ""))[len("Status_"):], str(r.get("SettingValue", "")))
+        for r in rows if str(r.get("SettingKey", "")).startswith("Status_")
+    )
+    if not conf_statuses:
+        embed.add_field(name="Conferences", value="No conference has started.", inline=False)
+    for conf, st in conf_statuses:
+        line = st.replace("_", " ").title()
+        if st == "in_progress":
+            cur = get_current_devy_pick(conf)
+            if cur:
+                line += f" — **{cur['teamName']}** (R{cur['round']} P{cur['pick']})"
+        embed.add_field(name=conf, value=line, inline=True)
 
     await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -8443,22 +8452,22 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
     )
 
     set_devy_draft_setting("DraftYear", str(draft_year))
-    set_devy_draft_setting("CurrentConference", conference.upper())
 
     if first_open is None:
-        # Every slot is already filled by retentions - nothing to draft.
-        set_devy_draft_setting("DraftStatus", "completed")
-        set_devy_draft_setting("CurrentPickDeadline", "")
+        # Every slot is already filled by retentions - nothing to draft. Only
+        # mark THIS conference complete (not the global DraftStatus).
+        set_devy_current_deadline(conference.upper(), "")
         set_devy_conf_status(conference.upper(), "completed")
         set_devy_cycle_phase("DRAFTING")
         reevaluate_devy_cycle_phase()
         await interaction.followup.send(f"All picks for {conference.upper()} ({draft_year}) are already filled by retentions.")
         return
 
-    # Start the draft at the first open slot
+    # Start this conference at its first open slot. DraftStatus stays a coarse
+    # "at least one conference is live" flag; the per-conference Status_<CONF> +
+    # Current_<CONF>_* keys are authoritative.
     set_devy_draft_setting("DraftStatus", "in_progress")
-    set_devy_draft_setting("CurrentRound", str(first_open.get("Round")))
-    set_devy_draft_setting("CurrentPick", str(first_open.get("Pick")))
+    set_devy_current_pick(conference.upper(), first_open.get("Round"), first_open.get("Pick"))
     set_devy_cycle_phase("DRAFTING")
     set_devy_conf_status(conference.upper(), "in_progress")
     # Turn on the on-the-clock watcher for this conference (announces widget picks,
@@ -8469,7 +8478,7 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
     deadline = datetime.now()
     from datetime import timedelta
     deadline = deadline + timedelta(hours=deadline_hours)
-    set_devy_draft_setting("CurrentPickDeadline", deadline.isoformat())
+    set_devy_current_deadline(conference.upper(), deadline.isoformat())
 
     # Get first pick info
     first_pick = get_current_devy_pick(conference.upper())

@@ -89,7 +89,7 @@
           </div>
           <sc-if value="{{ leader.hasPhoto }}" hint-placeholder-val="{{ false }}"><img src="{{ leader.photo }}" alt="{{ leader.name }}" style="position:absolute;inset:0;z-index:2;width:100%;height:100%;object-fit:cover;display:block;"/></sc-if>
           <span style="position:absolute;top:8px;left:8px;z-index:4;font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.06em;padding:3px 6px;border-radius:2px;color:#F5F5F5;background:rgba(10,10,10,.78);">{{ leader.cls }}</span>
-          <div style="position:absolute;bottom:-8px;left:-8px;z-index:5;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font-display);font-weight:700;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 3px var(--bg-surface);background:var(--border-strong);{{ leader.chipBg }};color:var(--fg-primary);color:{{ leader.teamTxt }};"><sc-if value="{{ leader.teamNoLogo }}" hint-placeholder-val="{{ true }}">{{ leader.teamAbbr }}</sc-if><sc-if value="{{ leader.teamHasLogo }}" hint-placeholder-val="{{ false }}"><img src="{{ leader.teamLogo }}" alt="" style="width:88%;height:88%;object-fit:contain;display:block;"/></sc-if></div>
+          <div style="position:absolute;bottom:-8px;left:-8px;z-index:5;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font-display);font-weight:700;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 3px var(--bg-surface);background:var(--border-strong);{{ leader.chipBg }};color:var(--fg-primary);color:{{ leader.teamTxt }};"><sc-if value="{{ leader.chipNoLogo }}" hint-placeholder-val="{{ true }}">{{ leader.teamAbbr }}</sc-if><sc-if value="{{ leader.chipHasLogo }}" hint-placeholder-val="{{ false }}"><img src="{{ leader.chipLogo }}" alt="" style="width:92%;height:92%;object-fit:contain;display:block;"/></sc-if></div>
         </div>
         <div style="min-width:0;display:flex;flex-direction:column;justify-content:center;">
           <div style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:2px;font:700 10px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;background:rgba(201,162,39,.12);color:var(--gold);border:1px solid rgba(201,162,39,.3);">{{ leader.badgeLabel }} {{ leader.badge }}</div>
@@ -480,40 +480,38 @@ class Component extends DCLogic {
   pad(n) { return n < 10 ? '0' + n : '' + n; }
   fmt2(n) { return (+n).toFixed(2); }
   scoreOf(f, isCoach) {
-    if (isCoach) { const wins = +(f.overall.split('-')[0]) || 0; return Math.round(f.teamPts * 0.45) + wins * 6 + Math.round(f.swing * 1.5); }
-    return Math.round(f.pts * 0.55) + Math.round(f.confPts * 0.25) + Math.round(f.pctTeam * 4 * 0.20);
+    if (isCoach) { return (f.awardScore || 0).toFixed(2); }   // coach/team award: feed supplies the composite score
+    return (f.pts * 0.55 + f.confPts * 0.25 + f.pctTeam * 4 * 0.20).toFixed(2);
   }
 
   buildLeader(award, highlight) {
     if (!award || !award.finalists || !award.finalists.length) {
       return {
         name: '—', cls: '', teamAbbr: '', teamColor: 'var(--border-strong)', teamTxt: 'var(--fg-primary)',
-        teamLogo: '', teamHasLogo: false, teamNoLogo: true, chipBg: 'background:var(--border-strong)', photo: '', hasPhoto: false,
+        teamLogo: '', teamHasLogo: false, teamNoLogo: true, chipBg: 'background:var(--border-strong)', chipLogo: '', chipHasLogo: false, chipNoLogo: true, photo: '', hasPhoto: false,
         subline: 'Awaiting results', badgeLabel: '', badge: '', cushionVal: '', cushionLabel: '',
         score: 0, formulaExpr: '', formulaParts: [], metrics: [],
       };
     }
     const f = award.finalists[0], nx = award.finalists[1];
+    // Front-runner badge is a round bubble → prefer the square team icon (fills the
+    // circle cleanly), fall back to the pill, then the colored initials. Mirrors the beeswarm.
+    const chipLogo = f.team.squareLogo || f.team.logo || '';
     if (award.isCoach) {
-      const lead = nx ? f.teamPts - nx.teamPts : 0;
-      const wins = +(f.overall.split('-')[0]) || 0;
-      const c1 = Math.round(f.teamPts * 0.45), c2 = wins * 6, c3 = Math.round(f.swing * 1.5);
+      // Live feed shapes the coach/team award like a player row: pts = team points,
+      // teamWins = wins, awardScore = composite. No overall/swing/confRec exist here.
+      const lead = nx ? f.pts - nx.pts : 0;
       return {
         name: f.name, cls: 'HC', teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
-        teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, chipBg: f.team.logo ? 'background:#F5F5F5' : 'background:' + f.team.color, photo: f.photo || '', hasPhoto: !!f.photo,
-        subline: f.team.name + ' · Head Coach', badgeLabel: 'RECORD', badge: f.overall,
-        cushionVal: '+' + lead, cushionLabel: 'Team-pts lead over #2',
-        score: c1 + c2 + c3,
-        formulaExpr: 'Score = (0.45 · Team Pts For) + (6 · Wins) + (1.5 · Point Swing)',
-        formulaParts: [
-          { label: 'Team Pts For', input: '' + f.teamPts, weight: '× 0.45', value: c1 },
-          { label: 'Wins', input: f.overall, weight: '× 6', value: c2 },
-          { label: 'Point Swing', input: (f.swing > 0 ? '+' : '') + f.swing, weight: '× 1.5', value: c3 },
-        ],
+        teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, chipBg: chipLogo ? 'background:#F5F5F5' : 'background:' + f.team.color, chipLogo: chipLogo, chipHasLogo: !!chipLogo, chipNoLogo: !chipLogo, photo: '', hasPhoto: false,
+        subline: 'Head Coach of the Year', badgeLabel: 'WINS', badge: String(f.teamWins),
+        cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Team-pt lead over #2',
+        score: Math.round(f.awardScore || 0),
+        formulaExpr: '', formulaParts: [],
         metrics: [
-          { label: 'OVERALL', value: f.overall, isHero: false, isPlain: true },
-          { label: 'CONF', value: f.confRec, isHero: false, isPlain: true },
-          { label: 'TEAM PTS FOR', value: this.fmt2(f.teamPts), isHero: !!highlight, isPlain: !highlight },
+          { label: 'TEAM PTS', value: this.fmt2(f.pts), isHero: !!highlight, isPlain: !highlight },
+          { label: 'WINS', value: String(f.teamWins), isHero: false, isPlain: true },
+          { label: 'LEAGUE RANK', value: '#' + f.rank, isHero: false, isPlain: true },
         ],
       };
     }
@@ -521,7 +519,7 @@ class Component extends DCLogic {
     const c1 = Math.round(f.pts * 0.55), c2 = Math.round(f.confPts * 0.25), c3 = Math.round(f.pctTeam * 4 * 0.20);
     return {
       name: f.name, cls: f.cls, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
-      teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, chipBg: f.team.logo ? 'background:#F5F5F5' : 'background:' + f.team.color, photo: f.photo || '', hasPhoto: !!f.photo,
+      teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, chipBg: chipLogo ? 'background:#F5F5F5' : 'background:' + f.team.color, chipLogo: chipLogo, chipHasLogo: !!chipLogo, chipNoLogo: !chipLogo, photo: f.photo || '', hasPhoto: !!f.photo,
       subline: f.team.name + ' · ' + this.clsFull(f.cls), badgeLabel: f.pos + ' RANK', badge: '#' + f.posRank,
       cushionVal: '+' + this.fmt2(lead), cushionLabel: 'Fantasy-pt lead over #2',
       score: c1 + c2 + c3,
@@ -533,7 +531,7 @@ class Component extends DCLogic {
       ],
       metrics: [
         { label: 'FANTASY PTS', value: this.fmt2(f.pts), isHero: !!highlight, isPlain: !highlight },
-        { label: '% OF TEAM', value: f.pctTeam + '%', isHero: false, isPlain: true },
+        { label: '% OF TEAM', value: this.fmt2(f.pctTeam) + '%', isHero: false, isPlain: true },
         { label: 'CONF PTS', value: this.fmt2(f.confPts), isHero: false, isPlain: true },
       ],
     };
@@ -542,14 +540,14 @@ class Component extends DCLogic {
   buildFinalist(f, isCoach) {
     if (isCoach) return {
       rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
-      teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, photo: f.photo || '', hasPhoto: !!f.photo,
-      meta: f.confRec + ' conf · ' + (f.swing > 0 ? '+' : '') + f.swing + ' swing', statMain: this.fmt2(f.teamPts), statSub: f.overall,
+      teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, photo: '', hasPhoto: false,
+      meta: 'Head Coach · ' + f.teamWins + ' W', statMain: this.fmt2(f.pts), statSub: f.teamWins + ' W',
       score: this.scoreOf(f, true),
     };
     return {
       rankStr: this.pad(f.rank), name: f.name, teamAbbr: f.team.abbr, teamColor: f.team.color, teamTxt: f.team.txt,
       teamLogo: f.team.logo || '', teamHasLogo: !!f.team.logo, teamNoLogo: !f.team.logo, photo: f.photo || '', hasPhoto: !!f.photo,
-      meta: f.cls + ' · ' + f.pos + ' #' + f.posRank, statMain: this.fmt2(f.pts), statSub: f.pctTeam + '%',
+      meta: f.cls + ' · ' + f.pos + ' #' + f.posRank, statMain: this.fmt2(f.pts), statSub: this.fmt2(f.pctTeam) + '%',
       score: this.scoreOf(f, false),
     };
   }
@@ -716,10 +714,16 @@ class Component extends DCLogic {
 
     const hiKey = this.state.recHover || selT.key;
     const CH = 600, PAD = 36, swW = this.state.swW || 600, narrow = swW < 360, COLL = narrow ? 22 : 28, halfW = swW / 2 - (narrow ? 14 : 18);
-    const maxSw = Math.max(...scoped.map((t) => t.total), 1);
+    // Domain spans max down to min, always anchored to include $0 so negative
+    // totals get real space below the zero baseline instead of clipping off-chart.
+    const swVals = scoped.map((t) => t.total);
+    const maxSw = Math.max(1, ...swVals);
+    const minSw = Math.min(0, ...swVals);
+    const spanSw = (maxSw - minSw) || 1;
+    const money = (v) => (v < 0 ? '-$' + Math.round(-v) : '$' + Math.round(v));
     const placedPts = [];
     const swarmDots = scoped.slice().sort((a, b) => b.total - a.total).map((t) => {
-      const y = PAD + (1 - t.total / maxSw) * (CH - PAD * 2);
+      const y = PAD + (1 - (t.total - minSw) / spanSw) * (CH - PAD * 2);
       let x = 0;
       let yy = y;
       search: for (let ring = 0; ring < 8; ring++) {
@@ -735,7 +739,7 @@ class Component extends DCLogic {
       const hi = t.key === hiKey;
       const size = narrow ? (hi ? 30 : 22) : (hi ? 36 : 27);
       const below = yy < CH / 2;
-      const tip = { head: (t.abbr || t.key) + ' · $' + t.total, body: '#' + t.rank + ' · ' + t.name, pos: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(below ? yy + size / 2 + 10 : yy - size / 2 - 10) + 'px;' + (below ? '' : 'transform:translate(-50%,-100%);') };
+      const tip = { head: (t.abbr || t.key) + ' · ' + money(t.total), body: '#' + t.rank + ' · ' + t.name, pos: 'left:calc(50% + ' + Math.round(x) + 'px);top:' + Math.round(below ? yy + size / 2 + 10 : yy - size / 2 - 10) + 'px;' + (below ? '' : 'transform:translate(-50%,-100%);') };
       // Beeswarm dots prefer the square team logo (fills the round dot cleanly);
       // fall back to the pill icon, then the 2-letter colored chip. Contain on a
       // white fill so any logo shape sits nicely inside the circle.
@@ -750,7 +754,7 @@ class Component extends DCLogic {
       };
     });
     const swarmTicks = Array.from({ length: 5 }, (_, i) => ({
-      label: '$' + Math.round(maxSw * (1 - i / 4)),
+      label: money(maxSw - (i / 4) * spanSw),
       style: 'top:' + Math.round(PAD + (i / 4) * (CH - PAD * 2)) + 'px;',
     }));
 
@@ -876,7 +880,7 @@ class Component extends DCLogic {
         pos: p.pos, posColor: pc, posTxt: pt,
         name: p.name, teamAbbr: p.team.abbr, teamColor: p.team.color, teamTxt: p.team.txt,
         teamLogo: p.team.logo || '', teamHasLogo: !!p.team.logo, teamNoLogo: !p.team.logo, photo: p.photo || '', hasPhoto: !!p.photo,
-        cls: p.cls, posRank: '#' + p.posRank, pts: this.fmt2(p.pts), pctTeam: p.pctTeam + '%', confPts: this.fmt2(p.confPts), score: this.scoreOf(p, false),
+        cls: p.cls, posRank: '#' + p.posRank, pts: this.fmt2(p.pts), pctTeam: this.fmt2(p.pctTeam) + '%', confPts: this.fmt2(p.confPts), score: this.scoreOf(p, false),
       };
     });
 
