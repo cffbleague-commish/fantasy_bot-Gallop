@@ -436,7 +436,7 @@ var CONF_ALIAS={SEC:'SEC',B1G:'B1G',B10:'B1G',BIG10:'B1G',ACC:'ACC',B12:'B12',BI
 function confStyle(id){var key=CONF_ALIAS[String(id).toUpperCase()]||String(id).toUpperCase();return DVCONF[key]||{color:'#5A5A5A',logo:''};}
 
 /* ===== live state, built from the ?feed=devy payload ===== */
-var FEED=null, ST={}, POOLBY={}, WORK=[], ROSTV=[], PASTF=[], me=DV.me, LOADED=false, LOADERR='', BUSY=false;
+var FEED=null, ST={}, POOLBY={}, WORK=[], ROSTV=[], PASTF=[], me=DV.me, LOADED=false, LOADERR='', BUSY=false, LASTSIG='';
 function feedConf(id){return (FEED&&FEED.conferences||[]).filter(function(c){return c.id===id;})[0]||null;}
 function buildState(feed){
   FEED=feed;
@@ -506,8 +506,14 @@ function untilTxt(ms){var s2=Math.floor(ms/1e3),dd=Math.floor(s2/86400),h=Math.f
 /* endpoint I/O */
 function feedUrl(nc){return WEBAPP_URL+(WEBAPP_URL.indexOf('?')>=0?'&':'?')+'feed=devy&fid='+encodeURIComponent(me)+(nc?'&nocache=1':'');}
 function postAction(payload){payload.franchiseId=me;return fetch(WEBAPP_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
-function reload(nc,cb){return fetch(feedUrl(nc),{credentials:'omit'}).then(function(r){return r.json();}).then(function(feed){if(feed&&feed.error) throw new Error(feed.error);buildState(feed);LOADED=true;LOADERR='';if(!ui.conf||!CF.some(function(c){return c.id===ui.conf;})) ui.conf=myConf();if(!ui.yr) ui.yr=(PASTF[0]&&PASTF[0].year)||DV.season-1;if(cb) cb();render();}).catch(function(e){LOADED=true;LOADERR=String(e&&e.message||e);render();});}
-function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(function(res){BUSY=false;if(res&&res.success){reload(true);toast(okMsg||res.message||'Done.');}else{reload(true);toast((res&&res.message)||'That action was rejected.');}}).catch(function(e){BUSY=false;toast('Network error \u2014 try again.');});}
+function reload(nc,cb,force){return fetch(feedUrl(nc),{credentials:'omit'}).then(function(r){return r.text();}).then(function(txt){var feed;try{feed=JSON.parse(txt);}catch(e){throw new Error('Bad response from server.');}if(feed&&feed.error) throw new Error(feed.error);
+  // Only re-render when the payload actually changed. The 30s background poll
+  // otherwise rebuilds the whole panel on every tick, which reflows the layout
+  // and re-scrolls the board — the periodic "jump". A forced reload (user hit
+  // Refresh, or just made a pick) always renders.
+  var changed=(txt!==LASTSIG);LASTSIG=txt;
+  buildState(feed);LOADED=true;LOADERR='';if(!ui.conf||!CF.some(function(c){return c.id===ui.conf;})) ui.conf=myConf();if(!ui.yr) ui.yr=(PASTF[0]&&PASTF[0].year)||DV.season-1;if(cb) cb();if(changed||force) render();}).catch(function(e){LOADED=true;LOADERR=String(e&&e.message||e);render();});}
+function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(function(res){BUSY=false;if(res&&res.success){reload(true,null,true);toast(okMsg||res.message||'Done.');}else{reload(true,null,true);toast((res&&res.message)||'That action was rejected.');}}).catch(function(e){BUSY=false;toast('Network error \u2014 try again.');});}
 /* ---------- render ---------- */
 function chipRet(y){return '<span class="chip ret sm" title="Retained \u00B7 year '+y+'">Ret \u00B7 Yr '+y+'</span>';}
 function confBar(){
@@ -662,18 +668,48 @@ root.addEventListener('click',function(e){
   else if(a==='draft'){var mc=myConf();if(ui.conf!==mc||!ui.sel||!canPick(mc)||BUSY) return;var sel=ui.sel;ui.sel=null;act({action:'pick',conference:mc,playerId:sel});}
   else if(a==='dec'){if(!retentionOpen()||BUSY) return;act({action:(v==='retain'?'retain':'release'),conference:myConf(),playerId:b.getAttribute('data-id')});}
   else if(a==='yr'){ui.yr=+v;render();}
-  else if(a==='refresh'){reload(true);toast('Refreshed.');}
+  else if(a==='refresh'){reload(true,null,true);toast('Refreshed.');}
   else if(a==='gopool'){ui.tab='draft';ui.sub='pool';ui.conf=myConf();render();var gp=root.querySelector('.gpool'),q=$('q');if(gp){var y=gp.getBoundingClientRect().top+window.pageYOffset-12;window.scrollTo({top:y,behavior:'smooth'});}if(q) q.focus({preventScroll:true});}
 });
 root.addEventListener('toggle',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-dv');if(k==='how'){ui.howOpen=e.target.open;var sp=e.target.querySelector('summary span');if(sp) sp.textContent=ui.howOpen?'Hide':'Show';}},true);
 root.addEventListener('change',function(e){if(e.target.getAttribute('data-dv')==='yr'){ui.yr=+e.target.value;render();}});
 root.addEventListener('input',function(e){if(e.target.getAttribute('data-dv')==='q'){ui.q=e.target.value;refreshPool();}});
+/* ===== adaptive polling — cadence follows the cycle phase =====
+   • a conference is actively drafting  → poll every 60s: stay live + keep the
+     Apps Script instance warm;
+   • retention window open               → poll every 60s: stay warm and catch a
+     commish/bot edit (the viewer's own retain/release already refreshes
+     instantly via act());
+   • any other phase                     → no polling: static after load (manual
+     Refresh still works). A transient load error retries at 30s. */
+function pollMs(){
+  if(LOADERR) return 30000;
+  if(!FEED||!FEED.settings) return 0;
+  var ph=FEED.settings.cyclePhase||'';
+  var live=(FEED.conferences||[]).some(function(c){return c.status==='in_progress'||c.status==='awaiting_makeups';});
+  if(live||ph==='DRAFTING') return 60000;
+  if(ph==='RETENTION_OPEN') return 60000;
+  return 0;
+}
+var pollTimer=null;
+function schedulePoll(){
+  if(pollTimer){clearTimeout(pollTimer);pollTimer=null;}
+  var ms=pollMs();if(!ms) return;              // static phase → stop polling
+  pollTimer=setTimeout(function(){
+    if(BUSY||document.visibilityState==='hidden'){schedulePoll();return;}
+    reload(true).then(schedulePoll);           // fetch, then reschedule at the new cadence
+  },ms);
+}
+/* a backgrounded tab coming back refreshes once (if we're in an active phase),
+   then resumes the normal cadence */
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState!=='hidden'&&pollMs()) reload(true).then(schedulePoll);
+});
 /* identity + boot */
 me=pad4((typeof franchise_id!=='undefined'&&franchise_id)?franchise_id:(DVQP.get('fid')||DV.me))||DV.me;
 ui.conf=confOf(me).id;ui.team=me;
-render();       // shows loading state
-reload(false);  // first fetch (cache ok)
+render();                          // loading state
+reload(false).then(schedulePoll);  // first fetch (cache ok), then start adaptive polling
 setInterval(function(){if(LOADED&&!LOADERR) tick();},1000);
-setInterval(function(){if(!BUSY&&document.visibilityState!=='hidden') reload(true);},30000);
 })();
 </script>
