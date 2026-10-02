@@ -270,16 +270,33 @@
     teams.forEach(function (t) { byId[String(t.id)] = t; });
 
     // GameDay previews the week we are GOING INTO, not the one just finished.
-    // In the payload, games[] holds only completed games and weeksPlayed is the
-    // last completed week; the in-progress/upcoming matchups live in upcoming[]
-    // (see detectLatestCompletedWeek in PowerRankingsWebApp.gs). So the target
-    // week is the lowest week appearing in any team's upcoming[] — i.e. the
-    // in-progress week — falling back to weeksPlayed + 1 when upcoming[] is empty.
-    var week = 0;
-    teams.forEach(function (t) {
-      (t.upcoming || []).forEach(function (g) { var w = num(g.week); if (w && (!week || w < week)) week = w; });
-    });
-    if (!week) week = (num(d && d.weeksPlayed) || 0) + 1;
+    // weeksPlayed is the last FULLY-completed week (detectLatestCompletedWeek in
+    // PowerRankingsWebApp.gs — the same "entering the week" convention Power
+    // Rankings uses), so the week we're heading into is weeksPlayed + 1.
+    //
+    // We deliberately do NOT derive the week from the lowest upcoming[] week. A
+    // game that never earns a real score — a forfeit, an unreported game, a true
+    // 0 — stays in upcoming[] at its (now past) week forever (the else branch in
+    // PowerRankingsWebApp.gs pushes it to upcoming with no "is this week over?"
+    // gate). Taking the global min of upcoming[] then latches onto that stale
+    // week, which dragged GameDay a week — or more — behind the live slate.
+    var weeksPlayed = num(d && d.weeksPlayed) || 0;
+    var week = weeksPlayed + 1;
+    // Safety net: if nothing is scheduled that week (end of season, a schedule
+    // gap), fall back to the earliest genuinely-future upcoming week so the
+    // message never renders an empty slate.
+    var hasWeek = function (w) {
+      return teams.some(function (t) {
+        return (t.games || []).concat(t.upcoming || []).some(function (g) { return num(g.week) === w; });
+      });
+    };
+    if (!hasWeek(week)) {
+      var nextUp = 0;
+      teams.forEach(function (t) {
+        (t.upcoming || []).forEach(function (g) { var w = num(g.week); if (w > weeksPlayed && (!nextUp || w < nextUp)) nextUp = w; });
+      });
+      if (nextUp) week = nextUp;
+    }
 
     var rankOf = function (id) { var r = num(byId[id] && byId[id].rank); return r > 0 ? r : null; };
 
