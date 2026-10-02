@@ -173,15 +173,31 @@ async function buildBannerCss() {
 // output below).
 const IMG_ASSETS = {
   '../../assets/icons/rivalry.svg':       path.join(ASSET_DIR, 'icons', 'rivalry.svg'),
-  '../../assets/nfl-draft-logo.png':      path.join(ASSET_DIR, 'nfl-draft-logo.png'),
   '../../assets/gameday-logo.png':        path.join(ASSET_DIR, 'gameday-logo.png'),
   '../../assets/icons/award-heisman.svg': path.join(ASSET_DIR, 'icons', 'award-heisman.svg'),
   './nfl-draft-placeholder.svg':          path.join(SRC_DIR, 'nfl-draft-placeholder.svg'),
   './gameday-placeholder.svg':            path.join(SRC_DIR, 'gameday-placeholder.svg'),
 };
 
-// Draft banner logo -> window global read by pa-data-live -> CFFB_NFLDRAFT.logo.
-const draftLogoUri = fileDataUri(path.join(ASSET_DIR, 'nfl-draft-logo.png')) || '';
+// Draft logo: resized (async, in main) then used in two places — the <img> path
+// in the template and the window global read by pa-data-live -> CFFB_NFLDRAFT.logo.
+// A small PNG logo at 74 KB inlined twice nearly blew the 768 KB limit, so it is
+// downscaled + palette-quantized via sharp. Markers are substituted in main().
+const DRAFT_LOGO_MARK = '__PA_DRAFT_LOGO_URI__';
+const DRAFT_LOGO_PATH = path.join(ASSET_DIR, 'nfl-draft-logo.png');
+const DRAFT_LOGO_MAX_W = 420;   // displays ≤160px; retina headroom
+async function buildDraftLogoUri() {
+  const p = resolveAssetPath(DRAFT_LOGO_PATH);
+  if (!p) return '';
+  let sharp = null;
+  try { sharp = require('sharp'); } catch (e) {}
+  if (!sharp) return fileDataUri(p) || '';
+  try {
+    const buf = await sharp(p).resize({ width: DRAFT_LOGO_MAX_W, withoutEnlargement: true }).png({ compressionLevel: 9, palette: true }).toBuffer();
+    console.log('  draft logo nfl-draft-logo.png -> ' + (buf.length / 1024).toFixed(0) + ' KB (from ' + (fs.statSync(p).size / 1024).toFixed(0) + ' KB)');
+    return 'data:image/png;base64,' + buf.toString('base64');
+  } catch (e) { console.warn('warn: could not process draft logo (' + e.message + '); inlining raw'); return fileDataUri(p) || ''; }
+}
 
 // ---------------------------------------------------------------------------
 // Extract the DesignSync component: <x-dc> template + the DCLogic script.
@@ -261,7 +277,7 @@ const bootScript = [
   '  window.__cffbPlayerAwardsBooted = true;',
   '  window.__resources = true;',   // skip the runtime\'s self re-fetch of location.href
   '  window.__CFFB_AWARDS_LOGO_IDS = ' + JSON.stringify(Object.keys(confLogos)) + ';',
-  '  window.__CFFB_DRAFT_LOGO = ' + JSON.stringify(draftLogoUri) + ';',
+  '  window.__CFFB_DRAFT_LOGO = ' + JSON.stringify(DRAFT_LOGO_MARK) + ';',
   '  function __paData() {',
   dataLive,
   '  }',
@@ -319,6 +335,12 @@ async function main() {
   const bannerRules = await buildBannerCss();
   out = out.replace(BANNER_MARK, bannerRules.join('\n'));
 
+  // Resized draft logo -> template <img> path + window global (both markers).
+  const draftLogoUri = await buildDraftLogoUri();
+  if (!draftLogoUri) console.warn('warn: asset not found: assets/nfl-draft-logo.png (using placeholder)');
+  out = out.split('../../assets/nfl-draft-logo.png').join(draftLogoUri || TRANSPARENT_PNG);
+  out = out.split('"' + DRAFT_LOGO_MARK + '"').join(JSON.stringify(draftLogoUri || ''));
+
   // Sanity check: never ship a tag MFL rejects.
   const banned = /<\/?(?:html|head|body|textarea)\b[^>]*>/i;
   if (banned.test(out)) {
@@ -337,7 +359,7 @@ async function main() {
   console.log('  Feed: ' + WEBAPP_URL + '?feed=awards');
   console.log('  Logos inlined: ' + Object.keys(confLogos).join(', '));
   console.log('  Banners inlined: ' + bannerRules.length + '/2');
-  console.log('  Draft logo: ' + (draftLogoUri ? 'inlined' : 'placeholder fallback'));
+  console.log('  Draft logo: ' + (draftLogoUri ? 'inlined (resized)' : 'placeholder fallback'));
   console.log('  Size: ' + bytes + ' bytes (' + (bytes / 1024).toFixed(1) + ' KB) — MFL limit is 768 KB');
   if (bytes > 768 * 1024) console.warn('  ⚠ OVER the 768 KB MFL limit — lower BANNER_MAX_W / BANNER_JPEG_Q or provide smaller art.');
 }

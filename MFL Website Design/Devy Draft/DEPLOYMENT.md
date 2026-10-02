@@ -6,7 +6,8 @@ sheets, and makes the Discord bot announce widget activity. Three pieces:
 1. **Apps Script endpoint** — `apps_script_preseason_devy/DevyDraftWebApp.gs`
    (+ new logic in `DevyDraft.gs`). Serves the widget's data and is the single
    writer for picks/retentions/skips.
-2. **Widget** — `Devy Draft/Devy Draft MFL Message.html`.
+2. **Widget** — `home-message-devy-draft.html` (repo root of `MFL Website Design/`,
+   alongside the other `home-message-*.html` pages).
 3. **Discord bot** — `fantasy_bot.py` (watcher + stage stamping).
 
 ## 1. Deploy the Apps Script web app
@@ -30,7 +31,7 @@ Sanity-check the feed in a browser:
 
 ## 2. Wire the widget
 
-Edit `Devy Draft MFL Message.html`: set `WEBAPP_URL` (near the top of the
+Edit `../home-message-devy-draft.html`: set `WEBAPP_URL` (near the top of the
 `<script>`) to the `/exec` URL — replace the `__DEVY_WEBAPP_URL__` token. (Or
 add a `build-devy-draft.js` that substitutes it, mirroring
 `build-player-awards.js`.)

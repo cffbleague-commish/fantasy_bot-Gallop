@@ -6,8 +6,8 @@ POST {action:...}) and mutates in-memory state so picks / retention / skip /
 auto-pick actually change the board. No Google/MFL needed.
 
     python mock-server.py
-    # then open in a browser:
-    #   Devy Draft MFL Message.html?api=http://localhost:8770&fid=0005
+    # then open in a browser (widget lives one dir up, in MFL Website Design/):
+    #   ../home-message-devy-draft.html?api=http://localhost:8770&fid=0005
 
 Query knobs (GET): &phase=retention flips CyclePhase to RETENTION_OPEN so the
 Retention tab is editable; default is DRAFTING (SEC live, Georgia on the clock).
@@ -210,6 +210,6 @@ class H(http.server.BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print("Devy mock endpoint on http://localhost:%d" % PORT)
-    print("Open:  Devy Draft MFL Message.html?api=http://localhost:%d&fid=0005" % PORT)
+    print("Open:  ../home-message-devy-draft.html?api=http://localhost:%d&fid=0005" % PORT)
     print("       (add &phase=retention to test the Retention tab)")
     http.server.HTTPServer(("localhost", PORT), H).serve_forever()

@@ -12,9 +12,11 @@ so picks / retention / skip / auto-pick actually change the board.
     cd "MFL Website Design/Devy Draft"
     python mock-server.py          # serves http://localhost:8770
 
-Then open in a browser (double-click, or file:// URL) with the test query params:
+Then open the widget in a browser (it lives one level up, in the `MFL Website
+Design/` root next to the other `home-message-*.html` pages) with the test query
+params:
 
-    Devy Draft MFL Message.html?api=http://localhost:8770&fid=0005
+    ../home-message-devy-draft.html?api=http://localhost:8770&fid=0005
 
 - You are **Georgia (0005)**, on the clock in the SEC. Pick from the pool → the
   board advances and your "on the clock" state clears.
