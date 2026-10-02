@@ -420,7 +420,7 @@ var $=function(k){return root.querySelector('[data-dv="'+k+'"]');};
    ?fid= query overrides are for LOCAL TESTING only; on MFL the injected
    franchise_id global wins for identity and no such params are present. ===== */
 var DVQP=(function(){try{return new URLSearchParams(location.search);}catch(e){return {get:function(){return null;}};}})();
-var WEBAPP_URL = DVQP.get('api') || "__DEVY_WEBAPP_URL__";
+var WEBAPP_URL = DVQP.get('api') || "https://script.google.com/macros/s/AKfycbyi0iWgRlISIZYdtRkfK2gWDvGSYdbr3CCoieWBDvL9I_he_kwHj9AbEVdOPmUuo9NHeA/exec";
 
 var T=DV.teams, CF=DV.conferences, H=DV.clockHours*3600e3;
 var pad=function(v){return (v<10?'0':'')+v;};
