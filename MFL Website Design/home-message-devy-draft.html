@@ -447,7 +447,15 @@ function buildState(feed){
   if(s.rebateStep!=null) DV.rebateStep=s.rebateStep;
   if(s.slotOrder) DV.slotOrder=s.slotOrder;
   var ft=feed.teams||{};
-  Object.keys(ft).forEach(function(k){var f=ft[k];if(!T[k]) T[k]={name:f.name||k,abbr:f.abbr||k,color:f.color||'#2A2A2A',txt:f.txt||'#F5F5F5'};if(f.owner) T[k].own=f.owner;if(f.logo) T[k].logo=f.logo;if(f.abbr) T[k].abbr=T[k].abbr||f.abbr;});
+  // The Teams sheet (feed) is authoritative. For any franchise the feed knows,
+  // overwrite the hardcoded DV.teams demo entry entirely — its name/color/logo
+  // placeholders belong to a different team at this id and would otherwise show
+  // the wrong name, colors, or (worst) the wrong logo. Missing color/txt fall
+  // back to a neutral chip; populate those columns in the Teams sheet to restyle.
+  Object.keys(ft).forEach(function(k){var f=ft[k];
+    T[k]={name:f.name||k,abbr:f.abbr||k,
+          color:f.color||'#2A2A2A',txt:f.txt||'#F5F5F5',
+          own:f.owner||'',logo:f.logo||''};});
   ST={};POOLBY={};
   // Rebuild the conference list from the feed (codes are authoritative); style
   // from the presentation defaults via confStyle so colors/logos still apply.
