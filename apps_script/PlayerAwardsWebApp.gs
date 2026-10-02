@@ -19,7 +19,7 @@
  * Redeploy after editing this file (deployments are frozen at deploy time).
  */
 
-const AW_CACHE_KEY = "awards_payload_v3";
+const AW_CACHE_KEY = "awards_payload_v4";
 const AW_CACHE_TTL_SECONDS = 600; // 10 minutes
 
 // ============================================================================
@@ -186,7 +186,7 @@ function buildNational(awards, teamOf) {
           ? (posRankByCopy[r.copyId] || i + 1)
           : (i + 1),
         pts: round2(r.pts),
-        pctTeam: r.teamPF ? Math.round((r.pts / r.teamPF) * 100) : 0,
+        pctTeam: r.teamPF ? round2((r.pts / r.teamPF) * 100) : 0,
         teamWins: r.teamWins,
         awardScore: round2(r.awardScore),
         team: team
@@ -234,7 +234,7 @@ function buildConfTiers(awards, teamOf) {
         playerId: r.playerId,
         posRank: posRank[r.copyId] || r.rank,
         pts: round2(r.pts),
-        pctTeam: r.teamPF ? Math.round((r.pts / r.teamPF) * 100) : 0,
+        pctTeam: r.teamPF ? round2((r.pts / r.teamPF) * 100) : 0,
         confPts: round2(r.pts), // all-conference points ARE conference-game points
         awardScore: round2(r.awardScore),
         team: team
