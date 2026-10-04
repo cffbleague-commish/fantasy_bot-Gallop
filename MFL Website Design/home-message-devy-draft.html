@@ -533,7 +533,7 @@ function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(f
     else{reload(true,null,true);} // older deployment without feed-in-reply
     toast(okMsg||res.message||'Done.');
   }else{reload(true,null,true);toast((res&&res.message)||'That action was rejected.');}
-}).catch(function(e){BUSY=false;toast('Network error \u2014 try again.');});}
+}).catch(function(e){BUSY=false;render();toast('Network error \u2014 try again.');});}
 /* ---------- render ---------- */
 function chipRet(y){return '<span class="chip ret sm" title="Retained \u00B7 year '+y+'">Ret \u00B7 Yr '+y+'</span>';}
 function confBar(){
@@ -620,7 +620,7 @@ function actBar(){
   var mine=onc||owed>0, slotLab=owed>0&&!onc?'make-up pick':(cn+' pick '+(c>-1?lab(c,mc):''));
   if(!mine) return '<div class="act"><div><b>Scout the pool</b><small>Your next '+cn+' pick: '+(nextMine()||'none left')+'.</small></div></div>';
   if(!p) return '<div class="act"><div><b>'+(owed>0&&!onc?'You owe a make-up pick':'You\u2019re on the clock')+'</b><small>Select a player to make your '+slotLab+'.</small></div></div>';
-  return '<div class="act"><div><b>'+p.n+'</b><small>'+p.pos+' \u00B7 Elig. '+(p.elig||'\u2014')+' \u00B7 '+slotLab+'</small></div><button type="button" class="btn pri" data-act="draft"'+(BUSY?' disabled':'')+'>'+(owed>0&&!onc?'Make up pick':'Draft player')+'</button></div>';
+  return '<div class="act"><div><b>'+p.n+'</b><small>'+p.pos+' \u00B7 Elig. '+(p.elig||'\u2014')+' \u00B7 '+slotLab+'</small></div><button type="button" class="btn pri" data-act="draft"'+(BUSY?' disabled':'')+'>'+(BUSY?'Submitting\u2026':(owed>0&&!onc?'Make up pick':'Draft player'))+'</button></div>';
 }
 function pDraft(){
   var c=curIdx(),TOT=totOf(),status=cs().status,pre=status==='not_started',hot=canPick(ui.conf);
@@ -700,7 +700,7 @@ root.addEventListener('click',function(e){
   else if(a==='sub'){ui.sub=v;render();}
   else if(a==='pos'){ui.pos=v;root.querySelectorAll('[data-act="pos"]').forEach(function(x){x.classList.toggle('on',x===b);});refreshPool();}
   else if(a==='sel'){ui.sel=ui.sel===v?null:v;refreshPool();}
-  else if(a==='draft'){var mc=myConf();if(ui.conf!==mc||!ui.sel||!canPick(mc)||BUSY) return;var sel=ui.sel;ui.sel=null;act({action:'pick',conference:mc,playerId:sel});}
+  else if(a==='draft'){var mc=myConf();if(ui.conf!==mc||!ui.sel||!canPick(mc)||BUSY) return;act({action:'pick',conference:mc,playerId:ui.sel});refreshPool();}
   else if(a==='dec'){if(!retentionOpen()||SUBMITTED||BUSY) return;PICK[b.getAttribute('data-id')]=(v==='retain'?'RETAIN':'RELEASE');render();}
   else if(a==='retsubmit'){
     if(!retentionOpen()||SUBMITTED||BUSY) return;
