@@ -488,7 +488,7 @@ function buildState(feed){
     ST[fc.id]={picks:picks,curIndex:curIndex,status:status,current:fc.current||null,
       deadline:(fc.current&&fc.current.pickDeadline)?Date.parse(fc.current.pickDeadline):0,
       owed:(fc.owed||[])};
-    POOLBY[fc.id]=(fc.pool||[]).map(function(p){return {id:p.playerId,n:p.name,pos:p.pos,sch:'',elig:p.year,rk:p.rank};});
+    POOLBY[fc.id]=(fc.pool||[]).map(function(p){return {id:p.playerId,n:p.name,pos:p.pos,sch:'',elig:eligLabel(p.year),rk:p.rank};});
   });
   WORK=(feed.viewer&&feed.viewer.retentionWorklist)||[];
   SUBMITTED=!!(feed.viewer&&feed.viewer.retentionSubmitted);
@@ -535,6 +535,11 @@ function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(f
   }else{reload(true,null,true);toast((res&&res.message)||'That action was rejected.');}
 }).catch(function(e){BUSY=false;render();toast('Network error \u2014 try again.');});}
 /* ---------- render ---------- */
+/* KTC tags a projected NFL draft class; a stale/passed year (e.g. "2024" in the
+   2026 draft) reads as wrong. Floor the displayed eligibility at the draft season
+   + 1 so an already-eligible prospect shows as next year's class, not the past.
+   The raw feed value is untouched \u2014 this is display-only. */
+function eligLabel(y){var n=+y;if(!n)return '';return String(Math.max(n,DV.season+1));}
 function chipRet(y){return '<span class="chip ret sm" title="Retained \u00B7 year '+y+'">Ret \u00B7 Yr '+y+'</span>';}
 function confBar(){
   $('conf').innerHTML=CF.map(function(c){var ci=curIdx(c.id),mine=c.id===myConf();
