@@ -525,7 +525,15 @@ function reload(nc,cb,force){return fetch(feedUrl(nc),{credentials:'omit'}).then
   // Refresh, or just made a pick) always renders.
   var changed=(txt!==LASTSIG);LASTSIG=txt;
   buildState(feed);LOADED=true;LOADERR='';if(!ui.conf||!CF.some(function(c){return c.id===ui.conf;})) ui.conf=myConf();if(!ui.yr) ui.yr=(PASTF[0]&&PASTF[0].year)||DV.season-1;if(cb) cb();if(changed||force) render();}).catch(function(e){LOADED=true;LOADERR=String(e&&e.message||e);render();});}
-function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(function(res){BUSY=false;if(res&&res.success){reload(true,null,true);toast(okMsg||res.message||'Done.');}else{reload(true,null,true);toast((res&&res.message)||'That action was rejected.');}}).catch(function(e){BUSY=false;toast('Network error \u2014 try again.');});}
+function act(payload,okMsg){if(BUSY) return;BUSY=true;postAction(payload).then(function(res){BUSY=false;
+  if(res&&res.success){
+    // The POST reply already carries a freshly rebuilt feed \u2014 render from it
+    // directly so the board advances immediately, with no second GET round-trip.
+    if(res.feed){LASTSIG=JSON.stringify(res.feed);buildState(res.feed);LOADED=true;LOADERR='';if(!ui.conf||!CF.some(function(c){return c.id===ui.conf;})) ui.conf=myConf();render();}
+    else{reload(true,null,true);} // older deployment without feed-in-reply
+    toast(okMsg||res.message||'Done.');
+  }else{reload(true,null,true);toast((res&&res.message)||'That action was rejected.');}
+}).catch(function(e){BUSY=false;toast('Network error \u2014 try again.');});}
 /* ---------- render ---------- */
 function chipRet(y){return '<span class="chip ret sm" title="Retained \u00B7 year '+y+'">Ret \u00B7 Yr '+y+'</span>';}
 function confBar(){

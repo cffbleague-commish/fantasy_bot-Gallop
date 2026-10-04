@@ -86,9 +86,13 @@ function doPost(e) {
       default:         result = { success: false, message: "Unknown action: " + action };
     }
 
-    // Bust this viewer's cached feed so the widget's next GET is fresh.
+    // On a successful write: bust this viewer's cached feed AND attach a freshly
+    // rebuilt feed to the response, so the widget can advance to the next pick from
+    // the POST reply alone — no second GET round-trip (halves perceived latency).
     if (result && result.success && fid3) {
-      try { CacheService.getScriptCache().remove("devy_feed_" + devyPad4(fid3)); } catch (ignore) {}
+      var fid4 = devyPad4(fid3);
+      try { CacheService.getScriptCache().remove("devy_feed_" + fid4); } catch (ignore) {}
+      try { result.feed = buildDevyFeed(fid4); } catch (feedErr) { /* client falls back to its own GET */ }
     }
     return devyJsonOut(result);
   } catch (err) {
