@@ -8486,7 +8486,7 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
 
     embed = discord.Embed(
         title=f"🏈 {conference.upper()} Devy Draft Started!",
-        description=f"Draft Year: {draft_year}\n2 Rounds, Snake Format",
+        description=f"Draft Year: {draft_year}\n2 Rounds — same order each round (worst picks first)",
         color=discord.Color.green()
     )
 
@@ -8521,7 +8521,7 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
 
 @devy.command(name="retain", description="Retain a devy player for next year")
 @app_commands.describe(
-    player_id="The player ID to retain",
+    player_id="Start typing your player's name (pick from the list)",
     year="The year to retain for (e.g., 2026)"
 )
 async def devy_retain(interaction: discord.Interaction, player_id: str, year: int):
@@ -8555,8 +8555,46 @@ async def devy_retain(interaction: discord.Interaction, player_id: str, year: in
     else:
         await interaction.followup.send(f"❌ {result['message']}")
 
+
+def _build_owned_roster_choices(interaction: discord.Interaction, current: str):
+    """Autocomplete choices for the current user's owned devy roster (drafted or
+    retained). Shared by /devy retain and /devy release so owners never have to know
+    a raw PlayerID — they pick a name and the PlayerID is sent as the value."""
+    if devy_player_pool_ws is None:
+        return []
+    team = get_team_by_discord_id(interaction.user.id)
+    if not team:
+        return []
+    franchise_id = str(team.get("id")).zfill(3)
+    roster = get_team_devy_roster(franchise_id, team.get("conference"))
+    if not roster:
+        return []
+
+    term = (current or "").lower().strip()
+    matches = []
+    for p in roster:
+        status_tag = "Retained" if p.get("status") == "Retained" else "Drafted"
+        display_name = f"{p['lastName']}, {p['firstName']} ({p['position']}) — {status_tag}"
+        if (not term
+                or term in display_name.lower()
+                or term in str(p['lastName']).lower()
+                or term in str(p['firstName']).lower()):
+            matches.append(
+                app_commands.Choice(name=display_name[:100], value=p["playerId"])
+            )
+        if len(matches) >= 25:  # Discord max 25 choices
+            break
+    return matches
+
+
+@devy_retain.autocomplete('player_id')
+async def devy_retain_autocomplete(interaction: discord.Interaction, current: str):
+    """Let owners retain by picking a name from their own devy roster."""
+    return _build_owned_roster_choices(interaction, current)
+
+
 @devy.command(name="release", description="Release a retained devy player back to the pool")
-@app_commands.describe(player_id="The player ID to release")
+@app_commands.describe(player_id="Start typing your player's name (pick from the list)")
 async def devy_release(interaction: discord.Interaction, player_id: str):
     await interaction.response.defer(ephemeral=True)
 
@@ -8585,6 +8623,13 @@ async def devy_release(interaction: discord.Interaction, player_id: str):
         await interaction.followup.send(embed=embed, ephemeral=True)
     else:
         await interaction.followup.send(f"❌ {result['message']}")
+
+
+@devy_release.autocomplete('player_id')
+async def devy_release_autocomplete(interaction: discord.Interaction, current: str):
+    """Let owners release by picking a name from their own devy roster."""
+    return _build_owned_roster_choices(interaction, current)
+
 
 @commish.command(name="devy_retained", description="View all retained devy players in a conference")
 @app_commands.describe(conference="Conference to view (defaults to your conference)")
@@ -8860,7 +8905,15 @@ class DevyRetentionView(discord.ui.View):
         """Generate the current status embed."""
         embed = discord.Embed(
             title=f"🏈 Devy Retention Decisions - {self.team_name}",
-            description=f"**Conference:** {self.conference}\n**Retention Year:** {self.retention_year}\n\nSelect which players to **retain** or **release**. Released players return to the draft pool.",
+            description=(
+                f"**Conference:** {self.conference}\n"
+                f"**Retention Year:** {self.retention_year}\n\n"
+                "Select which players to **retain** or **release**. Released players return to the draft pool.\n\n"
+                "**Cost:** you may retain up to **2** players. Your 1st retention spends your "
+                "**Round 2** pick, your 2nd spends your **Round 1** pick.\n"
+                "**Rebate:** $20 base, minus $5 for each consecutive year retained "
+                "($15 the 1st year, $10, $5, then $0)."
+            ),
             color=discord.Color.blue()
         )
 
@@ -8873,9 +8926,19 @@ class DevyRetentionView(discord.ui.View):
             else:
                 status = "⏳ *Pending*"
 
+            # Rebate preview (seeded on the PENDING worklist row). Shown so owners
+            # see what a retention is worth before deciding.
+            detail = f"Drafted: {p.get('draftYear', '?')}"
+            rebate = p.get("rebateRemaining")
+            consec = p.get("consecutiveYear")
+            if rebate not in (None, ""):
+                ordinal = {1: "1st", 2: "2nd", 3: "3rd"}.get(consec, f"{consec}th") if consec not in (None, "") else None
+                yr_note = f", {ordinal} year" if ordinal else ""
+                detail += f"\nRetain rebate: ${rebate}{yr_note}"
+
             embed.add_field(
                 name=f"{p['firstName']} {p['lastName']} ({p['position']})",
-                value=f"Drafted: {p.get('draftYear', '?')}\n{status}",
+                value=f"{detail}\n{status}",
                 inline=True
             )
 
@@ -9035,6 +9098,10 @@ def get_pending_retention_by_team(year, conference: str = None):
                 "year": r.get("Year"),
                 "status": "PENDING",
                 "draftYear": "",
+                # Rebate preview seeded by Open Retention Window (DevyDraft.gs). Lets the
+                # DM show owners what a retention is worth before they decide.
+                "consecutiveYear": r.get("ConsecutiveYear"),
+                "rebateRemaining": r.get("RebateRemaining"),
             })
         return teams
     except Exception as e:

@@ -233,6 +233,12 @@
 #cffb-dv .dec button.on.retain{background:var(--tl);color:#0A0A0A}
 #cffb-dv .dec button.on.release{background:var(--red);color:#F5F5F5}
 #cffb-dv .dec[aria-disabled="true"]{opacity:.55;pointer-events:none}
+#cffb-dv .disc{margin:14px 0 10px;padding:9px 11px;border-radius:6px;background:rgba(224,106,106,.1);border:1px solid rgba(224,106,106,.35);color:#F0B4B4;font:500 12px/1.45 Inter,sans-serif}
+#cffb-dv .disc b{color:#F5C9C9;font-weight:700}
+#cffb-dv button.submit{width:100%;min-height:46px;margin-top:2px;border:0;border-radius:6px;background:var(--tl);color:#0A0A0A;font:800 13px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+#cffb-dv button.submit:hover:not(:disabled){filter:brightness(1.08)}
+#cffb-dv button.submit:disabled{background:#2A2A2A;color:#6A6A6A;cursor:not-allowed}
+#cffb-dv .note.done{margin-top:14px;padding:9px 11px;border-radius:6px;color:var(--tl-l);background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.3)}
 #cffb-dv .side{display:flex;flex-direction:column;gap:16px;position:sticky;top:16px}
 #cffb-dv .box{padding:20px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
 #cffb-dv .box h4{margin:0 0 4px;font:800 20px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
@@ -437,7 +443,7 @@ var CONF_ALIAS={SEC:'SEC',B1G:'B1G',B10:'B1G',BIG10:'B1G',ACC:'ACC',B12:'B12',BI
 function confStyle(id){var key=CONF_ALIAS[String(id).toUpperCase()]||String(id).toUpperCase();return DVCONF[key]||{color:'#5A5A5A',logo:''};}
 
 /* ===== live state, built from the ?feed=devy payload ===== */
-var FEED=null, ST={}, POOLBY={}, WORK=[], ROSTV=[], PASTF=[], me=DV.me, LOADED=false, LOADERR='', BUSY=false, LASTSIG='';
+var FEED=null, ST={}, POOLBY={}, WORK=[], ROSTV=[], PASTF=[], me=DV.me, LOADED=false, LOADERR='', BUSY=false, LASTSIG='', SUBMITTED=false, PICK={};
 function feedConf(id){return (FEED&&FEED.conferences||[]).filter(function(c){return c.id===id;})[0]||null;}
 function buildState(feed){
   FEED=feed;
@@ -485,6 +491,11 @@ function buildState(feed){
     POOLBY[fc.id]=(fc.pool||[]).map(function(p){return {id:p.playerId,n:p.name,pos:p.pos,sch:'',elig:p.year,rk:p.rank};});
   });
   WORK=(feed.viewer&&feed.viewer.retentionWorklist)||[];
+  SUBMITTED=!!(feed.viewer&&feed.viewer.retentionSubmitted);
+  // Seed staged choices from any decision already on record (commish edit /
+  // prior session) but never overwrite a key the user has toggled this session —
+  // so a background poll can't wipe in-progress choices.
+  WORK.forEach(function(w){if(!(w.playerId in PICK)&&(w.decision==='RETAIN'||w.decision==='RELEASE')) PICK[w.playerId]=w.decision;});
   ROSTV=(feed.viewer&&feed.viewer.roster)||[];
   PASTF=feed.past||[];
 }
@@ -617,22 +628,37 @@ function pDraft(){
 }
 function pRet(){
   var rOpen=retentionOpen(),cn=confOf(me).name,step=DV.rebateStep;
-  var nRet=WORK.filter(function(w){return w.decision==='RETAIN';}).length;
-  var nRel=WORK.filter(function(w){return w.decision==='RELEASE';}).length;
-  var pend=WORK.filter(function(w){return w.decision==='PENDING';}).length;
+  // When the window is open and the slate isn't submitted yet, the UI reflects
+  // the viewer's STAGED choices (PICK); once submitted (or the window closes) it
+  // shows the RECORDED decisions from the feed.
+  var locked=SUBMITTED||!rOpen;
+  var choiceOf=function(w){return locked?w.decision:(PICK[w.playerId]||'');};
+  var nRet=WORK.filter(function(w){return choiceOf(w)==='RETAIN';}).length;
+  var nRel=WORK.filter(function(w){return choiceOf(w)==='RELEASE';}).length;
+  var pend=WORK.filter(function(w){var ch=choiceOf(w);return ch!=='RETAIN'&&ch!=='RELEASE';}).length;
   var cards=WORK.length?WORK.map(function(w){
-    var isR=w.decision==='RETAIN',isRel=w.decision==='RELEASE',full=nRet>=DV.maxRetained&&!isR;
+    var ch=choiceOf(w),isR=ch==='RETAIN',isRel=ch==='RELEASE',full=nRet>=DV.maxRetained&&!isR;
     var dec;
-    if(!rOpen) dec='<div class="dec ro"><span class="chip '+(isR?'ret':isRel?'red':'')+'">'+(isR?'Retained':isRel?'Released':'No decision')+'</span></div>';
+    if(locked) dec='<div class="dec ro"><span class="chip '+(isR?'ret':isRel?'red':'')+'">'+(isR?'Retained':isRel?'Released':'No decision')+'</span></div>';
     else dec='<div class="dec"><button type="button" data-act="dec" data-id="'+String(w.playerId).replace(/"/g,'&quot;')+'" data-v="retain" class="retain'+(isR?' on':'')+'"'+(full?' disabled title="Both pick slots are used"':'')+'>Retain</button><button type="button" data-act="dec" data-id="'+String(w.playerId).replace(/"/g,'&quot;')+'" data-v="release" class="release'+(isRel?' on':'')+'">Release</button></div>';
     return '<div class="rc"><div class="who"><span class="pos '+w.pos+'">'+w.pos+'</span><div><b>'+w.name+'</b><small>'+(w.conference||cn)+'</small></div></div>'+
     '<div class="facts"><div><small>Kept</small><b class="n">'+(w.consecutiveYear?'Yr '+w.consecutiveYear:'\u2014')+'</b></div>'+
     '<div><small>Rebate</small><b class="n'+(isR?' sl':'')+'">'+((w.rebateRemaining!==''&&w.rebateRemaining!=null)?'$'+w.rebateRemaining:'\u2014')+'</b></div>'+
     '<div><small>Pick slot</small><b class="n'+(isR?' sl':'')+'">'+(w.pickUsed||(isR?'\u2014':''))+'</b></div></div>'+dec+'</div>';}).join(''):'<div class="empty">No devy players to decide on'+(rOpen?'':' \u2014 the retention window isn\u2019t open')+'.</div>';
-  var box='<div class="box"><h4>Your Decisions</h4><p>'+(rOpen?'Retain or release each devy player. Each choice saves immediately and can be changed until the window closes.':'The retention window is closed. These are your recorded decisions \u2014 contact the commissioner to change anything.')+'</p>'+
+  var canSubmit=rOpen&&!SUBMITTED&&!!WORK.length&&!pend&&nRet<=DV.maxRetained&&!BUSY;
+  var intro=SUBMITTED?'Your decisions are submitted and locked in \u2014 contact the commissioner to change anything.':(rOpen?'Set each devy player to Retain or Release, then Submit. Nothing is saved until you submit.':'The retention window is closed. These are your recorded decisions \u2014 contact the commissioner to change anything.');
+  var submitBlock='';
+  if(rOpen&&!SUBMITTED){
+    submitBlock='<div class="disc">\u26a0 Once you submit, your decisions are <b>final</b>. Any change afterward must be brought to the commissioner.</div>'+
+      '<button type="button" class="submit" data-act="retsubmit"'+(canSubmit?'':' disabled')+'>'+(WORK.length?('Submit '+WORK.length+' Decision'+(WORK.length>1?'s':'')):'Submit Decisions')+'</button>'+
+      (pend?'<div class="note">'+pend+' still undecided \u2014 set every player to submit.</div>':'');
+  } else if(SUBMITTED){
+    submitBlock='<div class="note done">\u2713 Decisions submitted. Contact the commissioner to change anything.</div>';
+  }
+  var box='<div class="box"><h4>Your Decisions</h4><p>'+intro+'</p>'+
     '<div class="sum"><div><b class="n" style="color:var(--tl-l)">'+nRet+'</b><small>RETAIN</small></div><div><b class="n" style="color:#E06A6A">'+nRel+'</b><small>RELEASE</small></div><div><b class="n">'+nRet+'/'+DV.maxRetained+'</b><small>PICKS USED</small></div></div>'+
-    (rOpen&&pend?'<div class="note">'+pend+' still undecided. Undecided players are auto-retained (up to '+DV.maxRetained+') when the window closes.</div>':'')+'</div>';
-  return '<div class="pnl"><div class="rgrid"><div><div class="sh"><h3>Your Devy Roster</h3><span class="eb n">'+(rOpen?'Window open':'Window closed')+'</span></div>'+cards+'</div>'+
+    submitBlock+'</div>';
+  return '<div class="pnl"><div class="rgrid"><div><div class="sh"><h3>Your Devy Roster</h3><span class="eb n">'+(SUBMITTED?'Submitted':rOpen?'Window open':'Window closed')+'</span></div>'+cards+'</div>'+
   '<div class="side">'+box+
   '<details class="box how" data-dv="how"'+(ui.howOpen?' open':'')+'><summary><h4>How Retention Works</h4><span>'+(ui.howOpen?'Hide':'Show')+'</span></summary><p>Retaining keeps a devy player who hasn\u2019t entered the NFL on your roster without re-drafting him. Each retained player uses one of your conference draft picks, and his rebate drops $'+step+' for every year he\u2019s retained.</p><ol class="ladder">'+
   DV.rules.map(function(r){return '<li><b class="'+(r.x?'x':'')+'">'+r.n+'</b><div><strong>'+r.t+'</strong><span>'+r.d+'</span></div></li>';}).join('')+'</ol></details></div></div></div>';
@@ -667,7 +693,15 @@ root.addEventListener('click',function(e){
   else if(a==='pos'){ui.pos=v;root.querySelectorAll('[data-act="pos"]').forEach(function(x){x.classList.toggle('on',x===b);});refreshPool();}
   else if(a==='sel'){ui.sel=ui.sel===v?null:v;refreshPool();}
   else if(a==='draft'){var mc=myConf();if(ui.conf!==mc||!ui.sel||!canPick(mc)||BUSY) return;var sel=ui.sel;ui.sel=null;act({action:'pick',conference:mc,playerId:sel});}
-  else if(a==='dec'){if(!retentionOpen()||BUSY) return;act({action:(v==='retain'?'retain':'release'),conference:myConf(),playerId:b.getAttribute('data-id')});}
+  else if(a==='dec'){if(!retentionOpen()||SUBMITTED||BUSY) return;PICK[b.getAttribute('data-id')]=(v==='retain'?'RETAIN':'RELEASE');render();}
+  else if(a==='retsubmit'){
+    if(!retentionOpen()||SUBMITTED||BUSY) return;
+    var ds=WORK.map(function(w){return {playerId:w.playerId,decision:PICK[w.playerId]};});
+    if(ds.some(function(d){return d.decision!=='RETAIN'&&d.decision!=='RELEASE';})){toast('Set every player to Retain or Release first.');return;}
+    if(ds.filter(function(d){return d.decision==='RETAIN';}).length>DV.maxRetained){toast('You can retain at most '+DV.maxRetained+'.');return;}
+    if(!window.confirm('Submit your retention decisions?\n\nOnce submitted they are FINAL. Any later change must be brought to the commissioner.')) return;
+    act({action:'retentionSubmit',conference:myConf(),decisions:ds},'Retention decisions submitted.');
+  }
   else if(a==='yr'){ui.yr=+v;render();}
   else if(a==='refresh'){reload(true,null,true);toast('Refreshed.');}
   else if(a==='gopool'){ui.tab='draft';ui.sub='pool';ui.conf=myConf();render();var gp=root.querySelector('.gpool'),q=$('q');if(gp){var y=gp.getBoundingClientRect().top+window.pageYOffset-12;window.scrollTo({top:y,behavior:'smooth'});}if(q) q.focus({preventScroll:true});}

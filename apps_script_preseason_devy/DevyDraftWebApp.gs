@@ -78,6 +78,7 @@ function doPost(e) {
       case "pick":     result = devyWebPick(conf, fid3, body.playerId); break;
       case "retain":   result = devyWebRetain(conf, fid3, body.playerId); break;
       case "release":  result = devyWebRelease(conf, fid3, body.playerId); break;
+      case "retentionSubmit": result = devyWebRetentionSubmit(fid3, body.decisions); break;
       // Internal actions the bot watcher calls (also serialized under the lock).
       case "skip":     result = skipDevyCurrentPick(conf); break;
       case "autopick": result = autoPickExpiredDevySkips(conf); break;
@@ -123,9 +124,10 @@ function devyWebRetain(conference, fid3, playerId) {
   if (getDevyCyclePhase() !== "RETENTION_OPEN") {
     return { success: false, message: "Retention window is closed." };
   }
+  var year = Number(getDevyDraftSetting("DraftYear"));
+  if (devyRetentionSubmitted(fid3, year)) return devyRetentionLockedResult();
   var owner = devyOwnerOf(playerId);
   if (owner !== fid3) return { success: false, message: "That player is not on your roster." };
-  var year = Number(getDevyDraftSetting("DraftYear"));
   return retainDevyPlayer(playerId, fid3, year);
 }
 
@@ -135,9 +137,10 @@ function devyWebRelease(conference, fid3, playerId) {
   if (getDevyCyclePhase() !== "RETENTION_OPEN") {
     return { success: false, message: "Retention window is closed." };
   }
+  var year = Number(getDevyDraftSetting("DraftYear"));
+  if (devyRetentionSubmitted(fid3, year)) return devyRetentionLockedResult();
   var owner = devyOwnerOf(playerId);
   if (owner !== fid3) return { success: false, message: "That player is not on your roster." };
-  var year = Number(getDevyDraftSetting("DraftYear"));
   return releaseRetainedPlayer(playerId, year);
 }
 
@@ -155,6 +158,71 @@ function devyOwnerOf(playerId) {
     }
   }
   return null;
+}
+
+// ----------------------------------------------------------------------------
+// Retention submit + per-franchise lock
+// ----------------------------------------------------------------------------
+// A franchise submits its full retention slate once; after that the widget locks
+// and the endpoint rejects further self-service retain/release for that team.
+// The commissioner reopens a team by deleting its RetentionSubmitted_<fid>_<year>
+// row in DevyDraftSettings (or editing the sheets directly). Keyed per
+// (franchise, year) so each new season starts unlocked.
+function devyRetentionSubmittedKey(fid3, year) {
+  return "RetentionSubmitted_" + fid3 + "_" + year;
+}
+function devyRetentionSubmitted(fid3, year) {
+  return String(getDevyDraftSetting(devyRetentionSubmittedKey(fid3, year)) || "") === String(year);
+}
+function devyRetentionLockedResult() {
+  return { success: false, message: "Your retention decisions are locked in. Contact the commissioner to change them." };
+}
+
+/**
+ * Submit a franchise's full retention slate in one shot: validate every player
+ * is owned by this franchise and the RETAIN count is within the 2-per-year cap,
+ * apply each decision (retain/release upsert the worklist row + flip the pool
+ * copy), then lock the franchise so no further self-service edits are accepted.
+ */
+function devyWebRetentionSubmit(fid3, decisions) {
+  if (!fid3) return { success: false, message: "Missing franchiseId." };
+  if (getDevyCyclePhase() !== "RETENTION_OPEN") {
+    return { success: false, message: "Retention window is closed." };
+  }
+  var year = Number(getDevyDraftSetting("DraftYear"));
+  if (devyRetentionSubmitted(fid3, year)) return devyRetentionLockedResult();
+  if (!decisions || !decisions.length) return { success: false, message: "No decisions to submit." };
+
+  // Validate everything before applying anything (all-or-nothing intent).
+  var retainCount = 0;
+  for (var i = 0; i < decisions.length; i++) {
+    var dec = String(decisions[i].decision || "").toUpperCase();
+    if (dec !== "RETAIN" && dec !== "RELEASE") {
+      return { success: false, message: "Set every player to Retain or Release before submitting." };
+    }
+    if (devyOwnerOf(decisions[i].playerId) !== fid3) {
+      return { success: false, message: "A selected player is not on your roster." };
+    }
+    if (dec === "RETAIN") retainCount++;
+  }
+  if (retainCount > 2) {
+    return { success: false, message: "You may retain at most 2 players per year." };
+  }
+
+  // Apply. Validation above should make each call succeed; surface the first
+  // failure (e.g. a concurrent change) without locking the franchise.
+  for (var j = 0; j < decisions.length; j++) {
+    var d = decisions[j];
+    var r = String(d.decision).toUpperCase() === "RETAIN"
+      ? retainDevyPlayer(d.playerId, fid3, year)
+      : releaseRetainedPlayer(d.playerId, year);
+    if (!r || !r.success) {
+      return { success: false, message: (r && r.message) || "A decision could not be applied." };
+    }
+  }
+
+  setDevyDraftSetting(devyRetentionSubmittedKey(fid3, year), String(year));
+  return { success: true, message: "Retention decisions submitted and locked in." };
 }
 
 // ============================================================================
@@ -211,7 +279,8 @@ function buildDevyFeed(fid4) {
       onClock: onClock,
       owedSlots: owedSlots,
       roster: devyViewerRoster(fid3),
-      retentionWorklist: devyRetentionWorklist(fid3, draftYear)
+      retentionWorklist: devyRetentionWorklist(fid3, draftYear),
+      retentionSubmitted: devyRetentionSubmitted(fid3, draftYear)
     };
   }
 
