@@ -6933,6 +6933,51 @@ def set_devy_draft_setting(key: str, value):
         print(f"Error setting devy draft setting: {e}")
         return False
 
+# ---- Draft "how to proceed" instructions ----
+# Compact version goes in the /devy start embed; the full version is posted as a
+# separate (pinnable) message. Both can be overridden from the DevyDraftSettings
+# sheet (keys: InstructionsShort / InstructionsFull) without redeploying the bot.
+# Use {conf}, {year}, {hours} placeholders — they're filled in at send time.
+DEFAULT_DEVY_INSTRUCTIONS_SHORT = (
+    "1️⃣ `/devy pool` — browse available players (search by name or position)\n"
+    "2️⃣ `/devy pick` — draft a player (start typing the last name; it autocompletes)\n"
+    "3️⃣ `/devy order` / `/devy status` — see the order and who's on the clock\n"
+    "⏱️ You have **{hours}h** per pick. Miss the clock and the pick is auto-skipped."
+)
+DEFAULT_DEVY_INSTRUCTIONS_FULL = (
+    "**📋 How to conduct the {conf} devy draft ({year})**\n\n"
+    "**Format:** 2 rounds, same order each round (worst records pick first).\n"
+    "**Pick clock:** {hours} hours per pick. If the clock expires the bot "
+    "auto-skips/grace-picks the owed slot and moves on.\n\n"
+    "**Owners — how to pick:**\n"
+    "• `/devy pool` — see who's available in your conference (optional search).\n"
+    "• `/devy pick` — make your selection. Start typing the last name and pick "
+    "from the autocomplete. Not in the pool? Use the first_name/last_name/position "
+    "fields to enter a player manually.\n"
+    "• `/devy order` — the full draft order.  `/devy status` — who's on the clock now.\n"
+    "• `/devy history` — all picks so far.  `/devy my_history` — just your team's picks.\n\n"
+    "**Live board:** the live draft widget is on the league **MFL homepage** — follow "
+    "the picks there in real time.\n\n"
+    "**After the draft:** `/devy retain` / `/devy release` manage which devy players "
+    "you keep into next year.\n\n"
+    "Commish runs `/devy start <conference> <year>` for each conference to begin."
+)
+
+def _fmt_devy_instructions(template: str, conference: str, year, hours) -> str:
+    try:
+        return template.format(conf=str(conference).upper(), year=year, hours=hours)
+    except Exception:
+        # A stray brace in the sheet text shouldn't break the announcement.
+        return template
+
+def get_devy_instructions_short(conference, year, hours) -> str:
+    template = get_devy_draft_setting("InstructionsShort") or DEFAULT_DEVY_INSTRUCTIONS_SHORT
+    return _fmt_devy_instructions(template, conference, year, hours)
+
+def get_devy_instructions_full(conference, year, hours) -> str:
+    template = get_devy_draft_setting("InstructionsFull") or DEFAULT_DEVY_INSTRUCTIONS_FULL
+    return _fmt_devy_instructions(template, conference, year, hours)
+
 # ---- Cycle-stage helpers (mirror DevyDraft.gs — keep the two engines in parity) ----
 def set_devy_cycle_phase(phase: str):
     set_devy_draft_setting("CyclePhase", phase)
@@ -8511,12 +8556,32 @@ async def devy_start(interaction: discord.Interaction, conference: str, year: in
         )
         embed.add_field(name="Pick Deadline", value=deadline.strftime("%Y-%m-%d %H:%M"), inline=True)
 
-    embed.set_footer(text="Use /devy pick <player_id> to make your selection")
+    # Compact "how to draft" block so owners see the steps right in the announcement.
+    embed.add_field(
+        name="📋 How to Draft",
+        value=get_devy_instructions_short(conference.upper(), draft_year, deadline_hours),
+        inline=False
+    )
+
+    embed.set_footer(text="Use /devy pick to make your selection — start typing the player's last name")
     await interaction.followup.send(embed=embed)
+
+    # Post the full walkthrough as a separate message the commish can pin.
+    try:
+        instructions_msg = await interaction.channel.send(
+            get_devy_instructions_full(conference.upper(), draft_year, deadline_hours)
+        )
+        try:
+            await instructions_msg.pin()
+        except Exception as e:
+            # Pinning needs Manage Messages; not fatal if the bot lacks it.
+            print(f"[DEBUG] Could not pin devy instructions message: {e}")
+    except Exception as e:
+        print(f"[ERROR] Failed to send devy instructions message: {e}")
 
     # Send a separate ping message so the user gets notified
     if first_user_mention:
-        await interaction.channel.send(f"{first_user_mention} The {conference.upper()} devy draft has started! You're on the clock - 24 hours to make your pick.")
+        await interaction.channel.send(f"{first_user_mention} The {conference.upper()} devy draft has started! You're on the clock - {deadline_hours} hours to make your pick.")
 
 
 @devy.command(name="retain", description="Retain a devy player for next year")
