@@ -6942,13 +6942,13 @@ DEFAULT_DEVY_INSTRUCTIONS_SHORT = (
     "1️⃣ `/devy pool` — browse available players (search by name or position)\n"
     "2️⃣ `/devy pick` — draft a player (start typing the last name; it autocompletes)\n"
     "3️⃣ `/devy order` / `/devy status` — see the order and who's on the clock\n"
-    "⏱️ You have **{hours}h** per pick. Miss the clock and the pick is auto-skipped."
+    "⏱️ You have **{hours}h** per pick. Miss it and the pick is auto-skipped, but it's "
+    "owed back as a make-up — use `/devy pick` to fill it later (auto-picked after {grace}h)."
 )
 DEFAULT_DEVY_INSTRUCTIONS_FULL = (
     "**📋 How to conduct the {conf} devy draft ({year})**\n\n"
     "**Format:** 2 rounds, same order each round (worst records pick first).\n"
-    "**Pick clock:** {hours} hours per pick. If the clock expires the bot "
-    "auto-skips/grace-picks the owed slot and moves on.\n\n"
+    "**Pick clock:** {hours} hours per pick.\n\n"
     "**Owners — how to pick:**\n"
     "• `/devy pool` — see who's available in your conference (optional search).\n"
     "• `/devy pick` — make your selection. Start typing the last name and pick "
@@ -6956,6 +6956,12 @@ DEFAULT_DEVY_INSTRUCTIONS_FULL = (
     "fields to enter a player manually.\n"
     "• `/devy order` — the full draft order.  `/devy status` — who's on the clock now.\n"
     "• `/devy history` — all picks so far.  `/devy my_history` — just your team's picks.\n\n"
+    "**⏰ If you miss your clock:** when your {hours}h runs out the bot automatically "
+    "**skips** your pick and moves the draft to the next team — your spot isn't held up. "
+    "The skipped pick isn't lost: it becomes an **owed make-up pick**. You can fill it "
+    "any time with `/devy pick` (it slots back into your original spot without affecting "
+    "whoever is currently on the clock). If a make-up pick sits unfilled for **{grace}h**, "
+    "the bot auto-picks the best available player for you so the draft can finish.\n\n"
     "**Live board:** the live draft widget is on the league **MFL homepage** — follow "
     "the picks there in real time.\n\n"
     "**After the draft:** `/devy retain` / `/devy release` manage which devy players "
@@ -6963,20 +6969,22 @@ DEFAULT_DEVY_INSTRUCTIONS_FULL = (
     "Commish runs `/devy start <conference> <year>` for each conference to begin."
 )
 
-def _fmt_devy_instructions(template: str, conference: str, year, hours) -> str:
+def _fmt_devy_instructions(template: str, conference: str, year, hours, grace) -> str:
     try:
-        return template.format(conf=str(conference).upper(), year=year, hours=hours)
+        return template.format(conf=str(conference).upper(), year=year, hours=hours, grace=grace)
     except Exception:
         # A stray brace in the sheet text shouldn't break the announcement.
         return template
 
 def get_devy_instructions_short(conference, year, hours) -> str:
+    grace = int(get_devy_draft_setting("SkipGraceHours") or 24)
     template = get_devy_draft_setting("InstructionsShort") or DEFAULT_DEVY_INSTRUCTIONS_SHORT
-    return _fmt_devy_instructions(template, conference, year, hours)
+    return _fmt_devy_instructions(template, conference, year, hours, grace)
 
 def get_devy_instructions_full(conference, year, hours) -> str:
+    grace = int(get_devy_draft_setting("SkipGraceHours") or 24)
     template = get_devy_draft_setting("InstructionsFull") or DEFAULT_DEVY_INSTRUCTIONS_FULL
-    return _fmt_devy_instructions(template, conference, year, hours)
+    return _fmt_devy_instructions(template, conference, year, hours, grace)
 
 # ---- Cycle-stage helpers (mirror DevyDraft.gs — keep the two engines in parity) ----
 def set_devy_cycle_phase(phase: str):
