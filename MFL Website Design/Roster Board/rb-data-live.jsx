@@ -862,10 +862,20 @@ async function rbFetchLineup(week, targetFid, forceFid) {
   // locked regardless of how MFL rendered the row. Uses the form's own week so
   // future-week edits (no clock) stay fully open.
   const { clocks, starters } = await rbFetchGameData(form.week || week, fid);
+  const formWeek = form.week || week;
+  // A player whose NFL team is on bye this week has NO game, so MFL reports a
+  // game clock of 0 (which rbGameStateOf would read as FINAL) even though the
+  // player never kicks off. Never lock a bye-week player — their lineup slot
+  // stays fully editable. Mirrors Live Scoring's `p.bye === WEEK` bye handling.
+  const onByeForWeek = (pid) => {
+    const info = (typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[String(pid)]) || null;
+    const bye = info && info.bye;
+    return bye != null && formWeek != null && Number(bye) === Number(formWeek);
+  };
   const inForm = {};   // pid -> true, for every checkbox row MFL rendered
   form.order.forEach((slot) => (form.slots[slot] || []).forEach((row) => {
     inForm[String(row.pid)] = true;
-    const st = rbGameStateOf(clocks[String(row.pid)]);
+    const st = onByeForWeek(row.pid) ? 'PRE' : rbGameStateOf(clocks[String(row.pid)]);
     row.gameState = st;                           // 'PRE' | 'LIVE' | 'FINAL'
     row.started = st !== 'PRE' || !!row.locked;    // combine clock + MFL's disabled attr
   }));
@@ -880,6 +890,7 @@ async function rbFetchLineup(week, targetFid, forceFid) {
     const pid = String(m.pid);
     if (inForm[pid]) return;                                   // already in the form
     if (String(m.status || 'ROSTER').toUpperCase() !== 'ROSTER') return;  // not startable (taxi/IR)
+    if (onByeForWeek(pid)) return;                             // on bye → no game → never locked
     const st = rbGameStateOf(clocks[pid]);
     if (st === 'PRE') return;                                  // game hasn't started → not locked; nothing to add
     const info = (typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[pid]) || null;

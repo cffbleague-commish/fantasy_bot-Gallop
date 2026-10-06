@@ -2091,10 +2091,16 @@ async function rbFetchLineup(week, targetFid, forceFid) {
     clocks,
     starters
   } = await rbFetchGameData(form.week || week, fid);
+  const formWeek = form.week || week;
+  const onByeForWeek = pid => {
+    const info = typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[String(pid)] || null;
+    const bye = info && info.bye;
+    return bye != null && formWeek != null && Number(bye) === Number(formWeek);
+  };
   const inForm = {};
   form.order.forEach(slot => (form.slots[slot] || []).forEach(row => {
     inForm[String(row.pid)] = true;
-    const st = rbGameStateOf(clocks[String(row.pid)]);
+    const st = onByeForWeek(row.pid) ? 'PRE' : rbGameStateOf(clocks[String(row.pid)]);
     row.gameState = st;
     row.started = st !== 'PRE' || !!row.locked;
   }));
@@ -2103,6 +2109,7 @@ async function rbFetchLineup(week, targetFid, forceFid) {
     const pid = String(m.pid);
     if (inForm[pid]) return;
     if (String(m.status || 'ROSTER').toUpperCase() !== 'ROSTER') return;
+    if (onByeForWeek(pid)) return;
     const st = rbGameStateOf(clocks[pid]);
     if (st === 'PRE') return;
     const info = typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[pid] || null;
