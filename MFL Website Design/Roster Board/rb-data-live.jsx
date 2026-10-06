@@ -865,17 +865,30 @@ async function rbFetchLineup(week, targetFid, forceFid) {
   const formWeek = form.week || week;
   // A player whose NFL team is on bye this week has NO game, so MFL reports a
   // game clock of 0 (which rbGameStateOf would read as FINAL) even though the
-  // player never kicks off. Never lock a bye-week player — their lineup slot
-  // stays fully editable. Mirrors Live Scoring's `p.bye === WEEK` bye handling.
-  const onByeForWeek = (pid) => {
+  // player never kicks off — that alone would lock them. Detect bye from TWO
+  // signals: MFL's own Bye column in the lineup form (row.bye, the reliable
+  // one — it comes straight from the HTML we're parsing), falling back to the
+  // player record's bye (PLAYERS_BY_ID, which can be absent if the cached
+  // payload predates the bye data). Mirrors Live Scoring's `p.bye === WEEK`.
+  const onByeForWeek = (pid, rowBye) => {
+    if (formWeek == null) return false;
+    if (rowBye != null && Number(rowBye) === Number(formWeek)) return true;
     const info = (typeof PLAYERS_BY_ID !== 'undefined' && PLAYERS_BY_ID[String(pid)]) || null;
     const bye = info && info.bye;
-    return bye != null && formWeek != null && Number(bye) === Number(formWeek);
+    return bye != null && Number(bye) === Number(formWeek);
   };
   const inForm = {};   // pid -> true, for every checkbox row MFL rendered
   form.order.forEach((slot) => (form.slots[slot] || []).forEach((row) => {
     inForm[String(row.pid)] = true;
-    const st = onByeForWeek(row.pid) ? 'PRE' : rbGameStateOf(clocks[String(row.pid)]);
+    if (onByeForWeek(row.pid, row.bye)) {
+      // On bye → no game → never locked. Force fully editable (clear MFL's own
+      // disabled flag too) so the manager can bench them for someone who plays.
+      row.gameState = 'PRE';
+      row.started = false;
+      row.locked = false;
+      return;
+    }
+    const st = rbGameStateOf(clocks[String(row.pid)]);
     row.gameState = st;                           // 'PRE' | 'LIVE' | 'FINAL'
     row.started = st !== 'PRE' || !!row.locked;    // combine clock + MFL's disabled attr
   }));
