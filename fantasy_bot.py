@@ -7602,7 +7602,7 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
                 # Conference-scoped, non-KTC id so a pool refresh won't erase this write-in.
                 manual_id = f"{conference}_MANUAL_{last_name}_{first_name}".replace(" ", "")
 
-                # Record pick in history with manual details
+                # Record pick in history with manual details (14 cols — must match DEVY_DRAFT_HISTORY_HEADERS)
                 devy_draft_history_ws.append_row([
                     draft_year,
                     conference,
@@ -7612,9 +7612,11 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
                     normalized_id,
                     current_pick_info["teamName"],
                     manual_id,
+                    f"{last_name}, {first_name}",  # PlayerName (MFL "Last, First")
                     first_name,
                     last_name,
                     position,
+                    "",                # IsRookie
                     timestamp
                 ])
 
@@ -7677,7 +7679,7 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
         draft_year = int(get_devy_draft_setting("DraftYear"))
         timestamp = datetime.now().isoformat()
 
-        # Record pick in history
+        # Record pick in history (14 cols — must match DEVY_DRAFT_HISTORY_HEADERS in DevyDraft.gs)
         devy_draft_history_ws.append_row([
             draft_year,
             conference,
@@ -7687,9 +7689,11 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
             normalized_id,
             current_pick_info["teamName"],
             player_id,
+            player.get("PlayerName") or f'{player.get("LastName")}, {player.get("FirstName")}',  # PlayerName (MFL "Last, First")
             player.get("FirstName"),
             player.get("LastName"),
             player.get("Position"),
+            "",                # IsRookie — populated by formula
             timestamp
         ])
 
@@ -7869,7 +7873,7 @@ def apply_retentions_to_draft(draft_year, conferences=None):
             skipped.append(f"{player_name} ({conference}): slot {slot_key} already filled")
             continue
 
-        # Append matching make_devy_pick's column layout
+        # Append matching make_devy_pick's column layout (14 cols — must match DEVY_DRAFT_HISTORY_HEADERS)
         devy_draft_history_ws.append_row([
             year,
             conference,
@@ -7879,9 +7883,11 @@ def apply_retentions_to_draft(draft_year, conferences=None):
             franchise_id,
             slot["teamName"],
             row.get("PlayerID"),
+            row.get("PlayerName"),         # PlayerName (MFL "Last, First")
             row.get("PlayerFirstName"),
             row.get("PlayerLastName"),
             row.get("PlayerPosition"),
+            "",                            # IsRookie
             timestamp,
         ])
         filled_by_conf[conference].add(slot_key)
