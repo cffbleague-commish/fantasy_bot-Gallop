@@ -38,8 +38,8 @@ const SHOT_FILES = {
   gameday: 'gameday.jpg', live: 'live.jpg', playoffs: 'playoffs.jpg',
   awards: 'awards.jpg', devy: 'devy.jpg'
 };
-const SHOT_MAXWIDTH = 1000;   // downscale wide captures; the detail panel renders ≤ ~780px
-const SHOT_QUALITY = 72;      // JPEG quality for the inlined copies
+const SHOT_MAXWIDTH = 800;    // downscale wide captures; the detail panel renders ≤ ~780px
+const SHOT_QUALITY = 60;      // JPEG quality for the inlined copies (keeps the message under MFL's 768 KB cap)
 
 const HEADER = `<!-- CFFB League Guide — MFL Home Page Message. This whole file is the paste-ready
      block: copy it all into MFL’s Home Page Message. It merges the Bylaws and the
