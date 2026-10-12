@@ -412,6 +412,14 @@
 #cffb-sm .sm-shot{position:relative;margin:0;border:1px solid var(--bd);border-radius:8px;background:var(--s1);overflow:visible}
 #cffb-sm .sm-shot img{display:block;width:100%;height:auto;border-radius:7px}
 #cffb-sm .sm-shot.soon img{filter:saturate(.6) brightness(.8)}
+#cffb-sm .sm-noshot{display:none;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;padding:44px 20px;min-height:200px;border-radius:7px;background:repeating-linear-gradient(115deg,var(--s1) 0 22px,var(--s2) 22px 30px)}
+#cffb-sm .sm-noshot svg{width:42px;height:42px;color:var(--fg3);opacity:.85}
+#cffb-sm .sm-noshot b{font:800 21px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em;color:var(--fg2)}
+#cffb-sm .sm-noshot small{font-size:11.5px;letter-spacing:.03em;color:var(--fg3);text-wrap:pretty}
+#cffb-sm .sm-shot.noimg{background:none;border-style:dashed}
+#cffb-sm .sm-shot.noimg img{display:none}
+#cffb-sm .sm-shot.noimg .sm-hs,#cffb-sm .sm-shot.noimg .sm-rib{display:none}
+#cffb-sm .sm-shot.noimg .sm-noshot{display:flex}
 #cffb-sm .sm-rib{position:absolute;top:10px;right:10px;font:800 10px/1 Inter,sans-serif;letter-spacing:.14em;padding:6px 8px;border-radius:2px;background:var(--gold);color:#0A0A0A}
 #cffb-sm .sm-hs{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #0A0A0A;background:var(--gold);color:#0A0A0A;font:900 14px/1 'Saira Condensed',sans-serif;cursor:pointer;padding:0;box-shadow:0 0 0 3px rgba(201,162,39,.35),0 4px 12px rgba(0,0,0,.6);transition:transform .15s cubic-bezier(.2,.8,.2,1),background .15s;animation:smPop .4s cubic-bezier(.2,.8,.2,1.4) both;animation-delay:calc(.15s + var(--i)*.07s)}
 #cffb-sm .sm-hs::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--gold);opacity:0;animation:smRing 2.4s calc(var(--i)*.3s) ease-out infinite}
@@ -736,7 +744,7 @@ var BL = {
 /* Articles → rules. key: stable id · t: title · s: plain-English summary · b: full rule (verbatim-faithful) · nw: season it changed */
 var A = [
 {t:'League Calendar',k:'dates deadline when timeline schedule month february may june august january',r:[
- {key:'cal',t:'Annual Calendar',s:'The league year turns over in <b>February</b>. Auctions run <b>May through August</b>. Devy draft hits <b>Week 4</b>. The title chase is <b>Weeks 13 to 17</b>.',cal:[['February','Start of new league year (MFL rollover)'],['Feb 1 – May 1','Vacancies filled'],['March 1','Conference schedule announced'],['May 1','Recruiting dollars administered'],['May 15','Transfer announcement deadline · auction start date announced'],['May 16 – 29','Upperclassmen / transfer auction'],['May 31','Devy player auction'],['June 1 – 15','Freshmen auction starts*'],['June 15 – Aug 24','Walk-on auction*'],['July 1 – Aug 31','Scheduling'],['Aug 25','Taxi Squad and IR slots open'],['Week 4 Tuesday','Devy draft'],['Week 5 Thursday','Taxi & IR locked at kickoff'],['Week 14','Conference championship & player awards announced'],['Weeks 15 – 17','National championship playoffs'],['Week 18','League payouts administered'],['January 1','Early declares and player-initiated transfers announced'],['January 31','Early declare and transfer retentions due']],b:['Weeks refer to the NFL regular season.','*Freshmen and walk-on dates are rough estimates of when school budgets run lower, not official stop points.']},
+ {key:'cal',t:'Annual Calendar',s:'The league year turns over in <b>February</b>. Auctions run <b>May through August</b>. Devy draft hits <b>Week 4</b>. The title chase is <b>Weeks 13 to 17</b>.',cal:[['February','Start of new league year (MFL rollover)'],['Feb 1 – May 1','Vacancies filled'],['March 1','Conference schedule announced'],['March 1','Early declares & player-initiated transfers announced'],['March 31','Early-declare & transfer retentions due'],['May 1','Recruiting dollars administered'],['May 15','Transfer announcement deadline · auction start date announced'],['May 16 – 29','Upperclassmen / transfer auction'],['May 31','Devy player auction'],['June 1 – 15','Freshmen auction starts*'],['June 15 – Aug 24','Walk-on auction*'],['July 1 – Aug 31','Scheduling'],['Aug 25','Taxi Squad and IR slots open'],['Week 4 Tuesday','Devy draft'],['Week 5 Thursday','Taxi & IR locked at kickoff'],['Week 12','Returning poll opens — vote if you’re back next year'],['Week 14','Conference championship & player awards announced'],['Weeks 15 – 17','National championship playoffs'],['Week 18','League payouts administered'],['January 31','Buy-in payment due · returning-poll vote closes']],b:['Weeks refer to the NFL regular season.','*Freshmen and walk-on dates are rough estimates of when school budgets run lower, not official stop points.']},
  {key:'y1',t:'Year One Exception',s:'The startup year folds every auction into <b>one startup auction in May</b>. Only devy drafts run that year.',b:['All auctions are condensed into one startup auction starting in May (date TBD).','Only devy drafts occur during the first year.']}
 ]},
 {t:'Platform',k:'mfl discord google data studio communication reports chat',r:[
@@ -961,13 +969,15 @@ var EV = (function(){
    ['Devy draft','Two rounds, 24 hours per pick, worst-to-first.',wk(4,-2),0,'window',['devydraft'],'Week 4 \u00B7 Tue'],
    ['Taxi & IR lock','Thursday kickoff. Not stashed by now? No redshirt this year.',wk(5),0,'deadline',['trad','med'],'Week 5 \u00B7 Thu'],
    ['Conference play','Weeks 5\u201312. Rivalry week is Week 12, then Week 5.',wk(5),wk(12,4),'games',['params','tb'],'Weeks 5\u201312'],
+   ['Returning poll opens','Mandatory vote on whether you\u2019re back next season. Pay or vote by Jan 31.',wk(12),0,'admin',['due','checkin'],'Week 12'],
    ['Player awards finalized','Heisman, position awards, All-Conference, Coach of the Year.',wk(12,5),0,'admin',['natl','allconf','coy'],'After Week 12'],
    ['Conference championships','Top two in each conference standings.',wk(13),wk(13,4),'games',['ccg','tb'],'Week 13'],
    ['Bowl games','Six wins gets you in.',wk(14),wk(14,4),'games',['bowls'],'Week 14'],
    ['National championship playoff','16 teams, seeded by national ranking after Week 13.',wk(14),wk(17,4),'games',['playoff'],'Weeks 14\u201317'],
    ['League payouts','Top 25 and conference payouts paid out.',wk(18),0,'admin',['top25','confpay'],'Week 18'],
-   ['Early declares & transfers announced','See who\u2019s leaving early before retention decisions.',d(1,1,1),0,'admin',['early']],
-   ['Retentions & buy-in due','Pay or vote in the returning poll. Early-declare retention fees due.',d(1,31,1),0,'deadline',['early','due']]
+   ['Buy-in & returning vote due','Pay your buy-in on LeagueSafe or vote in the returning poll. Miss both and your school goes vacant.',d(1,31,1),0,'deadline',['due']],
+   ['Early declares & transfers announced','See who\u2019s leaving early and who entered the portal, before retention decisions.',d(3,1),0,'admin',['early','portal']],
+   ['Early-declare & transfer retentions due','Forfeit recruiting dollars to keep players declaring early. Devy retention notices due too.',d(3,31),0,'deadline',['early','devyret']]
   ];
   var ev = L.map(function(x, i){ return { i: i, t: x[0], d: x[1], a: x[2], b: x[3] || null, ty: x[4], r: x[5], wl: x[6] || '' }; });
   ev.ph = [['off','Offseason',d(2,1),d(5,1)],['rec','Recruiting',d(5,1),wk(1)],['reg','Regular season',wk(1),wk(13)],['post','Postseason',wk(13),wk(18,4)],['off','Offseason',wk(18,4),d(2,1,1)]];
@@ -1081,7 +1091,7 @@ bar(); view();
 /* ===== CONFIG — edit to match the live site ===== */
 var SM = {
   host: 'https://www46.myfantasyleague.com', year: 2026, league: '12011', // auto-detected from the page URL on MFL
-  img: 'assets/sitemap/',
+  img: 'screenshots/', // screenshot folder. On MFL use a PUBLIC base URL (GitHub Pages / Imgur). Until the images exist each widget shows a styled "screenshot coming soon" placeholder instead of a broken image.
   teams: 'assets/teams/', // team pill PNGs. On MFL this must be a public URL // screenshot folder. On MFL this must be a public URL (e.g. GitHub Pages / Imgur album base)
   discord: 'https://discord.com/',
   start: 'roster',
@@ -1099,10 +1109,10 @@ var W = [
  {key:'standings',tab:0,n:'League Standings',img:'standings.jpg',find:'League Standings',
   ask:'Who leads my conference? Am I in the title game?',
   d:'Every conference\u2019s race: national rank, overall and conference record, All-Play % and points.',
-  hs:[{x:16,y:30,t:'Pick a conference',d:'Each tab is one conference. The number is how many schools it has.'},
-      {x:6.5,y:55,t:'Top two play for the title',d:'Rows tagged <b>CCG</b> meet in the Week 13 conference championship.',f:'CCG'},
-      {x:13,y:54,t:'National rank',d:'Where the school sits on the league-wide ladder (Rankings tab).',f:'Nat'},
-      {x:81,y:43,t:'All-Play %',d:'Your record if you played every school every week. Tiebreaker #3 after conf W-L and head-to-head.',f:'All-Play'}],
+  hs:[{x:12,y:31,t:'Pick a conference',d:'Each tab is one conference. The number is how many schools it has.'},
+      {x:7.5,y:51,t:'Top two play for the title',d:'Rows tagged <b>CCG</b> meet in the Week 13 conference championship.',f:'CCG'},
+      {x:15,y:49,t:'National rank',d:'Where the school sits on the league-wide ladder (Rankings tab).',f:'Nat'},
+      {x:91,y:49,t:'All-Play %',d:'Your record if you played every school every week. Tiebreaker #3 after conf W-L and head-to-head.',f:'All-Play'}],
   k:'standings conference record wins losses tiebreaker championship race ccg'},
  {key:'bylaws',tab:0,n:'Rules (this guide)',img:'bylaws.jpg',sel:'#cffb-bl',
   ask:'What\u2019s the rule? When\u2019s the next deadline?',
@@ -1115,57 +1125,57 @@ var W = [
  {key:'roster',tab:1,n:'Roster Board',img:'roster.jpg',find:'Roster Board',codes:1,
   ask:'Who\u2019s on a roster? How much eligibility does he have left?',
   d:'Every school\u2019s roster with class, eligibility, redshirt, awards and status for each copy, plus buttons to manage your own: set lineups and move players to Taxi or IR.',
-  hs:[{x:25,y:22,t:'Pick a conference, then a school',d:'Each conference has a school dropdown. Your school loads first.'},
-      {x:75,y:52,t:'School summary',d:'Points, roster count, players redshirting this year, and players out.',f:'Redshirting',up:1},
-      {x:40,y:86,t:'Class code & eligibility dots',d:'<b>R-JR</b> = redshirted junior. Filled dots are seasons used; open dots are seasons left.',f:'Eligibility'},
-      {x:56,y:85,t:'Redshirt',d:'Shield = traditional, cross = medical, with the year taken (<b>RS \u201923</b>).',f:'Redshirt'},
-      {x:70,y:85,t:'Awards',d:'Career awards. One national or two conference awards can trigger an early declare.',f:'Awards'},
-      {x:85,y:86,t:'Status',d:'<b>Active</b>, <b>Taxi</b>, <b>IR</b>, or an injury tag (P / Q / O).',f:'Status'},
-      {t:'Roster management buttons',d:'Manage your own roster from here: <b>Set Lineup</b>, move a freshman to <b>Taxi</b> for a traditional redshirt, or an injured player to <b>IR</b> for a medical. Do it before <b>Week 5 Thursday kickoff</b>.',f:'Lineup',nopic:1}],
+  hs:[{x:17,y:16,t:'Pick a conference, then a school',d:'Each conference has a school dropdown. Your school loads first.'},
+      {x:85,y:27,t:'School summary',d:'Points, roster count, players redshirting this year, and players out.',f:'Redshirting',up:1},
+      {x:33,y:54,t:'Class code & eligibility dots',d:'<b>R-JR</b> = redshirted junior. Filled dots are seasons used; open dots are seasons left.',f:'Eligibility'},
+      {x:45,y:54,t:'Redshirt',d:'Shield = traditional, cross = medical, with the year taken (<b>RS \u201923</b>).',f:'Redshirt'},
+      {x:54,y:54,t:'Awards',d:'Career awards. One national or two conference awards can trigger an early declare.',f:'Awards'},
+      {x:69,y:54,t:'Status',d:'<b>Active</b>, <b>Taxi</b>, <b>IR</b>, or an injury tag (P / Q / O).',f:'Status'},
+      {x:84,y:36,t:'Roster management buttons',d:'Manage your own roster from here: <b>Set Lineup</b>, move a freshman to <b>Taxi</b> for a traditional redshirt, or an injured player to <b>IR</b> for a medical. Do it before <b>Week 5 Thursday kickoff</b>.',f:'Lineup'}],
   k:'roster rosters board players copy copies eligibility class redshirt taxi ir injury fr so jr sr gr coach office'},
  {key:'rankings',tab:2,n:'Power Rankings',img:'rankings.jpg',find:'Power Rankings',
   ask:'Where do I rank nationally? Am I playoff bound?',
   d:'All 100 schools on one ladder. Sets playoff at-large bids, bowl matchups and Top 25 payouts.',
-  hs:[{x:40,y:31,t:'Filter by conference',d:'<b>All</b> is the full national ladder. Scroll sideways for every conference.'},
-      {x:6,y:66,t:'Rank & weekly move',d:'Arrows show movement since last week.',f:'Rank'},
-      {x:75,y:57,t:'All-Play & Opp. All-Play',d:'The two percentages that drive the ranking formula.',f:'All-Play'},
-      {x:93,y:65,t:'CFFB score',d:'<b>(wins + 1) \u00D7 (All-Play % + Opp. All-Play %) + postseason wins.</b> Top 11 non-champs after Week 13 get at-large bids.',f:'CFFB'}],
+  hs:[{x:20,y:20,t:'Filter by conference',d:'<b>All</b> is the full national ladder. Scroll sideways for every conference.'},
+      {x:7,y:48,t:'Rank & weekly move',d:'Arrows show movement since last week.',f:'Rank'},
+      {x:44,y:46,t:'All-Play & Opp. All-Play',d:'The two percentages that drive the ranking formula.',f:'All-Play'},
+      {x:56,y:44,t:'CFFB score',d:'<b>(wins + 1) \u00D7 (All-Play % + Opp. All-Play %) + postseason wins.</b> Top 11 non-champs after Week 13 get at-large bids.',f:'CFFB'}],
   k:'rankings rank national top 25 poll playoff at-large bowl payout formula power'},
  {key:'gameday',tab:3,n:'College Gameday',img:'gameday.jpg',sel:'#cffb-gd',
   ask:'What\u2019s the game of the week?',
   d:'The spotlight matchup each regular-season week, picked by lowest average rank.',
-  hs:[{x:24,y:25,t:'This week\u2019s pick',d:'Both schools earn <b>$1</b> recruiting. The primary game earns <b>$1 more</b>.'},
-      {x:50,y:63,t:'The matchup',d:'Ranks and records for both schools. Rivalry games are tagged.'}],
+  hs:[{x:28,y:13,t:'This week\u2019s pick',d:'Both schools earn <b>$1</b> recruiting. The primary game earns <b>$1 more</b>.'},
+      {x:50,y:34,t:'The matchup',d:'Ranks and records for both schools. Rivalry games are tagged.'}],
   k:'gameday game of the week spotlight matchup rivalry'},
  {key:'live',tab:3,n:'Live Scoring',img:'live.jpg',find:'Live Scoring',
   ask:'How\u2019s my game going right now?',
   d:'Every matchup live, with projections and players left to play.',
-  hs:[{x:20,y:38,t:'Every live game',d:'Tap a game to load it below. Gold border = the one you\u2019re viewing.'},
-      {x:45,y:81,t:'Score & projection',d:'Live points with the projected final underneath.',f:'Proj'},
-      {x:77,y:73,t:'Players left',d:'Starters playing now, yet to play, and final.',f:'Playing'}],
+  hs:[{x:14,y:26,t:'Every live game',d:'Tap a game to load it below. Gold border = the one you\u2019re viewing.'},
+      {x:44,y:50,t:'Score & projection',d:'Live points with the projected final underneath.',f:'Proj'},
+      {x:72,y:52,t:'Players left',d:'Starters playing now, yet to play, and final.',f:'Playing'}],
   k:'live scoring scores score projection'},
  {key:'playoffs',tab:4,n:'Playoff Bracket',img:'playoffs.jpg',find:'Championship',
   ask:'Who\u2019s in, and who do we play?',
   d:'The 16-team bracket from Week 14 to the Week 17 title game, plus projections before it\u2019s set.',
-  hs:[{x:40,y:31.5,t:'Four rounds',d:'Round of 16 (Week 14) through the title game (Week 17).',f:'Round of 16'},
-      {x:3.5,y:39,t:'Seeds',d:'Set by national ranking after Week 13: five Power 5 champs plus 11 at-larges.'},
-      {x:70.5,y:54.6,t:'Live games',d:'Green <b>LIVE</b> marks games in progress.'},
-      {x:86,y:81,t:'Title game',d:'The winner is ranked #1 nationally.',f:'Title Game'}],
+  hs:[{x:35,y:37,t:'Four rounds',d:'Round of 16 (Week 14) through the title game (Week 17).',f:'Round of 16'},
+      {x:4.5,y:44,t:'Seeds',d:'Set by national ranking after Week 13: five Power 5 champs plus 11 at-larges.'},
+      {x:61,y:62,t:'Live games',d:'Green <b>LIVE</b> marks games in progress.'},
+      {x:85,y:86,t:'Title game',d:'The winner is ranked #1 nationally.',f:'Title Game'}],
   k:'playoff playoffs bracket seed projection postseason championship'},
  {key:'awards',tab:5,n:'Awards & Recruiting $',img:'awards.jpg',find:'League Awards',
   ask:'Who\u2019s winning the Heisman? What has my school earned?',
   d:'Award races, the NFL Draft (early declares and draft prestige) and every school\u2019s recruiting dollars.',
-  hs:[{x:37,y:30,t:'Three views',d:'<b>Awards Watch</b>, <b>NFL Draft</b> and <b>Recruiting $</b>.',f:'Awards Watch',up:1},
-      {x:16,y:55,t:'National awards',d:'Heisman, O\u2019Brien, Doak Walker, Biletnikoff. <b>$5</b> each; only a player\u2019s top copy counts.',f:'National Awards'},
-      {x:14,y:95,t:'Award races',d:'Each card is one award\u2019s top 10. Finalized after Week 12.'}],
+  hs:[{x:30,y:29,t:'Three views',d:'<b>Awards Watch</b>, <b>NFL Draft</b> and <b>Recruiting $</b>.',f:'Awards Watch',up:1},
+      {x:16,y:45,t:'National awards',d:'Heisman, O\u2019Brien, Doak Walker, Biletnikoff. <b>$5</b> each; only a player\u2019s top copy counts.',f:'National Awards'},
+      {x:14,y:88,t:'Award races',d:'Each card is one award\u2019s top 10. Finalized after Week 12.'}],
   k:'awards heisman obrien doak walker biletnikoff all-conference coach year recruiting dollars nfl draft early declare prestige'},
  {key:'devy',tab:6,n:'Devy Draft',img:'devy.jpg',sel:'#cffb-dv',
   ask:'Who\u2019s on the clock? Who did my conference take?',
   d:'The live two-round devy draft for every conference, plus retention and past drafts.',
-  hs:[{x:16,y:31,t:'On the clock',d:'The school picking now, and who\u2019s up next.',f:'On the clock'},
-      {x:72,y:39,t:'Pick timer',d:'<b>24 hours</b> per pick. A missed pick can be made once the next school picks.'},
-      {x:50,y:68,t:'Pick a conference',d:'Each conference drafts on its own. <b>Yours</b> shows your pick number.',f:'Yours'},
-      {x:50,y:86,t:'Draft, retention, history',d:'<b>Retention</b> is where you keep undeclared picks (rebate drops $5 a year).',f:'Retention'}],
+  hs:[{x:35,y:14,t:'On the clock',d:'The school picking now, and who\u2019s up next.',f:'On the clock'},
+      {x:80,y:11,t:'Pick timer',d:'<b>24 hours</b> per pick. A missed pick can be made once the next school picks.'},
+      {x:42,y:27,t:'Pick a conference',d:'Each conference drafts on its own. <b>Yours</b> shows your pick number.',f:'Yours'},
+      {x:50,y:38,t:'Draft, retention, history',d:'<b>Retention</b> is where you keep undeclared picks (rebate drops $5 a year).',f:'Retention'}],
   k:'devy draft pick clock order college prospect rebate retention'},
  {key:'auction',tab:7,n:'Auction Board',img:'auction.jpg',find:'Auction Board',soon:1,mfl:'auction',
   ask:'What\u2019s up for bid? What\u2019s my budget?',
@@ -1189,19 +1199,19 @@ var W = [
 /* Standard MFL pages. {Y}=season {L}=league. Verify the O= codes against your league menu. */
 var P = [
  {g:'My Team',l:[
-  ['lineup','Set Lineup','Submit your 8 starters every week.','/{Y}/options?L={L}&O=02','lineup start starters submit sit'],
+  ['lineup','Set Lineup','Submit your 8 starters every week.','/{Y}/lineup?L={L}','lineup start starters submit sit'],
   ['myroster','My Roster','Your 30-man roster, Taxi and IR.','/{Y}/options?L={L}&O=07','roster my team'],
-  ['adddrop','Add / Drop','Drop players to the portal before the deadline.','/{Y}/options?L={L}&O=05','drop cut add release portal'],
-  ['taxi','Taxi Squad & IR','Stash redshirt candidates before Week 5 Thursday.','/{Y}/options?L={L}&O=165','taxi ir redshirt stash injured reserve']]},
+  ['drop','Drop Players','Drop a player into the transfer portal.','/{Y}/options?L={L}&O=257','drop cut release portal transfer'],
+  ['taxi','Taxi Squad','Stash a freshman for a traditional redshirt before Week 5 Thursday.','/{Y}/options?L={L}&O=98','taxi redshirt stash freshman rookie traditional'],
+  ['ir','Injured Reserve','Stash an injured player for a medical redshirt before Week 5 Thursday.','/{Y}/options?L={L}&O=18','ir injured reserve medical redshirt hurt']]},
  {g:'Scores & Schedule',l:[
   ['mlive','MFL Live Scoring','The standard MFL live page.','/{Y}/live_scoring_summary?L={L}','live scores scoring score'],
   ['sched','Schedule','Your 12-game slate.','/{Y}/options?L={L}&O=15','schedule games opponent week'],
-  ['weekly','Weekly Results','Final scores by week.','/{Y}/weekly?L={L}','results scores week weekly']]},
+  ['weekly','Weekly Results','Final scores by week.','/{Y}/options?L={L}&O=22','results scores week weekly']]},
  {g:'Auctions',l:[
   ['auction','Auction Room','Nominate and bid. High bid for 12 hours wins.','/{Y}/options?L={L}&O=43','auction bid nominate']]},
  {g:'League',l:[
-  ['trans','Transactions','Every add, drop and auction win.','/{Y}/options?L={L}&O=03','transactions moves log'],
-  ['msg','Message Board','Older posts. Discord is the main channel.','/{Y}/options?L={L}&O=09','message board post']]}
+  ['trans','Transactions','Every add, drop and auction win.','/{Y}/options?L={L}&O=03','transactions moves log']]}
 ];
 var SH = '<path d="M2 4 L10 1 L18 4 L18 11 C18 16 10 20 10 20 C10 20 2 16 2 11 Z"/>';
 var SHM = SH + '<g transform="translate(10 10.5) rotate(-30)"><rect x="-6" y="-2" width="12" height="4" rx="1.4" fill="rgba(209,117,117,0.18)"/><rect x="-6" y="-2" width="3.2" height="4" rx="1.2" fill="rgba(209,117,117,0.5)" stroke="currentColor" stroke-width="1.1"/><rect x="2.8" y="-2" width="3.2" height="4" rx="1.2" fill="rgba(209,117,117,0.5)" stroke="currentColor" stroke-width="1.1"/></g>';
@@ -1337,7 +1347,7 @@ function vMap(){
       return '<button type="button" class="sm-wb'+(x.key===w.key?' on':'')+(x.here?' here':'')+(x.soon?' soon':'')+'" style="--i:'+k+'" data-act="w" data-v="'+x.key+'"><span>'+x.n+'</span><small>'+(x.here?'YOU ARE HERE':x.soon?'SOON':'')+'</small></button>'; }).join('')+'</div>'; }).join('');
   var sel = '<select class="sm-sel" data-sm="wsel" aria-label="Choose a widget">'+TABS.map(function(t, ti){ return '<optgroup label="'+esc(t.n)+'">'+REAL.filter(function(x){ return x.tab === ti; }).map(function(x){ return '<option value="'+x.key+'"'+(x.key===w.key?' selected':'')+'>'+x.n+'</option>'; }).join('')+'</optgroup>'; }).join('')+'</select>';
   var tab = TABS[w.tab];
-  var shot = '<figure class="sm-shot'+(w.soon?' soon':'')+'"><img src="'+SM.img+w.img+'" alt="'+esc(w.n)+' widget" loading="lazy">'+(w.soon?'<span class="sm-rib">PREVIEW \u00B7 COMING SOON</span>':'')+
+  var shot = '<figure class="sm-shot'+(w.soon?' soon':'')+'"><img src="'+SM.img+w.img+'" alt="'+esc(w.n)+' widget" loading="lazy" onerror="this.closest(\'.sm-shot\').classList.add(\'noimg\')"><div class="sm-noshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="9.5" r="1.5"></circle><path d="M21 15l-5-5L5 18"></path></svg><b>'+esc(w.n)+'</b><small>Live on the '+esc(tab.n)+' tab \u00B7 screenshot coming soon</small></div>'+(w.soon?'<span class="sm-rib">PREVIEW \u00B7 COMING SOON</span>':'')+
     w.hs.map(function(s, i){ return s.x == null ? '' : '<button type="button" class="sm-hs" style="left:'+s.x+'%;top:'+s.y+'%;--i:'+i+'" data-hs="'+(i+1)+'" aria-label="'+(i+1)+'. '+esc(s.t)+'">'+(i+1)+'</button>'; }).join('')+'</figure>';
   var steps = '<ol class="sm-steps">'+w.hs.map(function(s, i){ return '<li data-hs="'+(i+1)+'"><i>'+(i+1)+'</i><span><strong>'+s.t+(s.nopic?' <span class="sm-pill soon" style="margin-left:6px">NOT IN PREVIEW</span>':'')+'</strong>'+s.d+'</span></li>'; }).join('')+'</ol>';
   var acts = '<div class="sm-acts">'+(w.soon ? (w.mfl ? '<a class="sm-btn" href="'+url(PK[w.mfl].u)+'" target="_blank" rel="noopener">'+PK[w.mfl].t+' on MFL \u2197</a>' : '') :

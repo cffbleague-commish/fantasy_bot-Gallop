@@ -1,0 +1,548 @@
+﻿College Fantasy Football Bylaws
+Bylaw Walkthrough Pt. 1
+Bylaw Walkthrough Pt. 2
+Strategy Discussion Pt. 1
+Strategy Discussion Pt. 2
+* League Calendar [a]
+   * (*This is the annual calendar of events expected after the 1st year)
+   * February: Start of New League Year (MFL Roll-over)
+   * February 1st-May 1st: Vacancies filled
+   * March 1st: Conference schedule announced
+   * May 1st: Recruiting Dollars Administered
+   * May 15th: Transfer Announcement Deadline/Announce Start of Auction Date
+   * May 16th-29th: Upperclassmen/Transfer Auction
+   * May 31st: Devy Player Auction[b]
+   * June 1st-June 15th: Freshmen Auction Starts*
+   * June 15th-Aug 24th: Walk-On Auction*
+      * * These are not official stop points just rough estimation of when schools’ budgets are lower
+   * July 1st- Aug 31st: Scheduling
+   * Aug 25th: Taxi Squad and IR slots opened
+   * Week 4 Tuesday NFL Regular Season: Devy Draft
+   * Week 5 Thursday NFL Game Kickoff: Taxi & IR locked
+   * Week 14 NFL Regular Season: Conference Championship & Player Awards Announced
+   * Weeks 15-17 NFL Regular Season: National Championship Playoffs
+   * Week 18 NFL Regular Season: League Payouts Administered
+   * January 1st: Early Declares and Player Initiated Transfers Announced
+   * January 31st: Early Declares and Player Initiated Transfers Retentions Due
+   * The only difference for year one is that all auctions will be condensed into one startup auction starting in May (TBD when) as well as only devy drafts occurring during the first year.
+* League Platform
+   * League will be held on MFL
+   * League communication will be facilitated via Discord
+      * Members of the league are encouraged to join the Discord channel  as it will be the only communication for any league updates or fielding questions.
+      * Discord was chosen for primarily its organizational aspects as it helps to manage a league so large
+   * League will also utilize Google Data Studio to facilitate certain reports for features in the league.
+      * Links for these reports will be made available on both MFL and Discord
+* Buy-In & Payout
+   * Buy-In
+      * Buy-ins will be collected on LeagueSafe
+      * $4600 Prize Pool
+      * $50 league buy-in each year for each Power 5 School
+      * $25 league buy-in each year for each Non-Power 5 School (labeled Minor)
+      * Each team is also responsible for 1/100th of the MFL Maintenance fee (rounded up to the nearest whole dollar)
+         * For example, $184.85 was the devoted  MFL maintenance fee for 2025. Each team is responsible for $1.85 rounded up to $2 for the 2025 MFL fee.
+      * $100 is devoted to reducing buy-ins for vacant teams
+      * Buy-in Deadline
+         * After completion of season coaches will have until Jan 31st to pay or vote in the returning poll
+            * If coach does neither they will be assumed to not be interested in returning next season and school will be deemed vacant
+         * Coaches that at least vote prior to the deadline will have until February rollover to settle up their buyin
+            * If not settled up their school will be deemed vacant
+   * Payout
+      * Max Total Pot: $4360
+      * Conference Champ: $100 each ($600 total)
+      * Conference Semi-Finalist: $50 each ($300 total)
+      * Top 25 Finish Payouts:
+Ranking
+	% of Pot
+	Max Payout ($)
+	#1
+	17.3%
+	$600
+	#2
+	8.67%
+	$300
+	#3
+	6.79%
+	$235
+	#4
+	5.78%
+	$200
+	#5
+	4.91%
+	$170
+	#6
+	4.34%
+	$150
+	#7
+	4.05%
+	$140
+	#8
+	3.9%
+	$135
+	#9
+	3.76%
+	$130
+	#10
+	3.61%
+	$125
+	#11
+	3.47%
+	$120
+	#12
+	3.32%
+	$115
+	#13
+	3.18%
+	$110
+	#14
+	3.03%
+	$105
+	#15
+	2.89%
+	$100
+	#16
+	2.75%
+	$95
+	#17
+	2.6%
+	$90
+	#18
+	2.46%
+	$85
+	#19
+	2.31%
+	$80
+	#20
+	2.17%
+	$75
+	#21
+	2.02%
+	$70
+	#22
+	1.88%
+	$65
+	#23
+	1.73%
+	$60
+	#24
+	1.59%
+	$55
+	#25
+	1.45%
+	$50
+	         * Top 25 Payout is based on end of year ranking (After Week 17 of NFL Regular Season)
+* Schools & Conferences
+   * 100 total schools
+      * 6 Conferences
+         * Five Power 5 Conferences (80 Schools)
+            * ACC, SEC, B10, B12, P12
+            * 16 Schools per Conference
+         * One Minor Conference (20 Schools)
+            * American (AAC)
+            * 20 Schools per Conference
+      * Schools chosen on to be used for this league were determined based on conference makeup then primary geographic location in comparison to the rest of the conference
+         * Requests to change school to a non used school will only be entertained if
+            * School is vacant
+            * Non-used school is a current FBS school
+            * Quality Graphics are in a feasible capacity to obtain for commissioner
+   * Graphics
+      * Graphics for the league and for teams are supplied by the commissioner at no additional cost to the coaches
+      * Graphics are there to provide a uniform aesthetic to the league 
+      * The graphics will be updated when the resources are available and a school in real life updates on of their:
+         * Logos
+         * Colors
+         * Stadium (for School Banner showcased on Coach’s Office)
+* Rosters
+   * Player Pools
+      * Each conference will have access to 2 copies of eligible players
+      * Schools are not able to have 2 copies of the same player on their roster (MFL enforced)
+      * Players cannot be traded
+      * Copies are not able to cross conference lines (MFL enforced)
+   * 30 Total Roster Spots
+   * Starting Lineups
+      * 8 Offense
+         * 1 QB
+         * 1-5 RB
+         * 2-6 WR/TE
+      * Schools will have lineups carried over from week to week. If commissioner sees an invalid lineup submission they will set by the Fantasy Sharks option on MFL for the remainder of the season
+         * Ensuring there are full lineups is important as schools that miss lineups not only affect their teams outcomes but sway rankings as well.
+      * Schools are expected to field a full 8 man lineup each week
+         * Players can be on bye or injured and start but there must be at least 8 players on your active roster to meet the lineup requirements.
+* Scoring
+   * The scoring format will be as follows for all positions:
+Category
+	Point Total
+	Passing TDs
+	4 pts each
+	INTs
+	-2 pts each
+	Pass Yards
+	.04 pts each
+	Pass 2 point conversions
+	2 pts each
+	Pass 1st Down Converted
+	.2 pts each
+	Rush TDs
+	6 pts each
+	Rush Yards
+	.1 pts each
+	Rush 2 Point Conversions
+	2 pts each
+	Fumbles Lost
+	-2 pts each
+	Rush 1st Downs Converted
+	.5 pt each
+	Receiving TDs
+	6 pts each
+	Receiving Yards
+	.1 pts each
+	Receiving 2 Point Conversions
+	2 pts each
+	Receiving 1st Downs Converted
+	.5 pt each
+	Receptions
+	.5 pts each
+	Punt Return Yards
+	.05 pts each
+	Kick Return Yards
+	.05 pts each
+	Special Team TDs (Punt & Kick Returns)
+	6 pts each
+	
+
+* Eligibility
+   * Because this league is designed to mirror real College Football but in the NFL landscape. The primary player pool will be limited to players with 1-4 years of NFL experience
+      * MFL will dictate what a players NFL experience level is
+      * Once all copies of a player have used up their 4 years of eligibility they are considered to have graduated and are added to the Can’t Add list on MFL to be removed from the player pool.
+         * Individual player copies that might leave early will have their eligibility set at zero or GR designating them as graduated
+   * Schools that have players with no eligibility still on their roster are expected to be removed before the start of the recruiting or school will be docked $-5 from the recruiting budget for the year.
+      * If still not dropped before the season starts, the team will not be given the ability to set a lineup until player(s) are dropped.
+   * Due to having a conference recruiting model (see Recruiting for more information) to be able to illustrate each copy’s eligibility we have to get creative. Below you will find examples of what to look for and how to read eligibility on MFL:
+Player
+	Copy 1 Info
+	Copy 2 Info
+	McCaffrey, Christian CAR RB
+	BC_SR
+	MIA_JR_r17
+	Harris, Damien NEP RB
+	GT_FR_m19
+	FA_SO
+	Elliot, Ezekiel DAL RB
+	FSU_SR_r16
+	FA_GR
+	
+
+   * Each copy should contain an abbreviation of a school that owns a player or a FA to designate they are not owned. Copies should also state what year of eligibility they are currently in (FR, SO, JR, SR, GR). Copies will also reflect if they have received any type of redshirt by a list of an r= Traditional or a m= medical along with the year it was used.
+      * In the CMC example there are two owned copies, one with Boston College and one with Miami. The Miami copy of CMC was given a traditional redshirt during CMC’s rookie year of 2017 while Boston did not give one.
+      * Damien Harris' example shows that he is currently owned by one team (Georgia Tech) and the other copy is free and available to be acquired. Georgia Tech's copy had a medical redshirt applied to Damien Harris during the 2019 season. The free copy has no current records of redshirts being applied, and is not able to receive a traditional redshirt anymore but could still be eligible for a medical.
+      * Ezekiel Elliot is a bit different than Damien Harris. Florida State had redshirted his copy so he is in his last year of eligibility with his team. The other copy didn’t have any eligibility left and shows that copy has graduated and is not available to be owned by any team (hence the GR= Graduate)
+   * These are just some of the examples of what coaches will see on roster pages or on the Free Agent Listing page on MFL
+   * The copy info will be updated a few times a year, if coaches have questions or find inconsistencies please let the commissioner know
+* Redshirts
+   * Schools are able to delay a players eligibility by exercising two different types of redshirts on a player
+      * Traditional
+         * Traditional redshirts are reserved for any incoming freshmen player meets the following requirement:
+            * Has been placed in a Taxi Squad slot in MFL prior to kickoff of Week 5 NFL Regular season (Thursday Night Game).
+         * If a player is removed from a school's Taxi Squad Slot prior to completion of the CFFB season they will not be awarded a traditional redshirt
+            * Coaches who need to remove a player off of taxi will ask the commissioner to move a player off of the taxi squad to their active roster.
+      * Medical
+         * Medical redshirts are reserved for any player with remaining eligibility that is injured and meets the following requirements
+            * Has been placed in an IR slot in MFL prior to kickoff of Week 5 NFL Regular season (Thursday Night Game); 
+               * must be listed as IR or I on MFL to be eligible to be placed in a IR slot
+            * Has not had a medical redshirt applied to the player previously
+         * If a player loses their IR or I designation on MFL during the season but is still occupying one of their schools IR slots they will remain eligible to receive a medical redshirt as long as the requirements above are satisfied.
+         * If a player is removed from a school's IR Slot prior to completion of the CFFB season they will not be awarded a medical redshirt; even if they satisfy the requirements above.
+* Schedule
+   * Schedule Parameters
+      * 12 Game Regular Season Schedule
+         * Weeks 1-12 of NFL Regular Season
+            * 8 games reserved for conference opponents
+               * Weeks 5-12 of NFL Regular Season
+            * 4 games for non conference
+               * Weeks 1-4 of NFL Regular Season
+            * 2 game can be designated as a rivalry  opponent
+               * Weeks 5 & 12  of NFL Regular Season will be used for any conference rivalries
+                  * (i.e Alabama vs. Auburn, Ohio State vs. Michigan, Miami OH vs. Ohio University, etc.)
+                  * The scheduling system will default to using week 12 for the first conference rivalry week.
+                  * If a second conference rivalry week is needed, week 5 will be used.
+               * Non-Conference Rivalry weeks can be scheduled any week(s) 1-4
+                  * (i.e Iowa vs. Iowa St, Kansas vs. Missouri, USC vs. Notre Dame, etc.)
+               * More information on Rivalries can be found in the Rivalries section of the bylaws.
+
+
+
+
+   * Scheduling Games
+      * Each year schools will be able to schedule 4 non-conference games
+      * Schools are not required to schedule their own games but are encouraged to do so (as this can affect their rankings in a season).
+      * Schools will utilize the module (provided by the league) to fill out and schedule games for the season.
+         * Only games that have been verified by both schools will be used
+      * Schools need to schedule enough games to satisfy the requirements for the Schedule Parameters listed above.
+      * The Commissioner reserves the right to alter any scheduled games in order to satisfy the Schedule Parameters. 
+         * Changes will be altered based on the verified submission time stamp.
+         * Any bartered recruiting dollars for altered games will be returned to their original schools budgets
+      * Conference Schedule
+         * In March, Conference schedules will be randomly generated each year by the scheduling system.
+         * If teams wish to have conference rivalry games those can be scheduled for week 12 and week 5 if needed prior to the conference schedule being generated..
+            * The scheduling system will default to using week 12 for the first conference rivalry week.
+            * If a second conference rivalry week is needed, week 5 will be used.
+   * Winning Games and Recruiting Dollars
+      * Schools obtain a recruiting dollar ($1) for each win they get in the regular season (Weeks 1-12) and obtain a recruiting dollar ($1) for each appearance they get in a post season game (Week 13-17)
+      * Schools obtain a recruiting dollar ($1) for each win they get in a post season game (Week 13-17)
+      * These recruiting dollars are applied to next year's recruiting budget
+   * College Gameday Game of the Week
+      * Each week during the regular season (Week 1-12) a select matchups will spotlighted on College Gameday
+      * Matchup that is selected will be based off of the matchup that has an average ranking of 15 or lower
+         * #3 Ranked Texas is playing the #6 Ranked Oklahoma their average rank for that matchup is 4.5. Comparing that to the matchup between #1 Ranked Miami and #10 Ranked Georgia Tech who has an average rank of 5 meaning Texas vs. Oklahoma would be more likely to be selected for College Gameday than Miami vs. Georgia Tech
+         * In event of a tie for the lowest gameday will be whichever team has highest rank
+            * #2 Tulsa vs. #7 Boston College compared against #3 Texas vs. #6 Oklahoma both have average ranks for 4.5, but since #2 Tulsa has the highest rank out of the 4 schools College Gameday tiebreaker goes to their matchup
+      * Schools selected for College Gameday will have a graphic made for their matchup and placed on the main page slider on MFL as well as each being given $1 for recruiting next year.
+         * The schools with the lowest average matchup for a week is given an additional $1 for being labeled as the primary College Gameday matchup
+   * Post Season
+      * Week 13 of NFL Regular Season
+         * Conference Championships
+      * Weeks 14-17 of NFL Regular Season
+         * 16 team playoff
+            * Power 5 Conference Champions
+            * 11 At- Large Bids
+               * Awarded to highest nationally ranked teams at the completion of Week 13 in NFL Regular Season
+            * Seeding of playoffs will be decided by national rankings at completion of Week 13 in NFL Regular Season with the highest national ranking receiving the highest seed.
+               * #1 ranked team receives the #1 seed in playoffs, etc.
+            * Matchups within the playoff bracket will follow the seeding pattern outlined in Figure 1. 
+               * After the 2024 season if there are any issues found with how the bracket is seeded the playoffs will be reseeded to appropriate reference Figure 1.
+
+
+  
+
+Figure 1. Example Playoff Bracket
+         * Bowl Games (Weeks 14)
+            * Schools with 6 or more wins are invited to play in a bowl game
+               * In the event of odd number of 6 or more win schools one invite will offered to highest ranked 5 win school
+                  * Highest ranked 5 win school will play the last remaining 6 win school in this instance.
+            * Matchups for bowl games are determined by national rankings at the completion of week 13 of NFL Regular Season
+               * I.e top ranked non playoff school plays the next second top ranked non playoff school etc.
+* National Ranking
+   * A Ranking system will be utilized to help place teams on a league wide scale.
+   * Rankings will be calculated based on the following metric:
+      * ((Regular Season Wins +1) * (All Play % + Opp All Play %)) + (Post Season Wins)
+   * Rankings will help set:
+      * Playoffs At-Large Bids
+      * Bowl Game Matchups
+      * End of Year Payouts
+         * Winner of National Championship Playoff will be ranked #1. Their National Ranking metric score will be scored 1 point higher than the second ranked team unless they would rank #1 regardless.
+* Conference Standings
+   * The top two schools in the Conference standings will represent their Conference in the conference’s championship game held Week 13 of NFL Regular Season
+   * Following ranking will be used to determine leaders in conference standings
+      * Conference W-L percentage
+      * H2H Record (between tied teams)
+         * When three or more schools are tied entering a H2H tiebreaker step, a single school must hold a clear lead over all other tied schools to break the tie. If no clear lead exists, the tiebreaker moves to the next step. If a clear leader exists the remaining teams are re-run head to head until there is no clear H2H Leader then drop to next tiebreaker.
+      * All-Play percentage
+      * Total Points
+      * Higher National Ranking
+* Awards
+   * Each year outstanding copies of players will be awarded recognition for their usage and contributions to their school.
+   * With each award given bonus recruiting dollars will be awarded to the schools to be used for next season’s recruiting class
+      * Amount of recruiting dollars awarded for each award in highlighted below
+   * Award finalized and announced after the completion of Week 12 of NFL Regular Season
+   * National Awards
+      * For National awards only the top copy of a player will be recognized
+      * The copies of players will then be ranked on their Score for the season and the highest one will be win their respective national awards
+      * Players are ranked using the following metric:
+         * Player Regular Season Starter Points/Team Regular Season PF*Player Regular Starter points* (Schools Regular Season Wins+1)= Score
+         * This essentially narrows in on selecting the copies that were most impactful for their schools success for that season
+      * The Awards given out on a National Level are:
+         * Heisman (Top Player in League) : $5
+         * O’Brien (Top QB): $5
+         * Doak Walker (Top RB): $5
+         * Biletnikoff (Top WR/TE): $5
+      * Coach of the Year: $5
+         * Award given to the coach that blended winning with highest scoring and submitting the best lineups over the course of regular season
+            * (Regular Season Wins+1) * Regular Season PF * (Regular Season PF/PP)= Coach of Year Metric 
+   * Conference Awards
+      * Each conference will award all-conference accolades to players at each position
+      * Focus on production only during conference play (Week 4-12 of NFL Regular Season)
+      * Conferences will reward the Top Scores for each conference as follows:
+         * 1st Team awarded: $5
+         * 2nd Team awarded: $4
+         * 3rd Team awarded: $3
+         * Each All Conference team will consist of 1 QB, 3 RB, 4 WR/TE
+         * Players are ranked using the following metric:
+            * Conference Play Starter Points*(Conference Play Starter Points/Team Conference PF)= All-Conference Score
+*  NFL Draft
+   * At the close of the CFFB season a theoretical NFL draft will take place. The NFL draft is a way for schools to have players move on to the next stage of their life and be able to shine some prestige on the schools that made them what they are.
+   * Early Declares
+      * Natural Juniors and Redshirt Sophomores and Redshirt Juniors are able to leave their schools early to head to the theoretical NFL draft. Players that decide to declare for the draft early are determined if one of the following criteria is met:
+         * Player copies that have won 1 National award during their career
+         * Player copies that have won 2 Conference awards during their career
+         * Even if one of the criteria is met before a player is eligible to declare early the player still will leave early
+         * Even if a player is coming off a medical redshirt season as long as one of the criteria is met they will leave early
+         * Players that leave early can be persuaded to stay at their school next year if the school forfeits money from their recruiting budget for next season.
+            * Players that stay may not be placed for transfers
+            * Players that trigger early declare by winning a national award have to have their school pay $20 to retain the player
+               * If the player wins another award after being persuaded to stay the team will have to pay $30 to get them to stay the following season.
+            * Players that trigger early declare by winning two all-conference awards have to have their school pay $10 to retain the player
+               * If the player wins another award after being persuaded to stay the team will have to pay $20 to get them to stay the following season.
+   * Draft Prestige
+      * Each year the Commissioner will group the players entering the draft (graduates + early declares) into tiers based on their latest seasons (thru Week 12 of NFL Regular Season) total points scored per position (WR/TE together). Those tiers will set the theoretical draft capital spent on a player in the NFL draft. Schools that have a player selected in the draft will receive some recruiting dollars that are applied to next season's budget.
+         * This only applies to schools that had players on the roster for the most recent season. If a player didn’t play for any school in the most recent season they do not have any recruiting dollars given to them.
+         * Only applies to copies that are eligible to enter draft
+         * Tiers are as follows; recruiting dollars awarded are highlighted:
+            * Top 1-8: $5
+            * Top 9-16: $4
+            * Top 17-24: $3
+            * Top 25-32: $2
+            * Top 33-40: $1
+            * Above 40: $0
+            * Example: Lamar Jackson is a Natural Junior and scored as QB1 of all QBs in the NFL last year. One copy won a National award and 11 other copies won a Conference Award. This is his second time winning a conference award for 6 of his copies (excluding the copy that won National Award) meaning he is declaring early for 7 out of 12 copies. 1 of those 7 schools decided to forfeit $20 for their copy to stay. His total points scored in the regular season got him listed in the top 1-8 tier for the draft. All 6 schools that had him declare early will receive $5 to their recruiting budgets for next season.
+* Recruiting
+   * All Auctions will be public proxy bidding on MFL where players are rewarded to school after being the highest bidder for 12 hours.
+   * Schools will have two nominations to use at any one time.
+      * Can not nominate two copies of the same player at the same time (MFL enforced)
+      * Can not nominate second copy of player if school already possess the first copy of player (MFL enforced)
+   * Each year schools will compete against other schools within their conference for shot at acquiring incoming freshmen (NFL rookies) during recruiting season
+   * Incoming freshmen are auctioned off where the schools with the highest bid are awarded the players
+   * Close of Auction
+      * Each year around August; league will announce when the close of the auction is expected
+         * Close is anticipated to be a week after cut down of NFL rosters happen
+            * Unless start of season is within a week
+      * Player Lock
+         * Players that are dropped in the middle of an auction are locked for 24 hours to prevent collusion
+         * This rule is suspended once entered into the close of auction period
+   * Schools recruiting budgets are set by how many recruiting dollars they have
+      * Schools receive a budget of $200 each year plus:
+         * Any funds won from players transferred out (see Transfers section for more details)
+         * Any funds awarded from National or Conference player awards from previous year (see Awards section for more details)
+         * Any funds awarded from wins from previous year
+         * Any funds awarded from draft prestige from previous year (See Draft Prestige section for more details)
+         * Any funds subtracted from Early Declares or Transfer Stays
+   * Startup:
+      * First year of league play the league will hold a startup auction to setup rosters
+      * All schools will have a $400 budget
+      * All eligible players will be available to be acquired
+         * No NFL Players with more than 4 years of NFL experience will be available
+         * No retro redshirts will be given to players
+            * I.e no natural seniors (4th year players) can be given a redshirt etc.
+   * Devy
+      * Each year each conference will have an opportunity to start the recruiting process early on a player that has yet to declare in real life for the NFL draft.
+      * Rebate Auction system will be utilized for recruiting devy players
+         * Draft
+            * Draft will start the beginning of Week 4 of each NFL Season
+            * Draft will give schools an opportunity to lay an early claim at select prospects.
+            * Only one copy of devy player will be available for the draft.
+            * There will be 2 rounds to draft (32 total picks in Power 5, 40 in Minor)
+            * Schools will have 24 hours to submit a pick
+               * Schools that time out will be allowed to make-up their pick as soon as the school currently on the clock makes theirs
+               * If pick is still not made up by the end of the draft the Commissioner will auto assign a devy selection utilizing DLF’s Most Recent Devy Rankings
+            * Schools are not able to trade or swap draft picks
+            * Order of draft will be determined by:
+               * Inverse Conf. W-L from previous year
+               * Tied schools will have order set by previous year national ranking in reverse order
+                  * Ranking at conclusion of season
+                  * I.e worst schools from last year have higher draft pick
+                  * First season order will be randomized
+         * Auction
+            * Players selected in the devy draft that declare in real life to the NFL draft will be auto-nominated at start of freshmen recruiting auction by commissioner at a starting bid of $0
+               * Players that were selected in devy draft but did not declare for NFL Draft that year will be able to be retained by schools prior to the start of the regular season at a reduced rebate amount depending on the number of subsequent years retained
+                  * -$5 per year retained
+                  * If one of non declared Devy selections are retained they will take the spot of the schools second round pick in the draft; if two non declared Devy selections are retained then both draft slots are taken up by retained players.
+                  * If schools do not provide notice of retention the league office will auto consider the player retained
+               * Second copies of players will be able to be nominated after the first copy and would count towards the rule below.
+            * When a devy player has their auction price finalized, if they are won by the school that had drafted them a rebate up to $20 will be applied to their recruiting budget for that year.
+               * Players acquired in auction for less than $20 will have whatever their final amount rebated back to them
+                  * Player goes for $7, only $7 will be rebated back to the school
+* Transfers
+   * Each year schools will be able to acquire upperclassmen through the Transfer Portal
+   * Transfers will be conducted via auctions on MFL starting in May of the League’s Calendar year.
+   * Same parameters of acquiring and nominating players as detailed in the Recruiting section of bylaws.
+   * Players are able to be reacquired by their previous school in any of the transfer scenarios (no % will be given back to the school for the player)
+   * Players can enter the transfer portal through by being dropped by their school prior to the transfer drop deadline
+      * Players dropped by their school and won in the auction by another school will have 50% (rounded to nearest dollar) of the amount won for added back to the previous school’s recruiting budget.
+         * Example: Lamar Jackson is won in the transfer auction for $25 the previous school receives $13.
+   * Transfer Portal Copy Management
+      * If multiple copies of the same player are available during an auction period the version of that copy will be determined as follows:
+         * If a player is nominated by a school that cut the player during the current league year and their copy had not been previously won by another team then the copy nominated will be considered that previous teams copy
+         * Or else it will be managed in the following tiebreakers (in order)
+            * The player copy with most eligibility will be the copy selected
+               * Example 1- A player has been given a traditional redshirt vs a copy that isn’t. The copy that had been given a redshirt will be selected first
+               * Example 2- A player has been given a medical redshirt compared to a copy that has received a traditional. The copy that had received a traditional will be selected first as they still have the opportunity to receive a medical redshirt and are deemed more valuable
+            * If not able to be broken by the eligibility tiebreaker then the player copy with less player awards will be selected next
+               * Example- Player has a conference award logged compared to a copy that doesn’t the copy that doesn’t have an award will be nominated first
+            * If not able to be broken by the player award tiebreaker then then the copy who was dropped from their school first will be selected first
+* Rivalries[c]
+   * Schools will be allowed to register for rivalries with other schools
+      * Schools are only allowed two rivalries at any one time
+   * Rivals are able to set a wager $0-5 recruiting dollars on the matchup and the winner of the matchup receives the funds from their rivals recruiting budget for next year
+      * The wager amount is reoccurring; e.g schools sets wager at $5 means that each year the two rivals are playing for $5
+   * Scheduling
+      * Non-Conference or Cross Conference Rivals are able to schedule games as appropriate for scheduling parameters
+   * Both schools will have to register a rivalry with the commissioner to have it be recognized. This will be completed and confirmed on Discord.
+      * Schools will have to name their rivalry as well as how much each rivalry game is wagering
+      * If a coach leaves a program the rivalry will have to be re-registered with a new coach or for the new school a coach goes to.
+* Vacancies
+   * Knowing coaches play in this format to take the reigns of their favorite College Football program we will allow coaches to leave their current schools for greener pastures.
+   * Coaches are able to petition the commissioners office when a new vacancy opens. 
+   * Commissioner will choose the coach by:
+      * Longest tenure (years in the league)
+      * Career wins (regular and postseason)
+      * Career PF/G
+      * If no ties are broken a coin flip or random draw will occur.
+   * Coaches that are awarded a vacant coaching position will leave their old roster and assume control of the vacant roster.
+      * All redshirts that were given out last year will still be honored (no freshmen that previously started will be given a retro redshirt)
+      * Will be able to persuade early declares at half the rate for that season
+         * Are still able to let them go and reap the rewards (at full amounts).
+         * Award counters for player awards still aggregate
+      * Will be able to retro-apply a medical redshirt to a medically eligible redshirted player(s) with petitioning to the Commish to review
+         * Player will have to have been listed for IR prior to Week 5 of the NFL Regular Season
+         * Player cannot have started for its CFFB team after Week 4
+         * Only will review petitions from the most recent season
+      * Recruiting dollars gained from the previous season will stay with the school program.
+         * Coach at Western Michigan leaves for Ohio State after a 6-6 season. Those $6 from wins will stay with Western Michigan for next year's budget, but will gain whatever dollars Ohio State has earned.
+      * Any devy players drafted their rebate rights will remain with the school that drafted them.
+         * Coach at Western Michigan drafts Trevor Lawrence in devy draft. He decided to move onto Ohio State the next year. The next Western Michigan coach will maintain the rebate rights to Trevor Lawrence for the next auction period.
+* Coach Conduct
+   * Coaches are expected to follow the rules laid out in these bylaws as well as:
+      * Submit Lineups each week their team is scheduled to play
+      * Participate within their means in league activities (transfers, recruiting, scheduling, etc.)
+      * Are expected to stay up to date on league issues through the primary league communication platform.
+      * Are expected to be reachable for commissioner via league communication platform
+         * To check in, answer questions, etc.
+         * Commissioner will not be obligated to reach out through alternative communication methods to track down coaches
+   * If coaches are found to not be making best efforts to meet the expectations on conduct or they are not responding to the commissioner on the league communication platform they may be asked to leave by the commissioner or outright removed.
+   * If coaches have issues with other coaches or league rules or decisions they are expected to reach out to the commissioner first in order to make sure the issue they have is known.
+   * School Check-In
+      * Prior to the start of the season the commissioner will attempt to check in with every school
+      * If a school does not check-in with the commissioner prior to the start acknowledging they are still present at ready the commissioner will consider the team AFK
+      * Once AFK the school will have its lineups set to auto and in season Devy selection set to auto skip
+* Rule Changes
+   * The Commissioner reserves the right to make decisions and changes deemed best for the integrity of the league.
+   * Coaches may suggest rule changes to be considered by the commissioner
+      * But the commissioner will determine if they meet the following:
+         * Spirit of the league
+         * Are logical changes
+         * Manageable workload for commissioner.
+   * Unless deemed to be a change to maintain the integrity of the league by the commissioner the league will vote on a rule change where a simple majority will determine if a change passes or not
+      * Votes will be held on MFL starting the month of February; after league rollover
+   * If any rule change is large enough where it impacts current strategy of all teams in the league the commissioner will insure enough lead time is given for coaches to adjust their strategies
+      * Example: if a scoring change is implemented (such as moving from standard to ppr scoring) the commissioner will give a year's notice of the change to coaches.
+
+
+[a]we need to adjust this. I;m thinking:
+
+
+Everything from March 1- Week 18 is fine. 
+
+
+I think we need to add Mandatory league poll week 12 for teams to vote if they are returning.
+
+
+I don't think any of the January dates are accurate. I am not sure how often we hit these deadlines. Maybe kick the declare and transfer info to March 1 that way its after rollover.
+
+
+Kick the retention deadline to 3/31.
+
+
+this way these league activities are completed after roll over and after the league is filled.
+
+
+Then add January 31st payment deadline.
+[b]this needs adjusted
+[c]Let me know if you think we need to outline a process, to cancel rivalries. I am okay with people being stuck for eternity. But on the off chance there ever arose a situation like where you didn't want to play me cuz my team sucked and screwed up your formula for a championship... I'm wondering if we should let teams "buy out" of their rivalries.

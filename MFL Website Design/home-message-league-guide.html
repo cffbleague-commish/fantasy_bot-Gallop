@@ -1,0 +1,1558 @@
+<!-- CFFB League Guide — MFL Home Page Message. This whole file is the paste-ready
+     block: copy it all into MFL’s Home Page Message. It merges the Bylaws and the
+     Site Map into one guide (one bar, one search). It carries no page-wrapper tags
+     (doctype / html / head / body), so it passes MFL’s tag filter, and also opens
+     directly in a browser for preview.
+     Source/design lives in “League Guide/League Guide MFL Message.html” — edit
+     there (it has the browser wrapper + mobile-preview harness), then run
+     `node build-league-guide.js` to regenerate this file. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap">
+<style>
+#cffb-bl{--gold:#C9A227;--gold-l:#E8C547;--gold-d:#8B6F1F;--bg:#0A0A0A;--s1:#141414;--s2:#1C1C1C;--sh:#1F1F1F;--bd:#2A2A2A;--fg:#F5F5F5;--fg2:#9A9A9A;--fg3:#5A5A5A;--grn:#2D7A4E;max-width:1080px;margin:24px auto 0;container-type:inline-size;container-name:bl;font-family:Inter,system-ui,sans-serif;color:var(--fg);box-sizing:border-box;position:relative}
+#cffb-bl *{box-sizing:border-box}
+#cffb-bl a{color:var(--gold-l);text-decoration:none}#cffb-bl a:hover{color:#F4D66A;text-decoration:underline}
+#cffb-bl button{font-family:inherit}
+#cffb-bl mark{background:rgba(201,162,39,.22);color:var(--gold-l);border-radius:2px;padding:0 1px}
+/* bar */
+#cffb-bl .bl-bar{position:relative;display:flex;align-items:stretch;min-height:96px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;cursor:pointer;user-select:none;animation:blIn .6s cubic-bezier(.2,.8,.2,1) both}
+#cffb-bl .bl-clip{position:absolute;inset:0;border-radius:8px;overflow:hidden;pointer-events:none}
+#cffb-bl .bl-chev{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(201,162,39,.07) 22px 30px);-webkit-mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%);mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%)}
+#cffb-bl .bl-sweep{position:absolute;top:-20%;bottom:-20%;width:38%;left:-45%;background:linear-gradient(100deg,transparent,rgba(201,162,39,.4) 45%,rgba(255,236,170,.55) 50%,rgba(201,162,39,.4) 55%,transparent);transform:skewX(-24deg);animation:blSweep 1.1s .35s cubic-bezier(.5,0,.2,1) both,blSheen 8s 3s linear infinite}
+#cffb-bl .bl-mk{position:relative;flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 34px 0 30px;background:var(--gold);color:#0A0A0A;border-radius:7px 0 0 7px;clip-path:polygon(0 0,100% 0,calc(100% - 18px) 100%,0 100%);animation:blSlide .5s .3s cubic-bezier(.2,.8,.2,1) both}
+#cffb-bl .bl-mk svg{display:block;overflow:visible}
+#cffb-bl .bl-mk .pg{fill:var(--gold);opacity:0;transform-box:view-box;transform-origin:12px 12px}
+#cffb-bl .bl-mk.fwd .pg{animation:blFlip .55s cubic-bezier(.45,0,.25,1) both}
+#cffb-bl .bl-mk.back .pg{animation:blFlipB .55s cubic-bezier(.45,0,.25,1) both}
+#cffb-bl .bl-mk .pg:nth-of-type(4){animation-delay:.12s}#cffb-bl .bl-mk .pg:nth-of-type(5){animation-delay:.24s}
+#cffb-bl .bl-mk.intro .pg{animation-delay:.9s}#cffb-bl .bl-mk.intro .pg:nth-of-type(4){animation-delay:1.02s}#cffb-bl .bl-mk.intro .pg:nth-of-type(5){animation-delay:1.14s}
+#cffb-bl .bl-mk small{font:800 10px/1 Inter,sans-serif;letter-spacing:.2em;margin-top:6px}
+#cffb-bl .bl-tease{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 20px;animation:blSlide .5s .45s cubic-bezier(.2,.8,.2,1) both}
+#cffb-bl .bl-eb{font:800 15px/1 'Saira Condensed',sans-serif;letter-spacing:.14em;color:var(--gold-l);text-transform:uppercase}
+#cffb-bl .bl-tm{font:800 30px/.95 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-ts{font-size:13px;color:var(--fg2)}
+#cffb-bl .bl-q{position:relative;flex:0 1 360px;align-self:center;margin-right:12px;display:flex;align-items:center;gap:8px;height:44px;padding:0 6px 0 12px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;cursor:text;animation:blFade .4s .6s both;transition:border-color .15s}
+#cffb-bl .bl-q:focus-within{border-color:var(--gold)}
+#cffb-bl .bl-q svg{flex:none;color:var(--fg2)}
+#cffb-bl .bl-q input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--fg);font:500 14px Inter,sans-serif}
+#cffb-bl .bl-q input::placeholder{color:var(--fg3)}
+#cffb-bl .bl-q kbd{flex:none;font:700 10px/1 Inter,sans-serif;color:var(--fg3);border:1px solid var(--bd);border-radius:2px;padding:4px 6px}
+#cffb-bl .bl-x{flex:none;width:30px;height:30px;display:none;align-items:center;justify-content:center;background:none;border:0;border-radius:4px;color:var(--fg2);cursor:pointer;font-size:14px}
+#cffb-bl .bl-x:hover{background:var(--sh);color:var(--fg)}
+#cffb-bl .bl-q.has .bl-x{display:flex}#cffb-bl .bl-q.has kbd{display:none}
+#cffb-bl .bl-tog{position:relative;flex:none;align-self:center;margin-right:20px;display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;color:var(--fg);padding:10px 14px;font:700 12px Inter,sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);animation:blFade .4s .7s both}
+#cffb-bl .bl-bar:hover .bl-tog{filter:brightness(1.12)}
+#cffb-bl .bl-tog svg{transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+#cffb-bl.is-open .bl-tog svg{transform:rotate(180deg)}
+#cffb-bl.is-open .bl-bar{border-radius:8px 8px 0 0}
+#cffb-bl.is-open .bl-mk{border-radius:7px 0 0 0}
+/* panel */
+#cffb-bl .bl-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s cubic-bezier(.2,.8,.2,1)}
+#cffb-bl.is-open .bl-panel{grid-template-rows:1fr}
+#cffb-bl .bl-panel>div{overflow:hidden;min-height:0}
+#cffb-bl .bl-body{background:var(--bg);border:1px solid var(--bd);border-top:0;border-radius:0 0 8px 8px}
+#cffb-bl .bl-tabs{display:flex;align-items:center;border-bottom:1px solid var(--bd);padding:0 20px;overflow-x:auto;scrollbar-width:none}
+#cffb-bl .bl-tab{position:relative;background:none;border:0;color:var(--fg2);padding:16px 16px 14px;font:800 17px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px}
+#cffb-bl .bl-tab:hover,#cffb-bl .bl-tab.on{color:var(--fg)}
+#cffb-bl .bl-tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--gold)}
+#cffb-bl .bl-tab i{font:700 10px/1 Inter,sans-serif;font-style:normal;letter-spacing:.08em;padding:3px 6px;border-radius:2px;background:var(--s2);color:var(--fg2)}
+#cffb-bl .bl-tab.on i{background:var(--gold);color:#0A0A0A}
+#cffb-bl .bl-tabs .sp{flex:1}
+#cffb-bl .bl-tab .sm{display:none}
+#cffb-bl .bl-doc{flex:none;font:700 11px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;padding:8px 0 8px 16px}
+#cffb-bl .bl-view{padding:24px}
+#cffb-bl .bl-sh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+#cffb-bl .bl-sh h3{margin:0;font:800 24px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em}
+#cffb-bl .bl-sh span{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--fg2);text-transform:uppercase}
+#cffb-bl .bl-lab{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--fg2);text-transform:uppercase;margin:0 0 8px}
+/* chips */
+#cffb-bl .bl-chips{display:flex;flex-wrap:wrap;gap:6px}
+#cffb-bl .bl-chip{display:inline-flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--bd);border-radius:2px;color:var(--fg);padding:6px 10px;font:600 12.5px/1 Inter,sans-serif;cursor:pointer}
+#cffb-bl .bl-chip:hover{border-color:var(--gold-d);background:var(--sh)}
+#cffb-bl .bl-cite{display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid var(--gold-d);border-radius:2px;color:var(--gold-l);padding:4px 7px;font:800 10.5px/1 Inter,sans-serif;letter-spacing:.06em;cursor:pointer;white-space:nowrap}
+#cffb-bl .bl-cite:hover{background:rgba(201,162,39,.1)}
+#cffb-bl .bl-cite span{font-weight:600;letter-spacing:0;color:var(--fg2)}
+#cffb-bl .bl-new{display:inline-block;font:800 9.5px/1 Inter,sans-serif;letter-spacing:.12em;padding:4px 6px;border-radius:2px;background:var(--gold);color:#0A0A0A;white-space:nowrap;vertical-align:middle}
+/* faq */
+#cffb-bl .bl-home{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start}
+#cffb-bl .bl-faqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+#cffb-bl .bl-faq{display:flex;flex-direction:column;gap:8px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px;animation:blUp .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.03s)}
+#cffb-bl .bl-faq h4{margin:0;font:800 18px/1.05 'Saira Condensed',sans-serif;text-transform:uppercase;text-wrap:balance}
+#cffb-bl .bl-fq{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:none;border:0;padding:0;color:var(--fg);text-align:left;cursor:default}
+#cffb-bl .bl-fq svg{display:none;flex:none;margin-top:3px;color:var(--fg3);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+#cffb-bl .bl-fa{display:flex;flex-direction:column;gap:8px;flex:1}
+#cffb-bl .bl-mnav{display:none}
+#cffb-bl .bl-rail{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+#cffb-bl .bl-rail::-webkit-scrollbar{display:none}
+#cffb-bl .bl-rail .bl-chip{flex:none;white-space:nowrap}
+#cffb-bl .bl-faq p{margin:0;font-size:13px;line-height:1.5;color:var(--fg2);text-wrap:pretty;flex:1}
+#cffb-bl .bl-faq p b{color:var(--fg);font-weight:600}
+#cffb-bl .bl-faq .bl-chips{gap:6px}
+#cffb-bl .bl-side{display:flex;flex-direction:column;gap:12px}
+#cffb-bl .bl-box{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px}
+#cffb-bl .bl-box.hero{border-top:3px solid var(--gold)}
+#cffb-bl .bl-box h4{margin:0 0 10px;font:800 19px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-box p{margin:0;font-size:12.5px;line-height:1.5;color:var(--fg2)}
+#cffb-bl .bl-nl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+#cffb-bl .bl-nl li{border-top:1px solid var(--bd)}
+#cffb-bl .bl-nl li:first-child{border-top:0}
+#cffb-bl .bl-nl button{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;background:none;border:0;padding:10px 0;color:var(--fg);text-align:left;cursor:pointer}
+#cffb-bl .bl-nl button:hover b{color:var(--gold-l)}
+#cffb-bl .bl-nl b{font:800 15px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-nl small{grid-column:2;font-size:11.5px;color:var(--fg2);line-height:1.35}
+/* results */
+#cffb-bl .bl-best{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;background:var(--s1);border:1px solid var(--bd);border-top:3px solid var(--gold);border-radius:8px;padding:16px 18px;margin-bottom:16px;animation:blUp .3s cubic-bezier(.2,.8,.2,1) both}
+#cffb-bl .bl-best h4{margin:4px 0 6px;font:800 22px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-best p{margin:0;font-size:13.5px;line-height:1.5;color:var(--fg2);text-wrap:pretty}
+#cffb-bl .bl-best p b{color:var(--fg)}
+#cffb-bl .bl-res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+#cffb-bl .bl-res li{border-top:1px solid var(--bd)}
+#cffb-bl .bl-rb{position:relative;width:100%;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:4px 16px;align-items:start;background:none;border:0;color:var(--fg);text-align:left;padding:14px 8px;cursor:pointer;animation:blUp .3s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.03s)}
+#cffb-bl .bl-rb::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--gold);transform:scaleY(0);transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+#cffb-bl .bl-rb:hover{background:var(--sh)}#cffb-bl .bl-rb:hover::before{transform:scaleY(1)}
+#cffb-bl .bl-rn{font:800 20px/1 'Saira Condensed',sans-serif;color:var(--gold-l);font-variant-numeric:tabular-nums;padding-top:2px}
+#cffb-bl .bl-rb small{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--fg2);text-transform:uppercase}
+#cffb-bl .bl-rb b{display:block;font:800 18px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase;margin:3px 0 4px}
+#cffb-bl .bl-rb p{margin:0;font-size:13px;line-height:1.5;color:var(--fg2);text-wrap:pretty}
+#cffb-bl .bl-rb p.sn{margin-top:6px;padding-left:10px;border-left:1px solid var(--bd);font-size:12.5px;color:var(--fg3)}
+#cffb-bl .bl-rb p.sn mark{color:var(--fg)}
+#cffb-bl .bl-go{align-self:center;font-size:18px;color:var(--fg3)}
+#cffb-bl .bl-empty{padding:24px;text-align:center;border:1px dashed var(--bd);border-radius:8px;color:var(--fg2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:12px}
+/* browse */
+#cffb-bl .bl-br{display:grid;grid-template-columns:230px minmax(0,1fr);gap:24px;align-items:start}
+#cffb-bl .bl-toc{position:sticky;top:12px;display:flex;flex-direction:column;border:1px solid var(--bd);border-radius:8px;background:var(--s1);padding:6px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}
+#cffb-bl .bl-ti{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:8px;align-items:center;background:none;border:0;border-radius:4px;color:var(--fg2);padding:8px;text-align:left;cursor:pointer;font:600 13px/1.2 Inter,sans-serif}
+#cffb-bl .bl-ti:hover{background:var(--sh);color:var(--fg)}
+#cffb-bl .bl-ti.on{background:rgba(201,162,39,.1);color:var(--fg);box-shadow:inset 2px 0 0 var(--gold)}
+#cffb-bl .bl-ti em{font:800 13px/1 'Saira Condensed',sans-serif;font-style:normal;color:var(--fg3);font-variant-numeric:tabular-nums}
+#cffb-bl .bl-ti.on em{color:var(--gold-l)}
+#cffb-bl .bl-ti i{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+#cffb-bl .bl-sel{display:none;width:100%;background:var(--s1);border:1px solid var(--bd);border-radius:4px;color:var(--fg);font:600 14px Inter,sans-serif;padding:10px}
+#cffb-bl .bl-ah{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:12px;border-bottom:1px solid var(--bd)}
+#cffb-bl .bl-ah small{display:block;font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--gold-l)}
+#cffb-bl .bl-ah h3{margin:6px 0 0;font:900 38px/.9 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-lnk{background:none;border:0;padding:0;color:var(--fg2);font:600 12px Inter,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+#cffb-bl .bl-lnk:hover{color:var(--fg)}
+#cffb-bl .bl-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;color:var(--fg);padding:8px 12px;font:700 11px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+#cffb-bl .bl-back:hover{filter:brightness(1.12)}
+#cffb-bl .bl-rules{display:flex;flex-direction:column;gap:8px}
+#cffb-bl .bl-rule{background:var(--s1);border:1px solid var(--bd);border-radius:8px;transition:border-color .3s,box-shadow .3s}
+#cffb-bl .bl-rule.flash{border-color:var(--gold);box-shadow:0 0 24px rgba(201,162,39,.28)}
+#cffb-bl .bl-rh{width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:4px 12px;align-items:start;background:none;border:0;color:var(--fg);text-align:left;padding:14px 16px;cursor:pointer}
+#cffb-bl .bl-rh .bl-rn{font-size:18px}
+#cffb-bl .bl-rh b{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:800 19px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-rh p{grid-column:2;margin:4px 0 0;font-size:13.5px;line-height:1.5;color:var(--fg2);text-wrap:pretty}
+#cffb-bl .bl-rh p b{display:inline;font:600 13.5px Inter,sans-serif;text-transform:none;color:var(--fg)}
+#cffb-bl .bl-ex{grid-row:1;grid-column:3;display:flex;align-items:center;gap:6px;font:700 10px/1 Inter,sans-serif;letter-spacing:.12em;color:var(--fg3);text-transform:uppercase;padding-top:4px;white-space:nowrap}
+#cffb-bl .bl-ex svg{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+#cffb-bl .bl-rule.open .bl-ex svg{transform:rotate(180deg)}
+#cffb-bl .bl-rh:hover .bl-ex{color:var(--fg)}
+#cffb-bl .bl-rd{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s cubic-bezier(.2,.8,.2,1)}
+#cffb-bl .bl-rule.open .bl-rd{grid-template-rows:1fr}
+#cffb-bl .bl-rd>div{overflow:hidden;min-height:0}
+#cffb-bl .bl-full{margin:0 16px 16px 80px;padding-top:12px;border-top:1px dashed var(--bd)}
+#cffb-bl .bl-full ul{margin:0;padding:0 0 0 16px;display:flex;flex-direction:column;gap:6px}
+#cffb-bl .bl-full li{font-size:13px;line-height:1.55;color:#C9C9C9;text-wrap:pretty}
+#cffb-bl .bl-full li::marker{color:var(--gold-d)}
+#cffb-bl .bl-full li b{color:var(--fg);font-weight:600}
+#cffb-bl .bl-full li.ex{list-style:none;margin-left:-16px;padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--fg2);font-size:12.5px}
+#cffb-bl .bl-full li.ex::before{content:"EXAMPLE";display:block;font:800 9.5px/1 Inter,sans-serif;letter-spacing:.14em;color:var(--gold-l);margin-bottom:5px}
+#cffb-bl .bl-tbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:12.5px;font-variant-numeric:tabular-nums}
+#cffb-bl .bl-tbl th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--fg3);padding:6px 8px;border-bottom:1px solid var(--bd);text-transform:uppercase}
+#cffb-bl .bl-tbl td{padding:7px 8px;border-bottom:1px solid var(--bd);color:#C9C9C9}
+#cffb-bl .bl-tbl td:first-child{color:var(--fg);font-weight:600}
+#cffb-bl .bl-tbl td.r,#cffb-bl .bl-tbl th.r{text-align:right}
+#cffb-bl .bl-pay{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;margin-top:12px}
+#cffb-bl .bl-pay div{display:flex;flex-direction:column;gap:3px;padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:4px}
+#cffb-bl .bl-pay div:first-child{border-color:var(--gold-d);background:rgba(201,162,39,.08)}
+#cffb-bl .bl-pay small{font:800 11px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--fg2)}
+#cffb-bl .bl-pay b{font:800 22px/1 'Saira Condensed',sans-serif;font-variant-numeric:tabular-nums}
+#cffb-bl .bl-pay div:first-child b{color:var(--gold-l)}
+#cffb-bl .bl-pay span{font-size:10.5px;color:var(--fg3);font-variant-numeric:tabular-nums}
+#cffb-bl .bl-cal{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column}
+#cffb-bl .bl-cal li{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px;line-height:1.4}
+#cffb-bl .bl-cal li span:first-child{font:800 14px/1.25 'Saira Condensed',sans-serif;text-transform:uppercase;color:var(--gold-l)}
+#cffb-bl .bl-cal li span:last-child{color:#C9C9C9}
+#cffb-bl .bl-pn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+#cffb-bl .bl-pn button{display:flex;flex-direction:column;gap:4px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;color:var(--fg);padding:12px 14px;text-align:left;cursor:pointer}
+#cffb-bl .bl-pn button:hover{background:var(--sh);border-color:var(--gold-d)}
+#cffb-bl .bl-pn button.nx{text-align:right;grid-column:2}
+#cffb-bl .bl-pn small{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--fg2)}
+#cffb-bl .bl-pn b{font:800 17px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--bd);font-size:11.5px;color:var(--fg3)}
+/* calendar */
+#cffb-bl .bl-up{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:20px;background:var(--s1);border:1px solid var(--bd);border-top:3px solid var(--gold);border-radius:8px}
+#cffb-bl .bl-up h4{margin:6px 0 4px;font:900 32px/.95 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-up .dt{font:800 15px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;color:var(--gold-l);text-transform:uppercase}
+#cffb-bl .bl-up p{margin:8px 0 12px;font-size:13px;line-height:1.5;color:var(--fg2);max-width:520px}
+#cffb-bl .bl-cd{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:96px;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:4px}
+#cffb-bl .bl-cd b{font:900 48px/1 'Saira Condensed',sans-serif;font-variant-numeric:tabular-nums}
+#cffb-bl .bl-cd small{font-size:9.5px;font-weight:700;letter-spacing:.16em;color:var(--fg2)}
+#cffb-bl .bl-now{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--fg2)}
+#cffb-bl .bl-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);box-shadow:0 0 12px rgba(45,122,78,.55);animation:blPulse 1.4s ease-in-out infinite}
+#cffb-bl .bl-yrw{margin:20px 0 8px;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}
+#cffb-bl .bl-yr{position:relative;min-width:680px;padding-top:26px}
+#cffb-bl .bl-mo{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));border-left:1px solid var(--bd)}
+#cffb-bl .bl-mo span{font:800 12px/1 'Saira Condensed',sans-serif;letter-spacing:.08em;color:var(--fg3);padding:0 0 8px 6px;border-right:1px solid var(--bd);text-transform:uppercase}
+#cffb-bl .bl-mo span.on{color:var(--fg)}
+#cffb-bl .bl-band{position:relative;height:28px;margin-top:2px}
+#cffb-bl .bl-ph{position:absolute;top:0;bottom:0;display:flex;align-items:center;padding:0 8px;overflow:hidden;white-space:nowrap;font:700 9.5px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;border-right:2px solid var(--bg)}
+#cffb-bl .bl-ph.off{background:var(--s2);color:var(--fg2)}
+#cffb-bl .bl-ph.rec{background:rgba(201,162,39,.16);color:var(--gold-l)}
+#cffb-bl .bl-ph.reg{background:var(--gold-d);color:#0A0A0A}
+#cffb-bl .bl-ph.post{background:var(--gold);color:#0A0A0A}
+#cffb-bl .bl-tk{position:relative;height:30px}
+#cffb-bl .bl-tk button{position:absolute;top:8px;width:12px;height:12px;margin-left:-6px;padding:0;background:var(--bg);border:2px solid var(--fg3);transform:rotate(45deg);cursor:pointer;transition:border-color .15s,background .15s}
+#cffb-bl .bl-tk button:hover{border-color:var(--gold-l);background:var(--gold-d)}
+#cffb-bl .bl-tk button.dl{border-color:var(--gold)}
+#cffb-bl .bl-tk button.done{opacity:.4}
+#cffb-bl .bl-tk button.nx{background:var(--gold);border-color:var(--gold-l);box-shadow:0 0 14px rgba(201,162,39,.5)}
+#cffb-bl .bl-today{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--fg);z-index:2;pointer-events:none}
+#cffb-bl .bl-today span{position:absolute;top:0;left:-1px;transform:translateX(-50%);font:800 9.5px/1 Inter,sans-serif;letter-spacing:.14em;background:var(--fg);color:#0A0A0A;padding:4px 6px;border-radius:2px;white-space:nowrap}
+#cffb-bl .bl-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11.5px;color:var(--fg3);margin-bottom:24px}
+#cffb-bl .bl-key i{display:inline-block;width:9px;height:9px;transform:rotate(45deg);border:2px solid var(--fg3);margin-right:6px;vertical-align:0}
+#cffb-bl .bl-key i.dl{border-color:var(--gold)}#cffb-bl .bl-key i.nx{background:var(--gold);border-color:var(--gold-l)}
+#cffb-bl .bl-ag{display:flex;flex-direction:column;gap:20px}
+#cffb-bl .bl-agm h5{margin:0 0 8px;font:800 20px/1 'Saira Condensed',sans-serif;text-transform:uppercase;display:flex;align-items:baseline;gap:10px}
+#cffb-bl .bl-agm h5 small{font:700 10px/1 Inter,sans-serif;letter-spacing:.14em;color:var(--fg3)}
+#cffb-bl .bl-ev{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:6px 16px;align-items:start;padding:12px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--s1);margin-top:6px;transition:border-color .3s,box-shadow .3s}
+#cffb-bl .bl-ev.done{background:none;opacity:.5}
+#cffb-bl .bl-ev.now{box-shadow:inset 2px 0 0 var(--grn)}
+#cffb-bl .bl-ev.nx{border-color:var(--gold-d);box-shadow:inset 2px 0 0 var(--gold)}
+#cffb-bl .bl-ev.flash{border-color:var(--gold);box-shadow:0 0 24px rgba(201,162,39,.28)}
+#cffb-bl .bl-ed b{display:block;font:800 17px/1.05 'Saira Condensed',sans-serif;text-transform:uppercase;font-variant-numeric:tabular-nums}
+#cffb-bl .bl-ed small{display:block;margin-top:4px;font-size:10.5px;font-weight:600;color:var(--fg3);letter-spacing:.04em}
+#cffb-bl .bl-ev h6{margin:0;font:800 17px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#cffb-bl .bl-ev p{margin:4px 0 8px;font-size:12.5px;line-height:1.45;color:var(--fg2);text-wrap:pretty}
+#cffb-bl .bl-st{font:800 9.5px/1 Inter,sans-serif;letter-spacing:.12em;padding:5px 7px;border-radius:2px;white-space:nowrap;border:1px solid var(--bd);color:var(--fg2)}
+#cffb-bl .bl-st.now{border-color:var(--grn);color:#6FCF97}
+#cffb-bl .bl-st.nx{background:var(--gold);border-color:var(--gold);color:#0A0A0A}
+#cffb-bl .bl-st.dl{border-color:var(--gold-d);color:var(--gold-l)}
+#cffb-bl .bl-mrail{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:20px 0 16px}
+#cffb-bl .bl-mrail::-webkit-scrollbar{display:none}
+#cffb-bl .bl-mrail{scroll-snap-type:x proximity;cursor:grab;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 100%);mask-image:linear-gradient(90deg,#000 0,#000 100%)}
+#cffb-bl .bl-mrail.drag{cursor:grabbing;scroll-snap-type:none}
+#cffb-bl .bl-mrail.drag .bl-mgo{pointer-events:none}
+#cffb-bl .bl-mrail .bl-mgo{scroll-snap-align:center}
+#cffb-bl .bl-mrail.r{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 40px),transparent)}
+#cffb-bl .bl-mrail.l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px,#000 100%);mask-image:linear-gradient(90deg,transparent,#000 40px,#000 100%)}
+#cffb-bl .bl-mrail.l.r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent)}
+#cffb-bl .bl-mgo{flex:1 0 auto;min-width:56px;display:flex;flex-direction:column;align-items:center;gap:5px;background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:8px 6px;color:var(--fg2);cursor:pointer;font:800 13px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+#cffb-bl .bl-mgo:hover{background:var(--s2);color:var(--fg)}
+#cffb-bl .bl-mgo.now{border-color:var(--gold-d)}
+#cffb-bl .bl-mgo.on{background:var(--gold);border-color:var(--gold);color:#0A0A0A}
+#cffb-bl .bl-mgo i{display:flex;gap:2px;height:4px}
+#cffb-bl .bl-mgo i span{width:4px;height:4px;border-radius:50%;background:var(--fg3)}
+#cffb-bl .bl-mgo i span.dl{background:var(--gold)}
+#cffb-bl .bl-mgo.on i span{background:#0A0A0A}
+#cffb-bl .bl-mwrap{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+#cffb-bl .bl-mcal{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:14px}
+#cffb-bl .bl-mch{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#cffb-bl .bl-mch h3{margin:0;font:900 28px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-bl .bl-mch h3 small{font:700 12px Inter,sans-serif;color:var(--fg3);margin-left:6px;letter-spacing:.06em}
+#cffb-bl .bl-mnv{display:flex;gap:4px}
+#cffb-bl .bl-mnv button{width:34px;height:34px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;color:var(--fg);cursor:pointer;font-size:14px}
+#cffb-bl .bl-mnv button:hover{filter:brightness(1.15)}
+#cffb-bl .bl-mnv button[disabled]{opacity:.3;cursor:default}
+#cffb-bl .bl-mg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+#cffb-bl .bl-mwd{font:700 10px/1 Inter,sans-serif;letter-spacing:.12em;color:var(--fg3);text-align:center;padding:4px 0 8px}
+#cffb-bl .bl-md{position:relative;min-height:74px;display:flex;flex-direction:column;gap:3px;padding:6px;background:var(--bg);border:1px solid transparent;border-radius:4px;color:var(--fg2);text-align:left;cursor:pointer;overflow:hidden}
+#cffb-bl .bl-md:hover{border-color:var(--bd)}
+#cffb-bl .bl-md.out{visibility:hidden}
+#cffb-bl .bl-md.rng{background:rgba(201,162,39,.07)}
+#cffb-bl .bl-md.rng::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--gold-d)}
+#cffb-bl .bl-md.past{opacity:.5}
+#cffb-bl .bl-md.sel{border-color:var(--gold)}
+#cffb-bl .bl-md b{font:700 12px/1 Inter,sans-serif;font-variant-numeric:tabular-nums;color:var(--fg)}
+#cffb-bl .bl-md.today b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--fg);color:#0A0A0A}
+#cffb-bl .bl-md em{font:normal 600 10.5px/1.2 Inter,sans-serif;color:var(--fg);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-left:5px;border-left:2px solid var(--fg3)}
+#cffb-bl .bl-md em.dl{border-color:var(--gold);color:var(--gold-l)}
+#cffb-bl .bl-md em.nx{border-color:var(--gold-l)}
+#cffb-bl .bl-md .dots{display:none;gap:3px;margin-top:auto}
+#cffb-bl .bl-md .dots span{width:5px;height:5px;border-radius:50%;background:var(--fg2)}
+#cffb-bl .bl-md .dots span.dl{background:var(--gold)}
+#cffb-bl .bl-mkey{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:11px;color:var(--fg3)}
+#cffb-bl .bl-mkey i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border-radius:2px}
+#cffb-bl .bl-mag h4{margin:0 0 4px;font:800 20px/1 'Saira Condensed',sans-serif;text-transform:uppercase;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+#cffb-bl .bl-mag h4 button{background:none;border:0;color:var(--fg2);font:600 11px Inter,sans-serif;text-decoration:underline;cursor:pointer}
+#cffb-bl .bl-mag .bl-ev{grid-template-columns:minmax(0,1fr) auto}
+#cffb-bl .bl-mag .bl-ev>div:nth-child(2){grid-column:1/-1;grid-row:2}
+#cffb-bl .bl-mag .bl-ev .bl-st{grid-column:2;grid-row:1}
+#cffb-bl .bl-mempty{margin-top:6px;padding:20px;border:1px dashed var(--bd);border-radius:8px;color:var(--fg3);font-size:13px;text-align:center}
+@container bl (max-width:760px){#cffb-bl .bl-mrail{margin:16px -16px 12px;padding:0 16px}#cffb-bl .bl-mgo{flex:none}#cffb-bl .bl-mwrap{grid-template-columns:minmax(0,1fr)}#cffb-bl .bl-mcal{padding:10px}#cffb-bl .bl-mch h3{font-size:24px}#cffb-bl .bl-md{min-height:44px;padding:5px;align-items:center}#cffb-bl .bl-md em{display:none}#cffb-bl .bl-md .dots{display:flex}#cffb-bl .bl-md.today b{margin:-2px 0 0}}
+@keyframes blPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@container bl (max-width:760px){#cffb-bl .bl-up{grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-top-width:2px}#cffb-bl .bl-up .bl-lab{font-size:9px}#cffb-bl .bl-up h4{margin:4px 0 3px;font-size:19px;line-height:1}#cffb-bl .bl-up .dt{font-size:12px}#cffb-bl .bl-up p{display:none}#cffb-bl .bl-up .bl-chips{margin-top:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#cffb-bl .bl-up .bl-chips::-webkit-scrollbar{display:none}#cffb-bl .bl-up .bl-cite{flex:none}#cffb-bl .bl-now{margin-top:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#cffb-bl .bl-now .bl-chip{flex:none;white-space:nowrap}#cffb-bl .bl-cd{position:absolute;top:10px;right:10px;min-width:0;padding:5px 8px 6px;gap:1px;margin:0;border-radius:4px}#cffb-bl .bl-up{position:relative;grid-template-columns:minmax(0,1fr)}#cffb-bl .bl-up .bl-lab,#cffb-bl .bl-up h4,#cffb-bl .bl-up .dt{padding-right:70px}#cffb-bl .bl-cd b{font-size:20px;line-height:1}#cffb-bl .bl-cd small{font-size:7px;letter-spacing:.1em;white-space:nowrap}#cffb-bl .bl-ev{grid-template-columns:minmax(0,1fr) auto}#cffb-bl .bl-ed{grid-column:1}#cffb-bl .bl-ev>div:nth-child(2){grid-column:1/-1;grid-row:2}#cffb-bl .bl-ev .bl-st{grid-column:2;grid-row:1}}
+@keyframes blIn{from{clip-path:inset(0 100% 0 0 round 8px)}to{clip-path:inset(-20px 0 -20px 0)}}
+@keyframes blFlip{0%{opacity:1;transform:scaleX(1);fill:#E8C547}50%{fill:#F4D66A}99%{opacity:1;transform:scaleX(-1);fill:#C9A227}100%{opacity:0;transform:scaleX(-1)}}
+@keyframes blFlipB{0%{opacity:1;transform:scaleX(-1);fill:#C9A227}50%{fill:#F4D66A}99%{opacity:1;transform:scaleX(1);fill:#E8C547}100%{opacity:0;transform:scaleX(1)}}
+@keyframes blSweep{from{left:-45%}to{left:120%}}
+@keyframes blSheen{0%,86%{left:-45%;opacity:.35}100%{left:120%;opacity:.35}}
+@keyframes blSlide{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes blFade{from{opacity:0}to{opacity:1}}
+@keyframes blUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@container bl (max-width:900px){#cffb-bl .bl-home{grid-template-columns:minmax(0,1fr)}#cffb-bl .bl-q{flex-basis:260px}}
+@container bl (max-width:760px){
+#cffb-bl .bl-bar{flex-wrap:wrap;min-height:0;row-gap:10px}
+#cffb-bl .bl-mk{padding:10px 24px 10px 16px;border-radius:7px 0 0 0}
+#cffb-bl .bl-mk svg{width:32px;height:32px}
+#cffb-bl .bl-mk small{font-size:9px;margin-top:4px}
+#cffb-bl .bl-tease{flex:1 1 60%;padding:10px 12px;gap:4px}
+#cffb-bl .bl-tm{font-size:21px}
+#cffb-bl .bl-ts{font-size:11.5px}
+#cffb-bl .bl-tog{order:4;margin:0 10px 10px 0;padding:0;width:40px;height:40px;justify-content:center}
+#cffb-bl .bl-tog span{display:none}
+#cffb-bl .bl-q{order:3;flex:1 1 200px;min-width:0;height:40px;margin:0 8px 10px 10px}
+#cffb-bl .bl-q kbd{display:none}
+#cffb-bl .bl-mnav{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+#cffb-bl .bl-mnav .bl-sel{display:block;margin:0;height:44px;border-color:var(--gold-d)}
+#cffb-bl .bl-home .bl-side{display:none}
+#cffb-bl .bl-faqs{gap:6px}
+#cffb-bl .bl-faq{padding:0;gap:0}
+#cffb-bl .bl-fq{width:100%;padding:14px;cursor:pointer;min-height:48px}
+#cffb-bl .bl-fq h4{font-size:16.5px}
+#cffb-bl .bl-fq svg{display:block}
+#cffb-bl .bl-faq.open .bl-fq svg{transform:rotate(180deg)}
+#cffb-bl .bl-faq .bl-fa{display:none;padding:0 14px 14px}
+#cffb-bl .bl-faq.open{border-color:var(--gold-d)}
+#cffb-bl .bl-faq.open .bl-fa{display:flex}
+#cffb-bl .bl-br{grid-template-columns:minmax(0,1fr)}
+#cffb-bl .bl-toc{display:none}#cffb-bl .bl-sel{display:block;margin-bottom:16px}
+#cffb-bl .bl-full{margin:0 14px 14px}
+#cffb-bl .bl-rh{grid-template-columns:40px minmax(0,1fr) auto;padding:12px 14px}
+#cffb-bl .bl-rh p{grid-column:1/-1}
+#cffb-bl .bl-ex span{display:none}
+#cffb-bl .bl-rb{grid-template-columns:48px minmax(0,1fr)}
+#cffb-bl .bl-go{display:none}
+#cffb-bl .bl-best{grid-template-columns:minmax(0,1fr)}
+#cffb-bl .bl-view{padding:16px}
+#cffb-bl .bl-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:0;overflow:visible}
+#cffb-bl .bl-tabs .sp{display:none}
+#cffb-bl .bl-tab{flex-direction:column;justify-content:center;gap:6px;padding:12px 4px 11px;font-size:15px;min-height:56px;border-right:1px solid var(--bd)}
+#cffb-bl .bl-tab:last-of-type{border-right:0}
+#cffb-bl .bl-tab.on{background:rgba(201,162,39,.06)}
+#cffb-bl .bl-tab.on::after{left:0;right:0}
+#cffb-bl .bl-tab .lg{display:none}#cffb-bl .bl-tab .sm{display:inline}
+#cffb-bl .bl-tab i{font-size:9px;padding:3px 5px}
+#cffb-bl .bl-doc{display:none}
+#cffb-bl .bl-ah h3{font-size:30px}
+#cffb-bl .bl-cal li{grid-template-columns:minmax(0,1fr);gap:2px}
+#cffb-bl .bl-foot{padding:12px 16px}
+}
+@media (prefers-reduced-motion:reduce){#cffb-bl *{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+</style>
+<style>
+#cffb-sm{--gold:#C9A227;--gold-l:#E8C547;--gold-d:#8B6F1F;--bg:#0A0A0A;--s1:#141414;--s2:#1C1C1C;--sh:#1F1F1F;--bd:#2A2A2A;--fg:#F5F5F5;--fg2:#9A9A9A;--fg3:#5A5A5A;--grn:#2D7A4E;max-width:1080px;margin:24px auto 0;container-type:inline-size;container-name:sm;font-family:Inter,system-ui,sans-serif;color:var(--fg);box-sizing:border-box;position:relative}
+#cffb-sm *{box-sizing:border-box}
+#cffb-sm a{color:var(--gold-l);text-decoration:none}#cffb-sm a:hover{color:#F4D66A;text-decoration:underline}
+#cffb-sm button{font-family:inherit}
+#cffb-sm mark{background:rgba(201,162,39,.22);color:var(--gold-l);border-radius:2px;padding:0 1px}
+#cffb-sm .sm-bar{position:relative;display:flex;align-items:stretch;min-height:96px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;cursor:pointer;user-select:none;animation:smIn .6s cubic-bezier(.2,.8,.2,1) both}
+#cffb-sm .sm-clip{position:absolute;inset:0;border-radius:8px;overflow:hidden;pointer-events:none}
+#cffb-sm .sm-chev{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(201,162,39,.07) 22px 30px);-webkit-mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%);mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%)}
+#cffb-sm .sm-sweep{position:absolute;top:-20%;bottom:-20%;width:38%;left:-45%;background:linear-gradient(100deg,transparent,rgba(201,162,39,.4) 45%,rgba(255,236,170,.55) 50%,rgba(201,162,39,.4) 55%,transparent);transform:skewX(-24deg);animation:smSweep 1.1s .35s cubic-bezier(.5,0,.2,1) both,smSheen 8s 3s linear infinite}
+#cffb-sm .sm-mk{position:relative;flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 34px 0 30px;background:var(--gold);color:#0A0A0A;border-radius:7px 0 0 7px;clip-path:polygon(0 0,100% 0,calc(100% - 18px) 100%,0 100%);animation:smSlide .5s .3s cubic-bezier(.2,.8,.2,1) both}
+#cffb-sm .sm-mk svg{display:block;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+#cffb-sm.is-open .sm-mk svg{transform:rotate(-8deg) scale(1.04)}
+#cffb-sm .sm-mk small{font:800 10px/1 Inter,sans-serif;letter-spacing:.2em;margin-top:6px}
+#cffb-sm .sm-tease{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 20px;animation:smSlide .5s .45s cubic-bezier(.2,.8,.2,1) both}
+#cffb-sm .sm-tm{font:800 30px/.95 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sm .sm-ts{font-size:13px;color:var(--fg2)}
+#cffb-sm .sm-q{position:relative;flex:0 1 360px;align-self:center;margin-right:12px;display:flex;align-items:center;gap:8px;height:44px;padding:0 6px 0 12px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;cursor:text;animation:smFade .4s .6s both;transition:border-color .15s}
+#cffb-sm .sm-q:focus-within{border-color:var(--gold)}
+#cffb-sm .sm-q svg{flex:none;color:var(--fg2)}
+#cffb-sm .sm-q input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--fg);font:500 14px Inter,sans-serif}
+#cffb-sm .sm-q input::placeholder{color:var(--fg3)}
+#cffb-sm .sm-x{flex:none;width:30px;height:30px;display:none;align-items:center;justify-content:center;background:none;border:0;border-radius:4px;color:var(--fg2);cursor:pointer;font-size:14px}
+#cffb-sm .sm-x:hover{background:var(--sh);color:var(--fg)}
+#cffb-sm .sm-q.has .sm-x{display:flex}
+#cffb-sm .sm-tog{position:relative;flex:none;align-self:center;margin-right:20px;display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;color:var(--fg);padding:10px 14px;font:700 12px Inter,sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);animation:smFade .4s .7s both}
+#cffb-sm .sm-bar:hover .sm-tog{filter:brightness(1.12)}
+#cffb-sm .sm-tog svg{transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+#cffb-sm.is-open .sm-tog svg{transform:rotate(180deg)}
+#cffb-sm.is-open .sm-bar{border-radius:8px 8px 0 0}
+#cffb-sm.is-open .sm-mk{border-radius:7px 0 0 0}
+#cffb-sm .sm-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s cubic-bezier(.2,.8,.2,1)}
+#cffb-sm.is-open .sm-panel{grid-template-rows:1fr}
+#cffb-sm .sm-panel>div{overflow:hidden;min-height:0}
+#cffb-sm .sm-body{background:var(--bg);border:1px solid var(--bd);border-top:0;border-radius:0 0 8px 8px}
+#cffb-sm .sm-tabs{display:flex;align-items:center;border-bottom:1px solid var(--bd);padding:0 20px;overflow-x:auto;scrollbar-width:none}
+#cffb-sm .sm-tab{position:relative;background:none;border:0;color:var(--fg2);padding:16px 16px 14px;font:800 17px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px}
+#cffb-sm .sm-tab:hover,#cffb-sm .sm-tab.on{color:var(--fg)}
+#cffb-sm .sm-tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--gold)}
+#cffb-sm .sm-tab i{font:700 10px/1 Inter,sans-serif;font-style:normal;letter-spacing:.08em;padding:3px 6px;border-radius:2px;background:var(--s2);color:var(--fg2)}
+#cffb-sm .sm-tab.on i{background:var(--gold);color:#0A0A0A}
+#cffb-sm .sm-tab .sm-s{display:none}
+#cffb-sm .sm-view{padding:24px}
+#cffb-sm .sm-sh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+#cffb-sm .sm-sh h3{margin:0;font:800 24px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em}
+#cffb-sm .sm-sh span{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--fg2);text-transform:uppercase}
+#cffb-sm .sm-lab{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--fg2);text-transform:uppercase;margin:0 0 8px}
+#cffb-sm .sm-chips{display:flex;flex-wrap:wrap;gap:6px}
+#cffb-sm .sm-chip{display:inline-flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--bd);border-radius:2px;color:var(--fg);padding:6px 10px;font:600 12.5px/1 Inter,sans-serif;cursor:pointer;text-decoration:none!important}
+#cffb-sm .sm-chip:hover{border-color:var(--gold-d);background:var(--sh);color:var(--fg)}
+#cffb-sm .sm-chip.w{border-color:var(--gold-d);color:var(--gold-l)}
+#cffb-sm .sm-chip.w:hover{background:rgba(201,162,39,.1)}
+#cffb-sm .sm-pill{display:inline-block;font:800 9.5px/1 Inter,sans-serif;letter-spacing:.12em;padding:4px 6px;border-radius:2px;white-space:nowrap;vertical-align:middle;border:1px solid var(--grn);color:#6FCF97}
+#cffb-sm .sm-pill.soon{border-color:var(--gold-d);color:var(--gold-l);background:rgba(201,162,39,.08)}
+#cffb-sm .sm-pill.here{border-color:var(--fg);color:var(--fg)}
+/* map */
+#cffb-sm .sm-map{display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;align-items:start}
+#cffb-sm .sm-nav{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px;padding:8px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}
+#cffb-sm .sm-tg{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--bd)}
+#cffb-sm .sm-tg:first-child{border-top:0;padding-top:2px}
+#cffb-sm .sm-th{display:flex;align-items:center;gap:8px;padding:4px 8px;font:700 9.5px/1.2 Inter,sans-serif;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase}
+#cffb-sm .sm-th em{font:800 12px/1 'Saira Condensed',sans-serif;font-style:normal;color:var(--fg3);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+#cffb-sm .sm-wb{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:none;border:0;border-radius:4px;color:var(--fg2);padding:8px 8px 8px 28px;text-align:left;cursor:pointer;font:800 15px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em;animation:smUp .35s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.03s)}
+#cffb-sm .sm-wb:hover{background:var(--sh);color:var(--fg)}
+#cffb-sm .sm-wb.on{background:rgba(201,162,39,.1);color:var(--fg);box-shadow:inset 2px 0 0 var(--gold)}
+#cffb-sm .sm-wb small{font:700 8.5px/1 Inter,sans-serif;letter-spacing:.12em;color:var(--fg3)}
+#cffb-sm .sm-wb.here small{color:var(--fg)}
+#cffb-sm .sm-wb.soon small{color:var(--gold-l)}
+#cffb-sm .sm-det{display:flex;flex-direction:column;gap:16px;animation:smUp .3s cubic-bezier(.2,.8,.2,1) both;min-width:0}
+#cffb-sm .sm-dh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--bd)}
+#cffb-sm .sm-dh small{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--gold-l)}
+#cffb-sm .sm-dh h3{margin:6px 0 0;font:900 38px/.9 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sm .sm-ask{display:flex;flex-direction:column;gap:6px}
+#cffb-sm .sm-ask div{font:800 20px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase;color:var(--fg);text-wrap:balance}
+#cffb-sm .sm-det>p{margin:0;font-size:14px;line-height:1.55;color:var(--fg2);text-wrap:pretty;max-width:640px}
+#cffb-sm .sm-shot{position:relative;margin:0;border:1px solid var(--bd);border-radius:8px;background:var(--s1);overflow:visible}
+#cffb-sm .sm-shot img{display:block;width:100%;height:auto;border-radius:7px}
+#cffb-sm .sm-shot.soon img{filter:saturate(.6) brightness(.8)}
+#cffb-sm .sm-noshot{display:none;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;padding:44px 20px;min-height:200px;border-radius:7px;background:repeating-linear-gradient(115deg,var(--s1) 0 22px,var(--s2) 22px 30px)}
+#cffb-sm .sm-noshot svg{width:42px;height:42px;color:var(--fg3);opacity:.85}
+#cffb-sm .sm-noshot b{font:800 21px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em;color:var(--fg2)}
+#cffb-sm .sm-noshot small{font-size:11.5px;letter-spacing:.03em;color:var(--fg3);text-wrap:pretty}
+#cffb-sm .sm-shot.noimg{background:none;border-style:dashed}
+#cffb-sm .sm-shot.noimg img{display:none}
+#cffb-sm .sm-shot.noimg .sm-hs,#cffb-sm .sm-shot.noimg .sm-rib{display:none}
+#cffb-sm .sm-shot.noimg .sm-noshot{display:flex}
+#cffb-sm .sm-rib{position:absolute;top:10px;right:10px;font:800 10px/1 Inter,sans-serif;letter-spacing:.14em;padding:6px 8px;border-radius:2px;background:var(--gold);color:#0A0A0A}
+#cffb-sm .sm-hs{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #0A0A0A;background:var(--gold);color:#0A0A0A;font:900 14px/1 'Saira Condensed',sans-serif;cursor:pointer;padding:0;box-shadow:0 0 0 3px rgba(201,162,39,.35),0 4px 12px rgba(0,0,0,.6);transition:transform .15s cubic-bezier(.2,.8,.2,1),background .15s;animation:smPop .4s cubic-bezier(.2,.8,.2,1.4) both;animation-delay:calc(.15s + var(--i)*.07s)}
+#cffb-sm .sm-hs::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--gold);opacity:0;animation:smRing 2.4s calc(var(--i)*.3s) ease-out infinite}
+#cffb-sm .sm-hs:hover,#cffb-sm .sm-hs.on{transform:scale(1.18);background:var(--gold-l)}
+#cffb-sm .sm-hs.on{box-shadow:0 0 0 4px rgba(232,197,71,.55),0 0 24px rgba(201,162,39,.7)}
+#cffb-sm .sm-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+#cffb-sm .sm-steps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;padding:10px 8px;border-top:1px solid var(--bd);border-radius:4px;font-size:13.5px;line-height:1.5;color:#C9C9C9;text-wrap:pretty;cursor:default;transition:background .15s}
+#cffb-sm .sm-steps li:first-child{border-top:0}
+#cffb-sm .sm-steps li.on{background:rgba(201,162,39,.08)}
+#cffb-sm .sm-steps li>i{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--s2);border:1px solid var(--gold-d);color:var(--gold-l);font:900 13px/1 'Saira Condensed',sans-serif;font-style:normal}
+#cffb-sm .sm-steps li.on>i{background:var(--gold);color:#0A0A0A;border-color:var(--gold)}
+#cffb-sm .sm-steps b{color:var(--fg);font-weight:600}
+#cffb-sm .sm-steps strong{display:block;font:800 16px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase;color:var(--fg);margin-bottom:2px}
+#cffb-sm .sm-acts{display:flex;flex-wrap:wrap;gap:8px}
+#cffb-sm .sm-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;background:var(--gold);border:0;border-radius:4px;color:#0A0A0A;font:800 12px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;text-decoration:none!important}
+#cffb-sm .sm-btn:hover{background:var(--gold-l);color:#0A0A0A}
+#cffb-sm .sm-btn.g{background:var(--s2);border:1px solid var(--bd);color:var(--fg)}
+#cffb-sm .sm-btn.g:hover{filter:brightness(1.15);color:var(--fg)}
+#cffb-sm .sm-note{font-size:12px;color:var(--fg3)}
+#cffb-sm .sm-soon{padding:14px 16px;border:1px dashed var(--gold-d);border-radius:8px;background:rgba(201,162,39,.05);font-size:13px;line-height:1.5;color:var(--fg2)}
+#cffb-sm .sm-soon b{color:var(--gold-l)}
+#cffb-sm .sm-hereb{padding:20px;border:1px dashed var(--bd);border-radius:8px;color:var(--fg2);font-size:13.5px;line-height:1.5}
+@keyframes smPop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:none}}
+@keyframes smRing{0%{opacity:.7;transform:scale(.8)}70%,100%{opacity:0;transform:scale(1.6)}}
+/* roster-board lookalikes */
+#cffb-sm .rbv{--rs-t:#C9A227;--rs-m:#D17575;display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+#cffb-sm .rb-cls{font:700 13px/1 'Saira Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase;min-width:26px;padding:3px 6px;border:1px solid #3A3A3A;border-radius:2px;color:var(--fg);text-align:center;background:#1C1C1C}
+#cffb-sm .rb-cls.fr,#cffb-sm .rb-cls.so{border-color:var(--gold-d);color:var(--gold-l)}
+#cffb-sm .rb-cls.jr,#cffb-sm .rb-cls.sr{border-color:var(--gold);color:var(--gold)}
+#cffb-sm .rb-cls.gr{border-color:var(--gold-l);color:var(--gold-l);background:rgba(201,162,39,.12)}
+#cffb-sm .rb-dots{display:inline-flex;gap:3px;align-items:center}
+#cffb-sm .rb-dot{width:9px;height:9px;border-radius:50%;border:1.5px solid #3A3A3A;box-sizing:border-box}
+#cffb-sm .rb-dot.u{background:var(--gold);border-color:var(--gold)}
+#cffb-sm .rb-dot.r{background:radial-gradient(circle,transparent 0 2px,var(--rs-t) 2px 100%);border-color:var(--rs-t)}
+#cffb-sm .rb-dot.m{background:radial-gradient(circle,transparent 0 2px,var(--rs-m) 2px 100%);border-color:var(--rs-m)}
+#cffb-sm .rb-rs{display:inline-flex;align-items:center;gap:4px;font:700 10px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+#cffb-sm .rb-rs svg{width:14px;height:15px;flex:none}
+#cffb-sm .rb-rs.t{color:var(--rs-t)}#cffb-sm .rb-rs.t svg{stroke:var(--rs-t);fill:rgba(201,162,39,.08)}
+#cffb-sm .rb-rs.m{color:var(--rs-m)}#cffb-sm .rb-rs.m svg{stroke:var(--rs-m);fill:rgba(209,117,117,.08)}
+#cffb-sm .rb-inel{font:700 8px/1 Inter,sans-serif;letter-spacing:.12em;color:#D88787;border:1px solid rgba(184,69,69,.5);border-radius:2px;padding:2px 4px}
+#cffb-sm .rb-aw{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 6px;border:1px solid var(--bd);border-radius:2px;background:var(--s1);font:600 11px/1 Inter,sans-serif;color:var(--fg);white-space:nowrap}
+#cffb-sm .rb-aw svg{width:13px;height:13px;flex:none;color:var(--gold)}
+#cffb-sm .rb-aw i{font-style:normal;font-size:10px;color:var(--fg2);font-variant-numeric:tabular-nums}
+#cffb-sm .rb-aw.h{background:linear-gradient(135deg,#E8C547 0%,#C9A227 50%,#8B6F1F 100%);border-color:transparent;color:#0A0A0A;font-weight:700}
+#cffb-sm .rb-aw.h svg{color:#0A0A0A;stroke-width:2}#cffb-sm .rb-aw.h i{color:rgba(10,10,10,.65)}
+#cffb-sm .rb-aw.p{border-color:rgba(201,162,39,.45);background:rgba(201,162,39,.06)}
+#cffb-sm .rb-aw.a{border-color:rgba(201,162,39,.45)}
+#cffb-sm .rb-st{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border-radius:2px;border:1px solid var(--bd);white-space:nowrap}
+#cffb-sm .rb-st b{width:6px;height:6px;border-radius:50%;flex:none}
+#cffb-sm .rb-st.ok{border-color:rgba(45,122,78,.4);color:#4A9968}
+#cffb-sm .rb-st.q{border-color:rgba(201,162,39,.45);color:var(--gold)}
+#cffb-sm .rb-st.o{border-color:rgba(184,69,69,.55);color:#D88787}
+#cffb-sm .rb-st.rs{border-color:rgba(201,162,39,.35);color:var(--gold);background:rgba(201,162,39,.06)}
+#cffb-sm .rb-pos{display:inline-flex;align-items:center;justify-content:center;font:700 12px/1 'Saira Condensed',sans-serif;min-width:28px;padding:3px 5px;border-radius:2px;color:#0A0A0A;background:#C9A227}
+#cffb-sm .rb-tm{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font:800 9px/1 Inter,sans-serif;letter-spacing:.02em;flex:none}
+#cffb-sm .rb-pill{display:block;width:125px;max-width:100%;height:auto;flex:none}
+#cffb-sm .rb-grp{display:inline-flex;align-items:center;gap:8px;font:700 13px/1 'Saira Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+#cffb-sm .rb-grp i{width:3px;height:16px;border-radius:2px}
+#cffb-sm .rb-grp em{font:700 10px/1 Inter,sans-serif;font-style:normal;color:var(--fg3)}
+/* sample row */
+#cffb-sm .sm-samp{margin-bottom:24px;background:var(--s1);border:1px solid var(--bd);border-top:3px solid var(--gold);border-radius:8px;overflow:hidden}
+#cffb-sm .sm-samp>header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:16px 18px 12px}
+#cffb-sm .sm-samp h4{margin:0;font:800 22px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sm .sm-samp header span{font-size:12px;color:var(--fg3)}
+#cffb-sm .sm-sr{padding:0 18px}
+#cffb-sm .sm-sg{display:grid;grid-template-columns:minmax(0,1.5fr) 34px minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.1fr) minmax(0,.8fr) 44px minmax(0,125px);gap:10px;align-items:center}
+#cffb-sm .sm-sg.hd{padding:8px 0;border-bottom:1px solid var(--bd);font:700 9.5px/1 Inter,sans-serif;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase}
+#cffb-sm .sm-sg.rw{position:relative;padding:22px 0 14px}
+#cffb-sm .sm-sg .c{position:relative;display:flex;align-items:center;gap:8px;min-width:0;max-width:100%}
+#cffb-sm .sm-sg .c>u{position:absolute;top:-19px;left:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--gold);color:#0A0A0A;font:900 11px/1 'Saira Condensed',sans-serif;text-decoration:none;box-shadow:0 0 0 2px var(--s1)}
+#cffb-sm .sm-sg .c.on>u{background:var(--gold-l);box-shadow:0 0 0 2px var(--s1),0 0 12px rgba(201,162,39,.7)}
+#cffb-sm .sm-sg .nm b{display:block;font:600 13.5px/1.2 Inter,sans-serif}
+#cffb-sm .sm-ph{width:34px;height:34px;border-radius:5px;background:#1C1C1C;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif;color:var(--fg3);position:relative;overflow:hidden;flex:none}
+#cffb-sm .sm-ph::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#C9A227}
+#cffb-sm .sm-sg .c .kx{display:none}
+#cffb-sm .sm-pts{font:700 15px/1 'Saira Condensed',sans-serif;font-variant-numeric:tabular-nums;justify-content:flex-end}
+#cffb-sm .sm-key{list-style:none;margin:0;padding:10px 18px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 20px;border-top:1px solid var(--bd)}
+#cffb-sm .sm-key li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;font-size:12.5px;line-height:1.45;color:#C9C9C9;padding:4px;border-radius:4px}
+#cffb-sm .sm-key li.on{background:rgba(201,162,39,.08)}
+#cffb-sm .sm-key li>i{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--gold-d);color:var(--gold-l);font:900 11px/1 'Saira Condensed',sans-serif;font-style:normal}
+#cffb-sm .sm-key b{color:var(--fg);font-weight:600}
+#cffb-sm .sm-cl.v li{grid-template-columns:132px minmax(0,1fr);align-items:center}
+#cffb-sm .sm-raw{margin-top:24px}
+/* tasks */
+#cffb-sm .sm-tasks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+#cffb-sm .sm-task{display:flex;flex-direction:column;gap:10px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px;animation:smUp .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.03s)}
+#cffb-sm .sm-task h4{margin:0;font:800 18px/1.05 'Saira Condensed',sans-serif;text-transform:uppercase;text-wrap:balance}
+#cffb-sm .sm-task ol{margin:0;padding:0 0 0 18px;display:flex;flex-direction:column;gap:4px;flex:1}
+#cffb-sm .sm-task li{font-size:13px;line-height:1.45;color:var(--fg2);text-wrap:pretty}
+#cffb-sm .sm-task li::marker{color:var(--gold-d);font-weight:700}
+#cffb-sm .sm-task li b{color:var(--fg);font-weight:600}
+/* codes */
+#cffb-sm .sm-dec{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:18px;background:var(--s1);border:1px solid var(--bd);border-top:3px solid var(--gold);border-radius:8px;margin-bottom:24px}
+#cffb-sm .sm-dec h4{margin:0;font:800 22px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sm .sm-dec p{margin:0;font-size:13px;color:var(--fg2)}
+#cffb-sm .sm-din{display:flex;align-items:center;gap:8px;height:48px;padding:0 12px;background:var(--bg);border:1px solid var(--bd);border-radius:4px}
+#cffb-sm .sm-din:focus-within{border-color:var(--gold)}
+#cffb-sm .sm-din input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--fg);font:700 18px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+#cffb-sm .sm-din input::placeholder{color:var(--fg3);text-transform:none;font:500 14px Inter,sans-serif;letter-spacing:0}
+#cffb-sm .sm-dout{display:flex;flex-wrap:wrap;gap:8px}
+#cffb-sm .sm-tok{display:flex;flex-direction:column;gap:5px;min-width:120px;flex:1 1 140px;padding:10px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;animation:smUp .25s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.05s)}
+#cffb-sm .sm-tok b{font:900 24px/1 'Saira Condensed',sans-serif;color:var(--gold-l);letter-spacing:.04em}
+#cffb-sm .sm-tok small{font:700 9.5px/1 Inter,sans-serif;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase}
+#cffb-sm .sm-tok span{font-size:12.5px;line-height:1.4;color:#C9C9C9}
+#cffb-sm .sm-tok.bad b{color:var(--fg3)}
+#cffb-sm .sm-cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+#cffb-sm .sm-cgrp{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px;transition:border-color .3s,box-shadow .3s}
+#cffb-sm .sm-cgrp.flash{border-color:var(--gold);box-shadow:0 0 24px rgba(201,162,39,.28)}
+#cffb-sm .sm-cgrp h4{margin:0 0 4px;font:800 19px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sm .sm-cgrp>p{margin:0 0 10px;font-size:12px;color:var(--fg3)}
+#cffb-sm .sm-cl{list-style:none;margin:0;padding:0}
+#cffb-sm .sm-cl li{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:baseline;padding:8px 0;border-top:1px solid var(--bd)}
+#cffb-sm .sm-cl li:first-child{border-top:0}
+#cffb-sm .sm-cl code{font:800 16px/1 'Saira Condensed',sans-serif;letter-spacing:.06em;color:var(--gold-l)}
+#cffb-sm .sm-cl span{font-size:13px;line-height:1.45;color:#C9C9C9;text-wrap:pretty}
+#cffb-sm .sm-cl span b{color:var(--fg);font-weight:600}
+#cffb-sm .sm-cl span em{display:block;font-style:normal;font-size:11.5px;color:var(--fg3);margin-top:2px}
+/* mfl pages */
+#cffb-sm .sm-pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+#cffb-sm .sm-pgrp{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:6px}
+#cffb-sm .sm-pgrp h4{margin:0;padding:10px 10px 8px;font:800 17px/1 'Saira Condensed',sans-serif;text-transform:uppercase;color:var(--fg2);letter-spacing:.04em}
+#cffb-sm .sm-pl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:9px 10px;border-radius:4px;color:var(--fg)!important;text-decoration:none!important}
+#cffb-sm .sm-pl:hover{background:var(--sh)}
+#cffb-sm .sm-pl b{font:800 15px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sm .sm-pl small{grid-column:1;font-size:11.5px;color:var(--fg2);line-height:1.35}
+#cffb-sm .sm-pl i{grid-row:1/3;grid-column:2;font-style:normal;color:var(--fg3);font-size:14px}
+#cffb-sm .sm-pl:hover i{color:var(--gold-l)}
+/* results */
+#cffb-sm .sm-res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+#cffb-sm .sm-res li{border-top:1px solid var(--bd)}
+#cffb-sm .sm-rb{position:relative;width:100%;display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:4px 16px;align-items:start;background:none;border:0;color:var(--fg);text-align:left;padding:14px 8px;cursor:pointer;animation:smUp .3s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.03s)}
+#cffb-sm .sm-rb::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--gold);transform:scaleY(0);transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+#cffb-sm .sm-rb:hover{background:var(--sh)}#cffb-sm .sm-rb:hover::before{transform:scaleY(1)}
+#cffb-sm .sm-rk{font:700 9.5px/1.3 Inter,sans-serif;letter-spacing:.14em;color:var(--gold-l);text-transform:uppercase;padding-top:4px}
+#cffb-sm .sm-rb b{display:block;font:800 18px/1.1 'Saira Condensed',sans-serif;text-transform:uppercase;margin-bottom:4px}
+#cffb-sm .sm-rb p{margin:0;font-size:13px;line-height:1.5;color:var(--fg2);text-wrap:pretty}
+#cffb-sm .sm-go{align-self:center;font-size:18px;color:var(--fg3)}
+#cffb-sm .sm-empty{padding:24px;text-align:center;border:1px dashed var(--bd);border-radius:8px;color:var(--fg2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:12px}
+#cffb-sm .sm-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--bd);font-size:11.5px;color:var(--fg3)}
+#cffb-sm .sm-sel{display:none;width:100%;height:44px;background:var(--s1);border:1px solid var(--gold-d);border-radius:4px;color:var(--fg);font:600 14px Inter,sans-serif;padding:0 10px;margin-bottom:16px}
+@keyframes smIn{from{clip-path:inset(0 100% 0 0 round 8px)}to{clip-path:inset(-20px 0 -20px 0)}}
+@keyframes smSweep{from{left:-45%}to{left:120%}}
+@keyframes smSheen{0%,86%{left:-45%;opacity:.35}100%{left:120%;opacity:.35}}
+@keyframes smSlide{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes smFade{from{opacity:0}to{opacity:1}}
+@keyframes smUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@container sm (max-width:900px){#cffb-sm .sm-map{grid-template-columns:210px minmax(0,1fr)}#cffb-sm .sm-q{flex-basis:260px}}
+@container sm (max-width:760px){
+#cffb-sm .sm-bar{flex-wrap:wrap;min-height:0;row-gap:10px}
+#cffb-sm .sm-mk{padding:10px 24px 10px 16px;border-radius:7px 0 0 0}
+#cffb-sm .sm-mk svg{width:32px;height:32px}
+#cffb-sm .sm-mk small{font-size:9px;margin-top:4px}
+#cffb-sm .sm-tease{flex:1 1 60%;padding:10px 12px;gap:4px}
+#cffb-sm .sm-tm{font-size:21px}
+#cffb-sm .sm-ts{font-size:11.5px}
+#cffb-sm .sm-tog{order:4;margin:0 10px 10px 0;padding:0;width:40px;height:40px;justify-content:center}
+#cffb-sm .sm-tog span{display:none}
+#cffb-sm .sm-q{order:3;flex:1 1 200px;min-width:0;height:40px;margin:0 8px 10px 10px}
+#cffb-sm .sm-view{padding:16px}
+#cffb-sm .sm-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:0;overflow:visible}
+#cffb-sm .sm-tab{flex-direction:column;justify-content:center;gap:6px;padding:12px 4px 11px;font-size:15px;min-height:56px;border-right:1px solid var(--bd)}
+#cffb-sm .sm-tab:last-of-type{border-right:0}
+#cffb-sm .sm-tab.on{background:rgba(201,162,39,.06)}
+#cffb-sm .sm-tab.on::after{left:0;right:0}
+#cffb-sm .sm-tab .sm-l{display:none}#cffb-sm .sm-tab .sm-s{display:inline}
+#cffb-sm .sm-tab i{font-size:9px;padding:3px 5px}
+#cffb-sm .sm-map{grid-template-columns:minmax(0,1fr)}
+#cffb-sm .sm-nav{display:none}#cffb-sm .sm-sel{display:block}
+#cffb-sm .sm-hs{width:22px;height:22px;margin:-11px 0 0 -11px;font-size:12px}
+#cffb-sm .sm-dh h3{font-size:30px}
+#cffb-sm .sm-ask div{font-size:17px}
+#cffb-sm .sm-btn{flex:1 1 auto;justify-content:center;height:44px}
+#cffb-sm .sm-rb{grid-template-columns:minmax(0,1fr)}
+#cffb-sm .sm-go{display:none}
+#cffb-sm .sm-foot{padding:12px 16px}
+}
+@container sm (max-width:900px){#cffb-sm .sm-sg.hd{display:none}#cffb-sm .sm-sg.rw{grid-template-columns:repeat(4,minmax(0,1fr));gap:30px 14px;padding-top:28px}#cffb-sm .sm-sg.rw .c{flex-direction:column;align-items:flex-start;gap:6px}#cffb-sm .sm-sg.rw .c::before{content:attr(data-l);font:700 9.5px/1 Inter,sans-serif;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase}#cffb-sm .sm-sg.rw .c>u{top:-24px}#cffb-sm .sm-sg.rw .c[data-l="Player"]{grid-column:span 2}#cffb-sm .sm-sg.rw .c[data-l="Player"] .sm-ph{display:none}#cffb-sm .sm-pts{justify-content:flex-start}}
+@container sm (max-width:760px){#cffb-sm .sm-sg.rw{grid-template-columns:repeat(2,minmax(0,1fr))}#cffb-sm .sm-cl.v li{grid-template-columns:minmax(0,1fr);gap:8px;padding:12px 0}#cffb-sm .sm-cl.v li>span:first-child{min-height:24px}#cffb-sm .sm-cgrp{padding:14px}#cffb-sm .sm-key{display:none}#cffb-sm .sm-sg.rw{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0 0 4px}#cffb-sm .sm-sg.rw .c{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px 12px;align-items:center;justify-items:start;padding:12px 0;border-top:1px solid var(--bd)}#cffb-sm .sm-sg.rw .c:first-child{border-top:0}#cffb-sm .sm-sg.rw .c::before{grid-column:2}#cffb-sm .sm-sg.rw .c>*{grid-column:2}#cffb-sm .sm-sg.rw .c>u{position:static;grid-column:1;grid-row:1/span 3;align-self:start;width:22px;height:22px;font-size:12px}#cffb-sm .sm-sg.rw .c .kx{display:block;font:400 12.5px/1.45 Inter,sans-serif;font-style:normal;line-height:1.45;color:#C9C9C9;text-wrap:pretty}#cffb-sm .sm-sg.rw .c .kx b{color:var(--fg);font-weight:600}#cffb-sm .sm-sg.rw .c[data-l="Pos"]{display:none}#cffb-sm .sm-sg.rw .c[data-l="Player"] .nm b{font-size:15px}#cffb-sm .sm-samp>header,#cffb-sm .sm-sr{padding-left:12px;padding-right:12px}}
+@media (prefers-reduced-motion:reduce){#cffb-sm *{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+</style>
+<style>
+#cffb-lg{--gold:#C9A227;--gold-l:#E8C547;--gold-d:#8B6F1F;--bg:#0A0A0A;--s1:#141414;--s2:#1C1C1C;--sh:#1F1F1F;--bd:#2A2A2A;--fg:#F5F5F5;--fg2:#9A9A9A;--fg3:#5A5A5A;max-width:1080px;margin:24px auto 0;container-type:inline-size;container-name:lg;font-family:Inter,system-ui,sans-serif;color:var(--fg);box-sizing:border-box;position:relative}
+#cffb-lg *{box-sizing:border-box}#cffb-lg button{font-family:inherit}
+#cffb-lg a{color:var(--gold-l);text-decoration:none}#cffb-lg a:hover{color:#F4D66A;text-decoration:underline}
+#cffb-lg .lg-bar{position:relative;display:flex;align-items:stretch;min-height:96px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;cursor:pointer;user-select:none;animation:blIn .6s cubic-bezier(.2,.8,.2,1) both}
+#cffb-lg .lg-clip{position:absolute;inset:0;border-radius:8px;overflow:hidden;pointer-events:none}
+#cffb-lg .lg-chev{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(201,162,39,.07) 22px 30px);-webkit-mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%);mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%)}
+#cffb-lg .lg-sweep{position:absolute;top:-20%;bottom:-20%;width:38%;left:-45%;background:linear-gradient(100deg,transparent,rgba(201,162,39,.4) 45%,rgba(255,236,170,.55) 50%,rgba(201,162,39,.4) 55%,transparent);transform:skewX(-24deg);animation:blSweep 1.1s .35s cubic-bezier(.5,0,.2,1) both,blSheen 8s 3s linear infinite}
+#cffb-lg .lg-mk{position:relative;flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 34px 0 30px;background:var(--gold);color:#0A0A0A;border-radius:7px 0 0 7px;clip-path:polygon(0 0,100% 0,calc(100% - 18px) 100%,0 100%);animation:blSlide .5s .3s cubic-bezier(.2,.8,.2,1) both}
+#cffb-lg .lg-mk svg{display:block;animation:lgSpin 1.1s .55s cubic-bezier(.3,1.35,.4,1) both}
+#cffb-lg .lg-mk.spin svg{animation:lgSpin2 .8s cubic-bezier(.3,1.35,.4,1) both}
+#cffb-lg .lg-mk.spinb svg{animation:lgSpin3 .8s cubic-bezier(.3,1.35,.4,1) both}
+@keyframes lgSpin{from{transform:rotate(-360deg) scale(.6)}to{transform:none}}
+@keyframes lgSpin2{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes lgSpin3{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+#cffb-lg .lg-mk small{font:800 10px/1 Inter,sans-serif;letter-spacing:.2em;margin-top:6px}
+#cffb-lg .lg-tease{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 20px;animation:blSlide .5s .45s cubic-bezier(.2,.8,.2,1) both}
+#cffb-lg .lg-tm{font:800 30px/.95 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-lg .lg-ts{font-size:13px;color:var(--fg2)}
+#cffb-lg .lg-q{position:relative;flex:0 1 380px;align-self:center;margin-right:12px;display:flex;align-items:center;gap:8px;height:44px;padding:0 6px 0 12px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;cursor:text;animation:blFade .4s .6s both;transition:border-color .15s}
+#cffb-lg .lg-q:focus-within{border-color:var(--gold)}
+#cffb-lg .lg-q svg{flex:none;color:var(--fg2)}
+#cffb-lg .lg-q input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--fg);font:500 14px Inter,sans-serif}
+#cffb-lg .lg-q input::placeholder{color:var(--fg3)}
+#cffb-lg .lg-q kbd{flex:none;font:700 10px/1 Inter,sans-serif;color:var(--fg3);border:1px solid var(--bd);border-radius:2px;padding:4px 6px}
+#cffb-lg .lg-x{flex:none;width:30px;height:30px;display:none;align-items:center;justify-content:center;background:none;border:0;border-radius:4px;color:var(--fg2);cursor:pointer;font-size:14px}
+#cffb-lg .lg-x:hover{background:var(--sh);color:var(--fg)}
+#cffb-lg.q .lg-x{display:flex}#cffb-lg.q .lg-q kbd{display:none}
+#cffb-lg .lg-tog{position:relative;flex:none;align-self:center;margin-right:20px;display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;color:var(--fg);padding:10px 14px;font:700 12px Inter,sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);animation:blFade .4s .7s both}
+#cffb-lg .lg-bar:hover .lg-tog{filter:brightness(1.12)}
+#cffb-lg .lg-tog svg{transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+#cffb-lg.is-open .lg-tog svg{transform:rotate(180deg)}
+#cffb-lg.is-open .lg-bar{border-radius:8px 8px 0 0}#cffb-lg.is-open .lg-mk{border-radius:7px 0 0 0}
+#cffb-lg .lg-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s cubic-bezier(.2,.8,.2,1)}
+#cffb-lg.is-open .lg-panel{grid-template-rows:1fr}
+#cffb-lg .lg-panel>div{overflow:hidden;min-height:0}
+#cffb-lg .lg-body{background:var(--bg);border:1px solid var(--bd);border-top:0;border-radius:0 0 8px 8px}
+#cffb-lg .lg-sw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--s1);border-bottom:1px solid var(--bd)}
+#cffb-lg .lg-s{position:relative;display:flex;align-items:center;gap:14px;min-height:72px;padding:14px 22px;background:none;border:0;border-right:1px solid var(--bd);color:var(--fg2);text-align:left;cursor:pointer;transition:background .15s,color .15s}
+#cffb-lg .lg-s:last-child{border-right:0}
+#cffb-lg .lg-s:hover{background:var(--sh);color:var(--fg)}
+#cffb-lg .lg-s.on{background:var(--bg);color:var(--fg)}
+#cffb-lg .lg-s.on::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--gold)}
+#cffb-lg .lg-s svg{flex:none;width:30px;height:30px;color:var(--fg3);transition:color .15s}
+#cffb-lg .lg-s.on svg{color:var(--gold)}
+#cffb-lg .lg-s span{min-width:0}
+#cffb-lg .lg-s b{display:block;font:800 24px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em}
+#cffb-lg .lg-s small{display:block;margin-top:5px;font-size:12px;line-height:1.3;color:var(--fg3)}
+#cffb-lg .lg-s.on small{color:var(--fg2)}
+#cffb-lg .lg-in{display:flex;flex-direction:column}
+#cffb-lg #cffb-bl,#cffb-lg #cffb-sm{margin:0;max-width:none}
+#cffb-lg .bl-bar,#cffb-lg .sm-bar,#cffb-lg .bl-foot,#cffb-lg .sm-foot{display:none}
+#cffb-lg .bl-body,#cffb-lg .sm-body{border:0;border-radius:0;background:none}
+#cffb-lg[data-sec="rules"]:not(.q) #cffb-sm,#cffb-lg[data-sec="site"]:not(.q) #cffb-bl{display:none}
+#cffb-lg[data-sec="site"] .lg-hd[data-for="site"],#cffb-lg[data-sec="site"] #cffb-sm{order:-1}
+#cffb-lg .lg-hd{display:none;align-items:center;gap:10px;padding:12px 20px;background:var(--s1);border-bottom:1px solid var(--bd);font:800 16px/1 'Saira Condensed',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-l)}
+#cffb-lg .lg-hd+div{margin-bottom:0}
+#cffb-lg .lg-hd i{font:700 10px/1 Inter,sans-serif;font-style:normal;letter-spacing:.08em;padding:3px 6px;border-radius:2px;background:var(--gold);color:#0A0A0A}
+#cffb-lg .lg-hd button{margin-left:auto;background:none;border:0;padding:0;color:var(--fg2);font:600 12px Inter,sans-serif;letter-spacing:0;text-transform:none;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+#cffb-lg .lg-hd button:hover{color:var(--fg)}
+#cffb-lg.q .lg-hd{display:flex}#cffb-lg.q .lg-sw{display:none}
+#cffb-lg.q #cffb-sm,#cffb-lg.q #cffb-bl{border-bottom:1px solid var(--bd)}
+#cffb-lg .lg-foot{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:12px 24px;border-top:1px solid var(--bd);font-size:11.5px;color:var(--fg3)}
+#cffb-lg .lg-foot div{display:flex;gap:16px;flex-wrap:wrap}
+@container lg (max-width:760px){
+#cffb-lg .lg-bar{flex-wrap:wrap;min-height:0;row-gap:10px}
+#cffb-lg .lg-mk{padding:10px 24px 10px 16px;border-radius:7px 0 0 0}
+#cffb-lg .lg-mk svg{width:32px;height:32px}
+#cffb-lg .lg-mk small{font-size:9px;margin-top:4px}
+#cffb-lg .lg-tease{flex:1 1 60%;padding:10px 12px;gap:4px}
+#cffb-lg .lg-tm{font-size:21px}#cffb-lg .lg-ts{font-size:11.5px}
+#cffb-lg .lg-tog{order:4;margin:0 10px 10px 0;padding:0;width:40px;height:40px;justify-content:center}
+#cffb-lg .lg-tog span{display:none}
+#cffb-lg .lg-q{order:3;flex:1 1 200px;min-width:0;height:40px;margin:0 8px 10px 10px}
+#cffb-lg .lg-q kbd{display:none}
+#cffb-lg .lg-s{min-height:56px;padding:10px 14px;gap:10px}
+#cffb-lg .lg-s svg{width:22px;height:22px}
+#cffb-lg .lg-s b{font-size:19px}
+#cffb-lg .lg-s small{display:none}
+#cffb-lg .lg-hd{padding:10px 16px;font-size:14px}
+#cffb-lg .lg-foot{padding:12px 16px}
+}
+</style>
+<div id="cffb-lg" data-sec="rules">
+<div class="lg-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="cffb-lg-panel">
+<div class="lg-clip"><div class="lg-chev"></div><div class="lg-sweep"></div></div>
+<div class="lg-mk"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20"></path><path d="M5 5h11l3 3-3 3H5z"></path><path d="M19 13H8l-3 3 3 3h11z"></path></svg><small>GUIDE</small></div>
+<div class="lg-tease"><div class="lg-tm">Know the rules. Find the page.</div><div class="lg-ts">Bylaws, league calendar and site map in one place</div></div>
+<label class="lg-q" data-lg="qwrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input type="search" data-lg="q" placeholder="Ask a rule or find a page: redshirt" autocomplete="off" aria-label="Search the rules and site map"><kbd>/</kbd><button type="button" class="lg-x" data-lg="clear" aria-label="Clear search">✕</button></label>
+<button class="lg-tog" type="button" tabindex="-1"><span data-lg="togLabel">EXPAND</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+</div>
+<div class="lg-panel" id="cffb-lg-panel"><div><div class="lg-body">
+<div class="lg-sw" role="tablist" aria-label="Guide section">
+<button type="button" class="lg-s on" role="tab" aria-selected="true" data-sec="rules"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"></path><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path></svg><span><b>Rules</b><small>Common questions · League calendar · Every article</small></span></button>
+<button type="button" class="lg-s" role="tab" aria-selected="false" data-sec="site"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg><span><b>Site Map</b><small>Where every widget lives · Roster codes · MFL pages</small></span></button>
+</div>
+<div class="lg-in">
+<div class="lg-hd" data-for="rules"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"></path><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path></svg>In the rules<i data-lg="nR">0</i><button type="button" data-sec="rules">Only rules</button></div>
+<div id="cffb-bl" class="is-open">
+<div class="bl-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="cffb-bl-panel">
+<div class="bl-clip"><div class="bl-chev"></div><div class="bl-sweep"></div></div>
+<div class="bl-mk fwd"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"></path><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path><path class="pg" d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path><path class="pg" d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path><path class="pg" d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path></svg><small>BYLAWS</small></div>
+<div class="bl-tease"><div class="bl-tm">Know the rules. Ask anything.</div><div class="bl-ts" data-bl="sub"></div></div>
+<label class="bl-q" data-bl="qwrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input type="search" data-bl="q" placeholder="Ask a question: how do redshirts work?" autocomplete="off" aria-label="Search the bylaws"><kbd>/</kbd><button type="button" class="bl-x" data-act="clear" aria-label="Clear search">✕</button></label>
+<button class="bl-tog" type="button" tabindex="-1"><span data-bl="togLabel">EXPAND</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+</div>
+<div class="bl-panel" id="cffb-bl-panel"><div><div class="bl-body">
+<div class="bl-tabs" data-bl="tabs"></div>
+<div class="bl-view" data-bl="view"></div>
+<div class="bl-foot"><span>Summaries are the quick read. The official bylaws govern every call.</span><a data-bl="docLink" target="_blank" rel="noopener">Open the full bylaws ↗</a></div>
+</div></div></div>
+</div>
+<div class="lg-hd" data-for="site"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>On the site<i data-lg="nS">0</i><button type="button" data-sec="site">Only site map</button></div>
+<div id="cffb-sm" class="is-open">
+<div class="sm-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="cffb-sm-panel">
+<div class="sm-clip"><div class="sm-chev"></div><div class="sm-sweep"></div></div>
+<div class="sm-mk"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg><small>SITE MAP</small></div>
+<div class="sm-tease"><div class="sm-tm">Find anything on the league site.</div><div class="sm-ts" data-sm="sub"></div></div>
+<label class="sm-q" data-sm="qwrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><input type="search" data-sm="q" placeholder="Where do I… check eligibility?" autocomplete="off" aria-label="Search the site map"><button type="button" class="sm-x" data-act="clear" aria-label="Clear search">✕</button></label>
+<button class="sm-tog" type="button" tabindex="-1"><span data-sm="togLabel">EXPAND</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+</div>
+<div class="sm-panel" id="cffb-sm-panel"><div><div class="sm-body">
+<div class="sm-tabs" data-sm="tabs"></div>
+<div class="sm-view" data-sm="view"></div>
+<div class="sm-foot"><span>Tap ▶ Show me to walk through any widget on the live page.</span><a data-sm="disc" target="_blank" rel="noopener">Still lost? Ask on Discord ↗</a></div>
+</div></div></div>
+</div>
+</div>
+<div class="lg-foot"><span>Summaries are the quick read. The official bylaws govern every call.</span><div><a data-lg="doc" target="_blank" rel="noopener">Official bylaws ↗</a><a data-lg="disc" target="_blank" rel="noopener">Still lost? Ask on Discord ↗</a></div></div>
+</div></div></div>
+</div>
+<script>
+(function(){
+/* ===== CONFIG — edit when the bylaws change ===== */
+var BL = {
+  season: 2026,
+  doc: 'https://docs.google.com/document/d/1azwnisY3vNkruLU2ieUF5cLp6YilA5T7kwXTuVk10Sk/edit?usp=sharing',
+  newSince: 2025,
+  nflWeek1: '2026-09-10', // Thursday kickoff of NFL Week 1 this season (drives every week-based date)   // rules with nw >= this season get a NEW tag
+  popular: ['buy-in','redshirt','tiebreaker','devy rebate','early declare','transfer','scoring','rivalry']
+};
+/* Articles → rules. key: stable id · t: title · s: plain-English summary · b: full rule (verbatim-faithful) · nw: season it changed */
+var A = [
+{t:'League Calendar',k:'dates deadline when timeline schedule month february may june august january',r:[
+ {key:'cal',t:'Annual Calendar',s:'The league year turns over in <b>February</b>. Auctions run <b>May through August</b>. Devy draft hits <b>Week 4</b>. The title chase is <b>Weeks 13 to 17</b>.',cal:[['February','Start of new league year (MFL rollover)'],['Feb 1 – May 1','Vacancies filled'],['March 1','Conference schedule announced'],['March 1','Early declares & player-initiated transfers announced'],['March 31','Early-declare & transfer retentions due'],['May 1','Recruiting dollars administered'],['May 15','Transfer announcement deadline · auction start date announced'],['May 16 – 29','Upperclassmen / transfer auction'],['May 31','Devy player auction'],['June 1 – 15','Freshmen auction starts*'],['June 15 – Aug 24','Walk-on auction*'],['July 1 – Aug 31','Scheduling'],['Aug 25','Taxi Squad and IR slots open'],['Week 4 Tuesday','Devy draft'],['Week 5 Thursday','Taxi & IR locked at kickoff'],['Week 12','Returning poll opens — vote if you’re back next year'],['Week 14','Conference championship & player awards announced'],['Weeks 15 – 17','National championship playoffs'],['Week 18','League payouts administered'],['January 31','Buy-in payment due · returning-poll vote closes']],b:['Weeks refer to the NFL regular season.','*Freshmen and walk-on dates are rough estimates of when school budgets run lower, not official stop points.']},
+ {key:'y1',t:'Year One Exception',s:'The startup year folds every auction into <b>one startup auction in May</b>. Only devy drafts run that year.',b:['All auctions are condensed into one startup auction starting in May (date TBD).','Only devy drafts occur during the first year.']}
+]},
+{t:'Platform',k:'mfl discord google data studio communication reports chat',r:[
+ {key:'plat',t:'Where the League Lives',s:'<b>MFL</b> runs the league. <b>Discord</b> runs every announcement and question. Join it.',b:['The league is hosted on MFL.','League communication runs through Discord. It is the only channel for league updates and fielding questions, so members are encouraged to join.','Discord was chosen for its organization, which helps manage a league this large.']},
+ {key:'reports',t:'League Reports',s:'Feature reports run on <b>Google Data Studio</b>, linked from MFL and Discord.',b:['Google Data Studio powers certain reports for league features.','Links are posted on both MFL and Discord.']}
+]},
+{t:'Buy-In & Payout',k:'money pay paid fee cost price leaguesafe prize pot payout due',r:[
+ {key:'buyin',t:'Buy-In',nw:2025,s:'<b>$50</b> per Power 5 school, <b>$25</b> per Minor school, plus <b>1/100th of the MFL fee</b>. Paid on LeagueSafe.',b:['Buy-ins are collected on <b>LeagueSafe</b>.','Prize pool: <b>$4,600</b>.','<b>$50</b> per year for each Power 5 school.','<b>$25</b> per year for each Non-Power 5 (Minor) school.','Each team covers <b>1/100th of the MFL maintenance fee</b>, rounded up to the nearest whole dollar.','EX:The 2025 MFL fee was $184.85. Each team owed $1.85, rounded up to $2.','<b>$100</b> of the pool goes to reducing buy-ins for vacant teams.']},
+ {key:'due',t:'Buy-In Deadline',s:'Pay or vote in the returning poll by <b>Jan 31</b>. Do neither and your school goes vacant.',b:['After the season, coaches have until <b>January 31</b> to pay or vote in the returning poll.','Coaches who do neither are assumed not to be returning. Their school is deemed vacant.','Coaches who vote before the deadline have until the <b>February rollover</b> to settle their buy-in. Unsettled schools are deemed vacant.']},
+ {key:'confpay',t:'Conference Payouts',s:'Conference champ: <b>$100</b>. Conference semi-finalist: <b>$50</b>. Max total pot: <b>$4,360</b>.',b:['Max total pot: <b>$4,360</b>.','Conference champion: <b>$100</b> each ($600 total).','Conference semi-finalist: <b>$50</b> each ($300 total).']},
+ {key:'top25',t:'Top 25 Payouts',s:'<b>#1 takes $600</b>, down to <b>$50 for #25</b>. Paid on final ranking after Week 17.',pay:1,b:['Top 25 payout is based on end-of-year national ranking, after Week 17 of the NFL regular season.']}
+]},
+{t:'Schools & Conferences',k:'school team conference power 5 minor aac acc sec b10 big ten b12 p12 graphics logo',r:[
+ {key:'schools',t:'100 Schools, 6 Conferences',s:'Five Power 5 conferences of <b>16</b> (ACC, SEC, B10, B12, P12) plus the <b>20-school AAC</b> as the Minor.',b:['100 total schools across 6 conferences.','Five Power 5 conferences (80 schools): ACC, SEC, B10, B12, P12. 16 schools each.','One Minor conference (20 schools): American (AAC).','Schools were chosen by conference makeup, then primary geographic location relative to the rest of the conference.']},
+ {key:'swap',t:'Changing Your School',s:'Only if the school is <b>vacant</b>, a <b>current FBS school</b>, and the commish can get <b>quality graphics</b>.',b:['Requests to change to a non-used school are only entertained if:','The school is vacant.','The non-used school is a current FBS school.','Quality graphics are feasible for the commissioner to obtain.']},
+ {key:'gfx',t:'Graphics',s:'The commish supplies every graphic <b>free</b>. Refreshed when a real school changes its logo, colors or stadium.',b:['League and team graphics are supplied by the commissioner at no cost to coaches.','Graphics keep a uniform aesthetic across the league.','Graphics are updated when resources allow and a real school updates its logos, colors, or stadium (the school banner on Coach’s Office).']}
+]},
+{t:'Rosters & Lineups',k:'roster lineup starters start players copies copy trade spots size',r:[
+ {key:'pool',t:'Player Pools & Copies',s:'<b>Two copies</b> of every eligible player per conference. One per roster. <b>No trades.</b> Copies never cross conferences.',b:['Each conference has access to <b>2 copies</b> of every eligible player.','A school cannot roster two copies of the same player (MFL enforced).','<b>Players cannot be traded.</b>','Copies cannot cross conference lines (MFL enforced).']},
+ {key:'roster',t:'Roster Size & Starting Lineup',s:'<b>30</b> roster spots. Start <b>8</b>: 1 QB, 1–5 RB, 2–6 WR/TE.',b:['<b>30</b> total roster spots.','Starting lineup is <b>8 offense</b>: 1 QB, 1–5 RB, 2–6 WR/TE.']},
+ {key:'lineup',t:'Full Lineup Every Week',s:'Field <b>8 starters</b> every week. Invalid lineups get set to <b>Fantasy Sharks</b> for the rest of the season.',b:['Lineups carry over week to week.','If the commissioner sees an invalid lineup, it is set by the Fantasy Sharks option on MFL for the remainder of the season.','Missed lineups hurt your team and skew the rankings for everyone.','Schools must field a full 8-man lineup each week. Players can be on bye or injured, but at least 8 players must be on the active roster.']}
+]},
+{t:'Scoring',k:'scoring points ppr half td touchdown yards first down reception int fumble return',r:[
+ {key:'scoring',t:'Scoring Format',s:'Half-PPR with first-down bonuses. Rush/rec TDs <b>6</b>, pass TDs <b>4</b>, INTs and fumbles <b>−2</b>.',tbl:[['Category','Points'],['Passing TD','4'],['Interception','−2'],['Pass yard','0.04'],['Pass 2-pt conversion','2'],['Pass 1st down','0.2'],['Rush TD','6'],['Rush yard','0.1'],['Rush 2-pt conversion','2'],['Fumble lost','−2'],['Rush 1st down','0.5'],['Receiving TD','6'],['Receiving yard','0.1'],['Receiving 2-pt conversion','2'],['Receiving 1st down','0.5'],['Reception','0.5'],['Punt return yard','0.05'],['Kick return yard','0.05'],['Return TD (punt or kick)','6']],b:['The same scoring applies to every position.']}
+]},
+{t:'Eligibility',k:'eligibility years experience graduate graduated gr fr so jr sr freshman senior copy info',r:[
+ {key:'elig',t:'Four Years of Eligibility',s:'The pool is players with <b>1–4 years of NFL experience</b>. MFL sets experience. Burn all four and he graduates.',b:['The league mirrors college football in the NFL landscape, so the pool is limited to players with 1–4 years of NFL experience.','MFL dictates a player’s NFL experience level.','Once every copy has used its 4 years, the player graduates and moves to the Can’t Add list on MFL.','Individual copies that leave early are set to zero eligibility or GR (graduated).']},
+ {key:'grads',t:'Clearing Graduates',s:'Drop graduated players before recruiting or lose <b>$5</b> of budget. Still rostered at kickoff? <b>No lineup</b> until they’re gone.',b:['Players with no eligibility must be dropped before recruiting starts, or the school is docked <b>$5</b> from that year’s recruiting budget.','If still not dropped before the season, the team cannot set a lineup until the player(s) are dropped.']},
+ {key:'copyinfo',t:'Reading Copy Info',s:'Format is <b>School_Year_Redshirt</b>. <b>MIA_JR_r17</b> = Miami’s copy, junior, traditional redshirt in 2017.',tbl:[['Player','Copy 1','Copy 2'],['McCaffrey, Christian','BC_SR','MIA_JR_r17'],['Harris, Damien','GT_FR_m19','FA_SO'],['Elliott, Ezekiel','FSU_SR_r16','FA_GR']],b:['Each copy shows the owning school’s abbreviation, or FA if unowned.','Then the eligibility year: FR, SO, JR, SR, GR.','Then any redshirt: <b>r</b> = traditional, <b>m</b> = medical, with the year used.','EX:McCaffrey: Boston College and Miami each own a copy. Miami gave him a traditional redshirt in his 2017 rookie year; BC did not.','EX:Harris: Georgia Tech owns one copy with a 2019 medical redshirt. The FA copy has no redshirts. It can’t take a traditional anymore but could still get a medical.','EX:Elliott: FSU redshirted its copy, so he’s in his last year there. The other copy has graduated (GR) and can’t be owned.','Copy info is updated a few times a year. Report questions or inconsistencies to the commissioner.']}
+]},
+{t:'Redshirts',k:'redshirt taxi ir injured injury medical traditional freshman rookie delay week 5',r:[
+ {key:'trad',t:'Traditional Redshirt',s:'Freshmen only. In a <b>Taxi Squad slot before Week 5 Thursday kickoff</b>, and kept there all season.',b:['Delays a player’s eligibility.','Reserved for incoming freshmen placed in a <b>Taxi Squad</b> slot on MFL before kickoff of the Week 5 Thursday night game.','If removed from Taxi before the CFFB season ends, no traditional redshirt is awarded.','To move a player off Taxi, ask the commissioner to move him to your active roster.']},
+ {key:'med',t:'Medical Redshirt',s:'Injured player in an <b>IR slot before Week 5 Thursday kickoff</b>, never medically redshirted before, kept there all season.',b:['Reserved for any injured player with remaining eligibility who:','Was placed in an <b>IR</b> slot on MFL before kickoff of the Week 5 Thursday night game. He must be listed IR or I on MFL to enter the slot.','Has never had a medical redshirt applied.','If he loses the IR/I designation mid-season but stays in the IR slot, he remains eligible.','If removed from the IR slot before the CFFB season ends, no medical redshirt is awarded, even if every other requirement is met.']}
+]},
+{t:'Schedule & Postseason',k:'schedule games weeks non-conference nonconference rivalry gameday playoff bowl postseason championship bracket seed',r:[
+ {key:'params',t:'Schedule Parameters',s:'<b>12 games</b>. Weeks 1–4 non-conference, Weeks 5–12 conference. Conference rivals go <b>Week 12</b>, then Week 5.',b:['12-game regular season, Weeks 1–12 of the NFL regular season.','8 conference games: Weeks 5–12.','4 non-conference games: Weeks 1–4.','Up to 2 games can be rivalry games.','Conference rivalries use Weeks 12 and 5. The system defaults to Week 12 first; Week 5 is used if a second is needed.','Non-conference rivalries can be scheduled any of Weeks 1–4.']},
+ {key:'sched',t:'Booking Non-Conference Games',s:'Book <b>4 non-conference games</b> in the league module. <b>Both schools verify</b> or it doesn’t count.',b:['Each year schools schedule 4 non-conference games.','Scheduling your own games isn’t required but is encouraged, since it affects your rankings.','Use the league-provided scheduling module. Only games verified by both schools are used.','Schedule enough games to meet the Schedule Parameters.','The commissioner can alter games to satisfy the parameters, based on verified submission time stamp.','Any bartered recruiting dollars for altered games go back to the original schools.']},
+ {key:'confsched',t:'Conference Schedule',s:'Randomly generated in <b>March</b>. Lock in conference rivals for Week 12 (then Week 5) before it runs.',b:['Conference schedules are randomly generated each March by the scheduling system.','Conference rivalry games can be set for Week 12, and Week 5 if needed, before the schedule is generated.']},
+ {key:'wins',t:'Wins Pay Recruiting Dollars',s:'<b>$1</b> per regular-season win, <b>$1</b> per postseason appearance, <b>$1</b> per postseason win. All go to next year’s budget.',b:['$1 for each regular-season win (Weeks 1–12).','$1 for each postseason game appearance (Weeks 13–17).','$1 for each postseason win (Weeks 13–17).','These dollars apply to next year’s recruiting budget.']},
+ {key:'gameday',t:'College Gameday Game of the Week',s:'The matchup with the <b>lowest average rank</b> gets the spotlight. Both schools get <b>$1</b>; the primary game gets <b>$1 more</b>.',b:['Each regular-season week (1–12), select matchups are spotlighted on College Gameday.','Selection is based on matchups with an average ranking of 15 or lower.','EX:#3 Texas vs. #6 Oklahoma averages 4.5. #1 Miami vs. #10 Georgia Tech averages 5. Texas–Oklahoma is more likely to be picked.','Ties go to the matchup with the highest-ranked team.','EX:#2 Tulsa vs. #7 Boston College and #3 Texas vs. #6 Oklahoma both average 4.5. Tulsa is the highest-ranked of the four, so their game wins the tiebreak.','Selected schools get a matchup graphic on the MFL main page slider and $1 each for next year’s recruiting.','The lowest-average matchup is the primary Gameday game, and each school gets an additional $1.']},
+ {key:'ccg',t:'Conference Championships',s:'<b>Week 13</b>. Top two in each conference’s standings.',b:['Conference championships are played Week 13 of the NFL regular season.','See Conference Standings for how the top two are decided.']},
+ {key:'playoff',t:'16-Team Playoff',nw:2025,s:'<b>Weeks 14–17</b>. Five Power 5 champs plus <b>11 at-large bids</b>, seeded by national ranking after Week 13.',b:['16-team playoff, Weeks 14–17 of the NFL regular season.','Automatic bids: the 5 Power 5 conference champions.','11 at-large bids go to the highest nationally ranked teams after Week 13.','Seeds follow national ranking after Week 13. The #1 ranked team gets the #1 seed.','Bracket matchups follow the seeding pattern in Figure 1 of the official bylaws.','After the 2024 season, if issues are found with bracket seeding, the playoffs will be reseeded per Figure 1.']},
+ {key:'bowls',t:'Bowl Games',s:'<b>Week 14</b>. Six wins earns a bowl. Odd count? The <b>highest-ranked 5-win school</b> takes the last invite.',b:['Schools with 6 or more wins are invited to a bowl game.','If the number of 6+ win schools is odd, one invite goes to the highest-ranked 5-win school, who plays the last remaining 6-win school.','Bowl matchups follow national ranking after Week 13: the top-ranked non-playoff school plays the next-highest, and so on.']}
+]},
+{t:'National Ranking',k:'ranking rank rankings formula all play allplay top 25 poll',r:[
+ {key:'formula',t:'Ranking Formula',s:'<b>((Reg. season wins + 1) × (All-Play % + Opp. All-Play %)) + postseason wins.</b>',b:['Rankings place every team on one league-wide scale.','Metric: ((Regular Season Wins + 1) × (All-Play % + Opponent All-Play %)) + Postseason Wins.']},
+ {key:'rankuse',t:'What Rankings Decide',s:'At-large bids, bowl matchups and end-of-year payouts. The <b>national champ is always #1</b>.',b:['Rankings set playoff at-large bids, bowl matchups, and end-of-year payouts.','The National Championship winner is ranked #1. Their metric is set 1 point above the #2 team unless they’d already rank #1.']}
+]},
+{t:'Conference Standings',k:'standings tiebreaker tie breaker h2h head to head conference championship tied',r:[
+ {key:'tb',t:'Standings & Tiebreakers',s:'Top two play for the title. Ties break on <b>conf W-L %</b>, then <b>H2H</b>, <b>All-Play %</b>, <b>total points</b>, <b>national rank</b>.',b:['The top two schools in conference standings play in the Week 13 conference championship.','Order of tiebreakers:','1. Conference W-L percentage.','2. Head-to-head record between tied teams. With three or more tied, one school must hold a clear H2H lead over all others. If none does, move to the next step. If one does, the rest are re-run head-to-head until no clear leader remains, then drop to the next step.','3. All-Play percentage.','4. Total points.','5. Higher national ranking.']}
+]},
+{t:'Awards',k:'awards award heisman obrien o brien doak walker biletnikoff coach of the year all-conference all conference team',r:[
+ {key:'natl',t:'National Awards',s:'<b>Heisman, O’Brien, Doak Walker, Biletnikoff</b>: $5 each to the winning school. Only a player’s top copy counts.',b:['Awards are finalized and announced after Week 12. Each award pays bonus recruiting dollars for next season.','Only the top copy of a player is recognized nationally.','Score = (Player Starter Pts ÷ Team PF) × Player Starter Pts × (School Wins + 1), regular season only.','This targets the copies most responsible for their school’s success.','<b>Heisman</b> (top player): $5 · <b>O’Brien</b> (top QB): $5 · <b>Doak Walker</b> (top RB): $5 · <b>Biletnikoff</b> (top WR/TE): $5.']},
+ {key:'coy',t:'Coach of the Year',s:'<b>$5</b>. Rewards winning, scoring and setting the best lineups.',b:['Goes to the coach who best blended winning, high scoring and optimal lineups over the regular season.','Metric: (Reg. Season Wins + 1) × Reg. Season PF × (PF ÷ PP).']},
+ {key:'allconf',t:'All-Conference Teams',s:'1st team <b>$5</b>, 2nd <b>$4</b>, 3rd <b>$3</b> per player. 1 QB, 3 RB, 4 WR/TE. Conference play only.',b:['Each conference names all-conference teams by position.','Only conference play counts (Weeks 4–12).','1st team: $5 · 2nd team: $4 · 3rd team: $3.','Each team is 1 QB, 3 RB, 4 WR/TE.','Score = Conf. Starter Pts × (Conf. Starter Pts ÷ Team Conference PF).']}
+]},
+{t:'NFL Draft',k:'draft declare early declare retain retention keep stay nfl prestige graduate leave',r:[
+ {key:'early',t:'Early Declares',s:'One national award or two conference awards and he leaves early. Keep him for <b>$20</b> (national) or <b>$10</b> (conference).',b:['A theoretical NFL draft runs at the close of each CFFB season.','Natural juniors, redshirt sophomores and redshirt juniors can declare early if a copy has won <b>1 national award</b> or <b>2 conference awards</b> in its career.','If the criteria are met before he’s eligible, he still leaves early. Coming off a medical redshirt doesn’t stop it.','A school can persuade him to stay by forfeiting next season’s recruiting dollars. Players who stay can’t be placed for transfer.','National-award trigger: <b>$20</b> to retain. Win again after staying: <b>$30</b> the next year.','Two-conference-award trigger: <b>$10</b> to retain. Win again after staying: <b>$20</b> the next year.']},
+ {key:'prestige',t:'Draft Prestige',s:'Drafted players earn their school up to <b>$5</b>. Tiers by position rank: <b>1–8 $5</b> down to <b>33–40 $1</b>.',b:['The commissioner tiers draft entrants (graduates + early declares) by total points through Week 12, per position (WR/TE combined).','Schools with a player drafted get recruiting dollars for next season.','Only applies to schools that rostered the player last season, and only to copies eligible to enter the draft.','Top 1–8: $5 · 9–16: $4 · 17–24: $3 · 25–32: $2 · 33–40: $1 · 41+: $0.','EX:Lamar Jackson, natural junior, QB1 last year. One copy won a national award; 11 won a conference award, the second for 6 of them. So 7 of 12 copies declare early. One school pays $20 to keep him. He lands in the top 1–8 tier, so the 6 schools that let him go get $5 each.']}
+]},
+{t:'Recruiting',k:'recruiting recruit auction bid bidding nominate nomination freshmen budget devy rebate startup dollars money',r:[
+ {key:'auction',t:'Auction Basics',s:'Public proxy bidding on MFL. <b>High bid for 12 hours wins.</b> Two nominations open at once.',b:['All auctions are public proxy bidding on MFL. A player is awarded after a school holds the high bid for <b>12 hours</b>.','Each school can have <b>2 nominations</b> active at any time.','No nominating two copies of the same player at once, or a second copy of a player you already own (MFL enforced).','Schools compete within their conference for incoming freshmen (NFL rookies).']},
+ {key:'close',t:'Close of Auction & Player Lock',s:'Close lands about <b>a week after NFL cutdowns</b>. Mid-auction drops lock for <b>24 hours</b>, until the close.',b:['Around August the league announces the expected close of the auction.','Close is about a week after NFL roster cutdowns, unless the season starts within a week.','Players dropped mid-auction are locked for 24 hours to prevent collusion.','The lock is suspended once the close-of-auction period begins.']},
+ {key:'budget',t:'Recruiting Budget',s:'<b>$200 base</b>, plus wins, awards, draft prestige and transfer returns, minus early-declare and transfer-stay costs.',b:['Every school gets <b>$200</b> each year, plus:','Funds from players transferred out.','Funds from last year’s national or conference awards.','Funds from last year’s wins.','Funds from last year’s draft prestige.','Minus any funds spent on early declare or transfer stays.']},
+ {key:'startup',t:'Startup Auction',s:'Year one only. <b>$400 budget</b>, every eligible player available, <b>no retro redshirts</b>.',b:['The first league year holds a startup auction to set rosters.','Every school has a $400 budget.','All eligible players are available; no one with more than 4 years of NFL experience.','No retro redshirts (no natural seniors can be given a redshirt).']},
+ {key:'devydraft',t:'Devy Draft',s:'Starts <b>Week 4</b>. Two rounds, <b>24 hours per pick</b>, worst-to-first order. No pick trading.',b:['Each conference gets an early claim on players who haven’t yet declared for the real NFL draft.','The draft starts at the beginning of Week 4 of each NFL season. Only one copy of each devy player is available.','2 rounds: 32 picks in each Power 5 conference, 40 in the Minor.','24 hours per pick. Timed-out schools can make up the pick as soon as the school on the clock picks. Still missing at the end? The commish auto-assigns from DLF’s most recent devy rankings.','Picks can’t be traded or swapped.','Order: inverse conference W-L from last year. Ties go by last year’s final national ranking, in reverse. The first season is randomized.']},
+ {key:'devyauc',t:'Devy Auction & Rebate',s:'Your devy picks open the freshmen auction at <b>$0</b>. Win him back and get <b>up to $20</b> rebated.',b:['Drafted devy players who declare for the real NFL draft are auto-nominated by the commish at the start of the freshmen auction, at $0.','Second copies can be nominated after the first copy and also count toward the rebate rule.','If the drafting school wins him, up to <b>$20</b> is rebated to that year’s budget.','Won for under $20? The full price is rebated.','EX:He goes for $7. You get $7 back.']},
+ {key:'devyret',t:'Retaining Undeclared Devy Picks',s:'Didn’t declare? Keep his rights at <b>$5 less rebate per year</b>. He takes your draft slot.',b:['Drafted players who didn’t declare can be retained before the regular season at a reduced rebate: <b>−$5 per year retained</b>.','One retained player takes your second-round slot; two retained take both slots.','No notice of retention? The league office assumes he’s retained.']}
+]},
+{t:'Transfers',k:'transfer transfers portal drop dropped cut release upperclassmen copy',r:[
+ {key:'portal',t:'Transfer Portal',s:'Upperclassmen auction starts in <b>May</b>. Same bidding and nomination rules as recruiting.',b:['Schools acquire upperclassmen through the Transfer Portal.','Transfers run as auctions on MFL starting in May.','Same acquiring and nominating rules as Recruiting.','Previous schools can reacquire their own players (no percentage returned in that case).']},
+ {key:'drop',t:'Dropping to the Portal',s:'Drop before the deadline. If another school wins him, <b>50% of the price</b> comes back to you.',b:['Players enter the portal by being dropped before the transfer drop deadline.','If another school wins him, 50% of the winning bid (rounded to the nearest dollar) goes back to the previous school’s budget.','EX:Lamar Jackson goes for $25 in the transfer auction. His previous school gets $13.']},
+ {key:'copies',t:'Which Copy Goes Up',s:'Your own cut copy first. Otherwise: <b>most eligibility</b>, then <b>fewest awards</b>, then <b>earliest dropped</b>.',b:['If the nominating school cut that player this league year and no one else has won that copy, the nominated copy is theirs.','Otherwise, tiebreakers in order:','1. Most eligibility.','EX:A traditional-redshirted copy goes before one that isn’t. A traditional-redshirted copy goes before a medical one, since it can still get a medical.','2. Fewest player awards.','3. Dropped from their school first.']}
+]},
+{t:'Rivalries',k:'rivalry rivalries rival wager bet register',r:[
+ {key:'riv',t:'Registering a Rivalry',s:'<b>Two rivals max.</b> Wager <b>$0–5</b> per game, every year. Register and name it with the commish on Discord.',b:['Schools may register up to two rivalries at a time.','Rivals set a $0–5 recruiting-dollar wager. The winner takes it from the loser’s next-year budget.','The wager recurs every year.','Non-conference or cross-conference rivals schedule games within the normal parameters.','Both schools register with the commissioner on Discord, naming the rivalry and the wager.','If a coach leaves, the rivalry must be re-registered with the new coach or at the coach’s new school.']}
+]},
+{t:'Vacancies',k:'vacancy vacant vacancies switch move change school coach petition leave job',r:[
+ {key:'petition',t:'Petitioning for a Vacancy',s:'Petition the commish. Ties break on <b>tenure</b>, <b>career wins</b>, <b>career PF/G</b>, then a coin flip.',b:['Coaches can leave for greener pastures when a vacancy opens.','Petition the commissioner’s office.','Selection order: longest tenure, career wins (regular + postseason), career PF/G, then a coin flip or random draw.']},
+ {key:'move',t:'What Moves With You',s:'Nothing. You take over the new roster. Your <b>old school keeps</b> its earned dollars and devy rights.',b:['You leave your old roster and take control of the vacant one.','Last year’s redshirts are honored. No retro redshirts for freshmen who started.','You can persuade early declares at <b>half the rate</b> that season, or let them go for full rewards. Award counters still aggregate.','You can petition to retro-apply a medical redshirt if the player was on IR before Week 5, didn’t start after Week 4, and it was last season.','Recruiting dollars earned last season stay with the school.','EX:A Western Michigan coach goes 6-6 and leaves for Ohio State. The $6 stays with Western Michigan; he inherits whatever Ohio State earned.','Devy rebate rights stay with the school that drafted the player.']}
+]},
+{t:'Coach Conduct',k:'conduct expectations afk check-in checkin inactive lineup removed kicked',r:[
+ {key:'conduct',t:'Expectations',s:'Set lineups, participate, stay current and <b>reachable on Discord</b>. Go dark and you can be removed.',b:['Follow the bylaws, and:','Submit lineups every week your team plays.','Participate within your means (transfers, recruiting, scheduling).','Stay current on league issues and reachable by the commissioner on the league platform. The commish won’t chase you elsewhere.','Coaches not meeting expectations or not responding may be asked to leave or removed.','Issues with coaches, rules or decisions go to the commissioner first.']},
+ {key:'checkin',t:'Preseason Check-In',s:'No check-in before kickoff means <b>AFK</b>: auto lineups, devy picks skipped.',b:['Before the season the commissioner checks in with every school.','Schools that don’t confirm they’re present are considered AFK.','AFK schools get auto lineups and auto-skip in the in-season devy draft.']}
+]},
+{t:'Rule Changes',k:'rule change changes vote voting amend amendment suggest proposal',r:[
+ {key:'changes',t:'How Rules Change',s:'Suggest it, the commish screens it, the league votes on MFL in <b>February</b>. <b>Simple majority</b> passes.',b:['The commissioner can make decisions and changes to protect league integrity.','Coaches may suggest changes. The commissioner checks they fit the spirit of the league, are logical, and are manageable.','Unless it’s an integrity call, the league votes. Simple majority passes.','Votes are held on MFL starting in February, after rollover.','Big strategy-shifting changes get enough lead time.','EX:A scoring change like standard to PPR gets a full year’s notice.']}
+]}
+];
+/* Common questions → answer + rule keys */
+var FAQ = [
+ {q:'How much is the buy-in?',a:'<b>$50</b> for a Power 5 school, <b>$25</b> for a Minor school, plus a ~$2 share of the MFL fee. Paid on LeagueSafe.',r:['buyin'],k:'cost price pay fee money'},
+ {q:'When is my buy-in due?',a:'Pay or vote in the returning poll by <b>Jan 31</b>. Voters get until the <b>February rollover</b> to pay.',r:['due'],k:'deadline pay late'},
+ {q:'Can I trade players?',a:'<b>No.</b> Players can’t be traded, and devy picks can’t be swapped.',r:['pool','devydraft'],k:'trade trading swap'},
+ {q:'What’s the starting lineup?',a:'<b>8 starters</b>: 1 QB, 1–5 RB, 2–6 WR/TE. 30 roster spots total.',r:['roster','lineup'],k:'start lineup roster'},
+ {q:'How do I redshirt a freshman?',a:'Put him in a <b>Taxi Squad slot before Week 5 Thursday kickoff</b> and leave him there all season.',r:['trad'],k:'redshirt taxi rookie'},
+ {q:'How does a medical redshirt work?',a:'Injured (IR/I on MFL), in an <b>IR slot before Week 5 Thursday kickoff</b>, never medically redshirted, and kept there all season.',r:['med'],k:'medical ir injured injury'},
+ {q:'How do I earn recruiting dollars?',a:'<b>$200 base</b>, plus <b>$1</b> per win and postseason appearance, Gameday, awards, draft prestige and transfer returns.',r:['budget','wins','gameday'],k:'money budget earn'},
+ {q:'How is the playoff field set?',a:'<b>Five Power 5 champs + 11 at-larges</b>, seeded by national ranking after Week 13.',r:['playoff','formula'],k:'playoff seed bracket'},
+ {q:'How are conference ties broken?',a:'Conf W-L %, then <b>head-to-head</b>, All-Play %, total points, national rank.',r:['tb'],k:'tiebreaker tie standings'},
+ {q:'When does a player leave early, and what to keep him?',a:'One national or two conference awards triggers it. Retain for <b>$20</b> or <b>$10</b>; it climbs to $30 / $20 if he wins again.',r:['early'],k:'declare early retain keep'},
+ {q:'What do I get back for dropping a player?',a:'If another school wins him in the transfer auction, <b>50%</b> of his price comes back to your budget.',r:['drop'],k:'drop cut transfer portal'},
+ {q:'How does the devy rebate work?',a:'Win your own devy pick in the freshmen auction and get <b>up to $20</b> back. Each year you retain an undeclared pick cuts it $5.',r:['devyauc','devyret'],k:'devy rebate'},
+ {q:'How do I set up a rivalry?',a:'Both coaches register it with the commish on Discord: name it, set a <b>$0–5</b> recurring wager. Two max.',r:['riv'],k:'rival rivalry wager'},
+ {q:'Can I switch schools?',a:'Petition for a vacancy. Priority is <b>tenure</b>, then career wins, then PF/G. You take the new roster as-is.',r:['petition','move'],k:'switch vacancy move'}
+];
+/* ============================================= */
+var root = document.getElementById('cffb-bl'); if (!root) return;
+var $ = function(k){ return root.querySelector('[data-bl="'+k+'"]'); };
+var R = {}, ALL = [];
+A.forEach(function(a, ai){ a.n = ai + 1; a.r.forEach(function(r, ri){ r.art = a; r.id = a.n + '.' + (ri + 1); R[r.key] = r; ALL.push(r); }); });
+function isNew(r){ return r.nw && r.nw >= BL.newSince; }
+var NEWS = ALL.filter(isNew);
+function strip(s){ return String(s).replace(/<[^>]+>/g, ' ').replace(/^EX:/, ''); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+/* ---- search ---- */
+var STOP = 'a an the is are am do does did i my me we our you your to of in on for at by with and or if it its be can how what when where who why which that this there their they them so get got much many any will would should could about as from into than then was were has have had not no yes up out'.split(' ').reduce(function(o,w){ o[w]=1; return o; }, {});
+var SYN = { money:['dollar','budget','fund'], dollar:['money','budget'], cost:['buy','fee','price','pay'], pay:['buy','fee','payout','paid'], paid:['pay','payout'], fee:['buy','pay'], buyin:['buy','fee'], ir:['medical','injured','injury'], injured:['ir','medical'], injury:['ir','medical'], hurt:['ir','medical','injured'], taxi:['traditional','redshirt'], rookie:['freshman','freshmen'], freshman:['rookie','freshmen'], cut:['drop','dropped','transfer'], release:['drop','transfer'], drop:['cut','transfer','dropped'], keep:['retain','stay'], retain:['keep','stay'], tie:['tiebreaker','tied'], tiebreak:['tiebreaker','tied'], h2h:['head'], playoff:['postseason','bracket','seed'], bracket:['playoff','seed'], rank:['ranking'], points:['scoring','point'], ppr:['reception','scoring'], switch:['vacancy','petition'], leave:['vacancy','declare'], quit:['vacancy','vacant'], start:['lineup','starter'], starter:['lineup','start'], trade:['traded'], prize:['payout','pot'], win:['wins','won'], deadline:['due','date'], when:['date','week'], devy:['rebate'], afk:['inactive','check'], vote:['rule','change'] };
+function stem(w){ if (w.length > 5 && /ies$/.test(w)) return w.slice(0,-3)+'y'; if (w.length > 5 && /ing$/.test(w)) return w.slice(0,-3); if (w.length > 4 && /ed$/.test(w)) return w.slice(0,-2); if (w.length > 3 && /s$/.test(w) && !/ss$/.test(w)) return w.slice(0,-1); return w; }
+function toks(s){ return strip(s).toLowerCase().replace(/buy-in/g,'buyin buy').replace(/[’']/g,'').split(/[^a-z0-9]+/).filter(function(w){ return w && !STOP[w]; }).map(stem); }
+ALL.forEach(function(r){ var body = (r.b || []).concat((r.cal || []).map(function(c){ return c.join(' '); })).concat((r.tbl || []).map(function(c){ return c.join(' '); })).join(' ');
+  r.ix = { t: toks(r.t), k: toks(r.art.t + ' ' + r.art.k), s: toks(r.s), b: toks(body) }; r.raw = (r.t + ' ' + strip(r.s) + ' ' + strip(body)).toLowerCase(); });
+FAQ.forEach(function(f){ f.ix = { t: toks(f.q), k: toks(f.k), s: toks(f.a), b: [] }; f.raw = (f.q + ' ' + strip(f.a)).toLowerCase(); });
+function qterms(q){ var base = toks(q), ex = [];
+  base.forEach(function(t){ (SYN[t] || []).forEach(function(s){ s = stem(s); if (base.indexOf(s) < 0 && ex.indexOf(s) < 0) ex.push(s); }); });
+  return { base: base, ex: ex }; }
+function hits(arr, t){ var n = 0; for (var i = 0; i < arr.length; i++){ if (arr[i] === t) n += 1; else if (t.length >= 3 && arr[i].indexOf(t) === 0) n += .5; } return n; }
+function score(o, Q, q){
+  var s = 0, matched = 0;
+  function one(t, w){ var h = hits(o.ix.t, t) * 6 + hits(o.ix.k, t) * 3 + hits(o.ix.s, t) * 3 + Math.min(3, hits(o.ix.b, t)) * 1; if (h > 0 && w === 1) matched++; s += h * w; }
+  Q.base.forEach(function(t){ one(t, 1); }); Q.ex.forEach(function(t){ one(t, .5); });
+  if (!s) return 0;
+  if (Q.base.length > 1 && matched === Q.base.length) s *= 1.6;
+  var ph = q.toLowerCase().trim(); if (ph.length > 3 && o.raw.indexOf(ph) >= 0) s += 6;
+  return s;
+}
+function search(q){
+  var Q = qterms(q); if (!Q.base.length) return { list: [], faq: null, Q: Q };
+  var list = ALL.map(function(r){ return { r: r, s: score(r, Q, q) }; }).filter(function(x){ return x.s > 0; }).sort(function(a,b){ return b.s - a.s; });
+  if (list.length) { var top = list[0].s; list = list.filter(function(x){ return x.s >= top * .18; }).slice(0, 10); }
+  var fq = FAQ.map(function(f){ return { f: f, s: score(f, Q, q) }; }).sort(function(a,b){ return b.s - a.s; })[0];
+  var faq = fq && fq.s >= 9 ? fq.f : null;
+  return { list: list, faq: faq, Q: Q };
+}
+function hlRe(Q){ var t = Q.base.concat(Q.ex).filter(function(x){ return x.length >= 2; }).map(function(x){ return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }); return t.length ? new RegExp('\\b(' + t.join('|') + ')[a-z]*', 'gi') : null; }
+function hl(html, re){ if (!re) return html; return html.replace(/(<[^>]+>)|([^<]+)/g, function(m, tag, txt){ return tag || txt.replace(re, '<mark>$&</mark>'); }); }
+function snippet(r, re){ if (!re) return ''; var best = null, bn = 0; (r.b || []).forEach(function(l){ re.lastIndex = 0; var n = (strip(l).match(re) || []).length; if (n > bn){ bn = n; best = l; } }); return best ? hl(esc(strip(best)), re) : ''; }
+
+/* ---- render ---- */
+var ui = { tab: 'faq', art: 1, q: '', open: {}, from: null, flash: null };
+function cite(k){ var r = R[k]; return '<button type="button" class="bl-cite" data-act="go" data-k="'+k+'">§'+r.id+'<span>'+r.t+'</span></button>'; }
+function newTag(r){ return isNew(r) ? '<span class="bl-new">NEW · '+r.nw+'</span>' : ''; }
+function bar(){
+  $('sub').textContent = 'Every answer cites its section';
+  $('docLink').href = BL.doc;
+}
+function tabs(){
+  var nx = nextEv(), nd = nx ? daysTo(nx.a) : null;
+  var t = [['faq','Common Questions',FAQ.length,'Questions'],['cal','League Calendar',nx ? (nd <= 0 ? 'TODAY' : 'NEXT ' + nd + 'D') : '\u2014','Calendar'],['browse','Browse Bylaws',A.length,'Browse']];
+  var on = ui.q ? 'res' : ui.tab;
+  $('tabs').innerHTML = (ui.q ? '<button type="button" class="bl-tab on" data-act="noop"><span>Results</span><i>'+ui.res.list.length+'</i></button>' : '') +
+    t.map(function(x){ return '<button type="button" class="bl-tab'+(on===x[0]?' on':'')+'" data-act="tab" data-v="'+x[0]+'"><span class="lg">'+x[1]+'</span><span class="sm">'+x[3]+'</span><i>'+x[2]+'</i></button>'; }).join('') +
+    '<span class="sp"></span><a class="bl-doc" href="'+BL.doc+'" target="_blank" rel="noopener">Official bylaws ↗</a>';
+}
+function vFaq(){
+  var cards = FAQ.map(function(f, i){ return '<div class="bl-faq'+(ui.faqOpen===i?' open':'')+'" style="--i:'+i+'" data-faq="'+i+'"><button type="button" class="bl-fq" data-act="faq" data-v="'+i+'" aria-expanded="'+(ui.faqOpen===i)+'"><h4>'+f.q+'</h4><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div class="bl-fa"><p>'+f.a+'</p><div class="bl-chips">'+f.r.map(cite).join('')+'</div></div></div>'; }).join('');
+  var mnav = '<div class="bl-mnav"><select class="bl-sel" data-bl="jump" aria-label="Jump to an article"><option value="">Jump to an article\u2026</option>'+A.map(function(a){ return '<option value="'+a.n+'">'+pad(a.n)+' \u00B7 '+a.t+'</option>'; }).join('')+'</select><div class="bl-rail">'+BL.popular.map(function(p){ return '<button type="button" class="bl-chip" data-act="q" data-v="'+esc(p)+'">'+esc(p)+'</button>'; }).join('')+'</div></div>';
+  var news = NEWS.length ? '<div class="bl-box hero"><h4>What’s New</h4><ul class="bl-nl">'+NEWS.map(function(r){ return '<li><button type="button" data-act="go" data-k="'+r.key+'"><span class="bl-new">'+r.nw+'</span><b>'+r.t+'</b><small>§'+r.id+' · '+r.art.t+'</small></button></li>'; }).join('')+'</ul></div>' : '';
+  return mnav + '<div class="bl-home"><div><div class="bl-sh"><h3>Common Questions</h3><span>Tap a section to read the full rule</span></div><div class="bl-faqs">'+cards+'</div></div>'+
+    '<div class="bl-side"><div class="bl-box"><h4>Popular Searches</h4><div class="bl-chips">'+BL.popular.map(function(p){ return '<button type="button" class="bl-chip" data-act="q" data-v="'+esc(p)+'">'+esc(p)+'</button>'; }).join('')+'</div></div>'+news+
+    '<div class="bl-box"><h4>Jump to an Article</h4><div class="bl-chips">'+A.map(function(a){ return '<button type="button" class="bl-chip" data-act="art" data-v="'+a.n+'">'+pad(a.n)+' · '+a.t+'</button>'; }).join('')+'</div></div></div></div>';
+}
+function vRes(){
+  var res = ui.res, re = hlRe(res.Q);
+  var best = res.faq ? '<div class="bl-best"><div><div class="bl-lab" style="color:var(--gold-l);margin:0">Quick answer</div><h4>'+res.faq.q+'</h4><p>'+res.faq.a+'</p></div><div class="bl-chips">'+res.faq.r.map(cite).join('')+'</div></div>' : '';
+  if (!res.list.length) return '<div class="bl-empty"><span>No rules match <b style="color:var(--fg)">“'+esc(ui.q)+'”</b>. Try a simpler word.</span><div class="bl-chips" style="justify-content:center">'+BL.popular.map(function(p){ return '<button type="button" class="bl-chip" data-act="q" data-v="'+esc(p)+'">'+esc(p)+'</button>'; }).join('')+'</div></div>';
+  return best + '<div class="bl-sh"><h3>'+res.list.length+' matching rule'+(res.list.length===1?'':'s')+'</h3><span>Best match first</span></div><ol class="bl-res">'+
+    res.list.map(function(x, i){ var r = x.r, sn = snippet(r, re); return '<li><button type="button" class="bl-rb" data-act="go" data-k="'+r.key+'" style="--i:'+i+'"><span class="bl-rn">§'+r.id+'</span><span><small>Article '+r.art.n+' · '+r.art.t+'</small><b>'+hl(esc(r.t), re)+' '+newTag(r)+'</b><p>'+hl(r.s, re)+'</p>'+(sn ? '<p class="sn">'+sn+'</p>' : '')+'</span><span class="bl-go">→</span></button></li>'; }).join('')+'</ol>';
+}
+function full(r){
+  var h = '';
+  if (r.cal) h += '<ul class="bl-cal">'+r.cal.map(function(c){ return '<li><span>'+c[0]+'</span><span>'+c[1]+'</span></li>'; }).join('')+'</ul>';
+  if (r.pay){ var P = [[17.3,600],[8.67,300],[6.79,235],[5.78,200],[4.91,170],[4.34,150],[4.05,140],[3.9,135],[3.76,130],[3.61,125],[3.47,120],[3.32,115],[3.18,110],[3.03,105],[2.89,100],[2.75,95],[2.6,90],[2.46,85],[2.31,80],[2.17,75],[2.02,70],[1.88,65],[1.73,60],[1.59,55],[1.45,50]];
+    h += '<div class="bl-pay">'+P.map(function(p, i){ return '<div><small>#'+(i+1)+'</small><b>$'+p[1]+'</b><span>'+p[0]+'% of pot</span></div>'; }).join('')+'</div>'; }
+  if (r.tbl) h += '<table class="bl-tbl"><thead><tr>'+r.tbl[0].map(function(c, i){ return '<th'+(i&&r.tbl[0].length===2?' class="r"':'')+'>'+c+'</th>'; }).join('')+'</tr></thead><tbody>'+r.tbl.slice(1).map(function(row){ return '<tr>'+row.map(function(c, i){ return '<td'+(i&&row.length===2?' class="r"':'')+'>'+c+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>';
+  if (r.b && r.b.length) h += '<ul style="'+(h?'margin-top:12px':'')+'">'+r.b.map(function(l){ return /^EX:/.test(l) ? '<li class="ex">'+l.slice(3)+'</li>' : '<li>'+l+'</li>'; }).join('')+'</ul>';
+  return h;
+}
+function vBrowse(){
+  var a = A[ui.art - 1], allOpen = a.r.every(function(r){ return ui.open[r.key]; });
+  var toc = A.map(function(x){ return '<button type="button" class="bl-ti'+(x.n===ui.art?' on':'')+'" data-act="art" data-v="'+x.n+'"><em>'+pad(x.n)+'</em><span>'+x.t+'</span>'+(x.r.some(isNew)?'<i title="New rule"></i>':'')+'</button>'; }).join('');
+  var sel = '<select class="bl-sel" data-bl="sel" aria-label="Choose article">'+A.map(function(x){ return '<option value="'+x.n+'"'+(x.n===ui.art?' selected':'')+'>'+pad(x.n)+' · '+x.t+'</option>'; }).join('')+'</select>';
+  var rules = a.r.map(function(r){ var o = ui.open[r.key]; return '<div class="bl-rule'+(o?' open':'')+(ui.flash===r.key?' flash':'')+'" data-rule="'+r.key+'"><button type="button" class="bl-rh" data-act="rule" data-k="'+r.key+'" aria-expanded="'+!!o+'"><span class="bl-rn">§'+r.id+'</span><b>'+r.t+newTag(r)+'</b><span class="bl-ex"><span>'+(o?'Hide':'Full rule')+'</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span><p>'+r.s+'</p></button><div class="bl-rd"><div><div class="bl-full">'+full(r)+'</div></div></div></div>'; }).join('');
+  var pv = A[ui.art - 2], nx = A[ui.art];
+  return '<div class="bl-br"><nav class="bl-toc" aria-label="Articles">'+toc+'</nav><div>'+sel+
+    (ui.from ? '<button type="button" class="bl-back" data-act="back">← Back to results for “'+esc(ui.from)+'”</button>' : '')+
+    '<div class="bl-ah"><div><small>ARTICLE '+pad(a.n)+' · '+a.r.length+' RULE'+(a.r.length===1?'':'S')+'</small><h3>'+a.t+'</h3></div><button type="button" class="bl-lnk" data-act="all">'+(allOpen?'Collapse all':'Expand all')+'</button></div>'+
+    '<div class="bl-rules">'+rules+'</div><div class="bl-pn">'+(pv?'<button type="button" data-act="art" data-v="'+pv.n+'"><small>← PREVIOUS</small><b>'+pv.t+'</b></button>':'')+(nx?'<button type="button" class="nx" data-act="art" data-v="'+nx.n+'"><small>NEXT →</small><b>'+nx.t+'</b></button>':'')+'</div></div></div>';
+}
+/* ---- league calendar ---- */
+var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], MOL = ['January','February','March','April','May','June','July','August','September','October','November','December'], WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function lyear(){ var n = new Date(); return n.getMonth() >= 1 ? n.getFullYear() : n.getFullYear() - 1; }
+var EV = (function(){
+  var y = lyear(), w1 = new Date(BL.nflWeek1 + 'T00:00:00'); w1.setFullYear(y);
+  function d(m, dd, o){ return new Date(y + (o || 0), m - 1, dd); }
+  function wk(n, off){ var x = new Date(w1); x.setDate(x.getDate() + 7 * (n - 1) + (off || 0)); return x; }
+  var L = [
+   ['League year starts','MFL rollover. Rule-change votes open on MFL.',d(2,1),0,'admin',['cal','changes']],
+   ['Vacancies filled','Open schools go to petitioning coaches by tenure, wins, PF/G.',d(2,1),d(5,1),'window',['petition']],
+   ['Conference schedule released','Randomly generated. Get conference rivals locked in first.',d(3,1),0,'admin',['confsched']],
+   ['Recruiting dollars administered','Budgets set: $200 base plus last season\u2019s earnings.',d(5,1),0,'admin',['budget']],
+   ['Transfer drop deadline','Last day to cut players into the portal. Auction start date announced.',d(5,15),0,'deadline',['drop','portal']],
+   ['Transfer auction','Upperclassmen up for bid. 50% back if your cut player goes elsewhere.',d(5,16),d(5,29),'window',['portal','drop']],
+   ['Devy player auction','Declared devy picks open at $0. Win yours back for up to $20 rebate.',d(5,31),0,'window',['devyauc']],
+   ['Freshmen auction','Rookies auctioned inside your conference. Estimated window.',d(6,1),d(6,15),'window',['auction']],
+   ['Walk-on auction','Leftovers and late adds. Estimated window.',d(6,15),d(8,24),'window',['auction','close']],
+   ['Scheduling window','Book your 4 non-conference games. Both schools verify.',d(7,1),d(8,31),'window',['sched']],
+   ['Taxi & IR slots open','Stash redshirt candidates now.',d(8,25),0,'admin',['trad','med']],
+   ['Non-conference games','Weeks 1\u20134. Non-conference rivalries live here.',wk(1),wk(4,4),'games',['params'],'Weeks 1\u20134'],
+   ['Devy draft','Two rounds, 24 hours per pick, worst-to-first.',wk(4,-2),0,'window',['devydraft'],'Week 4 \u00B7 Tue'],
+   ['Taxi & IR lock','Thursday kickoff. Not stashed by now? No redshirt this year.',wk(5),0,'deadline',['trad','med'],'Week 5 \u00B7 Thu'],
+   ['Conference play','Weeks 5\u201312. Rivalry week is Week 12, then Week 5.',wk(5),wk(12,4),'games',['params','tb'],'Weeks 5\u201312'],
+   ['Returning poll opens','Mandatory vote on whether you\u2019re back next season. Pay or vote by Jan 31.',wk(12),0,'admin',['due','checkin'],'Week 12'],
+   ['Player awards finalized','Heisman, position awards, All-Conference, Coach of the Year.',wk(12,5),0,'admin',['natl','allconf','coy'],'After Week 12'],
+   ['Conference championships','Top two in each conference standings.',wk(13),wk(13,4),'games',['ccg','tb'],'Week 13'],
+   ['Bowl games','Six wins gets you in.',wk(14),wk(14,4),'games',['bowls'],'Week 14'],
+   ['National championship playoff','16 teams, seeded by national ranking after Week 13.',wk(14),wk(17,4),'games',['playoff'],'Weeks 14\u201317'],
+   ['League payouts','Top 25 and conference payouts paid out.',wk(18),0,'admin',['top25','confpay'],'Week 18'],
+   ['Buy-in & returning vote due','Pay your buy-in on LeagueSafe or vote in the returning poll. Miss both and your school goes vacant.',d(1,31,1),0,'deadline',['due']],
+   ['Early declares & transfers announced','See who\u2019s leaving early and who entered the portal, before retention decisions.',d(3,1),0,'admin',['early','portal']],
+   ['Early-declare & transfer retentions due','Forfeit recruiting dollars to keep players declaring early. Devy retention notices due too.',d(3,31),0,'deadline',['early','devyret']]
+  ];
+  var ev = L.map(function(x, i){ return { i: i, t: x[0], d: x[1], a: x[2], b: x[3] || null, ty: x[4], r: x[5], wl: x[6] || '' }; });
+  ev.ph = [['off','Offseason',d(2,1),d(5,1)],['rec','Recruiting',d(5,1),wk(1)],['reg','Regular season',wk(1),wk(13)],['post','Postseason',wk(13),wk(18,4)],['off','Offseason',wk(18,4),d(2,1,1)]];
+  ev.y = y; ev.s = d(2,1); ev.e = d(2,1,1);
+  return ev;
+})();
+function evStat(e){ var n = Date.now(), end = new Date(e.b || e.a); end.setHours(23,59,59); if (n > end) return 'done'; if (n >= e.a.getTime()) return 'now'; return 'up'; }
+function daysTo(dt){ var t = new Date(); t.setHours(0,0,0,0); return Math.round((dt - t) / 864e5); }
+function fd(e){ var a = e.a, b = e.b; if (!b) return MO[a.getMonth()] + ' ' + a.getDate(); return a.getMonth() === b.getMonth() ? MO[a.getMonth()] + ' ' + a.getDate() + '\u2013' + b.getDate() : MO[a.getMonth()] + ' ' + a.getDate() + ' \u2013 ' + MO[b.getMonth()] + ' ' + b.getDate(); }
+function nextEv(){ return EV.filter(function(e){ return evStat(e) === 'up'; })[0] || null; }
+function pct(dt){ return Math.max(0, Math.min(100, (dt - EV.s) / (EV.e - EV.s) * 100)); }
+function vCal(){
+  var nx = nextEv(), live = EV.filter(function(e){ return evStat(e) === 'now'; }), today = new Date(), tp = pct(today), inYr = today >= EV.s && today < EV.e;
+  var dn = nx ? daysTo(nx.a) : 0;
+  var hero = nx ? '<div class="bl-up"><div><div class="bl-lab" style="margin:0;color:var(--gold-l)">Up next</div><h4>'+nx.t+'</h4><div class="dt">'+WD[nx.a.getDay()]+' \u00B7 '+fd(nx)+(nx.wl?' \u00B7 '+nx.wl:'')+'</div><p>'+nx.d+'</p><div class="bl-chips">'+nx.r.map(cite).join('')+'</div>'+
+    (live.length ? '<div class="bl-now"><span class="bl-dot"></span>HAPPENING NOW'+live.map(function(e){ return '<button type="button" class="bl-chip" data-act="ev" data-v="'+e.i+'">'+e.t+'</button>'; }).join('')+'</div>' : '')+
+    '</div><div class="bl-cd"><b>'+(dn <= 0 ? 'TODAY' : dn)+'</b><small>'+(dn <= 0 ? '' : dn === 1 ? 'DAY TO GO' : 'DAYS TO GO')+'</small></div></div>' : '<div class="bl-up"><div><h4>League year complete</h4><p>The next calendar posts at the February rollover.</p></div></div>';
+  var MS = []; for (var k = 0; k < 12; k++) MS.push(new Date(EV.y, 1 + k, 1));
+  var cur = inYr ? MS.findIndex(function(x){ return x.getMonth() === today.getMonth() && x.getFullYear() === today.getFullYear(); }) : 0; if (cur < 0) cur = 0;
+  if (ui.cm == null) ui.cm = cur; var M = MS[ui.cm], T0 = new Date(); T0.setHours(0,0,0,0); var sel = ui.cd ? new Date(M.getFullYear(), M.getMonth(), ui.cd) : null;
+  function day0(x){ var c = new Date(x); c.setHours(0,0,0,0); return c; }
+  function covers(e, d){ return d >= day0(e.a) && d <= day0(e.b || e.a); }
+  var rail = MS.map(function(x, i){ var ev = EV.filter(function(e){ return e.a.getMonth() === x.getMonth() && e.a.getFullYear() === x.getFullYear(); });
+    return '<button type="button" class="bl-mgo'+(i===ui.cm?' on':'')+(inYr&&i===cur?' now':'')+'" data-act="cm" data-v="'+i+'">'+MO[x.getMonth()]+'<i>'+ev.slice(0,4).map(function(e){ return '<span class="'+(e.ty==='deadline'?'dl':'')+'"></span>'; }).join('')+'</i></button>'; }).join('');
+  var dim = new Date(M.getFullYear(), M.getMonth() + 1, 0).getDate(), cells = '';
+  ['S','M','T','W','T','F','S'].forEach(function(w){ cells += '<div class="bl-mwd">'+w+'</div>'; });
+  for (var p = 0; p < M.getDay(); p++) cells += '<div class="bl-md out"></div>';
+  for (var dd = 1; dd <= dim; dd++){
+    var day = new Date(M.getFullYear(), M.getMonth(), dd), st = EV.filter(function(e){ return day0(e.a).getTime() === day.getTime(); }), rng = EV.some(function(e){ return e.b && covers(e, day); });
+    cells += '<button type="button" class="bl-md'+(rng?' rng':'')+(day<T0?' past':'')+(day.getTime()===T0.getTime()?' today':'')+(ui.cd===dd?' sel':'')+'" data-act="cday" data-v="'+dd+'" aria-label="'+MOL[M.getMonth()]+' '+dd+'"><b>'+dd+'</b>'+st.slice(0,2).map(function(e){ return '<em class="'+(e.ty==='deadline'?'dl':'')+(nx&&e.i===nx.i?' nx':'')+'">'+e.t+'</em>'; }).join('')+'<span class="dots">'+st.map(function(e){ return '<span class="'+(e.ty==='deadline'?'dl':'')+'"></span>'; }).join('')+'</span></button>';
+  }
+  var me = new Date(M.getFullYear(), M.getMonth() + 1, 0), list = EV.filter(function(e){ return day0(e.a) <= me && day0(e.b || e.a) >= M; }), shown = sel ? list.filter(function(e){ return covers(e, sel); }) : list;
+  var ag = shown.length ? shown.map(function(e){ var s = evStat(e), isN = nx && e.i === nx.i, dd = daysTo(e.a);
+    var stt = s === 'done' ? '<span class="bl-st">DONE</span>' : s === 'now' ? '<span class="bl-st now">\u25CF IN PROGRESS</span>' : isN ? '<span class="bl-st nx">NEXT \u00B7 '+(dd<=0?'TODAY':dd+'D')+'</span>' : e.ty === 'deadline' ? '<span class="bl-st dl">DEADLINE \u00B7 '+dd+'D</span>' : '<span class="bl-st">IN '+dd+'D</span>';
+    return '<div class="bl-ev '+(s==='done'?'done':s==='now'?'now':isN?'nx':'')+'" data-ev="'+e.i+'"><div class="bl-ed"><b>'+fd(e)+'</b><small>'+(e.wl || WD[e.a.getDay()])+'</small></div><div><h6>'+e.t+'</h6><p>'+e.d+'</p><div class="bl-chips">'+e.r.map(cite).join('')+'</div></div>'+stt+'</div>'; }).join('') : '<div class="bl-mempty">Nothing on the league calendar '+(sel?'this day':'this month')+'.</div>';
+  var grid = '<div class="bl-mrail">'+rail+'</div><div class="bl-mwrap"><div class="bl-mcal"><div class="bl-mch"><h3>'+MOL[M.getMonth()]+'<small>'+M.getFullYear()+'</small></h3><div class="bl-mnv"><button type="button" data-act="cprev"'+(ui.cm===0?' disabled':'')+' aria-label="Previous month">\u2039</button><button type="button" data-act="ctoday" aria-label="Today">\u25CF</button><button type="button" data-act="cnext"'+(ui.cm===11?' disabled':'')+' aria-label="Next month">\u203A</button></div></div><div class="bl-mg">'+cells+'</div><div class="bl-mkey"><span><i style="background:rgba(201,162,39,.2);border-top:2px solid var(--gold-d)"></i>Window</span><span><i style="background:var(--gold)"></i>Deadline</span><span><i style="background:var(--fg);border-radius:50%"></i>Today</span></div></div>'+
+    '<div class="bl-mag"><h4>'+(sel ? WD[sel.getDay()]+' \u00B7 '+MO[sel.getMonth()]+' '+sel.getDate()+'<button type="button" data-act="call">Whole month</button>' : MOL[M.getMonth()]+' \u00B7 '+list.length+(list.length===1?' event':' events'))+'</h4>'+ag+'</div></div>';
+  return hero + grid;
+}
+function evMonth(i){ var e = EV[+i]; if (!e) return; for (var k = 0; k < 12; k++){ var x = new Date(EV.y, 1 + k, 1); if (x.getMonth() === e.a.getMonth() && x.getFullYear() === e.a.getFullYear()){ ui.cm = k; ui.cd = null; return; } } }
+function flashEv(i){ var el = root.querySelector('[data-ev="'+i+'"]'); if (!el) return; topOf(el); el.classList.add('flash'); setTimeout(function(){ el.classList.remove('flash'); }, 1600); }
+function view(){
+  tabs();
+  $('view').innerHTML = ui.q ? vRes() : ui.tab === 'browse' ? vBrowse() : ui.tab === 'cal' ? vCal() : vFaq();
+  $('qwrap').classList.toggle('has', !!ui.q);
+  railInit();
+}
+function railInit(){
+  var r = root.querySelector('.bl-mrail'); if (!r) return;
+  var on = r.querySelector('.bl-mgo.on');
+  if (on) r.scrollLeft = on.offsetLeft - (r.clientWidth - on.offsetWidth) / 2 - r.offsetLeft;
+  var edge = function(){ r.classList.toggle('l', r.scrollLeft > 4); r.classList.toggle('r', r.scrollLeft < r.scrollWidth - r.clientWidth - 4); };
+  edge(); r.addEventListener('scroll', edge, { passive: true });
+  r.addEventListener('wheel', function(e){ if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && r.scrollWidth > r.clientWidth){ r.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  var sx = 0, sl = 0, drag = false, moved = false;
+  r.addEventListener('pointerdown', function(e){ if (e.pointerType !== 'mouse') return; drag = true; moved = false; sx = e.clientX; sl = r.scrollLeft; });
+  r.addEventListener('pointermove', function(e){ if (!drag) return; var dx = e.clientX - sx; if (Math.abs(dx) > 4){ moved = true; r.classList.add('drag'); } r.scrollLeft = sl - dx; });
+  var end = function(){ drag = false; r.classList.remove('drag'); };
+  r.addEventListener('pointerup', end); r.addEventListener('pointerleave', end);
+  r.addEventListener('click', function(e){ if (moved){ e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+}
+function topOf(el){ var y = el.getBoundingClientRect().top + window.pageYOffset - 16; window.scrollTo({ top: y, behavior: 'smooth' }); }
+var mk = root.querySelector('.bl-mk'); mk.classList.add('intro'); setTimeout(function(){ mk.classList.remove('intro'); }, 2000);
+function flip(dir){ mk.classList.remove('fwd','back','intro'); void mk.offsetWidth; mk.classList.add(dir); }
+function open(){ if (!root.classList.contains('is-open')){ root.classList.add('is-open'); barEl.setAttribute('aria-expanded', 'true'); $('togLabel').textContent = 'COLLAPSE'; flip('fwd'); } }
+function go(k){
+  var r = R[k]; if (!r) return;
+  ui.from = ui.q || ui.from; ui.q = ''; $('q').value = ''; ui.tab = 'browse'; ui.art = r.art.n; ui.open[k] = true; ui.flash = k;
+  view(); open();
+  var el = root.querySelector('[data-rule="'+k+'"]'); if (el) setTimeout(function(){ topOf(el); }, 60);
+  setTimeout(function(){ if (ui.flash === k){ ui.flash = null; var e = root.querySelector('[data-rule="'+k+'"]'); if (e) e.classList.remove('flash'); } }, 1800);
+}
+function setQ(v){ ui.q = v.trim(); if (ui.q){ ui.res = search(ui.q); ui.from = null; } view(); }
+
+/* ---- events ---- */
+root.addEventListener('click', function(e){
+  var b = e.target.closest('[data-act]'); if (!b || !root.contains(b)) return;
+  var a = b.getAttribute('data-act'), v = b.getAttribute('data-v'), k = b.getAttribute('data-k');
+  if (a === 'clear'){ e.stopPropagation(); $('q').value = ''; setQ(''); $('q').focus(); return; }
+  if (a === 'tab'){ ui.tab = v; ui.q = ''; $('q').value = ''; ui.from = null; view(); }
+  else if (a === 'q'){ $('q').value = v; setQ(v); open(); }
+  else if (a === 'go'){ go(k); }
+  else if (a === 'art'){ ui.art = +v; ui.tab = 'browse'; ui.q = ''; $('q').value = ''; ui.from = null; view(); var t = root.querySelector('.bl-tabs'); if (t && t.getBoundingClientRect().top < 0) topOf(t); }
+  else if (a === 'rule'){ ui.open[k] = !ui.open[k]; var el = root.querySelector('[data-rule="'+k+'"]'); el.classList.toggle('open', ui.open[k]); b.setAttribute('aria-expanded', ui.open[k]); b.querySelector('.bl-ex span').textContent = ui.open[k] ? 'Hide' : 'Full rule'; }
+  else if (a === 'all'){ var art = A[ui.art - 1], to = !art.r.every(function(r){ return ui.open[r.key]; }); art.r.forEach(function(r){ ui.open[r.key] = to; }); view(); }
+  else if (a === 'ev'){ ui.tab = 'cal'; ui.q = ''; $('q').value = ''; evMonth(v); view(); setTimeout(function(){ flashEv(v); }, 40); }
+  else if (a === 'cm'){ ui.cm = +v; ui.cd = null; view(); }
+  else if (a === 'cprev' && ui.cm > 0){ ui.cm--; ui.cd = null; view(); }
+  else if (a === 'cnext' && ui.cm < 11){ ui.cm++; ui.cd = null; view(); }
+  else if (a === 'ctoday'){ ui.cm = null; var t = new Date(); ui.cd = null; view(); var td = root.querySelector('.bl-md.today'); if (td){ ui.cd = t.getDate(); view(); } }
+  else if (a === 'cday'){ ui.cd = ui.cd === +v ? null : +v; view(); }
+  else if (a === 'call'){ ui.cd = null; view(); }
+  else if (a === 'faq'){ var fi = +v, card = b.parentNode, op = !card.classList.contains('open'); root.querySelectorAll('.bl-faq.open').forEach(function(c){ c.classList.remove('open'); c.querySelector('.bl-fq').setAttribute('aria-expanded','false'); }); card.classList.toggle('open', op); b.setAttribute('aria-expanded', op); ui.faqOpen = op ? fi : null; }
+  else if (a === 'back'){ var f = ui.from; ui.from = null; $('q').value = f; setQ(f); topOf(root.querySelector('.bl-tabs')); }
+});
+root.addEventListener('change', function(e){ var w = e.target.getAttribute('data-bl'); if (w === 'sel'){ ui.art = +e.target.value; ui.from = null; view(); } else if (w === 'jump' && e.target.value){ ui.art = +e.target.value; ui.tab = 'browse'; ui.from = null; view(); var t = root.querySelector('.bl-tabs'); if (t && t.getBoundingClientRect().top < 0) topOf(t); } });
+var qEl = $('q'), tmr;
+qEl.addEventListener('input', function(){ clearTimeout(tmr); var v = qEl.value; open(); tmr = setTimeout(function(){ setQ(v); }, 120); });
+qEl.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ qEl.value = ''; setQ(''); } else if (e.key === 'Enter' && ui.q && ui.res.list.length){ e.preventDefault(); go(ui.res.list[0].r.key); } });
+$('qwrap').addEventListener('click', function(e){ e.stopPropagation(); });
+document.addEventListener('keydown', function(e){ if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')){ e.preventDefault(); qEl.focus(); } });
+var barEl = root.querySelector('.bl-bar');
+function toggle(){ var o = !root.classList.contains('is-open'); root.classList.toggle('is-open', o); barEl.setAttribute('aria-expanded', o); $('togLabel').textContent = o ? 'COLLAPSE' : 'EXPAND'; flip(o ? 'fwd' : 'back'); }
+barEl.addEventListener('click', toggle);
+barEl.addEventListener('keydown', function(e){ if (e.target === barEl && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); toggle(); } });
+bar(); view();
+})();
+</script>
+<script>
+(function(){
+/* ===== CONFIG — edit to match the live site ===== */
+var SM = {
+  host: 'https://www46.myfantasyleague.com', year: 2026, league: '12011', // auto-detected from the page URL on MFL
+  img: 'screenshots/', // screenshot folder. On MFL use a PUBLIC base URL (GitHub Pages / Imgur). Until the images exist each widget shows a styled "screenshot coming soon" placeholder instead of a broken image.
+  teams: 'assets/teams/', // team pill PNGs. On MFL this must be a public URL // screenshot folder. On MFL this must be a public URL (e.g. GitHub Pages / Imgur album base)
+  discord: 'https://discord.com/',
+  start: 'roster',
+  /* Franchise ID → school, used by the raw-code decoder. On MFL this fills itself from the league feed; add entries here to override. */
+  fran: {}
+};
+/* MFL home-page tabs, left to right. hash: MFL tab anchor (#0 = first tab) */
+var TABS = [
+ {n:'Main',hash:'#0'},{n:'Coach\u2019s Office',hash:'#1'},{n:'Rankings',hash:'#2'},{n:'Gameday',hash:'#3'},{n:'Playoffs',hash:'#4'},
+ {n:'Awards & Recruiting Dollars',hash:'#5'},{n:'Devy',hash:'#6'},{n:'Auction',hash:'#7'},{n:'Almanac',hash:'#8'}
+];
+/* Widgets. tab: index into TABS · img: screenshot · sel: CSS selector for the live widget (optional) · find: heading text used to locate it if no sel
+   hs: numbered callouts — x/y are % of the screenshot. The tour reuses them: f = text inside the widget to spotlight (up = climb n parents), sel = exact element */
+var W = [
+ {key:'standings',tab:0,n:'League Standings',img:'standings.jpg',find:'League Standings',
+  ask:'Who leads my conference? Am I in the title game?',
+  d:'Every conference\u2019s race: national rank, overall and conference record, All-Play % and points.',
+  hs:[{x:12,y:31,t:'Pick a conference',d:'Each tab is one conference. The number is how many schools it has.'},
+      {x:7.5,y:51,t:'Top two play for the title',d:'Rows tagged <b>CCG</b> meet in the Week 13 conference championship.',f:'CCG'},
+      {x:15,y:49,t:'National rank',d:'Where the school sits on the league-wide ladder (Rankings tab).',f:'Nat'},
+      {x:91,y:49,t:'All-Play %',d:'Your record if you played every school every week. Tiebreaker #3 after conf W-L and head-to-head.',f:'All-Play'}],
+  k:'standings conference record wins losses tiebreaker championship race ccg'},
+ {key:'bylaws',tab:0,n:'Rules (this guide)',img:'bylaws.jpg',sel:'#cffb-bl',
+  ask:'What\u2019s the rule? When\u2019s the next deadline?',
+  d:'The searchable rulebook with common questions, every article in plain English, and the league calendar.',
+  hs:[{x:66,y:19,t:'Ask anything',d:'Type a question in plain English. Press <b>/</b> to jump here.',sel:'#cffb-bl .bl-q'},
+      {x:37,y:33.5,t:'Three views',d:'Common questions, the league calendar with countdowns, and every article.',sel:'#cffb-bl .bl-tabs'},
+      {x:10,y:68,t:'Section chips',d:'Every answer cites its section. Tap a <b>\u00A7 chip</b> to read the full rule.',sel:'#cffb-bl .bl-cite'}],
+  k:'rules rulebook bylaw calendar deadline faq question'},
+ {key:'here',tab:0,n:'League Guide',here:1,ask:'Where do I find\u2026?',d:'You are here.',hs:[],k:'site map help'},
+ {key:'roster',tab:1,n:'Roster Board',img:'roster.jpg',find:'Roster Board',codes:1,
+  ask:'Who\u2019s on a roster? How much eligibility does he have left?',
+  d:'Every school\u2019s roster with class, eligibility, redshirt, awards and status for each copy, plus buttons to manage your own: set lineups and move players to Taxi or IR.',
+  hs:[{x:17,y:16,t:'Pick a conference, then a school',d:'Each conference has a school dropdown. Your school loads first.'},
+      {x:85,y:27,t:'School summary',d:'Points, roster count, players redshirting this year, and players out.',f:'Redshirting',up:1},
+      {x:33,y:54,t:'Class code & eligibility dots',d:'<b>R-JR</b> = redshirted junior. Filled dots are seasons used; open dots are seasons left.',f:'Eligibility'},
+      {x:45,y:54,t:'Redshirt',d:'Shield = traditional, cross = medical, with the year taken (<b>RS \u201923</b>).',f:'Redshirt'},
+      {x:54,y:54,t:'Awards',d:'Career awards. One national or two conference awards can trigger an early declare.',f:'Awards'},
+      {x:69,y:54,t:'Status',d:'<b>Active</b>, <b>Taxi</b>, <b>IR</b>, or an injury tag (P / Q / O).',f:'Status'},
+      {x:84,y:36,t:'Roster management buttons',d:'Manage your own roster from here: <b>Set Lineup</b>, move a freshman to <b>Taxi</b> for a traditional redshirt, or an injured player to <b>IR</b> for a medical. Do it before <b>Week 5 Thursday kickoff</b>.',f:'Lineup'}],
+  k:'roster rosters board players copy copies eligibility class redshirt taxi ir injury fr so jr sr gr coach office'},
+ {key:'rankings',tab:2,n:'Power Rankings',img:'rankings.jpg',find:'Power Rankings',
+  ask:'Where do I rank nationally? Am I playoff bound?',
+  d:'All 100 schools on one ladder. Sets playoff at-large bids, bowl matchups and Top 25 payouts.',
+  hs:[{x:20,y:20,t:'Filter by conference',d:'<b>All</b> is the full national ladder. Scroll sideways for every conference.'},
+      {x:7,y:48,t:'Rank & weekly move',d:'Arrows show movement since last week.',f:'Rank'},
+      {x:44,y:46,t:'All-Play & Opp. All-Play',d:'The two percentages that drive the ranking formula.',f:'All-Play'},
+      {x:56,y:44,t:'CFFB score',d:'<b>(wins + 1) \u00D7 (All-Play % + Opp. All-Play %) + postseason wins.</b> Top 11 non-champs after Week 13 get at-large bids.',f:'CFFB'}],
+  k:'rankings rank national top 25 poll playoff at-large bowl payout formula power'},
+ {key:'gameday',tab:3,n:'College Gameday',img:'gameday.jpg',sel:'#cffb-gd',
+  ask:'What\u2019s the game of the week?',
+  d:'The spotlight matchup each regular-season week, picked by lowest average rank.',
+  hs:[{x:28,y:13,t:'This week\u2019s pick',d:'Both schools earn <b>$1</b> recruiting. The primary game earns <b>$1 more</b>.'},
+      {x:50,y:34,t:'The matchup',d:'Ranks and records for both schools. Rivalry games are tagged.'}],
+  k:'gameday game of the week spotlight matchup rivalry'},
+ {key:'live',tab:3,n:'Live Scoring',img:'live.jpg',find:'Live Scoring',
+  ask:'How\u2019s my game going right now?',
+  d:'Every matchup live, with projections and players left to play.',
+  hs:[{x:14,y:26,t:'Every live game',d:'Tap a game to load it below. Gold border = the one you\u2019re viewing.'},
+      {x:44,y:50,t:'Score & projection',d:'Live points with the projected final underneath.',f:'Proj'},
+      {x:72,y:52,t:'Players left',d:'Starters playing now, yet to play, and final.',f:'Playing'}],
+  k:'live scoring scores score projection'},
+ {key:'playoffs',tab:4,n:'Playoff Bracket',img:'playoffs.jpg',find:'Championship',
+  ask:'Who\u2019s in, and who do we play?',
+  d:'The 16-team bracket from Week 14 to the Week 17 title game, plus projections before it\u2019s set.',
+  hs:[{x:35,y:37,t:'Four rounds',d:'Round of 16 (Week 14) through the title game (Week 17).',f:'Round of 16'},
+      {x:4.5,y:44,t:'Seeds',d:'Set by national ranking after Week 13: five Power 5 champs plus 11 at-larges.'},
+      {x:61,y:62,t:'Live games',d:'Green <b>LIVE</b> marks games in progress.'},
+      {x:85,y:86,t:'Title game',d:'The winner is ranked #1 nationally.',f:'Title Game'}],
+  k:'playoff playoffs bracket seed projection postseason championship'},
+ {key:'awards',tab:5,n:'Awards & Recruiting $',img:'awards.jpg',find:'League Awards',
+  ask:'Who\u2019s winning the Heisman? What has my school earned?',
+  d:'Award races, the NFL Draft (early declares and draft prestige) and every school\u2019s recruiting dollars.',
+  hs:[{x:30,y:29,t:'Three views',d:'<b>Awards Watch</b>, <b>NFL Draft</b> and <b>Recruiting $</b>.',f:'Awards Watch',up:1},
+      {x:16,y:45,t:'National awards',d:'Heisman, O\u2019Brien, Doak Walker, Biletnikoff. <b>$5</b> each; only a player\u2019s top copy counts.',f:'National Awards'},
+      {x:14,y:88,t:'Award races',d:'Each card is one award\u2019s top 10. Finalized after Week 12.'}],
+  k:'awards heisman obrien doak walker biletnikoff all-conference coach year recruiting dollars nfl draft early declare prestige'},
+ {key:'devy',tab:6,n:'Devy Draft',img:'devy.jpg',sel:'#cffb-dv',
+  ask:'Who\u2019s on the clock? Who did my conference take?',
+  d:'The live two-round devy draft for every conference, plus retention and past drafts.',
+  hs:[{x:35,y:14,t:'On the clock',d:'The school picking now, and who\u2019s up next.',f:'On the clock'},
+      {x:80,y:11,t:'Pick timer',d:'<b>24 hours</b> per pick. A missed pick can be made once the next school picks.'},
+      {x:42,y:27,t:'Pick a conference',d:'Each conference drafts on its own. <b>Yours</b> shows your pick number.',f:'Yours'},
+      {x:50,y:38,t:'Draft, retention, history',d:'<b>Retention</b> is where you keep undeclared picks (rebate drops $5 a year).',f:'Retention'}],
+  k:'devy draft pick clock order college prospect rebate retention'},
+ {key:'auction',tab:7,n:'Auction Board',img:'auction.jpg',find:'Auction Board',soon:1,mfl:'auction',
+  ask:'What\u2019s up for bid? What\u2019s my budget?',
+  d:'Live tracker for the transfer, freshmen and walk-on auctions.',
+  soonTxt:'Arriving before the <b>May transfer auction</b>. Until then, bid on MFL\u2019s auction page.',
+  hs:[{x:50,y:12.5,t:'Three views',d:'Live auction, the recruiting database, and class grades.'},
+      {x:25,y:26,t:'Your conference',d:'You only bid against schools in your conference.'},
+      {x:35,y:55,t:'High bid',d:'Hold it for <b>12 hours</b> and he\u2019s yours.'},
+      {x:57,y:55,t:'Time left',d:'Countdown to the 12-hour mark. A new high bid resets it.'},
+      {x:79,y:45,t:'Nominate',d:'Two nominations open at a time.'},
+      {x:88.5,y:72,t:'Team funds',d:'Spent, remaining, and share of the conference pool.'}],
+  k:'auction board bid bidding nominate nomination budget recruiting transfer freshmen walk-on funds'},
+ {key:'almanac',tab:8,n:'League Almanac',img:'almanac.jpg',find:'League Almanac',
+  ask:'Who won it all before? What\u2019s the record?',
+  d:'League history: all-time standings, seasons, schools, head-to-head, coaches, honors and the record book.',
+  hs:[{x:13,y:52,t:'Sections',d:'Seven sections. The number is how many entries each holds.',f:'Sections',up:1},
+      {x:13,y:90,t:'Reigning champion',d:'Last season\u2019s national champ.',f:'Reigning'},
+      {x:40,y:63,t:'Section content',d:'Tap a season, school or series to drill in.'}],
+  k:'almanac history champions champion records past seasons archive head to head coaches honors record book'}
+];
+/* Standard MFL pages. {Y}=season {L}=league. Verify the O= codes against your league menu. */
+var P = [
+ {g:'My Team',l:[
+  ['lineup','Set Lineup','Submit your 8 starters every week.','/{Y}/lineup?L={L}','lineup start starters submit sit'],
+  ['myroster','My Roster','Your 30-man roster, Taxi and IR.','/{Y}/options?L={L}&O=07','roster my team'],
+  ['drop','Drop Players','Drop a player into the transfer portal.','/{Y}/options?L={L}&O=257','drop cut release portal transfer'],
+  ['taxi','Taxi Squad','Stash a freshman for a traditional redshirt before Week 5 Thursday.','/{Y}/options?L={L}&O=98','taxi redshirt stash freshman rookie traditional'],
+  ['ir','Injured Reserve','Stash an injured player for a medical redshirt before Week 5 Thursday.','/{Y}/options?L={L}&O=18','ir injured reserve medical redshirt hurt']]},
+ {g:'Scores & Schedule',l:[
+  ['mlive','MFL Live Scoring','The standard MFL live page.','/{Y}/live_scoring_summary?L={L}','live scores scoring score'],
+  ['sched','Schedule','Your 12-game slate.','/{Y}/options?L={L}&O=15','schedule games opponent week'],
+  ['weekly','Weekly Results','Final scores by week.','/{Y}/options?L={L}&O=22','results scores week weekly']]},
+ {g:'Auctions',l:[
+  ['auction','Auction Room','Nominate and bid. High bid for 12 hours wins.','/{Y}/options?L={L}&O=43','auction bid nominate']]},
+ {g:'League',l:[
+  ['trans','Transactions','Every add, drop and auction win.','/{Y}/options?L={L}&O=03','transactions moves log']]}
+];
+var SH = '<path d="M2 4 L10 1 L18 4 L18 11 C18 16 10 20 10 20 C10 20 2 16 2 11 Z"/>';
+var SHM = SH + '<g transform="translate(10 10.5) rotate(-30)"><rect x="-6" y="-2" width="12" height="4" rx="1.4" fill="rgba(209,117,117,0.18)"/><rect x="-6" y="-2" width="3.2" height="4" rx="1.2" fill="rgba(209,117,117,0.5)" stroke="currentColor" stroke-width="1.1"/><rect x="2.8" y="-2" width="3.2" height="4" rx="1.2" fill="rgba(209,117,117,0.5)" stroke="currentColor" stroke-width="1.1"/></g>';
+var GL = {
+ h:'<path d="M7 3 H17 V8 C17 11 15 13 12 13 C9 13 7 11 7 8 Z"/><path d="M7 5 C4 5 4 9 7 9"/><path d="M17 5 C20 5 20 9 17 9"/><path d="M12 13 V17"/><path d="M8 17 H16"/><path d="M7 20 H17"/>',
+ ob:'<path d="M3 18 Q9 4 18 8" stroke-dasharray="0.5 2.5" stroke-width="1.4"/><g transform="translate(17.5 9) rotate(35)"><ellipse rx="5" ry="2.6"/><path d="M-1.8 0 H1.8" stroke-width="1.4"/></g><path d="M2 17 L4 19 L2 21" stroke-width="1.4"/>',
+ dw:'<circle cx="14" cy="4.5" r="2"/><path d="M13 7 L10 13"/><path d="M13 8 L18 8"/><path d="M11.5 9 L8 11"/><g transform="translate(7 11.5) rotate(-20)"><ellipse rx="2.8" ry="1.5"/></g><path d="M10 13 L13 18"/><path d="M10 13 L5 19"/><path d="M2 21 H7 M9 21 H13" stroke-width="1.3"/>',
+ bk:'<path d="M3 4 L8 9" stroke-dasharray="0.5 2.5" stroke-width="1.3"/><g transform="translate(11 11) rotate(-40)"><ellipse rx="4.2" ry="2.2"/></g><path d="M7 14 L10 13 L11 15 L9 17 Z"/><path d="M17 14 L14 13 L13 15 L15 17 Z"/><path d="M7 14 L5 17 M17 14 L19 17"/>',
+ aa:'<path d="M6 5 Q3 12 6 19"/><path d="M18 5 Q21 12 18 19"/><path d="M12 7 L13.4 10 L16.6 10.3 L14.2 12.4 L14.9 15.6 L12 14 L9.1 15.6 L9.8 12.4 L7.4 10.3 L10.6 10 Z" fill="currentColor" stroke="none"/><path d="M9 20 L12 18 L15 20"/>'
+};
+function vCls(c, d){ return '<span class="rbv"><span class="rb-cls '+c.replace('R-','').toLowerCase()+'">'+c+'</span>'+(d?vDots(d):'')+'</span>'; }
+function vDots(d){ return '<span class="rb-dots">'+d.split('').map(function(x){ return '<span class="rb-dot '+(x==='o'?'':x)+'"></span>'; }).join('')+'</span>'; }
+function vRS(m, y){ return '<span class="rb-rs '+(m?'m':'t')+'"><svg viewBox="0 0 20 22" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">'+(m?SHM:SH)+'</svg>'+(m?'MRS':'RS')+' \u2019'+y+'</span>'; }
+function vAw(k, n, y){ return '<span class="rb-aw '+(k==='h'?'h':k==='aa'?'a':'p')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+GL[k]+'</svg>'+n+'<i>'+y+'</i></span>'; }
+function vSt(c, t){ return '<span class="rb-st '+c+'">'+(c==='rs'?'\u25CF ':'<b style="background:'+({ok:'#2D7A4E',q:'#C9A227',o:'#B84545',p:'#4A9968'}[c]||'#4A9968')+'"></b>')+t+'</span>'; }
+function vTm(a, bg, fg){ return '<span class="rb-tm" style="background:'+bg+';color:'+fg+'">'+a+'</span>'; }
+/* Roster codes — as they appear on the Roster Board. [label, meaning, visual] */
+var C = [
+ {key:'class',t:'Class & Eligibility',p:'The chip is the class. The dots are the eligibility clock.',l:[
+  ['FR','<b>Freshman.</b> First NFL season. Still eligible for a traditional redshirt.',vCls('FR','uoooo')],
+  ['SO','<b>Sophomore.</b> Second year.',vCls('SO','uuooo')],
+  ['JR','<b>Junior.</b> Third year. Can declare early with one national or two conference awards.',vCls('JR','uuuoo')],
+  ['SR','<b>Senior.</b> Final year.',vCls('SR','uuuuo')],
+  ['GR','<b>Graduated.</b> No eligibility left. <em>Drop before recruiting or lose $5 of budget.</em>',vCls('GR','uuuu')],
+  ['R-','<b>Redshirted copy.</b> R- in front of the class, like <b>R-SO</b>. Gets one extra year.',vCls('R-SO','ruooo')],
+  ['Dots','<b>Filled</b> = season played. <b>Gold ring</b> = traditional redshirt year. <b>Red ring</b> = medical. <b>Open</b> = season left.','<span class="rbv">'+vDots('urmo')+'</span>']]},
+ {key:'rs',t:'Redshirt Column',p:'The year the copy redshirted. Belongs to this copy only.',l:[
+  ['RS','<b>Traditional redshirt</b>, shield icon. <em>Freshman on Taxi before Week 5 Thursday, all season.</em>',vRS(0,'25')],
+  ['MRS','<b>Medical redshirt</b>, shield with bandage. <em>IR slot before Week 5 Thursday. Once per copy.</em>',vRS(1,'24')],
+  ['NO MRS LEFT','<b>On IR but already used a medical.</b> He can\u2019t earn another one.','<span class="rbv" style="flex-direction:column;align-items:flex-start;gap:3px">'+vRS(1,'23')+'<span class="rb-inel">\u26A0 NO MRS LEFT</span></span>'],
+  ['\u2014','No redshirt on this copy.','<span class="rbv" style="color:var(--fg3)">\u2014</span>']]},
+ {key:'aw',t:'Awards Column',p:'Career awards with the season. Two conference or one national triggers an early declare.',l:[
+  ['Heisman','<b>Heisman.</b> Top player. Solid gold badge.',vAw('h','Heisman','25')],
+  ['O\u2019Brien','<b>O\u2019Brien.</b> Top QB.',vAw('ob','O\u2019Brien','25')],
+  ['Walker','<b>Doak Walker.</b> Top RB.',vAw('dw','Walker','25')],
+  ['Biletnikoff','<b>Biletnikoff.</b> Top WR/TE.',vAw('bk','Biletnikoff','24')],
+  ['All-SEC','<b>All-Conference.</b> Badge names the conference.',vAw('aa','All-SEC','25')]]},
+ {key:'slot',t:'Status Column',p:'Game status this week. Dimmed rows won\u2019t score.',l:[
+  ['ACTIVE','<b>Active.</b> No injury tag.',vSt('ok','Active')],
+  ['PROB','<b>Probable.</b> Expected to play.',vSt('p','Prob')],
+  ['QUES','<b>Questionable.</b> Check before lineups lock.',vSt('q','Ques')],
+  ['OUT','<b>Out.</b> Won\u2019t play. Row is dimmed.',vSt('o','Out')],
+  ['REDSHIRT','<b>Redshirting this season.</b> Can\u2019t score. Row is dimmed.',vSt('rs','Redshirt')]]},
+ {key:'grp',t:'Roster Groups & Other Copy',p:'Section headers in the table, and who owns the second copy.',l:[
+  ['Taxi Squad','<b>Taxi Squad.</b> Copies redshirting this season. Moving off Taxi forfeits the redshirt.','<span class="rb-grp"><i style="background:var(--gold)"></i>Taxi Squad<em>2</em></span>'],
+  ['Injured Reserve','<b>IR.</b> Medical redshirt candidates.','<span class="rb-grp" style="color:#D88787"><i style="background:#B84545"></i>Injured Reserve<em>1</em></span>'],
+  ['Other copy','<b>Team logo</b> = the school with the other copy. Tap it to open that roster.','<span class="rbv">'+vTm('TEX','#BF5700','#fff')+vTm('UGA','#BA0C2F','#fff')+'</span>'],
+  ['FA','<b>Free agent.</b> Second copy is unowned and can be nominated.','<span class="rbv">'+vTm('FA','#1C1C1C','#9A9A9A')+'</span>'],
+  ['GR','<b>Graduated.</b> Second copy is out of eligibility.','<span class="rbv">'+vTm('GR','rgba(201,162,39,.15)','#E8C547')+'</span>']]}
+];
+var SAMPLE = [
+ ['Player','<span class="sm-ph">AM</span><span class="nm"><b>Arch Manning</b></span>','Player and position.'],
+ ['Pos','<span class="rb-pos">QB</span>',null],
+ ['Eligibility',vCls('R-JR','ruuo'),'<b>R-JR</b>: redshirted junior. Ring = 2023 redshirt; two seasons played, one in hand.'],
+ ['Redshirt',vRS(0,'23'),'<b>RS \u201923</b>: traditional redshirt taken in 2023.'],
+ ['Awards',vAw('ob','O\u2019Brien','25'),'<b>O\u2019Brien \u201925</b>: top QB in 2025.'],
+ ['Status',vSt('ok','Active'),'<b>Active</b>: no injury tag, can score.'],
+ ['Pts','<span style="font:inherit">31.40</span>','Season points.'],
+ ['Copy','<img class="rb-pill" src="'+SM.teams+'georgia.png" alt="Georgia">','Georgia owns the other copy. Tap the pill to open that roster.']
+];
+var T = [
+ {q:'Check a player\u2019s eligibility',s:['Go to <b>Coach\u2019s Office</b> and open the <b>Roster Board</b>.','Read his <b>class code</b> and eligibility dots.','Not sure what a code means? Use the <b>Roster Codes</b> decoder.'],w:['roster'],c:'class',k:'eligibility years left class graduate'},
+ {q:'Redshirt a freshman',s:['Go to <b>Coach\u2019s Office</b> and use the <b>Taxi</b> button on the Roster Board.','Move the freshman to Taxi <b>before Week 5 Thursday kickoff</b>.','Leave him there all season. The Roster Board shows <b>R-</b> next year.'],w:['roster'],p:['taxi'],k:'redshirt taxi freshman rookie medical'},
+ {q:'Set my lineup',s:['Go to <b>Coach\u2019s Office</b> and tap <b>Set Lineup</b> on the Roster Board.','Start <b>8</b>: 1 QB, 1\u20135 RB, 2\u20136 WR/TE.','Check <b>Q</b> and <b>O</b> tags before you lock it.'],w:['roster'],p:['lineup'],k:'lineup start starters'},
+ {q:'See my conference race',s:['On <b>Main</b>, open <b>League Standings</b>.','Pick your conference. Top two play Week 13.','Tiebreakers are in the Bylaws.'],w:['standings','bylaws'],k:'standings race title'},
+ {q:'Know if I\u2019m playoff bound',s:['Check <b>Rankings</b> for your national spot.','Power 5 champs plus the <b>top 11</b> after Week 13 get in.','Once set, the <b>Playoffs</b> tab shows the bracket.'],w:['rankings','playoffs'],k:'playoff bowl ranking'},
+ {q:'Follow my game live',s:['Go to the <b>Gameday</b> tab.','Open <b>Live Scoring</b> and tap your matchup.','Watch players left and the projection.'],w:['live','gameday'],k:'live score game'},
+ {q:'Track the Heisman race',s:['Go to <b>Awards & Recruiting Dollars</b>.','Stay on <b>Awards Watch</b>.','Winners pay <b>$5</b> to next year\u2019s budget.'],w:['awards'],k:'heisman award race'},
+ {q:'See my recruiting budget',s:['Go to <b>Awards & Recruiting Dollars</b>.','Switch to <b>Recruiting $</b>.','Base is <b>$200</b>, plus wins, awards and draft prestige.'],w:['awards'],k:'budget recruiting dollars money'},
+ {q:'Make my devy pick',s:['Go to the <b>Devy</b> tab to see who\u2019s on the clock.','Make the pick within <b>24 hours</b>.','Missed it? Pick once the school on the clock picks.'],w:['devy'],k:'devy draft pick'},
+ {q:'Bid on recruits or transfers',s:['Open the <b>Auction Room</b> on MFL.','Two nominations open at once. <b>12 hours</b> as high bidder wins.','The <b>Auction</b> tab board is coming soon.'],p:['auction'],w:['auction'],k:'auction bid recruit transfer nominate'},
+ {q:'Look up past champions',s:['Go to the <b>Almanac</b> tab.','Pick a season or a school.','Head-to-head shows any series.'],w:['almanac'],k:'history champion past record'},
+ {q:'Find a rule',s:['On <b>Main</b>, open the <b>Bylaws</b>.','Search in plain English.','Tap a \u00A7 chip for the full text.'],w:['bylaws'],k:'rule bylaw'}
+];
+/* ============================================= */
+var root = document.getElementById('cffb-sm'); if (!root) return;
+var $ = function(k){ return root.querySelector('[data-sm="'+k+'"]'); };
+var m = location.pathname.match(/^\/(\d{4})\/home\/(\d+)/); if (m){ SM.year = m[1]; SM.league = m[2]; SM.host = location.origin;
+  fetch(SM.host + '/' + SM.year + '/export?TYPE=league&L=' + SM.league + '&JSON=1', { credentials:'include' }).then(function(r){ return r.json(); }).then(function(j){ var fr = (((j || {}).league || {}).franchises || {}).franchise || []; [].concat(fr).forEach(function(x){ if (x && x.id && !SM.fran[x.id]) SM.fran[x.id] = x.name; }); if (ui.tab === 'codes' && !ui.q) decOut(); }).catch(function(){}); }
+function url(p){ return SM.host + p.replace('{Y}', SM.year).replace('{L}', SM.league); }
+var WK = {}, PK = {}; W.forEach(function(w, i){ w.i = i; WK[w.key] = w; }); P.forEach(function(g){ g.l.forEach(function(x){ PK[x[0]] = { key:x[0], t:x[1], d:x[2], u:x[3], k:x[4], g:g.g }; }); });
+var REAL = W.filter(function(w){ return !w.here; });
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function strip(s){ return String(s).replace(/<[^>]+>/g, ' '); }
+function pad(n){ return (n < 10 ? '0' : '') + n; }
+var ui = { tab:'map', sel:SM.start, q:'' };
+
+/* ---- search ---- */
+var STOP = 'a an the is are do does i my me to of in on for at by with and or it be can how what when where who why which that this find see check look get go whats wheres'.split(' ').reduce(function(o,w){ o[w]=1; return o; }, {});
+function toks(s){ return strip(s).toLowerCase().replace(/[\u2019']/g,'').split(/[^a-z0-9-]+/).filter(function(w){ return w && !STOP[w]; }); }
+var IDX = [];
+REAL.forEach(function(w){ IDX.push({ ty:TABS[w.tab].n, t:w.n, d:w.ask, x:toks(w.n+' '+w.k+' '+w.ask+' '+w.d+' '+TABS[w.tab].n), act:'w', v:w.key }); });
+TABS.forEach(function(t, i){ IDX.push({ ty:'MFL tab', t:t.n+' tab', d:REAL.filter(function(w){ return w.tab === i; }).map(function(w){ return w.n; }).join(' \u00B7 '), x:toks(t.n+' tab'), act:'w', v:(REAL.filter(function(w){ return w.tab === i; })[0] || {}).key }); });
+T.forEach(function(t, i){ IDX.push({ ty:'How do I', t:t.q, d:strip(t.s[0]), x:toks(t.q+' '+t.k+' '+t.s.join(' ')), act:'task', v:i }); });
+C.forEach(function(c){ c.l.forEach(function(r){ IDX.push({ ty:'Roster code', t:r[0]+' \u00B7 '+c.t, d:strip(r[1]), x:toks(r[0]+' '+c.t+' '+r[1]), act:'code', v:c.key, code:r[0].toLowerCase() }); }); });
+Object.keys(PK).forEach(function(k){ var p = PK[k]; IDX.push({ ty:'MFL page', t:p.t, d:p.d, x:toks(p.t+' '+p.k+' '+p.d), act:'page', v:k }); });
+function search(q){ var Q = toks(q), ql = q.trim().toLowerCase(); if (!Q.length) return [];
+  return IDX.map(function(o){ var s = 0; Q.forEach(function(t){ o.x.forEach(function(x){ if (x === t) s += 3; else if (t.length >= 3 && x.indexOf(t) === 0) s += 1.5; }); });
+    if (o.code && o.code === ql) s += 20; if (o.t.toLowerCase().indexOf(ql) >= 0) s += 6; if (o.act === 'w') s *= 1.2; return { o:o, s:s }; })
+   .filter(function(x){ return x.s > 0 && x.o.v != null; }).sort(function(a,b){ return b.s - a.s; }).slice(0, 10).map(function(x){ return x.o; }); }
+
+/* ---- decoder ---- */
+var CLS = { FR:'Freshman \u00B7 1st year', SO:'Sophomore \u00B7 2nd year', JR:'Junior \u00B7 3rd year', SR:'Senior \u00B7 final year', GR:'Graduated \u00B7 no eligibility left' };
+var AW = { H:'Heisman', OB:'O\u2019Brien', DW:'Doak Walker', BK:'Biletnikoff' };
+var SLOT = { TAXI:'Taxi Squad \u00B7 redshirt stash', IR:'Injured Reserve \u00B7 medical redshirt slot', P:'Injury \u00B7 Probable', Q:'Injury \u00B7 Questionable', O:'Injury \u00B7 Out' };
+function yr(s){ var n = +s; return n < 100 ? 2000 + n : n; }
+function decode(s){
+  return s.trim().toUpperCase().split(/[\s_,\/]+/).filter(Boolean).map(function(t){ var x;
+    if (CLS[t]) return [t,'Class',CLS[t]];
+    if ((x = t.match(/^R-(FR|SO|JR|SR|GR)$/))) return [t,'Class',CLS[x[1]] + '. Redshirted copy, one extra year'];
+    if ((x = t.match(/^R(\d{2,4})$/))) return [t,'Traditional redshirt','Taken in ' + yr(x[1])];
+    if ((x = t.match(/^M(\d{2,4})$/))) return [t,'Medical redshirt','Taken in ' + yr(x[1])];
+    if ((x = t.match(/^T(\d{4})$/))) return [t,'Traditional redshirt','Taken in ' + x[1]];
+    if (t === 'FA') return [t,'Owner','Free agent. Unowned copy'];
+    if ((x = t.match(/^AA(\d{4})?([A-Z0-9]+)?$/))) return [t,'Award','All-Conference' + (x[1] ? ', ' + x[1] : '') + (x[2] ? ' \u00B7 ' + x[2] : '')];
+    if ((x = t.match(/^(H|OB|DW|BK)(\d{4})?$/))) return [t,'Award',AW[x[1]] + (x[2] ? ', ' + x[2] : '')];
+    if (SLOT[t]) return [t, t.length > 1 ? 'Roster slot' : 'Injury', SLOT[t]];
+    if (/^\d{1,4}$/.test(t)){ var id = ('000' + t).slice(-4), nm = SM.fran[id]; return [t,'Franchise ID', nm ? '<b style="color:var(--fg)">' + esc(nm) + '</b> owns this copy' : 'MFL franchise #' + id + ' owns this copy']; }
+    if (/^[A-Z]{2,5}$/.test(t)) return [t,'Owning school','Old-style school abbreviation. This school owns the copy'];
+    return [t,'Unknown','Not a code we recognize. Ask on Discord', 1];
+  }); }
+
+/* ---- render ---- */
+function tabs(){
+  var t = [['map','Site Map',TABS.length+' tabs','Map'],['tasks','How Do I\u2026',T.length,'How to'],['codes','Roster Codes',C.reduce(function(n, c){ return n + c.l.length; }, 0),'Codes'],['mfl','MFL Menus',Object.keys(PK).length,'MFL']];
+  $('tabs').innerHTML = (ui.q ? '<button type="button" class="sm-tab on" data-act="noop"><span>Results</span><i>'+ui.res.length+'</i></button>' : '') +
+    t.map(function(x){ return '<button type="button" class="sm-tab'+(!ui.q&&ui.tab===x[0]?' on':'')+'" data-act="tab" data-v="'+x[0]+'"><span class="sm-l">'+x[1]+'</span><span class="sm-s">'+x[3]+'</span><i>'+x[2]+'</i></button>'; }).join('');
+}
+function vMap(){
+  var w = WK[ui.sel] || REAL[0], k = 0;
+  var nav = TABS.map(function(t, ti){ var ws = W.filter(function(x){ return x.tab === ti; });
+    return '<div class="sm-tg"><div class="sm-th"><em>'+pad(ti+1)+'</em>'+t.n+'</div>'+ws.map(function(x){ k++;
+      return '<button type="button" class="sm-wb'+(x.key===w.key?' on':'')+(x.here?' here':'')+(x.soon?' soon':'')+'" style="--i:'+k+'" data-act="w" data-v="'+x.key+'"><span>'+x.n+'</span><small>'+(x.here?'YOU ARE HERE':x.soon?'SOON':'')+'</small></button>'; }).join('')+'</div>'; }).join('');
+  var sel = '<select class="sm-sel" data-sm="wsel" aria-label="Choose a widget">'+TABS.map(function(t, ti){ return '<optgroup label="'+esc(t.n)+'">'+REAL.filter(function(x){ return x.tab === ti; }).map(function(x){ return '<option value="'+x.key+'"'+(x.key===w.key?' selected':'')+'>'+x.n+'</option>'; }).join('')+'</optgroup>'; }).join('')+'</select>';
+  var tab = TABS[w.tab];
+  var shot = '<figure class="sm-shot'+(w.soon?' soon':'')+'"><img src="'+SM.img+w.img+'" alt="'+esc(w.n)+' widget" loading="lazy" onerror="this.closest(\'.sm-shot\').classList.add(\'noimg\')"><div class="sm-noshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="9.5" r="1.5"></circle><path d="M21 15l-5-5L5 18"></path></svg><b>'+esc(w.n)+'</b><small>Live on the '+esc(tab.n)+' tab \u00B7 screenshot coming soon</small></div>'+(w.soon?'<span class="sm-rib">PREVIEW \u00B7 COMING SOON</span>':'')+
+    w.hs.map(function(s, i){ return s.x == null ? '' : '<button type="button" class="sm-hs" style="left:'+s.x+'%;top:'+s.y+'%;--i:'+i+'" data-hs="'+(i+1)+'" aria-label="'+(i+1)+'. '+esc(s.t)+'">'+(i+1)+'</button>'; }).join('')+'</figure>';
+  var steps = '<ol class="sm-steps">'+w.hs.map(function(s, i){ return '<li data-hs="'+(i+1)+'"><i>'+(i+1)+'</i><span><strong>'+s.t+(s.nopic?' <span class="sm-pill soon" style="margin-left:6px">NOT IN PREVIEW</span>':'')+'</strong>'+s.d+'</span></li>'; }).join('')+'</ol>';
+  var acts = '<div class="sm-acts">'+(w.soon ? (w.mfl ? '<a class="sm-btn" href="'+url(PK[w.mfl].u)+'" target="_blank" rel="noopener">'+PK[w.mfl].t+' on MFL \u2197</a>' : '') :
+    '<button type="button" class="sm-btn" data-act="tour" data-v="'+w.key+'">\u25B6 Show me on the page</button>')+
+    '<button type="button" class="sm-btn g" data-act="gotab" data-v="'+w.key+'">Open '+esc(tab.n)+' tab</button>'+(w.codes?'<button type="button" class="sm-btn g" data-act="tab" data-v="codes">Roster codes</button>':'')+'</div>';
+  var tasks = T.filter(function(t){ return t.w && t.w.indexOf(w.key) >= 0; });
+  var det = w.here ? '<div class="sm-hereb">This is the League Guide: rules on one side, the site map on the other. Pick any widget to see where it lives and how to read it.</div>' :
+    '<div class="sm-ask"><span class="sm-lab" style="margin:0">Go here when you\u2019re asking</span><div>\u201C'+w.ask+'\u201D</div></div><p>'+w.d+'</p>'+shot+
+    (w.soon?'<div class="sm-soon">'+w.soonTxt+'</div>':'')+'<div><div class="sm-lab">How to read it \u00B7 tap a number</div>'+steps+'</div>'+acts+
+    (tasks.length ? '<div><div class="sm-lab">Related</div><div class="sm-chips">'+tasks.map(function(t){ return '<button type="button" class="sm-chip" data-act="task" data-v="'+T.indexOf(t)+'">How do I '+t.q.charAt(0).toLowerCase()+t.q.slice(1)+'</button>'; }).join('')+'</div></div>' : '');
+  return '<div class="sm-map"><nav class="sm-nav" aria-label="MFL tabs">'+nav+'</nav><div style="min-width:0">'+sel+
+    '<div class="sm-det" data-det="'+w.key+'"><div class="sm-dh"><div><small>TAB '+pad(w.tab+1)+' \u00B7 '+esc(tab.n.toUpperCase())+(w.here?' <span class="sm-pill here">YOU ARE HERE</span>':w.soon?' <span class="sm-pill soon">COMING SOON</span>':' <span class="sm-pill">LIVE</span>')+'</small><h3>'+w.n+'</h3></div></div>'+det+'</div></div></div>';
+}
+function wChip(k){ var w = WK[k]; return '<button type="button" class="sm-chip w" data-act="w" data-v="'+k+'">'+w.n+(w.soon?' \u00B7 soon':'')+' \u2192</button>'; }
+function pChip(k){ var p = PK[k]; return '<a class="sm-chip" href="'+url(p.u)+'" target="_blank" rel="noopener">'+p.t+' \u2197</a>'; }
+function vTasks(){
+  return '<div class="sm-sh"><h3>How do I\u2026</h3><span>Every task points to where you do it</span></div><div class="sm-tasks">'+T.map(function(t, i){
+    return '<div class="sm-task" style="--i:'+i+'" data-task="'+i+'"><h4>'+t.q+'</h4><ol>'+t.s.map(function(s){ return '<li>'+s+'</li>'; }).join('')+'</ol><div class="sm-chips">'+(t.w||[]).map(wChip).join('')+(t.p||[]).map(pChip).join('')+(t.c?'<button type="button" class="sm-chip" data-act="code" data-v="'+t.c+'">Roster codes \u2192</button>':'')+'</div></div>'; }).join('')+'</div>';
+}
+function vCodes(){
+  var n = 0, cols = SAMPLE.map(function(s, i){ var k = s[2] ? ++n : 0; return '<span class="c'+(i===6?' sm-pts':'')+'" data-l="'+s[0]+'"'+(k?' data-hs="r'+k+'"':'')+'>'+(k?'<u>'+k+'</u>':'')+s[1]+(s[2]?'<em class="kx">'+s[2]+'</em>':'')+'</span>'; }).join('');
+  n = 0; var key = SAMPLE.filter(function(s){ return s[2]; }).map(function(s){ n++; return '<li data-hs="r'+n+'"><i>'+n+'</i><span>'+s[2]+'</span></li>'; }).join('');
+  return '<div class="sm-samp"><header><h4>Reading a Roster Board row</h4><span>Exactly as it shows on Coach\u2019s Office</span></header><div class="sm-sr"><div class="sm-sg hd">'+SAMPLE.map(function(s){ return '<span'+(s[0]==='Pts'?' style="text-align:right"':'')+'>'+s[0]+'</span>'; }).join('')+'</div><div class="sm-sg rw">'+cols+'</div></div><ul class="sm-key">'+key+'</ul></div>'+
+    '<div class="sm-cg">'+C.map(function(c){ return '<div class="sm-cgrp" data-code="'+c.key+'"><h4>'+c.t+'</h4><p>'+c.p+'</p><ul class="sm-cl v">'+c.l.map(function(r){ return '<li><span>'+r[2]+'</span><span>'+r[1]+'</span></li>'; }).join('')+'</ul></div>'; }).join('')+'</div>'+
+    '<div class="sm-dec sm-raw"><div><h4>Seeing raw codes on MFL?</h4><p>MFL\u2019s own pages show copy info as text: <b style="color:var(--fg)">franchise ID</b>, class, then any redshirt, like <b style="color:var(--fg)">0012_JR_r17</b>. Paste one to decode it.</p></div><label class="sm-din"><input data-sm="dec" value="'+esc(ui.dec == null ? '0012_JR_r17' : ui.dec)+'" placeholder="Try 0012_JR_r17 or FA_SO" autocomplete="off" spellcheck="false" aria-label="Code to decode"></label><div class="sm-dout" data-sm="dout"></div><div class="sm-chips">'+['0012_JR_r17','FA_SO','0034_FR_m19','0057_SR_r16'].map(function(x){ return '<button type="button" class="sm-chip" data-act="try" data-v="'+x+'">'+x+'</button>'; }).join('')+'</div></div>'+
+    '<div class="sm-acts" style="margin-top:16px">'+wChip('roster')+'</div>';
+}
+function decOut(){ var el = $('dout'); if (!el) return; var v = $('dec').value; ui.dec = v;
+  var d = decode(v); el.innerHTML = d.map(function(x, i){ return '<div class="sm-tok'+(x[3]?' bad':'')+'" style="--i:'+i+'"><small>'+x[1]+'</small><b>'+esc(x[0])+'</b><span>'+x[2]+'</span></div>'; }).join(''); }
+function vMfl(){
+  return '<div class="sm-sh"><h3>MFL Menus</h3><span>Opens the standard league page</span></div><div class="sm-pg">'+P.map(function(g){
+    return '<div class="sm-pgrp"><h4>'+g.g+'</h4>'+g.l.map(function(x){ return '<a class="sm-pl" href="'+url(x[3])+'" target="_blank" rel="noopener"><b>'+x[1]+'</b><small>'+x[2]+'</small><i>\u2197</i></a>'; }).join('')+'</div>'; }).join('')+'</div>';
+}
+function vRes(){
+  if (!ui.res.length) return '<div class="sm-empty"><span>Nothing matches <b style="color:var(--fg)">\u201C'+esc(ui.q)+'\u201D</b>. Try a tab or widget name.</span><div class="sm-chips" style="justify-content:center">'+REAL.map(function(w){ return wChip(w.key); }).join('')+'</div></div>';
+  return '<div class="sm-sh"><h3>'+ui.res.length+' match'+(ui.res.length===1?'':'es')+'</h3><span>Best match first</span></div><ol class="sm-res">'+ui.res.map(function(o, i){
+    var inner = '<span class="sm-rk">'+esc(o.ty)+'</span><span><b>'+esc(o.t)+'</b><p>'+o.d+'</p></span><span class="sm-go">'+(o.act==='page'?'\u2197':'\u2192')+'</span>';
+    return '<li>'+(o.act==='page' ? '<a class="sm-rb" style="--i:'+i+';text-decoration:none" href="'+url(PK[o.v].u)+'" target="_blank" rel="noopener">'+inner+'</a>' : '<button type="button" class="sm-rb" style="--i:'+i+'" data-act="'+o.act+'" data-v="'+o.v+'">'+inner+'</button>')+'</li>'; }).join('')+'</ol>';
+}
+function view(){
+  tabs();
+  $('view').innerHTML = ui.q ? vRes() : ui.tab === 'tasks' ? vTasks() : ui.tab === 'codes' ? vCodes() : ui.tab === 'mfl' ? vMfl() : vMap();
+  $('qwrap').classList.toggle('has', !!ui.q);
+  if (!ui.q && ui.tab === 'codes') decOut();
+}
+function topOf(el){ var y = el.getBoundingClientRect().top + window.pageYOffset - 16; window.scrollTo({ top: y, behavior: 'smooth' }); }
+function flash(sel){ var el = root.querySelector(sel); if (!el) return; topOf(el); el.classList.add('flash'); setTimeout(function(){ el.classList.remove('flash'); }, 1600); }
+function clearQ(){ ui.q = ''; $('q').value = ''; }
+var barEl = root.querySelector('.sm-bar');
+var mkEl = root.querySelector('.lg-mk');
+function spin(o){ mkEl.classList.remove('spin','spinb'); void mkEl.offsetWidth; mkEl.classList.add(o ? 'spin' : 'spinb'); }
+function setOpen(o){ spin(o); root.classList.toggle('is-open', o); barEl.setAttribute('aria-expanded', o); $('togLabel').textContent = o ? 'COLLAPSE' : 'EXPAND'; }
+function open(){ if (!root.classList.contains('is-open')) setOpen(true); }
+function hsOn(n){ root.querySelectorAll('[data-hs]').forEach(function(el){ el.classList.toggle('on', el.getAttribute('data-hs') === n); }); }
+
+/* ---- guided tour ---- */
+function norm(s){ return String(s).replace(/\s+/g, '').toLowerCase(); }
+function outside(el){ return !el.closest('#cffb-lg,#cffb-tour'); }
+function goTab(w){ var t = TABS[w.tab], hit = null;
+  var a = [].slice.call(document.querySelectorAll('a[href$="' + t.hash + '"]')).filter(outside)[0];
+  if (a) hit = a; else { var nt = norm(t.n); hit = [].slice.call(document.querySelectorAll('a,li,button,span,div')).filter(function(el){ return outside(el) && el.children.length <= 1 && norm(el.textContent) === nt && el.offsetParent; })[0]; }
+  if (hit) hit.click(); else if (location.hash !== t.hash) location.hash = t.hash;
+  return !!hit; }
+function findW(w){
+  if (w.sel){ var s = document.querySelector(w.sel); if (s && s.offsetParent) return s; }
+  if (!w.find) return null; var nf = norm(w.find);
+  var h = [].slice.call(document.querySelectorAll('h1,h2,h3,h4,h5,b,strong,span,div')).filter(function(el){ return outside(el) && el.children.length <= 2 && el.offsetParent && norm(el.textContent).indexOf(nf) === 0 && norm(el.textContent).length < nf.length + 24; })[0];
+  if (!h) return null; var el = h;
+  while (el.parentElement && el.parentElement !== document.body && el.offsetHeight < 320) el = el.parentElement;
+  return el; }
+function findIn(box, s){
+  if (s.sel){ var e = document.querySelector(s.sel); if (e && e.offsetParent) return e; }
+  if (!s.f || !box || box.tagName === 'IFRAME') return null;
+  var nf = norm(s.f), tw = document.createTreeWalker(box, NodeFilter.SHOW_TEXT), n;
+  while ((n = tw.nextNode())){ if (norm(n.nodeValue).indexOf(nf) === 0 && n.parentElement.offsetParent){ var el = n.parentElement; for (var u = 0; u < (s.up || 0) && el.parentElement; u++) el = el.parentElement; return el; } }
+  return null; }
+var TR = null;
+function tourCss(){ if (document.getElementById('cffb-tour-css')) return; var st = document.createElement('style'); st.id = 'cffb-tour-css';
+  st.textContent = "#cffb-tour{position:fixed;inset:0;z-index:2147483000;font-family:Inter,system-ui,sans-serif;color:#F5F5F5}#cffb-tour *{box-sizing:border-box}"+
+  "#cffb-tour .tr-catch{position:fixed;inset:0}"+
+  "#cffb-tour .tr-hole{position:fixed;border:2px solid #C9A227;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.74),0 0 32px rgba(201,162,39,.45);transition:top .35s cubic-bezier(.2,.8,.2,1),left .35s cubic-bezier(.2,.8,.2,1),width .35s cubic-bezier(.2,.8,.2,1),height .35s cubic-bezier(.2,.8,.2,1);pointer-events:none}"+
+  "#cffb-tour .tr-hole.none{border-color:transparent;box-shadow:0 0 0 9999px rgba(0,0,0,.74)}"+
+  "#cffb-tour .tr-tip{position:fixed;width:min(360px,calc(100vw - 24px));background:#141414;border:1px solid #2A2A2A;border-top:3px solid #C9A227;border-radius:8px;padding:16px 16px 14px;box-shadow:0 24px 60px rgba(0,0,0,.65);transition:top .35s cubic-bezier(.2,.8,.2,1),left .35s cubic-bezier(.2,.8,.2,1)}"+
+  "#cffb-tour .tr-k{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 10px/1 Inter,sans-serif;letter-spacing:.14em;color:#E8C547;text-transform:uppercase}"+
+  "#cffb-tour .tr-x{width:28px;height:28px;margin:-6px -6px 0 0;background:none;border:0;border-radius:4px;color:#9A9A9A;cursor:pointer;font-size:14px}#cffb-tour .tr-x:hover{background:#1F1F1F;color:#F5F5F5}"+
+  "#cffb-tour h5{margin:8px 0 6px;font:800 22px/1.05 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.01em}"+
+  "#cffb-tour p{margin:0;font-size:13.5px;line-height:1.5;color:#C9C9C9;text-wrap:pretty}#cffb-tour p b{color:#F5F5F5;font-weight:600}"+
+  "#cffb-tour .tr-f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}"+
+  "#cffb-tour .tr-d{display:flex;gap:4px}#cffb-tour .tr-d i{width:6px;height:6px;border-radius:50%;background:#2A2A2A}#cffb-tour .tr-d i.on{background:#C9A227;width:16px;border-radius:3px}"+
+  "#cffb-tour .tr-b{display:flex;gap:6px}#cffb-tour button.tr-n{height:36px;padding:0 14px;border-radius:4px;border:1px solid #2A2A2A;background:#1C1C1C;color:#F5F5F5;font:800 11px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}"+
+  "#cffb-tour button.tr-n.p{background:#C9A227;border-color:#C9A227;color:#0A0A0A}#cffb-tour button.tr-n:hover{filter:brightness(1.12)}#cffb-tour button.tr-n[hidden]{display:none}";
+  document.head.appendChild(st); }
+function tour(k){
+  var w = WK[k]; if (!w) return; endTour(); tourCss();
+  var o = document.createElement('div'); o.id = 'cffb-tour'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', w.n + ' tour');
+  o.innerHTML = '<div class="tr-catch"></div><div class="tr-hole none"></div><div class="tr-tip" style="left:50%;top:40%;transform:translateX(-50%)"><div class="tr-k"><span>Finding '+esc(w.n)+'\u2026</span></div></div>';
+  document.body.appendChild(o);
+  TR = { w:w, o:o, i:0, el:null, steps:[{ t:w.n, d:w.d + ' It lives on the <b>' + esc(TABS[w.tab].n) + '</b> tab.' }].concat(w.hs) };
+  o.addEventListener('click', function(e){ var b = e.target.closest('[data-tr]'); if (!b) return; var a = b.getAttribute('data-tr');
+    if (a === 'x') endTour(); else if (a === 'n'){ if (TR.i < TR.steps.length - 1) step(TR.i + 1); else endTour(); } else if (a === 'b' && TR.i > 0) step(TR.i - 1); else if (a === 'r') locate(true); });
+  locate(false);
+}
+function locate(force){
+  var w = TR.w, el = !force && findW(w);
+  if (el) return ready(el);
+  goTab(w); var tries = 0;
+  (function poll(){ if (!TR) return; var e = findW(w); if (e) return ready(e); if (++tries < 15) return setTimeout(poll, 200); missing(); })();
+}
+function ready(el){ TR.el = el; var bar = el.querySelector('[role="button"][aria-expanded="false"]'); if (bar) bar.click(); setTimeout(function(){ step(0); }, bar ? 450 : 0); }
+function missing(){ var w = TR.w; TR.el = null;
+  TR.o.querySelector('.tr-hole').className = 'tr-hole none';
+  var tip = TR.o.querySelector('.tr-tip'); tip.style.left = '50%'; tip.style.top = '40%'; tip.style.transform = 'translateX(-50%)';
+  tip.innerHTML = '<div class="tr-k"><span>'+esc(w.n)+'</span><button type="button" class="tr-x" data-tr="x" aria-label="Close tour">\u2715</button></div><h5>Open the '+esc(TABS[w.tab].n)+' tab</h5><p>'+esc(w.n)+' isn\u2019t showing on this page yet. Switch to the <b>'+esc(TABS[w.tab].n)+'</b> tab in the MFL menu, then try again.</p><div class="tr-f"><span></span><div class="tr-b"><button type="button" class="tr-n" data-tr="x">Close</button><button type="button" class="tr-n p" data-tr="r">Try again</button></div></div>'; }
+function step(i){
+  if (!TR) return; TR.i = i; var s = TR.steps[i], n = TR.steps.length;
+  TR.tgt = (i && findIn(TR.el, s)) || TR.el;
+  var tip = TR.o.querySelector('.tr-tip'); tip.style.transform = '';
+  tip.innerHTML = '<div class="tr-k"><span>'+(i ? 'Step '+i+' of '+(n-1) : esc(TABS[TR.w.tab].n)+' tab')+'</span><button type="button" class="tr-x" data-tr="x" aria-label="Close tour">\u2715</button></div><h5>'+s.t+'</h5><p>'+s.d+'</p><div class="tr-f"><div class="tr-d">'+TR.steps.map(function(_, j){ return '<i class="'+(j===i?'on':'')+'"></i>'; }).join('')+'</div><div class="tr-b"><button type="button" class="tr-n" data-tr="b"'+(i?'':' hidden')+'>Back</button><button type="button" class="tr-n p" data-tr="n">'+(i===n-1?'Done':i?'Next':'Start')+'</button></div></div>';
+  var r = TR.tgt.getBoundingClientRect(), vh = window.innerHeight;
+  if (r.top < 70 || r.bottom > vh - 200){ var off = r.height > vh - 280 ? 80 : Math.max(80, (vh - 200 - r.height) / 2); window.scrollTo({ top: window.pageYOffset + r.top - off, behavior: 'smooth' }); }
+  place(); setTimeout(place, 380); setTimeout(place, 700);
+  var nb = tip.querySelector('[data-tr="n"]'); if (nb) nb.focus({ preventScroll: true });
+}
+function place(){
+  if (!TR || !TR.tgt) return; var r = TR.tgt.getBoundingClientRect(), p = 6, vw = window.innerWidth, vh = window.innerHeight;
+  var hole = TR.o.querySelector('.tr-hole'); hole.className = 'tr-hole';
+  hole.style.left = (r.left - p) + 'px'; hole.style.top = (r.top - p) + 'px'; hole.style.width = (r.width + p * 2) + 'px'; hole.style.height = (r.height + p * 2) + 'px';
+  var tip = TR.o.querySelector('.tr-tip'), tw = tip.offsetWidth, th = tip.offsetHeight, top;
+  if (r.bottom + p + 12 + th < vh) top = r.bottom + p + 12; else if (r.top - p - 12 - th > 0) top = r.top - p - 12 - th; else top = vh - th - 16;
+  tip.style.top = Math.max(12, top) + 'px'; tip.style.left = Math.min(Math.max(12, r.left), vw - tw - 12) + 'px';
+}
+function endTour(){ if (TR){ TR.o.remove(); TR = null; } }
+window.addEventListener('scroll', function(){ if (TR) requestAnimationFrame(place); }, { passive: true });
+window.addEventListener('resize', function(){ if (TR) place(); });
+document.addEventListener('keydown', function(e){ if (!TR) return; if (e.key === 'Escape') endTour(); else if (TR.el && (e.key === 'ArrowRight')){ if (TR.i < TR.steps.length - 1) step(TR.i + 1); } else if (TR.el && e.key === 'ArrowLeft' && TR.i > 0) step(TR.i - 1); });
+
+/* ---- events ---- */
+root.addEventListener('click', function(e){
+  var h = e.target.closest('.sm-hs'); if (h){ hsOn(h.getAttribute('data-hs')); return; }
+  var b = e.target.closest('[data-act]'); if (!b || !root.contains(b)) return;
+  var a = b.getAttribute('data-act'), v = b.getAttribute('data-v');
+  if (a === 'clear'){ e.stopPropagation(); clearQ(); view(); $('q').focus(); return; }
+  if (a === 'tab'){ clearQ(); ui.tab = v; view(); }
+  else if (a === 'w'){ clearQ(); ui.tab = 'map'; ui.sel = v; view(); open(); var d = root.querySelector('.sm-det'); if (d && d.getBoundingClientRect().top < 0) topOf(root.querySelector('.sm-tabs')); }
+  else if (a === 'task'){ clearQ(); ui.tab = 'tasks'; view(); setTimeout(function(){ flash('[data-task="'+v+'"]'); }, 40); }
+  else if (a === 'code'){ clearQ(); ui.tab = 'codes'; view(); setTimeout(function(){ flash('[data-code="'+v+'"]'); }, 40); }
+  else if (a === 'try'){ $('dec').value = v; decOut(); }
+  else if (a === 'tour'){ tour(v); }
+  else if (a === 'gotab'){ goTab(WK[v]); }
+});
+root.addEventListener('mouseover', function(e){ var h = e.target.closest('[data-hs]'); if (h && root.contains(h)) hsOn(h.getAttribute('data-hs')); });
+root.addEventListener('mouseout', function(e){ var h = e.target.closest('[data-hs]'); if (h && !h.contains(e.relatedTarget)) hsOn(null); });
+root.addEventListener('change', function(e){ if (e.target.getAttribute('data-sm') === 'wsel'){ ui.sel = e.target.value; view(); } });
+root.addEventListener('input', function(e){ if (e.target.getAttribute('data-sm') === 'dec') decOut(); });
+var qEl = $('q'), tmr;
+qEl.addEventListener('input', function(){ clearTimeout(tmr); var v = qEl.value; open(); tmr = setTimeout(function(){ ui.q = v.trim(); if (ui.q) ui.res = search(ui.q); view(); }, 120); });
+qEl.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ clearQ(); view(); } else if (e.key === 'Enter' && ui.q && ui.res.length){ e.preventDefault(); var f = root.querySelector('.sm-rb'); if (f) f.click(); } });
+$('qwrap').addEventListener('click', function(e){ e.stopPropagation(); });
+barEl.addEventListener('click', function(){ setOpen(!root.classList.contains('is-open')); });
+barEl.addEventListener('keydown', function(e){ if (e.target === barEl && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); setOpen(!root.classList.contains('is-open')); } });
+$('sub').textContent = TABS.length + ' tabs \u00B7 ' + REAL.length + ' widgets \u00B7 guided tours';
+$('disc').href = SM.discord;
+view();
+})();
+</script>
+<script>
+(function(){
+/* League Guide shell: one bar + one search driving the Rules (bylaws) and Site Map widgets below */
+var LG = { doc:'https://docs.google.com/document/d/1azwnisY3vNkruLU2ieUF5cLp6YilA5T7kwXTuVk10Sk/edit?usp=sharing', discord:'https://discord.com/', key:'cffb-lg-sec' };
+var root = document.getElementById('cffb-lg'); if (!root) return;
+var $ = function(k){ return root.querySelector('[data-lg="'+k+'"]'); };
+var qEl = $('q'), blQ = root.querySelector('[data-bl="q"]'), smQ = root.querySelector('[data-sm="q"]'), barEl = root.querySelector('.lg-bar');
+$('doc').href = LG.doc; $('disc').href = LG.discord;
+function setSec(s){ root.setAttribute('data-sec', s); root.querySelectorAll('.lg-s').forEach(function(b){ var on = b.getAttribute('data-sec') === s; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); try{ localStorage.setItem(LG.key, s); }catch(e){} }
+function setOpen(o){ root.classList.toggle('is-open', o); barEl.setAttribute('aria-expanded', o); $('togLabel').textContent = o ? 'COLLAPSE' : 'EXPAND'; }
+function open(){ if (!root.classList.contains('is-open')) setOpen(true); }
+var ct;
+function counts(){ clearTimeout(ct); ct = setTimeout(function(){ var a = root.querySelector('#cffb-bl .bl-tab.on i'), b = root.querySelector('#cffb-sm .sm-tab.on i'); $('nR').textContent = a ? a.textContent : '0'; $('nS').textContent = b ? b.textContent : '0'; }, 220); }
+function push(v){ if (qEl.value !== v) qEl.value = v; [blQ, smQ].forEach(function(i){ if (i && i.value !== v){ i.value = v; i.dispatchEvent(new Event('input', { bubbles:true })); } }); root.classList.toggle('q', !!v.trim()); if (v.trim()){ open(); counts(); } }
+function panelTop(){ var t = root.querySelector('.lg-body'); if (t && t.getBoundingClientRect().top < 0) window.scrollTo({ top: t.getBoundingClientRect().top + window.pageYOffset - 16, behavior:'smooth' }); }
+qEl.addEventListener('input', function(){ push(qEl.value); });
+qEl.addEventListener('keydown', function(e){ if (e.key === 'Escape') push(''); else if (e.key === 'Enter' && qEl.value.trim()){ e.preventDefault(); var f = root.querySelector(root.getAttribute('data-sec') === 'site' ? '#cffb-sm .sm-rb' : '#cffb-bl .bl-rb') || root.querySelector('.bl-rb,.sm-rb'); if (f) f.click(); } });
+$('qwrap').addEventListener('click', function(e){ e.stopPropagation(); });
+$('clear').addEventListener('click', function(e){ e.stopPropagation(); push(''); qEl.focus(); });
+barEl.addEventListener('click', function(){ setOpen(!root.classList.contains('is-open')); });
+barEl.addEventListener('keydown', function(e){ if (e.target === barEl && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); setOpen(!root.classList.contains('is-open')); } });
+window.addEventListener('keydown', function(e){ if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')){ e.preventDefault(); e.stopPropagation(); qEl.focus(); } }, true);
+/* site-map links that point at the bylaws widget now just flip to the Rules side */
+root.addEventListener('click', function(e){
+  var s = e.target.closest('.lg-s,.lg-hd button'); if (s){ push(''); setSec(s.getAttribute('data-sec')); open(); return; }
+  var b = e.target.closest('#cffb-sm [data-v="bylaws"]'); if (b && /^(w|tour|gotab)$/.test(b.getAttribute('data-act'))){ e.stopPropagation(); e.preventDefault(); push(''); setSec('rules'); open(); panelTop(); }
+}, true);
+root.addEventListener('change', function(e){ if (e.target.getAttribute('data-sm') === 'wsel' && e.target.value === 'bylaws'){ e.stopPropagation(); setSec('rules'); } }, true);
+/* keep the shared search box in step when a result or tab inside either side is clicked */
+root.addEventListener('click', function(e){
+  var sec = e.target.closest('#cffb-bl') ? 'rules' : e.target.closest('#cffb-sm') ? 'site' : null; if (!sec) return;
+  setTimeout(function(){ var mine = (sec === 'rules' ? blQ : smQ).value.trim(), u = qEl.value.trim();
+    if (u && !mine){ setSec(sec); push(''); panelTop(); } else if (!u && mine){ push(mine); } }, 0);
+});
+var saved = null; try{ saved = localStorage.getItem(LG.key); }catch(e){}
+setSec(saved === 'site' ? 'site' : 'rules');
+})();
+</script>
