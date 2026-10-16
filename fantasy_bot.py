@@ -8249,7 +8249,9 @@ async def devy_pick(
     # watcher's fingerprint so it doesn't re-announce the same state as if it were
     # a widget pick.
     try:
-        devy_watch_seen[str(conference).upper()] = _devy_watch_key(str(conference).upper())
+        k = _devy_watch_key(str(conference).upper())
+        if k is not None:
+            devy_watch_seen[str(conference).upper()] = k
     except Exception:
         pass
 
@@ -9750,18 +9752,27 @@ def _devy_parse_deadline(s):
         return None
 
 def _devy_watch_key(conference):
-    """Fingerprint of a conference's state so the watcher only announces genuine
-    changes (e.g. a widget pick the bot didn't make itself)."""
+    """Fingerprint of a conference's current pick, so the watcher only announces
+    genuine advances (e.g. a widget pick the bot didn't make itself).
+
+    Returns None when the state can't be read confidently this tick. The caller
+    MUST treat None as "unknown, skip" — never as a state change. Previously this
+    folded failed reads into sentinel values (op=-1, status="not_started"), so a
+    single transient Sheets read failure (then its recovery next tick) looked like
+    two state changes and re-pinged the same team on the clock over and over."""
+    status = get_devy_conf_status(conference)
+    if status in (None, "", "not_started"):
+        # Couldn't confirm the draft is live — could be a failed settings read.
+        # Treat as unknown rather than a change.
+        return None
+    if status == "completed":
+        return ("completed",)
     cur = get_current_devy_pick(conference)
-    op = cur.get("overallPick") if cur else -1
-    n = 0
-    if devy_draft_history_ws is not None:
-        try:
-            data = devy_draft_history_ws.get_all_records(expected_headers=[])
-            n = sum(1 for r in data if r.get("Conference") == conference)
-        except Exception:
-            pass
-    return (op, n, get_devy_conf_status(conference))
+    op = cur.get("overallPick") if cur else None
+    if op in (None, ""):
+        # Current pick unreadable this tick — unknown, not a change.
+        return None
+    return (status, op)
 
 async def announce_devy_on_the_clock(conference, note=None):
     """Post the standard on-the-clock ping to a conference's devy channel — the
@@ -9785,7 +9796,7 @@ async def announce_devy_on_the_clock(conference, note=None):
     msg = f"{prefix}🕐 {emoji} **{cur['teamName']}** is on the clock (R{cur['round']}P{cur['pick']}). {mention} 24 hours to make your pick."
     await channel.send(msg.strip())
 
-@tasks.loop(seconds=30)
+@tasks.loop(minutes=5)
 async def devy_watch_loop():
     """Runs only while a draft is live. Announces picks made outside the bot,
     enforces the soft clock (auto-skip via the single-writer endpoint), grace
@@ -9811,12 +9822,16 @@ async def devy_watch_loop():
                 if dl and datetime.now() >= dl:
                     res = await devy_endpoint_post({"action": "skip", "conference": conference})
                     if res.get("success"):
-                        devy_watch_seen[conference] = _devy_watch_key(conference)
+                        k = _devy_watch_key(conference)
+                        if k is not None:
+                            devy_watch_seen[conference] = k
                         await announce_devy_on_the_clock(conference, note="⏰ Clock expired — pick skipped (owed as a make-up).")
                         continue
             # Announce any state change the bot didn't just make (e.g. a widget pick).
+            # key is None when the state couldn't be read this tick — skip rather
+            # than mistake a transient read failure for a change (would re-ping).
             key = _devy_watch_key(conference)
-            if devy_watch_seen.get(conference) != key:
+            if key is not None and devy_watch_seen.get(conference) != key:
                 devy_watch_seen[conference] = key
                 await announce_devy_on_the_clock(conference)
         except Exception as e:
@@ -9831,7 +9846,9 @@ def start_devy_watch(conference):
     conference = str(conference).upper()
     devy_watch_conferences.add(conference)
     try:
-        devy_watch_seen[conference] = _devy_watch_key(conference)
+        k = _devy_watch_key(conference)
+        if k is not None:
+            devy_watch_seen[conference] = k
     except Exception:
         pass
     if not devy_watch_loop.is_running():
