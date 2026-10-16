@@ -269,7 +269,7 @@ async def notify_opponent_dm(opponent_id: str, subject: str, message: str, embed
 
 # ----------------- Team Lookup Helpter ---------------
 def get_team_by_discord_id(discord_id: int):
-    teams = teams_ws.get_all_records(expected_headers=[])
+    teams = _devy_cached_records(teams_ws)
     for row in teams:
         if str(row.get("Owner Discord ID", "")).strip() == str(discord_id):
             return {
@@ -3346,7 +3346,7 @@ def get_team_emoji_map():
     Returns dict: franchiseId -> emoji string
     """
     try:
-        data = teams_ws.get_all_records(expected_headers=[])
+        data = _devy_cached_records(teams_ws)
         emoji_map = {}
         for row in data:
             franchise_id = str(row.get("Franchise ID", "")).strip()
@@ -5208,7 +5208,7 @@ def get_franchise_owner_map():
     Returns dict: franchiseId (3-digit padded) -> discord_id (string)
     """
     try:
-        data = teams_ws.get_all_records(expected_headers=[])
+        data = _devy_cached_records(teams_ws)
         owner_map = {}
         for row in data:
             franchise_id = str(row.get("Franchise ID", "")).strip()
@@ -6902,12 +6902,50 @@ def get_devy_channel_for_conference(conference: str) -> int:
     return DEVY_CHANNEL_IDS.get(conference.upper(), 0) if conference else 0
 
 
+# ---- Short-TTL whole-sheet read cache (quota relief for live devy drafts) ----
+# Every devy "get a setting / pick / pool" previously re-pulled an ENTIRE sheet
+# via get_all_records(). get_current_devy_pick alone did ~6 such reads, the 5-min
+# watch loop ran it ~2x per conference per tick, and the /devy pick autocomplete
+# re-read the full player pool on EVERY keystroke — so with all conferences live
+# the bot blew past Google Sheets' 60-reads/min/user quota (HTTP 429). This caches
+# whole-sheet reads for a few seconds, collapsing the many repeated reads within a
+# single watch tick (or a burst of autocomplete keystrokes) into one API call per
+# sheet. All conferences share the same sheets, so one cached snapshot still feeds
+# the existing per-conference filtering unchanged. Writes — including the external
+# Apps Script endpoint's — invalidate the affected sheet so reads never go stale.
+_devy_read_cache = {}            # worksheet title -> {"data": [...], "expires": datetime}
+_DEVY_READ_TTL = timedelta(seconds=8)
+_DEVY_UNSET = object()           # sentinel: "no precomputed value passed"
+
+def _devy_cached_records(ws):
+    """get_all_records(expected_headers=[]) for a worksheet, cached for a few
+    seconds. Returns the live cached list — callers must treat it read-only."""
+    if ws is None:
+        return []
+    key = ws.title
+    now = datetime.now()
+    entry = _devy_read_cache.get(key)
+    if entry is not None and entry["expires"] > now:
+        return entry["data"]
+    data = ws.get_all_records(expected_headers=[])
+    _devy_read_cache[key] = {"data": data, "expires": now + _DEVY_READ_TTL}
+    return data
+
+def _devy_invalidate_cache(ws=None):
+    """Drop cached reads (one worksheet, or all when ws is None) after a write so
+    the next read reflects it. Call after any write, including the Apps Script
+    endpoint (which writes to the sheet behind this process's back)."""
+    if ws is None:
+        _devy_read_cache.clear()
+    else:
+        _devy_read_cache.pop(ws.title, None)
+
 def get_devy_draft_setting(key: str):
     """Get a setting value from DevyDraftSettings sheet."""
     if devy_draft_settings_ws is None:
         return None
     try:
-        data = devy_draft_settings_ws.get_all_records(expected_headers=[])
+        data = _devy_cached_records(devy_draft_settings_ws)
         for row in data:
             if row.get("SettingKey") == key:
                 return row.get("SettingValue")
@@ -6921,13 +6959,17 @@ def set_devy_draft_setting(key: str, value):
     if devy_draft_settings_ws is None:
         return False
     try:
+        # Read fresh (not cached) so the row index is correct, then invalidate so
+        # the next get sees the new value.
         data = devy_draft_settings_ws.get_all_records(expected_headers=[])
         for idx, row in enumerate(data, start=2):
             if row.get("SettingKey") == key:
                 devy_draft_settings_ws.update_cell(idx, 2, value)
+                _devy_invalidate_cache(devy_draft_settings_ws)
                 return True
         # Key not found, add new row
         devy_draft_settings_ws.append_row([key, value])
+        _devy_invalidate_cache(devy_draft_settings_ws)
         return True
     except Exception as e:
         print(f"Error setting devy draft setting: {e}")
@@ -7019,7 +7061,7 @@ def reevaluate_devy_cycle_phase():
     if devy_draft_settings_ws is None:
         return
     try:
-        data = devy_draft_settings_ws.get_all_records(expected_headers=[])
+        data = _devy_cached_records(devy_draft_settings_ws)
     except Exception:
         return
     any_started = any_incomplete = False
@@ -7038,7 +7080,7 @@ def get_owed_devy_slots(conference: str, year: int):
     if devy_draft_history_ws is None:
         return []
     try:
-        data = devy_draft_history_ws.get_all_records(expected_headers=[])
+        data = _devy_cached_records(devy_draft_history_ws)
     except Exception:
         return []
     owed = []
@@ -7084,7 +7126,7 @@ def get_available_devy_players(conference: str = None):
     if devy_player_pool_ws is None:
         return []
     try:
-        data = devy_player_pool_ws.get_all_records(expected_headers=[])
+        data = _devy_cached_records(devy_player_pool_ws)
         players = []
         for row in data:
             # Check if available (not drafted, status is Available or Retained)
@@ -7477,7 +7519,7 @@ def get_current_devy_pick(conference: str):
     current_pick = int(get_devy_draft_setting(_devy_cur_key(conference, "Pick")) or 1)
 
     try:
-        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
+        order_data = _devy_cached_records(devy_draft_order_ws)
         for row in order_data:
             if (row.get("Year") == int(draft_year) and
                 row.get("Conference") == conference and
@@ -7502,8 +7544,8 @@ def get_devy_draft_order_with_status(conference: str, year: int):
         return []
 
     try:
-        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
-        history_data = devy_draft_history_ws.get_all_records(expected_headers=[])
+        order_data = _devy_cached_records(devy_draft_order_ws)
+        history_data = _devy_cached_records(devy_draft_history_ws)
 
         # Build set of completed picks
         completed_picks = set()
@@ -7641,6 +7683,10 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
                 except Exception as pool_err:
                     print(f"Write-in pool add failed for {manual_id}: {pool_err}")
 
+                # History + pool just changed — drop their cache before advancing.
+                _devy_invalidate_cache(devy_draft_history_ws)
+                _devy_invalidate_cache(devy_player_pool_ws)
+
                 # Advance draft
                 advance_result = advance_devy_draft(conference)
 
@@ -7704,6 +7750,11 @@ def make_devy_pick(conference: str, franchise_id: str, player_id: str, manual_en
         devy_player_pool_ws.update_cell(player_row, 10, normalized_id)  # DraftedBy
         devy_player_pool_ws.update_cell(player_row, 11, draft_year)  # DraftYear
 
+        # History + pool just changed — drop their cache before advancing so the
+        # skip/complete logic in advance_devy_draft reads the new pick.
+        _devy_invalidate_cache(devy_draft_history_ws)
+        _devy_invalidate_cache(devy_player_pool_ws)
+
         # Advance draft
         advance_result = advance_devy_draft(conference)
 
@@ -7731,7 +7782,7 @@ def get_filled_devy_slots(year, conference):
     if devy_draft_history_ws is None:
         return filled
     try:
-        for row in devy_draft_history_ws.get_all_records(expected_headers=[]):
+        for row in _devy_cached_records(devy_draft_history_ws):
             if str(row.get("Year")) == str(year) and row.get("Conference") == conference:
                 filled.add(f"{row.get('Round')}-{row.get('Pick')}")
     except Exception as e:
@@ -7746,7 +7797,7 @@ def advance_devy_draft(conference: str):
     current_pick = int(get_devy_draft_setting(_devy_cur_key(conference, "Pick")) or 1)
 
     try:
-        order_data = devy_draft_order_ws.get_all_records(expected_headers=[])
+        order_data = _devy_cached_records(devy_draft_order_ws)
 
         # Get all picks for this conference/year sorted by overall pick
         conf_picks = sorted(
@@ -9751,9 +9802,12 @@ def _devy_parse_deadline(s):
     except Exception:
         return None
 
-def _devy_watch_key(conference):
+def _devy_watch_key(conference, cur=_DEVY_UNSET):
     """Fingerprint of a conference's current pick, so the watcher only announces
     genuine advances (e.g. a widget pick the bot didn't make itself).
+
+    Pass `cur` (an already-fetched get_current_devy_pick result) to avoid a second
+    fetch when the caller just computed it; omit it to fetch here.
 
     Returns None when the state can't be read confidently this tick. The caller
     MUST treat None as "unknown, skip" — never as a state change. Previously this
@@ -9767,7 +9821,8 @@ def _devy_watch_key(conference):
         return None
     if status == "completed":
         return ("completed",)
-    cur = get_current_devy_pick(conference)
+    if cur is _DEVY_UNSET:
+        cur = get_current_devy_pick(conference)
     op = cur.get("overallPick") if cur else None
     if op in (None, ""):
         # Current pick unreadable this tick — unknown, not a change.
@@ -9804,6 +9859,10 @@ async def devy_watch_loop():
     if not devy_watch_conferences:
         devy_watch_loop.stop()
         return
+    # Start each tick from a fresh snapshot: within the tick the per-conference
+    # reads all hit the cache (one API read per shared sheet for ALL conferences),
+    # but a new tick must never serve state left over from the previous one.
+    _devy_invalidate_cache()
     for conference in list(devy_watch_conferences):
         try:
             if get_devy_conf_status(conference) == "completed":
@@ -9812,16 +9871,21 @@ async def devy_watch_loop():
                 await announce_devy_on_the_clock(conference)  # posts the complete message
                 continue
             year = int(get_devy_draft_setting("DraftYear") or 0)
+            cur = get_current_devy_pick(conference)
             if DEVY_WEBAPP_URL:
                 # Grace auto-pick any owed slot past its window (endpoint = single writer).
                 if get_owed_devy_slots(conference, year):
                     await devy_endpoint_post({"action": "autopick", "conference": conference})
+                    # Endpoint wrote to the sheet behind our back — refresh.
+                    _devy_invalidate_cache()
+                    cur = get_current_devy_pick(conference)
                 # Soft clock: if the current pick's deadline has passed, skip it.
-                cur = get_current_devy_pick(conference)
                 dl = _devy_parse_deadline(cur.get("pickDeadline")) if cur else None
                 if dl and datetime.now() >= dl:
                     res = await devy_endpoint_post({"action": "skip", "conference": conference})
                     if res.get("success"):
+                        # Endpoint advanced the pick — refresh before reading it.
+                        _devy_invalidate_cache()
                         k = _devy_watch_key(conference)
                         if k is not None:
                             devy_watch_seen[conference] = k
@@ -9830,7 +9894,7 @@ async def devy_watch_loop():
             # Announce any state change the bot didn't just make (e.g. a widget pick).
             # key is None when the state couldn't be read this tick — skip rather
             # than mistake a transient read failure for a change (would re-ping).
-            key = _devy_watch_key(conference)
+            key = _devy_watch_key(conference, cur)
             if key is not None and devy_watch_seen.get(conference) != key:
                 devy_watch_seen[conference] = key
                 await announce_devy_on_the_clock(conference)
