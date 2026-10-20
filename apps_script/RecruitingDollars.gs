@@ -4,8 +4,10 @@
  *
  * Bonus Sources:
  * - Regular Season Wins: $1 per win (max 12)
- * - Postseason Wins: $2 per win (any game Week 13+)
+ * - Postseason Wins: $1 per win (any game Week 13+)
  * - Postseason Appearances: $1 per loss (appearance bonus, Week 13+)
+ * - Game of the Week: $1 per week your matchup is listed as a Game of the Week (avg rank <= 15)
+ * - Gameday: $1 additional per week you are THE Gameday matchup (lowest avg rank that week)
  * - National Position Awards: $5 per player winning National_QB/RB/WR_TE (rank 1)
  * - Heisman Award: $5 per player winning Heisman
  * - 1st Team All-Conference: $5 per player
@@ -75,6 +77,13 @@ function calculateRecruitingDollars(year, throughWeek) {
   const teamsWithWagers = Object.keys(wagerOutcomes).filter(k => wagerOutcomes[k].net !== 0).length;
   Logger.log(`  Calculated wager outcomes for ${teamsWithWagers} teams with non-zero results`);
 
+  // Step 6b: Count College Gameday / Game of the Week appearances
+  Logger.log("\n--- Step 6b: Counting Gameday / Game of the Week Appearances ---");
+  const gamedayAppearances = getGamedayAppearancesByTeam(year, throughWeek);
+  const teamsWithGameday = Object.values(gamedayAppearances)
+    .filter(g => g.gotwWeeks > 0 || g.gamedayWeeks > 0).length;
+  Logger.log(`  ${teamsWithGameday} teams appeared in a Game of the Week / Gameday matchup`);
+
   // Step 7: Get draft bonuses and retention data (only for final rankings, Week 17+)
   Logger.log("\n--- Step 7: Getting Draft Bonuses & Retention Data ---");
   let draftBonuses = {};
@@ -127,6 +136,7 @@ function calculateRecruitingDollars(year, throughWeek) {
     const wagers = wagerOutcomes[franchiseId] || { won: 0, lost: 0, net: 0 };
     const draft = draftBonuses[franchiseId] || { count: 0, dollars: 0 };
     const retention = retentionData.byTeam[franchiseId] || { retentionCount: 0, retentionCost: 0 };
+    const gameday = gamedayAppearances[franchiseId] || { gotwWeeks: 0, gamedayWeeks: 0 };
 
     // Calculate dollar amounts
     const regSeasonDollars = regWins * dollarsConfig.regularSeasonWinValue;
@@ -164,11 +174,16 @@ function calculateRecruitingDollars(year, throughWeek) {
     const retentionCount = retention.retentionCount;
     const retentionCostDollars = retention.retentionCost;
 
+    // Gameday bonuses ($1 per Game of the Week week, +$1 per week as THE Gameday matchup)
+    const gameOfWeekDollars = gameday.gotwWeeks * dollarsConfig.gameOfWeekValue;
+    const gamedayDollars = gameday.gamedayWeeks * dollarsConfig.gamedayValue;
+
     // Total = bonuses + adjusted draft bonuses - retention costs
     const totalDollars = regSeasonDollars + postseasonDollars + ncDollars +
                          heismanDollars + cotyDollars +
                          firstTeamDollars + secondTeamDollars + thirdTeamDollars +
-                         wagerNet + draftBonusDollars - retentionCostDollars;
+                         wagerNet + draftBonusDollars - retentionCostDollars +
+                         gameOfWeekDollars + gamedayDollars;
 
     rows.push([
       year,
@@ -199,6 +214,8 @@ function calculateRecruitingDollars(year, throughWeek) {
       draftBonusDollars,
       retentionCount,
       retentionCostDollars,
+      gameOfWeekDollars,
+      gamedayDollars,
       totalDollars,
       now,
       status
@@ -694,6 +711,77 @@ function loadGameResultsForRivalries(year, throughWeek) {
   return results;
 }
 
+/**
+ * Count College Gameday / Game of the Week appearances per team for a season.
+ * Reads the per-week flags already written to ScheduleResults by the rankings calc:
+ *   - IsGameOfTheWeek  -> matchup avg rank <= 15 ($1 per week)
+ *   - IsCollegeGameday -> THE lowest-avg matchup that week ($1 additional per week)
+ * Weeks after throughWeek are ignored, and duplicate rows for the same team/week
+ * are de-duplicated so each qualifying week counts at most once.
+ *
+ * @param {String|Number} year - Season year
+ * @param {Number} throughWeek - Only count weeks <= this
+ * @returns {Object} - franchiseId -> { gotwWeeks, gamedayWeeks }
+ */
+function getGamedayAppearancesByTeam(year, throughWeek) {
+  const ss = SpreadsheetApp.getActive();
+  const sheet = ss.getSheetByName("ScheduleResults");
+
+  const result = {};
+  if (!sheet || sheet.getLastRow() <= 1) {
+    Logger.log("  ScheduleResults sheet not found or empty");
+    return result;
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const colMap = {};
+  headers.forEach((h, i) => { colMap[h] = i; });
+
+  const yearCol = colMap["Year"];
+  const weekCol = colMap["Week"];
+  const fidCol = colMap["FranchiseID"];
+  const gotwCol = colMap["IsGameOfTheWeek"];
+  const gamedayCol = colMap["IsCollegeGameday"];
+
+  if (gotwCol === undefined || gamedayCol === undefined) {
+    Logger.log("  IsGameOfTheWeek / IsCollegeGameday columns not found in ScheduleResults");
+    return result;
+  }
+
+  const asBool = v => v === true || String(v).toUpperCase() === "TRUE";
+
+  // Track unique weeks per team so duplicate rows can't double-count a week
+  const gotwWeeks = {};    // fId -> Set(week)
+  const gamedayWeeks = {}; // fId -> Set(week)
+
+  data.slice(1).forEach(row => {
+    if (Number(row[yearCol]) !== Number(year)) return;
+    const week = Number(row[weekCol]);
+    if (week > throughWeek) return;
+
+    const fId = String(row[fidCol] || "").padStart(3, "0");
+    if (!fId || fId === "000") return;
+
+    if (asBool(row[gotwCol])) {
+      (gotwWeeks[fId] = gotwWeeks[fId] || new Set()).add(week);
+    }
+    if (asBool(row[gamedayCol])) {
+      (gamedayWeeks[fId] = gamedayWeeks[fId] || new Set()).add(week);
+    }
+  });
+
+  const allIds = new Set([...Object.keys(gotwWeeks), ...Object.keys(gamedayWeeks)]);
+  allIds.forEach(fId => {
+    result[fId] = {
+      gotwWeeks: gotwWeeks[fId] ? gotwWeeks[fId].size : 0,
+      gamedayWeeks: gamedayWeeks[fId] ? gamedayWeeks[fId].size : 0
+    };
+  });
+
+  return result;
+}
+
 // ============================================================================
 // SHEET MANAGEMENT
 // ============================================================================
@@ -733,6 +821,8 @@ function getRecruitingDollarsSheet() {
     "DraftBonusDollars",
     "RetentionCount",
     "RetentionCostDollars",
+    "GameOfWeekDollars",
+    "GamedayDollars",
     "TotalBonusDollars",
     "LastCalculated",
     "Status"
@@ -748,40 +838,55 @@ function getRecruitingDollarsSheet() {
  * @param {Array} rows - Array of row data to write
  */
 function writeRecruitingDollarsToSheet(year, rows) {
+  const ss = SpreadsheetApp.getActive();
+  const sheetName = getConfig().sheets.recruitingDollars;
+
+  // Snapshot existing contents at their TRUE stored width BEFORE the header is
+  // migrated. getRecruitingDollarsSheet() rewrites the header row to the current
+  // layout; if we read after that, getDataRange() pads old rows out to the new
+  // width with trailing blanks, so the length-based legacy detection below would
+  // see full-width rows and silently misalign the preserved years.
+  const preSheet = ss.getSheetByName(sheetName);
+  const existingData = (preSheet && preSheet.getLastRow() > 0)
+    ? preSheet.getDataRange().getValues()
+    : [];
+
+  // Now get/create the sheet and migrate the header to the current layout.
   const sheet = getRecruitingDollarsSheet();
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-
-  // Get existing data
-  const existingData = sheet.getDataRange().getValues();
 
   // Keep rows from other years, padding old rows to match new header length
   const expectedCols = headers.length;
   const rowsToKeep = existingData.slice(1)
     .filter(row => Number(row[0]) !== Number(year))
     .map(row => {
-      if (row.length < expectedCols) {
-        const padded = [...row];
-        if (padded.length === 29) {
-          // 29-col layout (before CoachOfYear): insert 0,0 at index 13 (after HeismanDollars)
-          padded.splice(13, 0, 0, 0);
-        } else if (padded.length === 28) {
-          // 28-col layout (before PostseasonLosses): insert 0 at index 7
-          padded.splice(7, 0, 0);
-          // Also insert CoachOfYear at index 13
-          padded.splice(13, 0, 0, 0);
-        } else if (padded.length === 26) {
-          // Old 26-col layout: insert retention columns before TotalBonusDollars (index 23)
-          padded.splice(23, 0, 0, 0);
-          // Insert PostseasonLosses at index 7
-          padded.splice(7, 0, 0);
-          // Insert CoachOfYear at index 13
-          padded.splice(13, 0, 0, 0);
-        } else {
-          while (padded.length < expectedCols) padded.push("");
-        }
-        return padded;
+      if (row.length >= expectedCols) return row;
+      const padded = [...row];
+      // Step 1: normalize legacy layouts up to the 31-col layout (pre-gameday)
+      if (padded.length === 29) {
+        // 29-col layout (before CoachOfYear): insert 0,0 at index 13 (after HeismanDollars)
+        padded.splice(13, 0, 0, 0);
+      } else if (padded.length === 28) {
+        // 28-col layout (before PostseasonLosses): insert 0 at index 7
+        padded.splice(7, 0, 0);
+        // Also insert CoachOfYear at index 13
+        padded.splice(13, 0, 0, 0);
+      } else if (padded.length === 26) {
+        // Old 26-col layout: insert retention columns before TotalBonusDollars (index 23)
+        padded.splice(23, 0, 0, 0);
+        // Insert PostseasonLosses at index 7
+        padded.splice(7, 0, 0);
+        // Insert CoachOfYear at index 13
+        padded.splice(13, 0, 0, 0);
       }
-      return row;
+      // Step 2: insert GameOfWeekDollars + GamedayDollars before TotalBonusDollars.
+      // In the 31-col (pre-gameday) layout TotalBonusDollars is at index 28.
+      if (padded.length === 31) {
+        padded.splice(28, 0, 0, 0);
+      }
+      // Final safety pad for any unrecognized shorter layout
+      while (padded.length < expectedCols) padded.push("");
+      return padded;
     });
 
   // Clear sheet (except header)

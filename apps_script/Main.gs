@@ -1350,12 +1350,12 @@ function promptViewCollegeGameday() {
   lines.push(`  Average Rank: ${gm.avgRank.toFixed(1)}\n`);
 
   if (gamedayData.gamesOfTheWeek.length > 0) {
-    lines.push(`🌟 GAMES OF THE WEEK (Avg Rank < 15):`);
+    lines.push(`🌟 GAMES OF THE WEEK (Avg Rank ≤ 15):`);
     gamedayData.gamesOfTheWeek.forEach((m, i) => {
       lines.push(`${i + 1}. #${m.team1.rank} ${m.team1.name} vs #${m.team2.rank} ${m.team2.name} (Avg: ${m.avgRank.toFixed(1)})`);
     });
   } else {
-    lines.push(`No other Games of the Week (Avg Rank < 15)`);
+    lines.push(`No other Games of the Week (Avg Rank ≤ 15)`);
   }
 
   // Log full results

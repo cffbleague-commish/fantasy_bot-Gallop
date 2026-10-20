@@ -103,7 +103,7 @@ function getScheduleResultsSheet() {
     "OpponentRank",         // Opponent's rank for the week
     "MatchupAvgRank",       // Average of both teams' ranks
     "IsCollegeGameday",     // TRUE if this is THE featured Gameday matchup
-    "IsGameOfTheWeek",      // TRUE if avg rank < 15
+    "IsGameOfTheWeek",      // TRUE if avg rank <= 15
 
     "CachedAt"
   ];
@@ -1413,8 +1413,8 @@ function populateScheduleResults(year, throughWeek, cumulativeWeek = null) {
         const matchupKey = [franchiseId, d.opponentId].sort().join("-");
         isCollegeGameday = (matchupKey === gamedayMatchupKey);
 
-        // Game of the Week if avg rank < 15
-        isGameOfTheWeek = matchupAvgRank < 15;
+        // Game of the Week if avg rank <= 15
+        isGameOfTheWeek = matchupAvgRank <= 15;
       }
 
       // Check if this is a confirmed rivalry game
@@ -1827,7 +1827,7 @@ function calculateFinalRankings(year) {
 /**
  * Get College Gameday matchups for a given week
  * - "College Gameday" = The matchup with the lowest average rank between two teams
- * - "Games of the Week" = All matchups where average rank < 15
+ * - "Games of the Week" = All matchups where average rank <= 15
  *
  * @param {Number} year - Season year
  * @param {Number} upcomingWeek - The week to analyze matchups for
@@ -1888,7 +1888,7 @@ function getCollegeGamedayMatchups(year, upcomingWeek) {
         conference: franchiseConferenceMap[f2.franchiseId] || ""
       },
       avgRank: avgRank,
-      isGameOfTheWeek: avgRank < 15
+      isGameOfTheWeek: avgRank <= 15
     };
   });
 
@@ -1905,7 +1905,7 @@ function getCollegeGamedayMatchups(year, upcomingWeek) {
   // The Gameday matchup is always the first one (lowest avg rank)
   const gamedayMatchup = analyzedMatchups.length > 0 ? analyzedMatchups[0] : null;
 
-  // Games of the Week are all matchups with avg rank < 15
+  // Games of the Week are all matchups with avg rank <= 15
   const gamesOfTheWeek = analyzedMatchups.filter(m => m.isGameOfTheWeek && m !== gamedayMatchup);
 
   return {
@@ -2084,7 +2084,7 @@ function stampWeek1GamedayFromPoll(year, rankMap) {
       row[col["OpponentRank"]] = oppRank;
       row[col["MatchupAvgRank"]] = avg;
       row[col["IsCollegeGameday"]] = (key === gamedayKey);
-      row[col["IsGameOfTheWeek"]] = avg < 15;
+      row[col["IsGameOfTheWeek"]] = avg <= 15;
     }
   });
 
