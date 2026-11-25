@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CFFB Scenario Builder</title><style>body{margin:0;background:#0A0A0A;padding:24px 16px;font-family:Inter,system-ui,sans-serif}</style></head><body>
+<!-- ===== START MFL MESSAGE ===== (paste START→END into MFL Home Page Message; swap image paths for hosted https URLs) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap">
+<style>
+#cffb-sb{--gold:#C9A227;--gold-l:#E8C547;--gold-d:#8B6F1F;--bg:#0A0A0A;--s1:#141414;--s2:#1C1C1C;--sh:#1F1F1F;--bd:#2A2A2A;--bd2:#3A3A3A;--fg:#F5F5F5;--fg2:#9A9A9A;--fg3:#5A5A5A;--up:#4FA572;--dn:#D06060;--ap:#7BA4C9;max-width:1080px;margin:16px auto 0;container-type:inline-size;container-name:sb;font-family:Inter,system-ui,sans-serif;color:var(--fg);box-sizing:border-box;position:relative;font-variant-numeric:tabular-nums}
+#cffb-sb *{box-sizing:border-box}
+#cffb-sb a{color:var(--gold-l)}#cffb-sb a:hover{color:#F4D66A}
+#cffb-sb button{font-family:inherit;color:inherit}
+#cffb-sb .D{font-family:'Saira Condensed',sans-serif;text-transform:uppercase}
+/* bar */
+#cffb-sb .sb-bar{position:relative;display:flex;align-items:stretch;min-height:88px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;cursor:pointer;user-select:none;overflow:hidden}
+#cffb-sb .sb-chev{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(201,162,39,.07) 22px 30px);-webkit-mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%);mask:linear-gradient(90deg,transparent 10%,#000 60%,transparent 100%)}
+#cffb-sb .sb-wk{position:relative;flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 28px 0 22px;background:var(--gold);color:#0A0A0A;clip-path:polygon(0 0,100% 0,calc(100% - 16px) 100%,0 100%)}
+#cffb-sb .sb-wk small{font:800 10px/1 Inter,sans-serif;letter-spacing:.2em}
+#cffb-sb .sb-wk b{font:900 40px/.85 'Saira Condensed',sans-serif;margin-top:4px;white-space:nowrap}
+#cffb-sb .sb-ic{position:relative;flex:none;width:46px;height:46px;margin:4px 0 1px}
+#cffb-sb .sb-ic svg{display:block;width:100%;height:100%;overflow:visible}
+#cffb-sb .sb-ic .br{fill:none;stroke:rgba(10,10,10,.28);stroke-width:2;stroke-linecap:round}
+#cffb-sb .sb-ic .hl{fill:none;stroke:#0A0A0A;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:40;stroke-dashoffset:40;animation:sbDraw 4.5s cubic-bezier(.2,.8,.2,1) infinite}
+#cffb-sb .sb-ic .nd{fill:rgba(10,10,10,.2);stroke:rgba(10,10,10,.45);stroke-width:1.5}
+#cffb-sb .sb-ic .nd.on{fill:#0A0A0A;stroke:#0A0A0A;opacity:0;animation:sbNode 4.5s ease-out infinite}
+#cffb-sb .sb-ic .rt{fill:#0A0A0A}
+#cffb-sb .sb-ic .rp{fill:none;stroke:#0A0A0A;stroke-width:1.2;transform-origin:8px 24px;animation:sbRing 1.5s ease-out infinite}
+#cffb-sb .sb-ic .d2{animation-delay:1.5s}#cffb-sb .sb-ic .d3{animation-delay:3s}
+@keyframes sbDraw{0%{stroke-dashoffset:40;opacity:1}22%{stroke-dashoffset:0;opacity:1}30%{opacity:1}33%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes sbNode{0%,18%{opacity:0;transform:scale(.4)}24%{opacity:1;transform:scale(1.25)}28%{transform:scale(1)}31%{opacity:1}34%,100%{opacity:0}}
+@keyframes sbRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+#cffb-sb .sb-wk em{font:800 8.5px/1 Inter,sans-serif;font-style:normal;letter-spacing:.14em;margin-top:5px;opacity:.75;white-space:nowrap}
+#cffb-sb .sb-hd .sb-wkn{font-size:11px;font-weight:600;color:var(--fg2);margin-top:4px;letter-spacing:0}
+#cffb-sb .sb-tease{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:12px 16px}
+#cffb-sb .sb-eb{font:800 15px/1 'Saira Condensed',sans-serif;letter-spacing:.12em;color:var(--gold-l)}
+#cffb-sb .sb-mus{display:flex;flex-wrap:wrap;gap:6px 16px}
+#cffb-sb .sb-mu{display:flex;align-items:center;gap:5px}
+#cffb-sb .sb-mu i{font:700 9px/1 Inter,sans-serif;font-style:normal;letter-spacing:.1em;color:var(--fg3);width:30px}
+#cffb-sb .sb-mu em{font:700 10px/1 'Saira Condensed',sans-serif;font-style:normal;color:var(--fg3)}
+#cffb-sb .sb-tease-s{font-size:12px;color:var(--fg2)}
+#cffb-sb .sb-tog{position:relative;flex:none;align-self:center;margin-right:16px;display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:10px 14px;font:700 12px Inter,sans-serif;letter-spacing:.12em;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#cffb-sb .sb-bar:hover .sb-tog{filter:brightness(1.12)}
+#cffb-sb .sb-tog svg{transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+#cffb-sb.is-open .sb-tog svg{transform:rotate(180deg)}
+#cffb-sb.is-open .sb-bar{border-radius:8px 8px 0 0}
+/* panel */
+#cffb-sb .sb-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s cubic-bezier(.2,.8,.2,1)}
+#cffb-sb.is-open .sb-panel{grid-template-rows:1fr}
+#cffb-sb .sb-panel>div{overflow:hidden;min-height:0}
+#cffb-sb .sb-body{background:var(--bg);border:1px solid var(--bd);border-top:0;border-radius:0 0 8px 8px}
+#cffb-sb .sb-tabs{display:flex;border-bottom:1px solid var(--bd);padding:0 8px;overflow-x:auto;scrollbar-width:none}
+#cffb-sb .sb-tab{position:relative;background:none;border:0;color:var(--fg2);padding:14px 11px 12px;font:800 15px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+#cffb-sb .sb-tab:hover,#cffb-sb .sb-tab.on{color:var(--fg)}
+#cffb-sb .sb-tab.on::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;background:var(--gold)}
+#cffb-sb .sb-tab i{font:700 9px/1 Inter,sans-serif;font-style:normal;padding:3px 5px;border-radius:2px;background:var(--s2);color:var(--fg2)}
+#cffb-sb .sb-tab.on i{background:var(--gold);color:#0A0A0A}
+#cffb-sb .sb-view{padding:14px}
+#cffb-sb .sb-sub{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+#cffb-sb .sb-chips{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+#cffb-sb .sb-chip{display:flex;align-items:center;gap:5px;flex:none;padding:7px 10px;border-radius:4px;background:transparent;border:1px solid var(--bd);color:var(--fg2);cursor:pointer;font:700 13px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;min-height:34px}
+#cffb-sb .sb-chip img{width:15px;height:15px;object-fit:contain;filter:grayscale(1) opacity(.6)}
+#cffb-sb .sb-chip.on{background:var(--s2);border-color:var(--bd2);color:var(--fg)}
+#cffb-sb .sb-chip.on img{filter:none}
+#cffb-sb .sb-chip small{font:700 9px Inter,sans-serif;color:var(--fg3)}
+#cffb-sb .sb-chip.on small{color:var(--gold)}
+#cffb-sb .sb-seg{display:flex;background:var(--s1);border:1px solid var(--bd);border-radius:4px;padding:2px;gap:2px}
+#cffb-sb .sb-seg button{background:none;border:1px solid transparent;border-radius:3px;padding:5px 8px;font:700 11px/1 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2);cursor:pointer}
+#cffb-sb .sb-seg button.on{background:var(--s2);border-color:var(--bd2);color:var(--fg)}
+#cffb-sb .sb-lbl{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+#cffb-sb .sb-note{font-size:11px;color:var(--fg3);line-height:1.4;margin:10px 0 0;text-wrap:pretty}
+/* pill */
+#cffb-sb .sb-p{display:inline-flex;flex:none;border-radius:4px;overflow:hidden;vertical-align:middle;line-height:0;transition:opacity .12s,filter .12s}
+#cffb-sb .sb-p>img{height:100%;width:100%;display:block}
+#cffb-sb .sb-p--fb{box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+#cffb-sb .sb-p--fb i{display:flex;align-items:center;justify-content:center;flex:none;height:100%}
+#cffb-sb .sb-p--fb i img{width:68%;height:68%;object-fit:contain;filter:brightness(0) invert(1);opacity:.92}
+#cffb-sb .sb-p--fb b{flex:1;display:flex;align-items:center;justify-content:center;font-family:'Saira Condensed',sans-serif;font-weight:700;letter-spacing:.02em;line-height:1}
+#cffb-sb .sb-p.dim{opacity:.28;filter:grayscale(.85)}
+#cffb-sb .sb-pk{position:relative;background:none;border:0;padding:4px;margin:-4px;cursor:pointer;line-height:0;border-radius:6px;min-height:44px;display:flex;align-items:center}
+#cffb-sb .sb-pk:hover .sb-p{filter:brightness(1.12)}
+#cffb-sb .sb-pk:hover .sb-p.dim{opacity:.6}
+#cffb-sb .sb-pk.on .sb-p{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--gold)}
+#cffb-sb .sb-pk.on::after{content:"W";position:absolute;top:2px;right:0;width:15px;height:15px;border-radius:50%;background:var(--gold);color:#0A0A0A;font:700 9px/15px Inter,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--bg)}
+#cffb-sb .sb-tm{background:none;border:0;padding:0;cursor:pointer;line-height:0}
+/* game */
+#cffb-sb .sb-games{display:grid;gap:8px}
+#cffb-sb .sb-g{background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+#cffb-sb .sb-g.pk{border-color:rgba(201,162,39,.35)}
+#cffb-sb .sb-g.hot{box-shadow:inset 3px 0 0 var(--gold)}
+#cffb-sb .sb-g__row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 12px}
+#cffb-sb .sb-g__mid{display:flex;flex-direction:column;gap:4px;min-width:0}
+#cffb-sb .sb-g__nums{display:flex;justify-content:space-between;font:700 12px/1 'Saira Condensed',sans-serif;color:var(--fg3)}
+#cffb-sb .sb-g__nums .f{color:var(--fg)}
+#cffb-sb .sb-pb{display:flex;height:4px;gap:2px;border-radius:999px;overflow:hidden;background:#0d0d0d}
+#cffb-sb .sb-pb span{display:block;height:100%}
+#cffb-sb .sb-g__meta{display:flex;justify-content:center;gap:6px;font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);white-space:nowrap}
+#cffb-sb .sb-g__meta .hot{color:var(--gold)}
+#cffb-sb .sb-st{display:inline-flex;gap:2px;align-items:center;margin-left:3px}
+#cffb-sb .sb-st i{width:4px;height:7px;border-radius:1px;background:#2a2a2a}
+#cffb-sb .sb-st i.on{background:var(--gold)}
+#cffb-sb .sb-g__ft{display:flex;border-top:1px solid #1d1d1d}
+#cffb-sb .sb-g__ft button{flex:1;background:none;border:0;padding:9px 12px;font:700 10px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--fg2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px}
+#cffb-sb .sb-g__ft button:hover,#cffb-sb .sb-g__ft button.on{color:var(--gold-l)}
+#cffb-sb .sb-g__ft button+button{border-left:1px solid #1d1d1d}
+#cffb-sb .sb-imp{padding:4px 12px 10px;background:#101010;border-top:1px solid #1d1d1d}
+#cffb-sb .sb-imp__r{display:grid;grid-template-columns:minmax(0,1fr) 34px 66px 66px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid #1a1a1a}
+#cffb-sb .sb-imp__r:last-child{border-bottom:0}
+#cffb-sb .sb-imp__r--h{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);padding-top:6px}
+#cffb-sb .sb-imp__r--h span:not(:first-child){display:flex;justify-content:flex-end;align-items:center;gap:3px}
+#cffb-sb .sb-imp__now{text-align:right;font:600 12px 'Saira Condensed',sans-serif;color:var(--fg3)}
+#cffb-sb .sb-v{display:flex;justify-content:flex-end;align-items:baseline;gap:4px}
+#cffb-sb .sb-v b{font:700 14px 'Saira Condensed',sans-serif}
+#cffb-sb .sb-v i{font:700 10px 'Saira Condensed',sans-serif;font-style:normal;color:var(--fg3);min-width:22px;text-align:right}
+#cffb-sb .up{color:var(--up)!important}#cffb-sb .dn{color:var(--dn)!important}
+#cffb-sb .o-z{color:var(--fg3)}#cffb-sb .o-lo{color:var(--fg2)}#cffb-sb .o-mid{color:#C8C8C8}#cffb-sb .o-hi{color:var(--fg)}#cffb-sb .o-lock{color:var(--gold)}
+/* table */
+#cffb-sb .sb-card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+#cffb-sb .sb-tbl{width:100%;border-collapse:collapse}
+#cffb-sb .sb-tbl th{font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);text-align:right;padding:8px 6px;border-bottom:1px solid var(--bd);white-space:nowrap}
+#cffb-sb .sb-tbl th.l{text-align:left}
+#cffb-sb .sb-tbl td{padding:6px;border-bottom:1px solid #1c1c1c;text-align:right;white-space:nowrap;font:600 14px 'Saira Condensed',sans-serif}
+#cffb-sb .sb-tbl tr:last-child td{border-bottom:0}
+#cffb-sb .sb-tbl tbody tr{cursor:pointer}
+#cffb-sb .sb-tbl tbody tr:hover td{background:var(--sh)}
+#cffb-sb .sb-tbl tr.ccg td{background:rgba(201,162,39,.045)}
+#cffb-sb .sb-tbl tr.ccg td:first-child{box-shadow:inset 3px 0 0 var(--gold-d)}
+#cffb-sb .sb-tbl tr.cut td{border-bottom:1px dashed var(--bd2)}
+#cffb-sb .sb-tbl td.rk{text-align:left;font-weight:700;font-size:16px;width:34px}
+#cffb-sb .sb-tbl td.rk small{font:700 9px Inter,sans-serif;margin-left:3px}
+#cffb-sb .sb-tbl td.tm{text-align:left}
+#cffb-sb .sb-tbl td.tm span{display:inline-flex;align-items:center;gap:5px}
+#cffb-sb .sb-tbl td.o{font-weight:700;font-size:15px}
+#cffb-sb .sb-tbl td.s{color:var(--fg2);font-size:13px}
+#cffb-sb .w-only{display:none}
+#cffb-sb .mx{color:var(--up)}#cffb-sb .me{color:var(--dn)}
+#cffb-sb .sb-tbt{font:700 8px Inter,sans-serif;letter-spacing:.1em;color:var(--gold);border:1px solid rgba(201,162,39,.45);border-radius:2px;padding:1px 3px;line-height:1.2}
+#cffb-sb .sb-tie{padding:10px 12px;border-top:1px solid var(--bd);background:#111}
+#cffb-sb .sb-tie__h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+#cffb-sb .sb-tie__h span+span{color:var(--fg3);letter-spacing:.04em}
+#cffb-sb .sb-tie__r{display:grid;grid-template-columns:minmax(0,1fr) 40px 44px 44px 38px 30px;gap:4px;align-items:center;padding:3px 0;font:600 13px 'Saira Condensed',sans-serif;color:var(--fg2);text-align:right}
+#cffb-sb .sb-tie__r>span{border-radius:2px;padding:1px 3px}
+#cffb-sb .sb-tie__r--h{font:700 8px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+#cffb-sb .sb-tie__r .t{display:flex;align-items:center;gap:5px;text-align:left}
+#cffb-sb .sb-tie__r .t b{font-size:12px;color:var(--fg3);width:9px}
+#cffb-sb .sb-tie__r .dec{background:var(--gold);color:#0A0A0A}
+#cffb-sb .sb-tie__r .res{font:700 8px Inter,sans-serif;letter-spacing:.08em;color:var(--gold)}
+#cffb-sb .sb-tbl2{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--bd);font-size:11px;color:var(--fg3)}
+#cffb-sb .sb-tbl2 b{color:var(--fg);font:700 13px 'Saira Condensed',sans-serif}
+#cffb-sb .sb-tbl2 span span{margin-left:8px}
+#cffb-sb .sb-ccg{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--bd);background:linear-gradient(90deg,rgba(201,162,39,.07),transparent 70%)}
+#cffb-sb .sb-ccg__l{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);line-height:1.3}
+#cffb-sb .sb-ccg__l span{display:block;color:var(--fg3)}
+#cffb-sb .sb-vs{font:700 11px 'Saira Condensed',sans-serif;color:var(--fg3);text-transform:uppercase}
+#cffb-sb .sb-ccg__p{margin-left:auto;font-size:11px;color:var(--fg2)}
+/* paths */
+#cffb-sb .sb-pa__hd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--bd)}
+#cffb-sb .sb-pa__t{font:700 14px 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--fg)}
+#cffb-sb .sb-pa__t small{display:block;font:500 10px Inter,sans-serif;letter-spacing:0;text-transform:none;color:var(--fg3)}
+#cffb-sb .sb-pa{padding:10px 12px;border-top:1px solid var(--bd);display:grid;gap:6px}
+#cffb-sb .sb-pa:first-of-type{border-top:0}
+#cffb-sb .sb-pa__h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#cffb-sb .sb-pa__s{margin-left:auto;font:700 12px Inter,sans-serif;display:flex;gap:6px;align-items:center}
+#cffb-sb .sb-pa__s small{font-weight:500;color:var(--fg3);font-size:10px}
+#cffb-sb .sb-pa__l{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+#cffb-sb .sb-pa__k{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);min-width:42px}
+#cffb-sb .sb-pc{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid var(--bd);border-radius:3px;font-size:11px;color:var(--fg2);background:var(--s2)}
+#cffb-sb .sb-pc.must{border-color:var(--gold-d);color:var(--fg)}
+#cffb-sb .sb-pc small{color:var(--fg3);font-size:10px}
+#cffb-sb .sb-pa__n{font-size:11px;color:var(--fg3);line-height:1.4}
+#cffb-sb .sb-pa__tag{font:700 9px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:4px 6px;border-radius:2px;background:var(--s2);color:var(--fg2)}
+#cffb-sb .sb-pa__tag.x{background:var(--gold);color:#0A0A0A}
+#cffb-sb .sb-or2{font:700 9px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);flex:none}
+#cffb-sb .sb-sc__c>i{font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+#cffb-sb .sb-sc .sb-btn{flex:none;margin-left:auto}
+#cffb-sb .sb-sc{flex-wrap:wrap}
+#cffb-sb .sb-sc__c{flex:1 1 220px;min-width:0}
+#cffb-sb .sb-pc{flex-wrap:wrap;max-width:100%}
+#cffb-sb .sb-tblw{overflow-x:auto;scrollbar-width:none}
+#cffb-sb .sb-tbl th,#cffb-sb .sb-tbl td{padding-left:4px;padding-right:4px}
+#cffb-sb .sb-pa{padding:10px}
+#cffb-sb .sb-pa__k{min-width:0;flex-basis:100%}
+#cffb-sb .sb-pa__h{flex-wrap:nowrap}
+#cffb-sb .sb-pa__s{flex-direction:row-reverse;align-items:baseline;gap:8px;text-align:right;flex:none}
+#cffb-sb .sb-pa__s b{font-size:17px;line-height:1}
+#cffb-sb .sb-pa__s small{font-size:9px}
+#cffb-sb .sb-scb{padding:8px}
+#cffb-sb .sb-scb.al .sb-scb__h{color:var(--fg2)}
+#cffb-sb .sb-scb.el .sb-scb__h{color:#C9645A}
+#cffb-sb .sb-scb.el{border-color:rgba(201,100,90,.3)}
+#cffb-sb .sb-locked{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+#cffb-sb .sb-locked .sb-pc{cursor:pointer}
+#cffb-sb .sb-seeds{display:grid;gap:6px}
+#cffb-sb .sb-seed{display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--s1);border:1px solid var(--bd);border-radius:8px}
+#cffb-sb .sb-seed__n{flex:none;width:28px;font:800 24px/26px 'Saira Condensed',sans-serif;color:var(--gold);text-align:center}
+#cffb-sb .sb-seed__b{display:grid;gap:6px;min-width:0;flex:1}
+#cffb-sb .sb-seed__lead{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+#cffb-sb .sb-seed__lead b{margin-left:auto;font:800 22px/1 'Saira Condensed',sans-serif}
+#cffb-sb .sb-seed__c{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;min-width:0}
+#cffb-sb .sb-seed__t{display:inline-flex;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer;font:600 11px 'Saira Condensed',sans-serif;color:var(--fg3);opacity:.85}
+#cffb-sb .sb-seed__t:hover{opacity:1}
+#cffb-sb .sb-seed__m{font-size:11px;color:var(--fg3)}
+#cffb-sb .sb-path{display:grid;gap:6px}
+#cffb-sb .sb-path__l{display:grid;gap:5px}
+#cffb-sb .sb-cr{display:flex;align-items:center;gap:8px;min-height:22px}
+#cffb-sb .sb-cr__w{flex:none;width:38px;padding:3px 0;border:1px solid var(--bd);border-radius:3px;font:700 9px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--fg3);text-align:center}
+#cffb-sb .sb-cr__t{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;font-size:12px;color:var(--fg3)}
+#cffb-sb .sb-cr__t em{font-style:normal;font-weight:700;color:var(--fg)}
+#cffb-sb .sb-path__f{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+#cffb-sb .sb-path__s{margin-right:auto;font:700 13px 'Saira Condensed',sans-serif;color:var(--fg2)}
+#cffb-sb .sb-path__go{background:none;border:0;padding:4px 0;cursor:pointer;font:700 10px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+#cffb-sb .sb-path__go:hover{color:var(--gold-l)}
+#cffb-sb .sb-or3{display:flex;align-items:center;gap:8px;margin:4px 0;font:700 9px Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+#cffb-sb .sb-or3:before,#cffb-sb .sb-or3:after{content:"";flex:1;height:1px;background:var(--bd)}
+#cffb-sb .sb-scb{gap:6px;padding:10px}
+#cffb-sb .sb-scb__h{margin-bottom:2px}
+#cffb-sb .sb-pa__ft{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:10.5px;line-height:1.4;color:var(--fg3)}
+#cffb-sb .sb-pa__sub{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px dashed var(--bd)}
+#cffb-sb .sb-pa__subl{font:700 12px 'Saira Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--fg2)}
+#cffb-sb .sb-wl{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:3px;font:800 11px/1 'Saira Condensed',sans-serif}
+#cffb-sb .sb-wl.w{background:rgba(79,165,114,.18);color:var(--up)}
+#cffb-sb .sb-wl.l{background:rgba(208,98,90,.18);color:var(--dn)}
+#cffb-sb .sb-v2{font:600 11px Inter,sans-serif;font-style:normal;color:var(--fg3)}
+#cffb-sb .sb-bwx{display:grid;grid-template-columns:minmax(0,1fr) 22px;gap:8px 10px;align-items:center;padding:10px 12px}
+#cffb-sb .sb-bwx>.sb-bwx__s:first-child{grid-column:1;grid-row:1}
+#cffb-sb .sb-bwx>.sb-bwx__s:last-child{grid-column:1;grid-row:2}
+#cffb-sb .sb-bwx>.sb-vs{grid-column:2;grid-row:1/3;font-size:10px;text-align:center;align-self:center}
+#cffb-sb .sb-bwx__s{display:grid;gap:6px;min-width:0}
+#cffb-sb .sb-bwx__tie{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3)}
+#cffb-sb .sb-bwx__tie img{height:12px;width:auto}
+#cffb-sb .sb-bwx__o{display:grid;gap:5px;padding:0 12px 12px}
+#cffb-sb .sb-bwx__rk{font:600 11px Inter,sans-serif;color:var(--fg3)}
+@container sb (min-width:521px){#cffb-sb .sb-bwx{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px 12px}#cffb-sb .sb-bwx>.sb-bwx__s:first-child,#cffb-sb .sb-bwx>.sb-bwx__s:last-child,#cffb-sb .sb-bwx>.sb-vs{grid-column:auto;grid-row:auto}}
+#cffb-sb .sb-pa__btn{width:100%;background:none;border:0;padding:0;margin:0;cursor:pointer;color:inherit;font:inherit;text-align:left}
+#cffb-sb .sb-pa__chev{flex:none;width:8px;height:8px;margin-left:4px;border-right:2px solid var(--fg3);border-bottom:2px solid var(--fg3);transform:rotate(45deg) translateY(-3px);transition:transform .2s}
+#cffb-sb .sb-pa.open .sb-pa__chev{transform:rotate(225deg) translate(-2px,-1px);border-color:var(--gold)}
+#cffb-sb .sb-pa__btn:hover .sb-pa__chev{border-color:var(--fg)}
+#cffb-sb .sb-pa.open{background:rgba(255,255,255,.015)}
+#cffb-sb .sb-pa:not(.open){gap:0}
+#cffb-sb .sb-rl{display:flex;flex-direction:column;line-height:1.15;white-space:nowrap;flex:none}
+#cffb-sb .sb-rl em{font-style:normal;font-size:9.5px;color:var(--fg3)}
+@container sb (min-width:521px){#cffb-sb .sb-rl{flex-direction:row;align-items:baseline;gap:6px}#cffb-sb .sb-rl em{font-size:10.5px}}
+#cffb-sb .sb-lock{display:grid;gap:8px;padding:12px 14px;border:1px dashed var(--gold-d);border-radius:8px;background:rgba(201,162,39,.05);margin-bottom:12px}
+#cffb-sb .sb-lock b{font:700 15px 'Saira Condensed',sans-serif;text-transform:uppercase;letter-spacing:.03em;color:var(--fg)}
+#cffb-sb .sb-lock p{margin:0;font-size:12px;line-height:1.45;color:var(--fg2)}
+#cffb-sb .sb-lock p strong{color:var(--gold)}
+#cffb-sb .sb-lock__a{display:flex;gap:6px;flex-wrap:wrap}
+#cffb-sb .sb-tile small+b+small{display:block;margin-top:2px;font-size:10px;color:var(--fg3)}
+#cffb-sb .sb-scb{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--bd);border-radius:4px;background:rgba(255,255,255,.015)}
+#cffb-sb .sb-scb__h{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+#cffb-sb .sb-sc{display:flex;align-items:center;gap:8px;padding-top:4px;border-top:1px dashed var(--bd)}
+#cffb-sb .sb-sc:first-of-type{border-top:0}
+#cffb-sb .sb-sc__c{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+#cffb-sb .sb-sc__c>i{font-style:normal;font-weight:700;font-size:11px;color:var(--fg3)}
+#cffb-sb .sb-sc__p{margin-left:auto;font:700 11px Inter,sans-serif;color:var(--fg2)}
+#cffb-sb .sb-ap{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+/* ties tab */
+#cffb-sb .sb-tsc{display:grid;gap:8px}
+#cffb-sb .sb-tc{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+#cffb-sb .sb-tc__top{display:flex;justify-content:space-between;align-items:baseline}
+#cffb-sb .sb-tc__rec{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg2)}
+#cffb-sb .sb-tc__f{font:700 20px/1 'Saira Condensed',sans-serif}
+#cffb-sb .sb-tc__by{display:flex;height:18px;gap:2px;border-radius:2px;overflow:hidden}
+#cffb-sb .sb-tc__by span{display:flex;align-items:center;justify-content:center;flex-basis:0;font:700 9px Inter,sans-serif;letter-spacing:.06em;color:#0A0A0A;white-space:nowrap;overflow:hidden}
+#cffb-sb .tb-h2h{background:var(--gold)}#cffb-sb .tb-ap{background:var(--ap)}#cffb-sb .tb-pts{background:var(--gold-d)}#cffb-sb .tb-nat{background:var(--fg2)}
+#cffb-sb .sb-tc__adv{display:flex;flex-wrap:wrap;gap:6px 12px}
+#cffb-sb .sb-tc__adv button{display:flex;align-items:center;gap:5px;background:none;border:0;padding:0;cursor:pointer;font:700 15px 'Saira Condensed',sans-serif}
+#cffb-sb .sb-tc__ft{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;color:var(--fg3)}
+#cffb-sb .sb-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--fg2);margin-bottom:10px}
+#cffb-sb .sb-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+/* buttons */
+#cffb-sb .sb-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;border-radius:4px;border:1px solid var(--bd2);background:var(--s2);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);white-space:nowrap;min-height:36px}
+#cffb-sb .sb-btn:hover{filter:brightness(1.12)}
+#cffb-sb .sb-btn.g{background:linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F);color:#0A0A0A;border-color:transparent}
+#cffb-sb .sb-btn.gh{background:none;box-shadow:none;color:var(--fg2)}
+#cffb-sb .sb-btn.xs{min-height:28px;padding:6px 9px;font-size:9.5px}
+/* bracket */
+#cffb-sb .sb-br{display:grid;gap:14px}
+#cffb-sb .sb-rd__h{font:700 11px/1 'Saira Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);margin-bottom:6px}
+#cffb-sb .sb-rd__b{display:grid;gap:6px}
+#cffb-sb .sb-m{background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+#cffb-sb .sb-m__tag{display:flex;justify-content:space-between;padding:3px 10px;font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);background:#181818;border-bottom:1px solid var(--bd)}
+#cffb-sb .sb-m__tag .pk{color:var(--gold)}
+#cffb-sb .sb-sl{display:flex;align-items:center;gap:10px;padding:2px 10px}
+#cffb-sb .sb-sl+.sb-sl{border-top:1px solid var(--bd)}
+#cffb-sb .sb-sl__s{font:700 12px 'Saira Condensed',sans-serif;color:var(--fg3);width:16px;text-align:center}
+#cffb-sb .sb-sl__n{flex:1;min-width:0;font:600 13px 'Saira Condensed',sans-serif;text-transform:uppercase;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cffb-sb .sb-sl.w .sb-sl__n{color:var(--fg)}
+#cffb-sb .sb-sl__p{font:700 13px 'Saira Condensed',sans-serif;color:var(--fg3)}
+#cffb-sb .sb-sl.w .sb-sl__p{color:var(--gold)}
+#cffb-sb .sb-bye{font:700 8.5px Inter,sans-serif;letter-spacing:.12em;color:var(--gold);border:1px solid rgba(201,162,39,.4);border-radius:2px;padding:2px 5px}
+#cffb-sb .sb-champ{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid rgba(201,162,39,.35);border-radius:8px;background:radial-gradient(circle at 0 50%,rgba(201,162,39,.16),transparent 70%),var(--s1);box-shadow:0 0 24px rgba(201,162,39,.2)}
+#cffb-sb .sb-champ svg{width:40px;height:40px;flex:none}
+#cffb-sb .sb-champ__l{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+#cffb-sb .sb-champ__n{font:800 24px/1 'Saira Condensed',sans-serif;text-transform:uppercase;background:linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin:3px 0 6px}
+#cffb-sb .sb-side{display:grid;gap:12px;margin-top:14px}
+#cffb-sb .sb-sh{display:flex;justify-content:space-between;align-items:baseline;padding:9px 12px;border-bottom:1px solid var(--bd);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--fg2)}
+#cffb-sb .sb-sh span{color:var(--fg3);letter-spacing:.04em}
+#cffb-sb .sb-or{display:grid;grid-template-columns:auto minmax(0,1fr) 40px;gap:10px;align-items:center;padding:5px 12px;cursor:pointer;width:100%;background:none;border:0;text-align:left}
+#cffb-sb .sb-or:hover{background:var(--sh)}
+#cffb-sb .sb-or__b{height:6px;border-radius:999px;background:#0e0e0e;overflow:hidden}
+#cffb-sb .sb-or__b span{display:block;height:100%;border-radius:999px}
+#cffb-sb .sb-or__v{font:700 14px 'Saira Condensed',sans-serif;text-align:right}
+#cffb-sb .sb-out{display:flex;gap:8px 14px;flex-wrap:wrap;padding:12px}
+#cffb-sb .sb-out button{display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;cursor:pointer;font-size:11px;color:var(--fg3)}
+/* bowls */
+#cffb-sb .sb-bowls{display:grid;gap:8px}
+#cffb-sb .sb-bw{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:12px;display:grid;gap:8px}
+#cffb-sb .sb-bw__h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+#cffb-sb .sb-bw__n{font:700 17px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sb .sb-bw__c{font-size:10.5px;color:var(--fg3)}
+#cffb-sb .sb-bw__m{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
+#cffb-sb .sb-bw__t{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+#cffb-sb .sb-bw__t:last-child{align-items:flex-end}
+#cffb-sb .sb-bw__t small{font-size:10.5px;color:var(--fg2)}
+#cffb-sb .sb-bw__t small em{font-style:normal;color:var(--gold)}
+/* footer */
+#cffb-sb .sb-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 14px;border-top:1px solid var(--bd)}
+#cffb-sb .sb-foot__s{margin-left:auto;font-size:11px;color:var(--fg3)}
+#cffb-sb .sb-foot__s b{font:700 14px 'Saira Condensed',sans-serif;color:var(--fg)}
+/* sheet */
+#cffb-sb .sb-scrim{position:fixed;inset:0;background:rgba(10,10,10,.7);z-index:9998;animation:sbFade .18s both}
+#cffb-sb .sb-sheet{overflow-x:hidden;position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;background:var(--s1);border-top:1px solid var(--bd2);border-radius:12px 12px 0 0;z-index:9999;animation:sbUp .24s cubic-bezier(.2,.8,.2,1) both;max-width:560px;margin:0 auto;box-shadow:0 -20px 60px rgba(0,0,0,.7)}
+#cffb-sb .sb-sheet::before{content:"";display:block;height:3px;background:linear-gradient(135deg,#E8C547,#C9A227 50%,#8B6F1F)}
+#cffb-sb .sb-sh__top{display:flex;align-items:flex-start;gap:12px;padding:14px;border-bottom:1px solid var(--bd)}
+#cffb-sb .sb-sh__id{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+#cffb-sb .sb-sh__n{font:800 26px/1 'Saira Condensed',sans-serif;text-transform:uppercase}
+#cffb-sb .sb-sh__m{font-size:11.5px;color:var(--fg2)}
+#cffb-sb .sb-sh__m b{color:var(--fg)}
+#cffb-sb .sb-sh__st{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l)}
+#cffb-sb .sb-x{width:40px;height:40px;flex:none;border:1px solid var(--bd);border-radius:4px;background:var(--s2);color:var(--fg2);font-size:20px;cursor:pointer;line-height:1}
+#cffb-sb .sb-ds{padding:12px 14px;border-bottom:1px solid var(--bd)}
+#cffb-sb .sb-ds:last-child{border-bottom:0}
+#cffb-sb .sb-ds__h{display:flex;justify-content:space-between;gap:8px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--fg2);margin-bottom:8px}
+#cffb-sb .sb-ds__h span{color:var(--fg3);letter-spacing:.02em;text-transform:none;font-weight:600}
+#cffb-sb .sb-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#cffb-sb .sb-tile small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cffb-sb .sb-tile small+b+small{font-size:9.5px;letter-spacing:.02em}
+#cffb-sb .sb-ds__h{flex-wrap:wrap;row-gap:2px}
+#cffb-sb .sb-ds__h--st{align-items:center;flex-wrap:nowrap}
+#cffb-sb .sb-ds__h--st .sb-pa__s{color:inherit;letter-spacing:0}
+#cffb-sb .sb-ds__h--st .sb-pa__s small{text-transform:none}
+#cffb-sb .sb-ds{padding:12px}
+#cffb-sb .sb-sh__top{padding:12px}
+@container sb (min-width:521px){#cffb-sb .sb-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}#cffb-sb .sb-ds{padding:12px 14px}#cffb-sb .sb-sh__top{padding:14px}}
+#cffb-sb .sb-tile{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:7px 8px}
+#cffb-sb .sb-tile small{display:block;font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3)}
+#cffb-sb .sb-tile b{font:700 22px/1.1 'Saira Condensed',sans-serif}
+#cffb-sb .sb-need{width:100%;border-collapse:collapse}
+#cffb-sb .sb-need th{font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);text-align:right;padding:4px 6px;border-bottom:1px solid var(--bd)}
+#cffb-sb .sb-need th:first-child,#cffb-sb .sb-need td:first-child{text-align:left}
+#cffb-sb .sb-need td{padding:6px;text-align:right;border-bottom:1px solid #1c1c1c;font:700 15px 'Saira Condensed',sans-serif}
+#cffb-sb .sb-need td.f{font-weight:600;color:var(--fg2);font-size:13px}
+#cffb-sb .sb-need tr.cur td{background:rgba(201,162,39,.07)}
+#cffb-sb .sb-root{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1c1c1c;font-size:11px;color:var(--fg2)}
+#cffb-sb .sb-root:last-child{border-bottom:0}
+#cffb-sb .sb-root__d{margin-left:auto;font:700 15px 'Saira Condensed',sans-serif;color:var(--up);white-space:nowrap}
+#cffb-sb .sb-root__d small{font-size:11px;color:var(--fg3);margin-right:2px}
+#cffb-sb .sb-empty{font-size:12px;color:var(--fg3);padding:16px;border:1px dashed var(--bd2);border-radius:8px;text-align:center}
+@keyframes sbFade{from{opacity:0}}@keyframes sbUp{from{transform:translateY(40px);opacity:0}}
+@container sb (max-width:520px){
+#cffb-sb .sb-bar{flex-wrap:wrap;min-height:0}
+#cffb-sb .sb-wk{padding:10px 26px 10px 16px}
+#cffb-sb .sb-wk b{font-size:34px}
+#cffb-sb .sb-tease{order:3;flex-basis:100%;padding:10px 14px 14px;border-top:1px solid var(--bd)}
+#cffb-sb .sb-tog{margin:0 12px 0 auto}
+#cffb-sb .sb-hd{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 8px;min-width:0}
+#cffb-sb .sb-ic{width:38px;height:38px;margin:3px 0 0}
+#cffb-sb .sb-tog{padding:0;width:44px;height:44px;justify-content:center}
+#cffb-sb .sb-tog span{display:none}
+#cffb-sb .sb-hd .sb-eb{white-space:nowrap}
+#cffb-sb .sb-wkn{white-space:nowrap}
+#cffb-sb .sb-mus{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+#cffb-sb .sb-wide{display:none}
+#cffb-sb .sb-tease .sb-eb{font-size:13px}
+#cffb-sb .sb-mu{gap:4px;min-width:0}
+#cffb-sb .sb-mu i{width:22px;font-size:8px}
+#cffb-sb .sb-mu .sb-p{height:15px!important;width:62px!important}
+#cffb-sb.is-open .sb-tease{display:none}
+}
+@container sb (max-width:520px){#cffb-sb .sb-tease{display:none}}
+@container sb (min-width:521px){#cffb-sb .sb-hd{display:none}}
+@container sb (min-width:720px){
+#cffb-sb .sb-view{padding:20px}
+#cffb-sb .sb-pa{padding:10px 12px}
+#cffb-sb .sb-pa__k{flex-basis:auto;min-width:42px}
+#cffb-sb .sb-pa__s{flex-direction:row-reverse;align-items:baseline;gap:8px}
+#cffb-sb .sb-pa__s b{font-size:12px}
+#cffb-sb .sb-pa__s small{font-size:10px}
+#cffb-sb .sb-tbl th,#cffb-sb .sb-tbl td{padding-left:6px;padding-right:6px}
+#cffb-sb .sb-games,#cffb-sb .sb-tsc,#cffb-sb .sb-bowls{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+#cffb-sb .w-only{display:table-cell}
+#cffb-sb .sb-seeds{grid-template-columns:repeat(2,minmax(0,1fr))}
+#cffb-sb .sb-pob{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
+#cffb-sb .sb-side{margin-top:0}
+#cffb-sb .sb-rd--R1 .sb-rd__b,#cffb-sb .sb-rd--QF .sb-rd__b{grid-template-columns:repeat(2,minmax(0,1fr))}
+#cffb-sb .sb-tab{padding:16px 14px 14px;font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){#cffb-sb *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+<div id="cffb-sb">
+<div class="sb-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="cffb-sb-panel">
+<div class="sb-chev"></div>
+<div class="sb-wk"><small>WEEK <span data-sb="wkb">11</span></small><div class="sb-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="br" d="M8 24H18C26 24 28 9 38 9"></path><path class="br" d="M18 24H38"></path><path class="br" d="M18 24C26 24 28 39 38 39"></path><path class="hl" d="M8 24H18C26 24 28 9 38 9"></path><path class="hl d2" d="M8 24H38"></path><path class="hl d3" d="M8 24H18C26 24 28 39 38 39"></path><circle class="nd" cx="40" cy="9" r="3.5"></circle><circle class="nd" cx="40" cy="24" r="3.5"></circle><circle class="nd" cx="40" cy="39" r="3.5"></circle><circle class="nd on" cx="40" cy="9" r="3.5" style="transform-origin:40px 9px"></circle><circle class="nd on d2" cx="40" cy="24" r="3.5" style="transform-origin:40px 24px"></circle><circle class="nd on d3" cx="40" cy="39" r="3.5" style="transform-origin:40px 39px"></circle><circle class="rp" cx="8" cy="24" r="4"></circle><circle class="rt" cx="8" cy="24" r="4"></circle></svg></div><em data-sb="wke">UP NEXT</em></div>
+<div class="sb-hd"><div class="sb-eb">SCENARIO BUILDER</div><div class="sb-wkn" data-sb="wkn"></div></div>
+<div class="sb-tease"><div class="sb-eb"><span class="sb-wide">SCENARIO BUILDER · </span>PROJECTED TITLE GAMES</div><div class="sb-mus" data-sb="mus"></div><div class="sb-tease-s" data-sb="tsub"></div></div>
+<button class="sb-tog" type="button" tabindex="-1"><span data-sb="tog">PLAY IT OUT</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+</div>
+<div class="sb-panel" id="cffb-sb-panel"><div><div class="sb-body">
+<div class="sb-tabs" data-sb="tabs"></div>
+<div class="sb-view" data-sb="view"></div>
+<div class="sb-foot">
+<span class="sb-foot__s" data-sb="foot"></span>
+</div>
+</div></div></div>
+<div data-sb="sheet"></div>
+</div>
+<script>
+(function(){
+// CFFB · Scenario Builder — OUTCOME-COUNT engine (no simulation, no weighting)
+// Every open game is a branch: A wins or B wins. Each conference's open games are enumerated exhaustively
+// (n open games = 2^n outcomes) and every outcome is counted once.
+//   Standings:    conf win% → head-to-head among tied teams → projected all-play % → projected national rank
+//   Projected all-play % = season all-play through the last played week + remaining weeks scored at each team's PPG
+//   Projected national rank = 0.55 × projected all-play % + 0.45 × (projected points ÷ league-high)
+//   Exact-count limit: 20 open games per conference (1,048,576 outcomes). Above that, pick results to narrow it.
+//   Playoff: regular season follows your picks + favorites, then every Week 13 title-game outcome (2^6 = 64) is counted.
+//            16 teams, no byes: top 5 conference champions by final ranking get auto bids + 11 at-large;
+//            all 16 seeded by final ranking (W−L incl. CCG → national rank).
+// Swap SAMPLE data for the real game log: SB_GAMES needs {id, week, a, b, conf, sa, sb} (sa/sb null = not played).
+
+const SB_CONFS_SAMPLE = [
+  { id: 'sec', name: 'SEC',     accent: '#C9A227', logo: 'assets/conferences/sec.png' },
+  { id: 'b1g', name: 'Big Ten', accent: '#4A6FA5', logo: 'assets/conferences/b1g.png' },
+  { id: 'acc', name: 'ACC',     accent: '#8B4A5C', logo: 'assets/conferences/acc.png' },
+  { id: 'b12', name: 'Big 12',  accent: '#B84545', logo: 'assets/conferences/big12.png' },
+  { id: 'aac', name: 'AAC',     accent: '#6B5C8B', logo: 'assets/conferences/aac.png' },
+  { id: 'pac', name: 'Pac-12',  accent: '#5C7A6A', logo: 'assets/conferences/pac12.png' },
+];
+// [id, abbr, name, bg, fg, strength, conf index] — SAMPLE
+const SB_RAW_SAMPLE = [
+  ['UGA','UGA','Georgia','#990000','#FEC10C',17,0],
+  ['TEX','TEX','Texas','#BF5700','#FFFFFF',15,0],
+  ['BAMA','BAMA','Alabama','#9E1B32','#FFFFFF',13,0],
+  ['LSU','LSU','LSU','#461D7C','#FDD023',12,0],
+  ['OU','OU','Oklahoma','#841617','#FDF9F2',10,0],
+  ['TENN','TENN','Tennessee','#FF8200','#FFFFFF',8,0],
+  ['MISS','MISS','Ole Miss','#14213D','#CE1126',7,0],
+  ['TAMU','TAMU','Texas A&M','#500000','#FFFFFF',5,0],
+  ['AUB','AUB','Auburn','#0C2340','#E87722',4,0],
+  ['UF','UF','Florida','#0021A5','#FA4616',2,0],
+  ['MIZ','MIZ','Missouri','#000000','#F1B82D',1,0],
+  ['SCAR','SCAR','South Carolina','#73000A','#FFFFFF',-1,0],
+  ['ARK','ARK','Arkansas','#9D2235','#FFFFFF',-2,0],
+  ['UK','UK','Kentucky','#0033A0','#FFFFFF',-3,0],
+  ['MSST','MSST','Mississippi St','#660000','#FFFFFF',-4,0],
+  ['VAN','VAN','Vanderbilt','#866D4B','#000000',-6,0],
+  ['OSU','OSU','Ohio State','#BB0000','#FFFFFF',17,1],
+  ['ORE','ORE','Oregon','#154733','#FEE123',14,1],
+  ['MICH','MICH','Michigan','#00274C','#FFCB05',9,1],
+  ['PSU','PSU','Penn State','#041E42','#FFFFFF',7,1],
+  ['USC','USC','USC','#841617','#FFC72C',6,1],
+  ['WASH','WASH','Washington','#4B2E83','#E8E3D3',3,1],
+  ['UCLA','UCLA','UCLA','#2D68C4','#F2A900',2,1],
+  ['WISC','WISC','Wisconsin','#C5050C','#FFFFFF',2,1],
+  ['INDU','IND','Indiana','#990000','#EEEDEB',1,1],
+  ['IOWA','IOWA','Iowa','#000000','#FFCD00',0,1],
+  ['MSU','MSU','Michigan St','#18453B','#FFFFFF',-1,1],
+  ['NEB','NEB','Nebraska','#E41C38','#FFFFFF',-2,1],
+  ['NW','NW','Northwestern','#4E2A84','#FFFFFF',-3,1],
+  ['MINN','MINN','Minnesota','#7A0019','#FFCC33',-3,1],
+  ['ILL','ILL','Illinois','#13294B','#E84A27',-4,1],
+  ['MD','MD','Maryland','#E03A3E','#FFD520',-5,1],
+  ['PUR','PUR','Purdue','#000000','#CEB888',-6,1],
+  ['RUT','RUT','Rutgers','#CC0033','#FFFFFF',-7,1],
+  ['WAKE','WAKE','Wake Forest','#9E7E38','#000000',-8,1],
+  ['JVST','JVST','Jacksonville St','#C20E1A','#000000',-8,1],
+  ['MIA','MIA','Miami','#F47321','#005030',11,2],
+  ['CLEM','CLEM','Clemson','#F56600','#522D80',8,2],
+  ['FSU','FSU','Florida State','#782F40','#CEB888',5,2],
+  ['SMU','SMU','SMU','#354CA1','#CC0035',3,2],
+  ['UNC','UNC','North Carolina','#7BAFD4','#13294B',2,2],
+  ['VT','VT','Virginia Tech','#630031','#CF4420',1,2],
+  ['LOU','LOU','Louisville','#AD0000','#FFFFFF',0,2],
+  ['CUSE','CUSE','Syracuse','#F76900','#000E54',-1,2],
+  ['NCST','NCST','NC State','#CC0000','#000000',-3,2],
+  ['GT','GT','Georgia Tech','#B3A369','#003057',-3,2],
+  ['DUKE','DUKE','Duke','#003087','#FFFFFF',-4,2],
+  ['PITT','PITT','Pitt','#003594','#FFB81C',-2,2],
+  ['CAL','CAL','California','#003262','#FDB515',-5,2],
+  ['UVA','UVA','Virginia','#232D4B','#F84C1E',-6,2],
+  ['BC','BC','Boston College','#98002E','#BC9B6A',-7,2],
+  ['STAN','STAN','Stanford','#8C1515','#FFFFFF',-8,2],
+  ['UTAH','UTAH','Utah','#CC0000','#FFFFFF',10,3],
+  ['TCU','TCU','TCU','#4D1979','#FFFFFF',6,3],
+  ['COLO','COLO','Colorado','#CFB87D','#000000',5,3],
+  ['OKST','OKST','Oklahoma St','#FF7300','#000000',4,3],
+  ['BAY','BAY','Baylor','#154734','#FFB81C',3,3],
+  ['ARIZ','ARIZ','Arizona','#003366','#CC0033',2,3],
+  ['KU','KU','Kansas','#0051BA','#E8000D',2,3],
+  ['ASU','ASU','Arizona St','#8C1D40','#FFC627',1,3],
+  ['BYU','BYU','BYU','#002E5D','#FFFFFF',0,3],
+  ['TTU','TTU','Texas Tech','#CC0000','#000000',-1,3],
+  ['ISU','ISU','Iowa State','#C8102E','#F1BE48',-2,3],
+  ['WVU','WVU','West Virginia','#002855','#EAAA00',-3,3],
+  ['KSU','KSU','Kansas St','#512888','#FFFFFF',-3,3],
+  ['HOU','HOU','Houston','#C8102E','#FFFFFF',-4,3],
+  ['CIN','CIN','Cincinnati','#E00122','#000000',-5,3],
+  ['UCF','UCF','UCF','#000000','#BA9B37',-6,3],
+  ['ARMY','ARMY','Army','#2C2A29','#D4BF91',4,4],
+  ['FRES','FRES','Fresno State','#DB0032','#002E6D',2,4],
+  ['LIB','LIB','Liberty','#0A254E','#AC1E2D',1,4],
+  ['UTSA','UTSA','UTSA','#0C2340','#F15A22',0,4],
+  ['MEM','MEM','Memphis','#003087','#898D8D',-1,4],
+  ['UAB','UAB','UAB','#1E6B52','#D2B887',-2,4],
+  ['NAVY','NAVY','Navy','#00205B','#C5B783',-3,4],
+  ['ECU','ECU','East Carolina','#592A8A','#FDC82F',-3,4],
+  ['TULN','TULN','Tulane','#006747','#418FDE',-4,4],
+  ['FAU','FAU','Florida Atl','#003366','#CC0000',-5,4],
+  ['USF','USF','South Florida','#006747','#CFC493',-5,4],
+  ['UNT','UNT','North Texas','#00853E','#FFFFFF',-6,4],
+  ['TLSA','TLSA','Tulsa','#002D72','#C5B783',-7,4],
+  ['TEM','TEM','Temple','#9D2235','#FFFFFF',-7,4],
+  ['CHAR','CHAR','Charlotte','#046A38','#B3A369',-8,4],
+  ['RICE','RICE','Rice','#00205B','#C1C6C8',-8,4],
+  ['BSU','BSU','Boise State','#0033A0','#D64309',7,5],
+  ['WSU','WSU','Washington St','#981E32','#5E6A71',5,5],
+  ['AF','AF','Air Force','#003087','#B1B3B3',2,5],
+  ['ORST','ORST','Oregon State','#DC4405','#000000',1,5],
+  ['SDSU','SDSU','San Diego St','#A6192E','#000000',0,5],
+  ['UNLV','UNLV','UNLV','#CF0A2C','#666666',-1,5],
+  ['WYO','WYO','Wyoming','#492F24','#FFC425',-2,5],
+  ['CSU','CSU','Colorado St','#1E4D2B','#C8C372',-3,5],
+  ['HAW','HAW','Hawaii','#024731','#C8102E',-3,5],
+  ['NEV','NEV','Nevada','#003366','#807F84',-4,5],
+  ['SJSU','SJSU','San Jose St','#0055A2','#E5A823',-5,5],
+  ['USU','USU','Utah State','#0F2439','#A7A9AC',-6,5],
+  ['UNM','UNM','New Mexico','#BA0C2F','#A7A9AC',-7,5],
+  ['MONT','MONT','Montana','#9B1B30','#FFFFFF',-8,5],
+  ['NMSU','NMSU','New Mexico St','#8C0B42','#000000',-8,5],
+  ['IDHO','IDHO','Idaho','#B3A369','#000000',-8,5],
+];
+const SB_PILLS = { UGA: 'assets/teams/georgia.png', UNC: 'assets/teams/north-carolina.png', ARMY: 'assets/teams/army.png', FRES: 'assets/teams/fresno-state.png' };
+// ── League data — populated by sbApplyData() from the live feed or sample ──
+let SB_CONFS = [], SB_TEAMS = [], SB_GAMES = [];
+let SB_NT = 0, SB_NC = 0, SB_MEM = [], SB_ALL = [];
+let SB_WEEKS = 12, SB_ACTUAL_PLAYED = 0, SB_WEEKS_OPEN = [];
+let SB_CONF_AUTO = [];        // per conf index: true = power conf (auto-bid champion)
+let SB_CCG_RESULTS = [];      // per conf index: locked CCG winner (team idx) once played, else null
+const SB_CCG_WEEK = 13, SB_CONF_START = 4;
+const SB_CAP_BITS = 20, SB_CAP = 1 << SB_CAP_BITS;
+const SB_FIELD = 16, SB_MIN_WINS = 6, SB_SD = 16;
+
+// Build every derived league structure from a feed/sample model
+// ({ confs, teams, games, weeksPlayed, regWeeks, ccgResults }).
+function sbApplyData(data) {
+  SB_CONFS = data.confs;
+  SB_CONF_AUTO = SB_CONFS.map((c) => !!c.autoBid);
+  SB_TEAMS = data.teams.map((t, i) => { const o = Object.assign({}, t); o.idx = i; o.pill = t.pill || SB_PILLS[t.id] || null; return o; });
+  SB_NT = SB_TEAMS.length; SB_NC = SB_CONFS.length;
+  SB_MEM = SB_CONFS.map((_, c) => SB_TEAMS.filter((t) => t.conf === c).map((t) => t.idx));
+  SB_ALL = SB_TEAMS.map((t) => t.idx);
+  SB_WEEKS = data.regWeeks || 12;
+  SB_ACTUAL_PLAYED = Math.min(data.weeksPlayed || 0, SB_WEEKS);
+  SB_WEEKS_OPEN = []; for (let w = SB_ACTUAL_PLAYED + 1; w <= SB_WEEKS; w++) SB_WEEKS_OPEN.push(w);
+  SB_GAMES = data.games;
+  SB_CCG_RESULTS = (data.ccgResults && data.ccgResults.length === SB_NC) ? data.ccgResults : SB_CONFS.map(() => null);
+}
+const SB_TB = { rec: 'Conf record', h2h: 'Head-to-head', ap: 'All-play %', pts: 'Total points', nat: 'National rank' };
+const SB_TB_SHORT = { rec: 'Rec', h2h: 'H2H', ap: 'AP%', pts: 'PF', nat: 'Rank' };
+const SB_BOWLS = [
+  { name: 'Lone Star Classic' },
+  { name: 'Lakeshore Bowl' },
+  { name: 'Bayou Bowl' },
+  { name: 'Desert Bowl' },
+  { name: 'Bluegrass Bowl' },
+  { name: 'Evergreen Bowl' },
+  { name: 'Prairie Bowl' },
+  { name: 'Red Rock Bowl' },
+  { name: 'Gulf Coast Bowl' },
+  { name: 'Great Lakes Bowl' },
+];
+const SB_BRACKET = [
+  { id: 'R1', r: 'R1', a: { s: 1 }, b: { s: 16 } }, { id: 'R2', r: 'R1', a: { s: 8 }, b: { s: 9 } },
+  { id: 'R3', r: 'R1', a: { s: 5 }, b: { s: 12 } }, { id: 'R4', r: 'R1', a: { s: 4 }, b: { s: 13 } },
+  { id: 'R5', r: 'R1', a: { s: 6 }, b: { s: 11 } }, { id: 'R6', r: 'R1', a: { s: 3 }, b: { s: 14 } },
+  { id: 'R7', r: 'R1', a: { s: 7 }, b: { s: 10 } }, { id: 'R8', r: 'R1', a: { s: 2 }, b: { s: 15 } },
+  { id: 'QF1', r: 'QF', a: { g: 'R1' }, b: { g: 'R2' } }, { id: 'QF2', r: 'QF', a: { g: 'R3' }, b: { g: 'R4' } },
+  { id: 'QF3', r: 'QF', a: { g: 'R5' }, b: { g: 'R6' } }, { id: 'QF4', r: 'QF', a: { g: 'R7' }, b: { g: 'R8' } },
+  { id: 'SF1', r: 'SF', a: { g: 'QF1' }, b: { g: 'QF2' } }, { id: 'SF2', r: 'SF', a: { g: 'QF3' }, b: { g: 'QF4' } },
+  { id: 'F', r: 'F', a: { g: 'SF1' }, b: { g: 'SF2' } },
+];
+
+// ── SAMPLE data: fictional league used when no live feed is wired or the fetch
+// fails (keeps the offline device preview working). Wks 1–3 non-conference,
+// Wks 4–12 conference (50 games/week), scores synthesized from team strength. ──
+function sbSampleData() {
+  const PLAYED = 10, WEEKS = 12, CONF_START = SB_CONF_START;
+  const teams = SB_RAW_SAMPLE.map((r, i) => ({ id: r[0], abbr: r[1], name: r[2], bg: r[3], fg: r[4], conf: r[6], idx: i, str: r[5] }));
+  const confs = SB_CONFS_SAMPLE.map((c) => Object.assign({}, c, { autoBid: c.id !== 'aac' }));
+  const ALL = teams.map((t) => t.idx);
+  const MEM = confs.map((_, c) => teams.filter((t) => t.conf === c).map((t) => t.idx));
+  let seed = 20261122;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const noise = (sd) => sd * (rnd() + rnd() + rnd() + rnd() - 2) * 1.2;
+  const games = [];
+  for (let w = 1; w < CONF_START; w++) {
+    const pool = ALL.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    while (pool.length) {
+      const a = pool.shift();
+      let k = pool.findIndex((b) => teams[b].conf !== teams[a].conf); if (k < 0) k = 0;
+      games.push({ week: w, a, b: pool.splice(k, 1)[0], conf: false });
+    }
+  }
+  MEM.forEach((mem, c) => {
+    const n = mem.length;
+    for (let w = CONF_START; w <= WEEKS; w++) {
+      const r = (w - CONF_START + c * 2) % (n - 1), rot = mem.slice(1);
+      for (let k = 0; k < r; k++) rot.unshift(rot.pop());
+      const line = [mem[0], ...rot];
+      for (let i = 0; i < n / 2; i++) { const x = line[i], y = line[n - 1 - i], f = (r + i) % 2; games.push({ week: w, a: f ? y : x, b: f ? x : y, conf: true }); }
+    }
+  });
+  games.sort((g, h) => g.week - h.week);
+  games.forEach((g, n) => {
+    g.id = 'w' + g.week + '-' + n;
+    if (g.week <= PLAYED) {
+      g.sa = Math.round(Math.max(48, 96 + teams[g.a].str + noise(17)) * 10) / 10;
+      g.sb = Math.round(Math.max(48, 96 + teams[g.b].str + noise(17)) * 10) / 10;
+      if (g.sa === g.sb) g.sa += 0.1;
+    } else { g.sa = null; g.sb = null; }
+  });
+  const modelTeams = teams.map((t) => ({ id: t.id, abbr: t.abbr, name: t.name, bg: t.bg, fg: t.fg, conf: t.conf, pill: null, rank: null, ap: null, oppAp: null }));
+  return { confs, teams: modelTeams, games, weeksPlayed: PLAYED, regWeeks: WEEKS, season: 2026, ccgResults: confs.map(() => null) };
+}
+
+function sbErf(x) { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x)); }
+const sbPhi = (z) => 0.5 * (1 + sbErf(z / Math.SQRT2));
+
+// Base: results through `asOf`, open games, frozen projected tiebreak values.
+function sbBase(asOf) {
+  const NT = SB_NT;
+  const W = new Int16Array(NT), L = new Int16Array(NT), CW = new Int16Array(NT), CL = new Int16Array(NT);
+  const PF = new Float64Array(NT), GP = new Int16Array(NT), H = new Int8Array(NT * NT), APW = new Int32Array(NT), APL = new Int32Array(NT);
+  const wk = {}, wkTeams = {}, raw = [];
+  SB_GAMES.forEach((g) => {
+    if (g.week <= asOf && g.sa != null) {
+      const w = g.sa > g.sb ? g.a : g.b, l = w === g.a ? g.b : g.a;
+      W[w]++; L[l]++; if (g.conf) { CW[w]++; CL[l]++; } H[w * NT + l]++;
+      PF[g.a] += g.sa; PF[g.b] += g.sb; GP[g.a]++; GP[g.b]++;
+      (wk[g.week] = wk[g.week] || new Float64Array(NT)); (wkTeams[g.week] = wkTeams[g.week] || []);
+      wk[g.week][g.a] = g.sa; wk[g.week][g.b] = g.sb; wkTeams[g.week].push(g.a, g.b);
+    } else raw.push(g);
+  });
+  // Weekly all-play: compare each team only to OTHER teams that actually played
+  // that week — teams on a bye are excluded (matches the league's all-play calc).
+  Object.keys(wk).forEach((k) => { const s = wk[k], tms = wkTeams[k]; for (let x = 0; x < tms.length; x++) for (let y = 0; y < tms.length; y++) { const i = tms[x], j = tms[y]; if (i !== j) { if (s[i] > s[j]) APW[i]++; else if (s[i] < s[j]) APL[i]++; } } });
+  const ppg = Array.from(PF, (p, i) => (GP[i] ? p / GP[i] : 0));
+  const prob = (a, b) => sbPhi((ppg[a] - ppg[b]) / (SB_SD * Math.SQRT2));
+  const open = raw.map((g) => ({ ...g, p: prob(g.a, g.b) }));
+  const kOf = {}; open.forEach((g, k) => { kOf[g.id] = k; });
+  const rem = SB_WEEKS - asOf, FW = new Int32Array(NT), FL = new Int32Array(NT);
+  for (let i = 0; i < NT; i++) for (let j = 0; j < NT; j++) { if (i !== j) { if (ppg[i] > ppg[j]) FW[i]++; else if (ppg[i] < ppg[j]) FL[i]++; } }
+  const apNow = Array.from(APW, (w, i) => (w + APL[i] ? w / (w + APL[i]) : 0));
+  const apProj = Array.from(APW, (w, i) => { const a = w + FW[i] * rem, b = APL[i] + FL[i] * rem; return a + b ? a / (a + b) : 0; });
+  const ptsProj = Array.from(PF, (p, i) => p + ppg[i] * rem);
+  // Projected opponent all-play: authoritative value from the live feed, held
+  // constant across the remaining (cross-league, unknown-opponent) weeks. Neutral
+  // 0.5 when absent (sample data) so the ranking formula still orders sanely.
+  const oppAp = SB_ALL.map((i) => { const v = SB_TEAMS[i].oppAp; return v == null ? 0.5 : v; });
+  // National-rank baseline: the authoritative current league rank when the feed
+  // provides it (the bylaws' "National Ranking" tiebreaker). Falls back to a
+  // projected all-play/points blend for sample data that carries no published rank.
+  const natPos = new Int16Array(NT);
+  const haveRank = SB_NT > 0 && SB_TEAMS.every((t) => t.rank != null && t.rank > 0);
+  if (haveRank) { SB_TEAMS.forEach((t) => { natPos[t.idx] = t.rank; }); }
+  else {
+    const maxPF = Math.max.apply(null, Array.from(ptsProj)) || 1;
+    const nat = apProj.map((a, i) => 0.55 * a + 0.45 * ptsProj[i] / maxPF);
+    SB_ALL.slice().sort((a, b) => nat[b] - nat[a]).forEach((t, i) => { natPos[t] = i + 1; });
+  }
+  // Non-H2H tiebreak priority (bylaws): all-play % → total points → national rank.
+  const priPos = new Int16Array(NT); SB_ALL.slice().sort((a, b) => apProj[b] - apProj[a] || ptsProj[b] - ptsProj[a] || natPos[a] - natPos[b]).forEach((t, i) => { priPos[t] = i; });
+  return { asOf, W, L, CW, CL, H, ppg, prob, open, kOf, apNow, apProj, ptsProj, oppAp, natPos, priPos };
+}
+
+// Seed a group tied on conference record, per the bylaws:
+//   head-to-head "sweep" (a team must beat every other tied team) \u2014 the sweeper
+//   takes the next spot and the rest restart the sweep test; if no team sweeps,
+//   the whole remaining group drops to all-play % \u2192 total points \u2192 national rank.
+// Returns { ordered, steps } where steps[k] names the metric separating
+// ordered[k] from ordered[k+1] ('h2h' | 'ap' | 'pts' | 'nat').
+function sbSeedTied(group, H, stride, ap, pts, nat) {
+  const ordered = [], steps = [];
+  let remaining = group.slice();
+  const sweeps = (t) => remaining.every((o) => o === t || H[t * stride + o] > H[o * stride + t]);
+  const sep = (a, b) => (Math.abs(ap[a] - ap[b]) > 1e-9 ? 'ap' : Math.abs(pts[a] - pts[b]) > 1e-9 ? 'pts' : 'nat');
+  while (remaining.length > 1) {
+    const sweeper = remaining.find(sweeps);   // team idx; note idx 0 is falsy, so test against undefined
+    if (sweeper !== undefined) { ordered.push(sweeper); remaining = remaining.filter((t) => t !== sweeper); steps.push('h2h'); continue; }
+    remaining.sort((a, b) => ap[b] - ap[a] || pts[b] - pts[a] || nat[a] - nat[b]);
+    for (let k = 0; k < remaining.length - 1; k++) steps.push(sep(remaining[k], remaining[k + 1]));
+    ordered.push.apply(ordered, remaining); remaining = [];
+  }
+  if (remaining.length === 1) ordered.push(remaining[0]);
+  while (steps.length < ordered.length - 1) steps.push('h2h');
+  return { ordered: ordered, steps: steps.slice(0, Math.max(0, ordered.length - 1)) };
+}
+
+// Full conference order + tiebreak trace (for display).
+function sbConfOrder(c, CW, CL, H, B) {
+  const NT = SB_NT, ap = B.apProj, pts = B.ptsProj, natPos = B.natPos, m = SB_MEM[c].slice();
+  const pct = (t) => { const g = CW[t] + CL[t]; return g ? CW[t] / g : 0; };
+  m.sort((a, b) => pct(b) - pct(a));
+  const order = [], ties = [];
+  let i = 0;
+  while (i < m.length) {
+    let j = i + 1;
+    while (j < m.length && Math.abs(pct(m[j]) - pct(m[i])) < 1e-9) j++;
+    const grp = m.slice(i, j);
+    if (grp.length > 1) {
+      const hr = {};
+      grp.forEach((t) => { let w = 0, l = 0; grp.forEach((o) => { if (o !== t) { w += H[t * NT + o]; l += H[o * NT + t]; } }); hr[t] = [w, l]; });
+      const seeded = sbSeedTied(grp, H, NT, ap, pts, natPos);
+      ties.push({ teams: seeded.ordered.slice(), start: i, rec: CW[seeded.ordered[0]] + '\u2013' + CL[seeded.ordered[0]], h2h: hr, steps: seeded.steps });
+      order.push.apply(order, seeded.ordered);
+    } else { order.push(grp[0]); }
+    i = j;
+  }
+  return { order, ties };
+}
+
+function sbRecords(B, winners) {
+  const NT = SB_NT, W = B.W.slice(), L = B.L.slice(), CW = B.CW.slice(), CL = B.CL.slice(), H = B.H.slice();
+  B.open.forEach((g, k) => { const w = winners[k], l = w === g.a ? g.b : g.a; W[w]++; L[l]++; if (g.conf) { CW[w]++; CL[l]++; } H[w * NT + l]++; });
+  return { W, L, CW, CL, H };
+}
+
+// Final ranking, 16-team field, bowls — given regular-season records and title-game winners.
+// National ranking follows the league formula ((W+1) × (allPlay + oppAllPlay)),
+// projected to the end of championship week; the field is seeded by that ranking.
+function sbNational(B, W0, L0, champs, losers) {
+  const NT = SB_NT, W = W0.slice(), L = L0.slice();
+  champs.forEach((w, c) => { W[w]++; L[losers[c]]++; });
+  const score = new Float64Array(NT);
+  for (let i = 0; i < NT; i++) score[i] = (W[i] + 1) * (B.apProj[i] + B.oppAp[i]);
+  const rank = SB_ALL.slice().sort((i, j) => (score[j] - score[i]) || B.natPos[i] - B.natPos[j]);
+  const rankPos = new Int16Array(NT); rank.forEach((t, i) => { rankPos[t] = i; });
+  const byRank = (a, b) => rankPos[a] - rankPos[b];
+  // Auto-bids: champions of the power conferences (SB_CONF_AUTO) always qualify;
+  // a non-power champion (the AAC) must earn an at-large bid on national ranking.
+  const auto = champs.filter((t, c) => SB_CONF_AUTO[c]).sort(byRank), isAuto = new Uint8Array(NT); auto.forEach((t) => { isAuto[t] = 1; });
+  const field = [...auto, ...rank.filter((t) => !isAuto[t]).slice(0, SB_FIELD - auto.length)].sort(byRank);
+  const used = new Uint8Array(NT); field.forEach((t) => { used[t] = 1; });
+  const firstOut = rank.filter((t) => !used[t]).slice(0, 4);
+  const elig = (t) => !used[t] && W[t] >= SB_MIN_WINS;
+  const pool = rank.filter(elig);
+  const bowls = SB_BOWLS.map((bw, bi) => ({ bowl: bw, a: pool[bi * 2] ?? null, b: pool[bi * 2 + 1] ?? null }));
+  return { W, L, rank, rankPos, auto, isAuto, field, firstOut, bowls };
+}
+
+function sbPlayBracket(field, poPicks, prob) {
+  const res = {}, games = [];
+  SB_BRACKET.forEach((sp) => {
+    const side = (x) => (x.s ? field[x.s - 1] : res[x.g]);
+    const a = side(sp.a), b = side(sp.b), p = prob(a, b), pk = poPicks[sp.id];
+    const picked = pk != null && (pk === a || pk === b), w = picked ? pk : (p >= 0.5 ? a : b);
+    res[sp.id] = w;
+    games.push({ ...sp, a, b, w, p, picked, seedA: field.indexOf(a) + 1, seedB: field.indexOf(b) + 1 });
+  });
+  return { games, champ: res.F };
+}
+
+// Projected scenario: picks, favorites elsewhere.
+function sbProject(B, picks, ccgPick, poPicks) {
+  const winners = B.open.map((g) => (picks[g.id] != null ? picks[g.id] : (g.p >= 0.5 ? g.a : g.b)));
+  const R = sbRecords(B, winners);
+  const confs = SB_CONFS.map((_, c) => sbConfOrder(c, R.CW, R.CL, R.H, B));
+  const orders = confs.map((x) => x.order);
+  const ccg = orders.map((o, c) => {
+    const a = o[0], b = o[1], p = B.prob(a, b), pk = ccgPick[c], picked = pk === a || pk === b;
+    return { c, a, b, p, picked, w: picked ? pk : (p >= 0.5 ? a : b) };
+  });
+  const N = sbNational(B, R.W, R.L, ccg.map((x) => x.w), ccg.map((x) => (x.w === x.a ? x.b : x.a)));
+  return { winners, regW: R.W, regL: R.L, CW: R.CW, CL: R.CL, H: R.H, W: N.W, L: N.L, ap: B.apProj, ptsProj: B.ptsProj, natPos: B.natPos, confs, orders, ccg,
+    field: N.field, auto: N.auto, isAuto: N.isAuto, firstOut: N.firstOut, bowls: N.bowls, rank: N.rank, bracket: sbPlayBracket(N.field, poPicks, B.prob) };
+}
+
+// Count every Week 13 title-game outcome (unpicked CCGs) on top of a regular-season result.
+function sbTitleWeek(B, W, L, orders, ccgPick) {
+  const NT = SB_NT, games = orders.map((o, c) => { const a = o[0], b = o[1], pk = ccgPick[c]; return { a, b, fix: pk === a || pk === b ? pk : null }; });
+  const u = []; games.forEach((g, c) => { if (g.fix == null) u.push(c); });
+  const Cn = 1 << u.length, po = new Float64Array(NT), auto = new Float64Array(NT), conf = new Float64Array(NT);
+  const seeds = {}, bowls = {}, rankSum = new Float64Array(NT);
+  for (let mask = 0; mask < Cn; mask++) {
+    const champs = games.map((g) => (g.fix != null ? g.fix : g.a));
+    u.forEach((c, i) => { if ((mask >> i) & 1) champs[c] = games[c].b; });
+    const N = sbNational(B, W, L, champs, champs.map((w, c) => (w === games[c].a ? games[c].b : games[c].a)));
+    N.field.forEach((t, i) => { po[t]++; if (N.isAuto[t]) auto[t]++; (seeds[t] = seeds[t] || new Float64Array(SB_FIELD + 1))[i + 1]++; });
+    champs.forEach((t) => { conf[t]++; });
+    N.bowls.forEach((b, bi) => { [b.a, b.b].forEach((t, sd) => { if (t != null) (bowls[t] = bowls[t] || new Float64Array(SB_BOWLS.length * 2))[bi * 2 + sd]++; }); });
+    for (let t = 0; t < NT; t++) rankSum[t] += N.rankPos[t] + 1;
+  }
+  return { C: Cn, po, auto, conf, seeds, bowls, rank: Array.from(rankSum, (v) => v / Cn) };
+}
+function sbPoIf(B, winners, k, w, ccgPick) {
+  const wn = winners.slice(); wn[k] = w;
+  const R = sbRecords(B, wn);
+  const orders = SB_CONFS.map((_, c) => sbConfOrder(c, R.CW, R.CL, R.H, B).order);
+  return sbTitleWeek(B, R.W, R.L, orders, ccgPick);
+}
+
+// Exhaustive count of one conference's open games (Gray-code walk: one game flips per step).
+function sbCount(B, picks, c) {
+  const NT = SB_NT, mem = SB_MEM[c], n = mem.length, loc = {};
+  mem.forEach((t, i) => { loc[t] = i; });
+  const CW = new Int16Array(n), G = new Int16Array(n), H = new Int8Array(n * n);
+  mem.forEach((t, i) => { CW[i] = B.CW[t]; G[i] = B.CW[t] + B.CL[t]; mem.forEach((o, j) => { H[i * n + j] = B.H[t * NT + o]; }); });
+  const free = [], jOf = {};
+  B.open.forEach((g) => {
+    if (!g.conf || SB_TEAMS[g.a].conf !== c) return;
+    const a = loc[g.a], b = loc[g.b]; G[a]++; G[b]++;
+    const pk = picks[g.id];
+    if (pk != null) { const w = loc[pk], l = w === a ? b : a; CW[w]++; H[w * n + l]++; }
+    else { jOf[g.id] = free.length; free.push({ g, a, b, fav: g.p >= 0.5 ? 0 : 1 }); }
+  });
+  const F = free.length;
+  if (F > SB_CAP_BITS) return { c, over: true, F, free, mem, loc, n };
+  const M = 2 ** F, pri = mem.map((t) => B.priPos[t]), apL = mem.map((t) => B.apProj[t]), ptsL = mem.map((t) => B.ptsProj[t]);
+  const top1 = new Float64Array(n), top2 = new Float64Array(n), c1 = new Float64Array(F * 2 * n), c2 = new Float64Array(F * 2 * n);
+  const ownN = new Int8Array(n), ow = new Int8Array(n);
+  free.forEach((f) => { CW[f.a]++; H[f.a * n + f.b]++; ow[f.a]++; ownN[f.a]++; ownN[f.b]++; });
+  const bC1 = mem.map((_, i) => new Float64Array(ownN[i] + 1)), bC2 = mem.map((_, i) => new Float64Array(ownN[i] + 1));
+  const floor1 = new Int16Array(n).fill(999), floor2 = new Int16Array(n).fill(999), tbIn = new Float64Array(n), tbOut = new Float64Array(n);
+  const T1 = new Uint8Array(M), T2 = new Uint8Array(M);
+  const bestS = new Int16Array(n * 2).fill(-1), bestM = new Int32Array(n * 2);
+  const TB = { n: 0, by: { h2h: 0, ap: 0, pts: 0, nat: 0 }, groups: new Map() };
+  const pct = new Float64Array(n), hv = new Float64Array(n);
+  let fs = 0; free.forEach((f) => { if (f.fav === 0) fs++; });
+  const resolve = (grp) => {
+    for (const t of grp) { let w = 0, l = 0; for (const o of grp) if (o !== t) { w += H[t * n + o]; l += H[o * n + t]; } hv[t] = w + l ? w / (w + l) : 0.5; }
+    grp.sort((a, b) => hv[b] - hv[a] || pri[a] - pri[b]);
+  };
+  const crit = (a, b) => (Math.abs(hv[a] - hv[b]) > 1e-9 ? 'h2h' : Math.abs(apL[a] - apL[b]) > 1e-9 ? 'ap' : Math.abs(ptsL[a] - ptsL[b]) > 1e-9 ? 'pts' : 'nat');
+  let mask = 0;
+  for (let step = 0; step < M; step++) {
+    if (step > 0) {
+      const j = 31 - Math.clz32(step & -step), f = free[j];
+      if (!((mask >> j) & 1)) { CW[f.a]--; H[f.a * n + f.b]--; CW[f.b]++; H[f.b * n + f.a]++; ow[f.a]--; ow[f.b]++; fs += f.fav === 1 ? 1 : -1; }
+      else { CW[f.b]--; H[f.b * n + f.a]--; CW[f.a]++; H[f.a * n + f.b]++; ow[f.b]--; ow[f.a]++; fs += f.fav === 0 ? 1 : -1; }
+      mask ^= 1 << j;
+    }
+    let v1 = -1;
+    for (let i = 0; i < n; i++) { pct[i] = CW[i] / G[i]; if (pct[i] > v1) v1 = pct[i]; }
+    const S1 = []; for (let i = 0; i < n; i++) if (pct[i] > v1 - 1e-9) S1.push(i);
+    let t1, t2, cut1 = null, cut2 = null, grp = null;
+    if (S1.length > 1) { resolve(S1); t1 = S1[0]; t2 = S1[1]; cut1 = crit(t1, t2); if (S1.length > 2) { cut2 = crit(S1[1], S1[2]); grp = S1; } }
+    else {
+      t1 = S1[0]; let v2 = -1;
+      for (let i = 0; i < n; i++) if (i !== t1 && pct[i] > v2) v2 = pct[i];
+      const S2 = []; for (let i = 0; i < n; i++) if (i !== t1 && pct[i] > v2 - 1e-9) S2.push(i);
+      if (S2.length > 1) { resolve(S2); cut2 = crit(S2[0], S2[1]); grp = S2; }
+      t2 = S2[0];
+    }
+    top1[t1]++; top2[t1]++; top2[t2]++;
+    for (let j = 0; j < F; j++) { const o = (j * 2 + ((mask >> j) & 1)) * n; c2[o + t1]++; c2[o + t2]++; c1[o + t1]++; }
+    bC2[t1][ow[t1]]++; bC2[t2][ow[t2]]++; bC1[t1][ow[t1]]++;
+    if (CW[t1] < floor2[t1]) floor2[t1] = CW[t1]; if (CW[t2] < floor2[t2]) floor2[t2] = CW[t2]; if (CW[t1] < floor1[t1]) floor1[t1] = CW[t1];
+    if (fs > bestS[t1 * 2]) { bestS[t1 * 2] = fs; bestM[t1 * 2] = mask; }
+    if (fs > bestS[t2 * 2]) { bestS[t2 * 2] = fs; bestM[t2 * 2] = mask; }
+    if (fs > bestS[t1 * 2 + 1]) { bestS[t1 * 2 + 1] = fs; bestM[t1 * 2 + 1] = mask; }
+    T1[mask] = t1; T2[mask] = t2;
+    if (cut2) {
+      TB.n++; TB.by[cut2]++;
+      let bits = 0; for (const t of grp) { bits |= 1 << t; if (t === t1 || t === t2) tbIn[t]++; else tbOut[t]++; }
+      const key = bits * 32 + CW[grp[0]];
+      let G0 = TB.groups.get(key);
+      if (!G0) { G0 = { n: 0, by: { h2h: 0, ap: 0, pts: 0, nat: 0 }, adv: new Float64Array(n), ex: mask, grp: grp.slice(), cw: CW[grp[0]] }; TB.groups.set(key, G0); }
+      G0.n++; G0.by[cut2]++;
+      if (grp.indexOf(t1) >= 0) G0.adv[t1]++; G0.adv[t2]++;
+    }
+  }
+  return { c, over: false, F, M, free, jOf, mem, loc, n, G, top1, top2, c1, c2, ownN, bC1, bC2, floor1, floor2, tbIn, tbOut, TB, T1, T2, bestS, bestM };
+}
+
+// Pathways: condition a team's result on its K most decisive open games (own games first).
+// Each of the 2^K cells = share of the remaining outcomes (all other open games) that put the team in.
+// Minimal cubes where every cell = 100% → "gets in if"; every cell = 0% → "out if"; every cell > 0% → "alive if".
+function sbPathways(r, i, js, cut) {
+  const K = js.length, S = 1 << K, q = new Float64Array(S), M = r.M, T1 = r.T1, T2 = r.T2;
+  for (let m = 0; m < M; m++) {
+    if (T1[m] === i || (cut === 2 && T2[m] === i)) { let s = 0; for (let b = 0; b < K; b++) s |= ((m >> js[b]) & 1) << b; q[s]++; }
+  }
+  const per = M / S; for (let s = 0; s < S; s++) q[s] /= per;
+  const cubes = [];
+  for (let c = 0; c < Math.pow(3, K); c++) {
+    let sel = 0, val = 0, x = c, k = 0;
+    for (let b = 0; b < K; b++) { const d = x % 3; x = (x - d) / 3; if (d < 2) { sel |= 1 << b; if (d) val |= 1 << b; k++; } }
+    cubes.push({ sel, val, k });
+  }
+  cubes.sort((a, b) => a.k - b.k);
+  const sub = (A, cu) => A.some((s) => (s.sel & cu.sel) === s.sel && (cu.val & s.sel) === s.val);
+  const cl = [], al = [], el = [];
+  let allAlive = true; for (let s = 0; s < S; s++) if (q[s] <= 1e-9) allAlive = false;
+  cubes.forEach((cu) => {
+    let mn = 1, mx = 0, sum = 0, cnt = 0;
+    for (let s = 0; s < S; s++) if ((s & cu.sel) === cu.val) { if (q[s] < mn) mn = q[s]; if (q[s] > mx) mx = q[s]; sum += q[s]; cnt++; }
+    cu.avg = sum / cnt;
+    if (mn >= 1 - 1e-9) { if (!sub(cl, cu)) cl.push(cu); }
+    else if (mx <= 1e-9) { if (!sub(el, cu)) el.push(cu); }
+    else if (!allAlive && mn > 1e-9 && cu.k > 0 && !sub(al, cu) && !sub(cl, cu)) al.push(cu);
+  });
+  const lits = (cu) => js.map((j, b) => ((cu.sel >> b) & 1 ? { j, side: (cu.val >> b) & 1 } : null)).filter(Boolean);
+  const fin = (A) => A.map((cu) => ({ k: cu.k, avg: cu.avg, lits: lits(cu) }));
+  return { cl: fin(cl), al: fin(al).sort((a, b) => a.k - b.k || b.avg - a.avg), el: fin(el) };
+}
+
+/* ================= UI ================= */
+var root = document.getElementById('cffb-sb');
+var $ = function(k){ return root.querySelector('[data-sb="' + k + '"]'); };
+var KEY = 'cffb-sb-mfl-v4';
+var saved = (function(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })();
+var nulls = function(){ return SB_CONFS.map(function(){ return null; }); };
+var picks = {}, ccgPick = [], poPicks = {};
+var ui = { tab: 'races', wk: 1, conf: 0, metric: 'ccg', open: {}, sheet: null, pcut: 2, pex: {} };
+var B = null, proj, tw, CNT = [], cntKey = [], poCache = {}, lastPaths = {}, lastTies = [];
+var T = [], C = [];   // set by init() once league data is applied
+
+function save(){ try { localStorage.setItem(KEY, JSON.stringify({ picks: picks, ccgPick: ccgPick, poPicks: poPicks })); } catch (e) {} }
+function confKey(c){ return B.open.filter(function(g){ return g.conf && T[g.a].conf === c && picks[g.id] != null; }).map(function(g){ return g.id + ':' + picks[g.id]; }).join(','); }
+function recompute(){
+  proj = sbProject(B, picks, ccgPick, poPicks);
+  tw = sbTitleWeek(B, proj.regW, proj.regL, proj.orders, ccgPick);
+  for (var c = 0; c < SB_NC; c++) { var k = confKey(c); if (cntKey[c] !== k) { CNT[c] = sbCount(B, picks, c); cntKey[c] = k; } }
+  poCache = {};
+}
+function pct(v){ if (v == null) return '\u2014'; if (v <= 0) return '0%'; if (v >= 1) return '100%'; if (v < 0.01) return '<1%'; if (v > 0.99) return '>99%'; return Math.round(v * 100) + '%'; }
+function oc(v){ v = v || 0; return v <= 0 ? 'o-z' : v >= 0.995 ? 'o-lock' : v >= 0.6 ? 'o-hi' : v >= 0.25 ? 'o-mid' : 'o-lo'; }
+function rec(w, l){ return w + '\u2013' + l; }
+function num(n){ return Math.round(n).toLocaleString('en-US'); }
+function outs(F){ return num(Math.pow(2, F)); }
+function pill(t, h, cls){
+  var tm = T[t], c = C[tm.conf], w = Math.round(h * 250 / 60), st = 'height:' + h + 'px;width:' + w + 'px';
+  if (tm.pill) return '<span class="sb-p ' + (cls || '') + '" style="' + st + '" title="' + tm.name + '"><img src="' + tm.pill + '" alt="' + tm.name + '"></span>';
+  return '<span class="sb-p sb-p--fb ' + (cls || '') + '" style="' + st + '" title="' + tm.name + '"><i style="width:' + h + 'px;background:' + c.accent + '"><img src="' + c.logo + '" alt=""></i><b style="background:' + tm.bg + ';color:' + tm.fg + ';font-size:' + Math.round(h * 0.56) + 'px">' + tm.abbr + '</b></span>';
+}
+function pk(act, attrs, t, h, picked, isW){ return '<button type="button" class="sb-pk' + (picked && isW ? ' on' : '') + '" data-act="' + act + '" ' + attrs + ' data-t="' + t + '" aria-label="Pick ' + T[t].name + '">' + pill(t, h, picked && !isW ? 'dim' : '') + '</button>'; }
+function tm(t, h, cls){ return '<button type="button" class="sb-tm" data-act="team" data-t="' + t + '">' + pill(t, h, cls) + '</button>'; }
+function chips(act, cur, list){ return '<div class="sb-chips">' + list.map(function(x){ return '<button type="button" class="sb-chip' + (cur === x.v ? ' on' : '') + '" data-act="' + act + '" data-v="' + x.v + '">' + (x.img ? '<img src="' + x.img + '" alt="">' : '') + x.l + (x.n != null ? '<small>' + x.n + '</small>' : '') + '</button>'; }).join('') + '</div>'; }
+function confChips(nf){ return chips('conf', ui.conf, C.map(function(c, i){ return { v: i, l: c.name, img: c.logo, n: nf ? nf(i) : null }; })); }
+
+/* ---- count accessors ---- */
+function R(t){ return CNT[T[t].conf]; }
+function ccgV(t){ var r = R(t); return r.over ? null : r.top2[r.loc[t]] / r.M; }
+function n1V(t){ var r = R(t); return r.over ? null : r.top1[r.loc[t]] / r.M; }
+function mark(t){ var r = R(t); if (r.over) return null; var v = r.top2[r.loc[t]]; return v === r.M ? 'x' : v === 0 ? 'e' : null; }
+function condC(t, g, side, cut){ var r = CNT[T[g.a].conf]; if (r.over || r.jOf[g.id] == null || r.loc[t] == null) return null; var cc = cut === 1 ? r.c1 : r.c2; return cc[(r.jOf[g.id] * 2 + side) * r.n + r.loc[t]] / (r.M / 2); }
+function levC(g){ var r = CNT[T[g.a].conf]; if (r.over || r.jOf[g.id] == null) return 0; var j = r.jOf[g.id], s = 0; for (var i = 0; i < r.n; i++) s += Math.abs(r.c2[(j * 2) * r.n + i] - r.c2[(j * 2 + 1) * r.n + i]); return s / (r.M / 2) / 2; }
+function poIf(g){ if (!poCache[g.id]) { var k = B.kOf[g.id]; poCache[g.id] = { a: sbPoIf(B, proj.winners, k, g.a, ccgPick), b: sbPoIf(B, proj.winners, k, g.b, ccgPick) }; } return poCache[g.id]; }
+function levP(g){ var x = poIf(g), s = 0; for (var t = 0; t < SB_NT; t++) s += Math.abs(x.a.po[t] / x.a.C - x.b.po[t] / x.b.C); return s / 2; }
+function poV(t){ return tw.po[t] / tw.C; }
+function nextWk(c){ for (var w = SB_ACTUAL_PLAYED + 1; w <= SB_WEEKS; w++) if (B.open.some(function(g){ return g.week === w && g.conf && T[g.a].conf === c && picks[g.id] == null; })) return w; return null; }
+function lockCard(c){
+  var r = CNT[c], need = r.F - SB_CAP_BITS, w = nextWk(c);
+  return '<div class="sb-lock"><b>' + C[c].name + ': ' + r.F + ' open games = ' + outs(r.F) + ' outcomes</b><p>Exact counting tops out at ' + SB_CAP_BITS + ' open games per conference (' + num(SB_CAP) + ' outcomes). Pick at least <strong>' + need + '</strong> more ' + C[c].name + ' result' + (need > 1 ? 's' : '') + ' to unlock outcome counts, paths and tiebreakers.</p><div class="sb-lock__a">' +
+    (w ? '<button type="button" class="sb-btn xs" data-act="lockwk" data-c="' + c + '" data-v="' + w + '">Lock Wk ' + w + ' favorites</button>' : '') + '' + '</div></div>';
+}
+
+/* ---- bar ---- */
+function bar(){
+  // Regular season complete \u2192 no open reg-season games \u2192 championship-week state:
+  // the bracket of six title games is all that's left to project.
+  var champWeek = SB_ACTUAL_PLAYED >= SB_WEEKS;
+  var nx = champWeek ? SB_CCG_WEEK : SB_ACTUAL_PLAYED + 1;
+  $('wkb').textContent = nx;
+  $('wke').textContent = champWeek ? 'TITLES' : 'UP NEXT';
+  $('wkn').textContent = champWeek ? 'Conf Championships \u00b7 Wk ' + SB_CCG_WEEK : 'Wks ' + nx + '\u2013' + SB_WEEKS + ' + CCG';
+  $('mus').innerHTML = proj.ccg.map(function(x, c){ return '<span class="sb-mu"><i>' + C[c].name.replace('Big Ten', 'B1G') + '</i>' + pill(x.a, 18) + '<em>v</em>' + pill(x.b, 18) + '</span>'; }).join('');
+  var left = B.open.filter(function(g){ return picks[g.id] == null; }).length;
+  $('tsub').textContent = champWeek
+    ? 'Regular season final \u00b7 projecting ' + SB_NC + ' title games (Wk ' + SB_CCG_WEEK + ')'
+    : left + ' games left through Wk ' + SB_WEEKS + ' \u00b7 title games Wk ' + SB_CCG_WEEK;
+  $('foot').innerHTML = champWeek
+    ? '<b>' + SB_NC + '</b> championship games \u00b7 every outcome counted'
+    : '<b>' + B.open.length + '</b> open games \u00b7 every outcome counted';
+}
+
+/* ---- tabs ---- */
+function tabs(){
+  var n = B.open.filter(function(g){ return picks[g.id] != null; }).length, tieN = 0;
+  CNT.forEach(function(r){ if (!r.over && r.TB.n / r.M >= 0.05) tieN++; });
+  var tb = [['races', 'Races'], ['playoff', 'Playoff'], ['bowls', 'Bowls']];
+  $('tabs').innerHTML = tb.map(function(t){ return '<button type="button" class="sb-tab' + (ui.tab === t[0] ? ' on' : '') + '" data-act="tab" data-v="' + t[0] + '">' + t[1] + (t[2] != null ? '<i>' + t[2] + '</i>' : '') + '</button>'; }).join('');
+}
+
+/* ---- races ---- */
+function tieTable(tie){
+  var hi = tie.teams.map(function(){ return {}; });
+  tie.steps.forEach(function(s, i){ hi[i][s] = 1; hi[i + 1][s] = 1; });
+  var used = tie.steps.filter(function(s, i, a){ return a.indexOf(s) === i; }), o = proj.orders[T[tie.teams[0]].conf];
+  return '<div class="sb-tie"><div class="sb-tie__h"><span>Tied at ' + tie.rec + '</span><span>Decided by ' + used.map(function(u){ return SB_TB[u]; }).join(' \u2192 ') + '</span></div>' +
+    '<div class="sb-tie__r sb-tie__r--h"><span></span><span>H2H</span><span>AP%</span><span>PF</span><span>Rank</span><span></span></div>' +
+    tie.teams.map(function(t, i){ return '<div class="sb-tie__r"><span class="t"><b>' + (tie.start + i + 1) + '</b>' + tm(t, 16) + '</span><span class="' + (hi[i].h2h ? 'dec' : '') + '">' + rec(tie.h2h[t][0], tie.h2h[t][1]) + '</span><span class="' + (hi[i].ap ? 'dec' : '') + '">' + (proj.ap[t] * 100).toFixed(1) + '</span><span class="' + (hi[i].pts ? 'dec' : '') + '">' + Math.round(proj.ptsProj[t]) + '</span><span class="' + (hi[i].nat ? 'dec' : '') + '">#' + proj.natPos[t] + '</span><span class="res">' + (o.indexOf(t) < 2 ? 'CCG' : '') + '</span></div>'; }).join('') + '</div>';
+}
+function vRaces(){
+  var c = ui.conf, o = proj.orders[c], x = proj.ccg[c], ties = proj.confs[c].ties, r = CNT[c], tieOf = {};
+  ties.forEach(function(tie){ tie.teams.forEach(function(t){ tieOf[t] = 1; }); });
+  var h = '<div class="sb-sub">' + confChips() + '</div>' + (r.over ? lockCard(c) : '');
+  h += '<div class="sb-card"><div class="sb-tblw"><table class="sb-tbl"><thead><tr><th class="l">#</th><th class="l">Team</th><th>Conf</th><th class="w-only">Ovr</th><th class="w-only">AP%</th><th class="w-only">Rk</th><th>CCG</th><th>CFP</th><th>Bowl</th></tr></thead><tbody>';
+  o.forEach(function(t, i){
+    var mk = mark(t), v = ccgV(t), bw = 0;
+    if (tw.bowls[t]) tw.bowls[t].forEach(function(q){ bw += q; });
+    h += '<tr class="' + (i < 2 ? 'ccg' : '') + (i === 1 ? ' cut' : '') + '" data-act="team" data-t="' + t + '"><td class="rk">' + (i + 1) + (mk ? '<small class="m' + mk + '">' + mk + '</small>' : '') + '</td>' +
+      '<td class="tm"><span>' + pill(t, 20) + (tieOf[t] ? '<span class="sb-tbt">TB</span>' : '') + '</span></td>' +
+      '<td>' + rec(proj.CW[t], proj.CL[t]) + '</td><td class="s w-only">' + rec(proj.regW[t], proj.regL[t]) + '</td>' +
+      '<td class="s w-only">' + (proj.ap[t] * 100).toFixed(1) + '</td><td class="s w-only">' + proj.natPos[t] + '</td>' +
+      '<td class="o ' + (v == null ? 'o-z' : oc(v)) + '"' + (v == null ? '' : ' title="' + num(r.top2[r.loc[t]]) + ' of ' + num(r.M) + ' outcomes"') + '>' + pct(v) + '</td>' +
+      '<td class="o ' + oc(poV(t)) + '">' + pct(poV(t)) + '</td><td class="o ' + oc(bw / tw.C) + '">' + pct(bw / tw.C) + '</td></tr>';
+  });
+  h += '</tbody></table></div>' + ties.map(tieTable).join('');
+  if (!r.over) h += '<div class="sb-tbl2"><span>2nd CCG spot needs a tiebreaker in <b>' + pct(r.TB.n / r.M) + '</b> of ' + num(r.M) + ' outcomes</span>' + (r.TB.n ? '<span>' + ['h2h', 'ap', 'pts', 'nat'].map(function(k){ return '<span>' + SB_TB_SHORT[k] + ' <b>' + pct(r.TB.by[k] / r.TB.n) + '</b></span>'; }).join('') + '</span>' : '') + '</div>';
+  h += '<div class="sb-ccg"><span class="sb-ccg__l">Championship<span>Wk 13 \u00b7 Projected</span></span>' + tm(x.a, 24) + '<span class="sb-vs">vs</span>' + tm(x.b, 24) + '<span class="sb-ccg__p">Fav ' + T[x.w].abbr + '</span></div></div>';
+  if (!r.over) h = h.replace('<div class="sb-card"><div class="sb-tblw"><table', pathsCard(c) + '<div class="sb-card" style="margin-top:16px"><div class="sb-tblw"><table');
+  h += '<p class="sb-note">Standings shown with favorites winning. CCG = share of all ' + (r.over ? outs(r.F) : num(r.M)) + ' win/loss outcomes of the open ' + C[c].name + ' games that put the team in the top two (hover for the count). CFP/Bowl = share of the ' + tw.C + ' Week 13 outcomes. <span class="mx">x</span> clinched \u00b7 <span class="me">e</span> eliminated. Tiebreakers: H2H sweep \u2192 all-play % \u2192 total points \u2192 national rank.</p>';
+  return h;
+}
+
+/* ---- pathways ---- */
+function pathData(t, cut){
+  var r = R(t); if (r.over) return null;
+  var i = r.loc[t], n = r.n, half = r.M / 2, cc = cut === 1 ? r.c1 : r.c2, tot = (cut === 1 ? r.top1 : r.top2)[i], helps = [], imp = [];
+  r.free.forEach(function(f, j){
+    var g = f.g, ca = cc[(j * 2) * n + i] / half, cb = cc[(j * 2 + 1) * n + i] / half, d = ca - cb, own = g.a === t || g.b === t;
+    imp.push({ j: j, own: own, d: Math.abs(d) });
+    if (!own && tot > 0 && Math.abs(d) >= 0.01) helps.push({ g: g, w: d > 0 ? g.a : g.b, l: d > 0 ? g.b : g.a, pw: Math.max(ca, cb), pl: Math.min(ca, cb), d: Math.abs(d) });
+  });
+  helps.sort(function(a, b){ return b.d - a.d; });
+  var js = imp.filter(function(x){ return x.own || x.d >= 0.02; }).sort(function(a, b){ return (b.own - a.own) || b.d - a.d; }).slice(0, 6).map(function(x){ return x.j; });
+  var pw = tot > 0 && tot < r.M ? sbPathways(r, i, js, cut) : null;
+  var lit = function(x){ var g = r.free[x.j].g; return { g: g, w: x.side ? g.b : g.a, l: x.side ? g.a : g.b }; };
+  if (pw) ['cl', 'al', 'el'].forEach(function(k){ pw[k] = pw[k].map(function(c){ return { k: c.k, avg: c.avg, lits: c.lits.map(lit) }; }); });
+  var bi = i * 2 + (cut === 1 ? 1 : 0), path = null;
+  if (r.bestS[bi] >= 0) { path = {}; var bm = r.bestM[bi]; r.free.forEach(function(f, j){ path[f.g.id] = (bm >> j) & 1 ? f.g.b : f.g.a; }); }
+  var top = cut === 1 ? r.top1 : r.top2, rivals = r.mem.filter(function(o){ return o !== t && top[r.loc[o]] > 0; });
+  return { t: t, cut: cut, tot: tot, M: r.M, F: r.F, helps: helps, pw: pw, path: path, rivals: rivals, floor: (cut === 1 ? r.floor1 : r.floor2)[i], games: r.G[i] };
+}
+function litChip(x, d){
+  var t = d.t, body;
+  var W = '<b class="sb-wl w">W</b>', L = '<b class="sb-wl l">L</b>', v = '<i class="sb-v2">v</i>';
+  if (x.w === t) body = W + v + pill(x.l, 16);
+  else if (x.l === t) body = L + v + pill(x.w, 16);
+  else if (d.rivals.indexOf(x.l) >= 0) body = pill(x.l, 16) + L + v + pill(x.w, 16);
+  else body = pill(x.w, 16) + W + v + pill(x.l, 16);
+  return '<div class="sb-cr"><span class="sb-cr__w">WK ' + x.g.week + '</span><span class="sb-cr__t">' + body + '</span></div>';
+}
+function pwShort(list){ var s = list.filter(function(c){ return c.k <= 3; }); return s.length ? s : list.slice(0, 2); }
+function pwRows(list, d, kind, max){
+  return pwShort(list).slice(0, max).map(function(c, ci){
+    var idx = list.indexOf(c);
+    return (ci ? '<div class="sb-or3">or</div>' : '') + '<div class="sb-path"><div class="sb-path__l">' + c.lits.slice().sort(function(a, b){ return a.g.week - b.g.week || ((b.w === d.t || b.l === d.t) - (a.w === d.t || a.l === d.t)); }).map(function(x){ return litChip(x, d); }).join('') + '</div>' +
+      (kind === 'al' ? '<div class="sb-path__f"><span class="sb-path__s">Gets in ' + pct(c.avg) + ' of the time</span></div>' : '') + '</div>';
+  }).join('');
+}
+function pathStatus(d){
+  if (d.tot === d.M) return '<span class="sb-pa__tag x">Clinched</span>';
+  if (d.tot === 0) return '<span class="sb-pa__tag">Eliminated</span>';
+  return '<b class="' + oc(d.tot / d.M) + '">' + pct(d.tot / d.M) + '</b><small>' + num(d.tot) + ' of ' + num(d.M) + '</small>';
+}
+function pathBody(d){
+  var t = d.t, spot = d.cut === 1 ? 'the No. 1 seed' : 'the title game';
+  if (d.tot === d.M) {
+    var msg = '<div class="sb-pa__n">In ' + spot + ' in all ' + num(d.M) + ' outcomes.</div>';
+    if (d.cut === 2) { var d1 = pathData(t, 1); lastPaths[t + ':1'] = d1; msg += '<div class="sb-pa__sub"><span class="sb-pa__subl">Race for the No. 1 seed</span><span class="sb-pa__s">' + pathStatus(d1) + '</span></div>' + (d1.pw ? pathBody(d1) : ''); }
+    return msg;
+  }
+  if (d.tot === 0) return '<div class="sb-pa__n">Out of ' + spot + ' in all ' + num(d.M) + ' outcomes.</div>';
+  var pw = d.pw, h = '';
+  var own = pw.cl.some(function(c){ return c.lits.every(function(x){ return x.w === t; }); });
+  if (own) h += '<div><span class="sb-pa__tag x">Controls own destiny</span></div>';
+  if (pw.cl.length) h += '<div class="sb-scb"><div class="sb-scb__h">' + (d.cut === 1 ? 'Takes No. 1 if' : 'Gets in if') + '</div>' + pwRows(pw.cl, d, 'cl', 3) + '</div>';
+  else h += '<div class="sb-pa__n">No set of results guarantees it \u2014 needs help from other games too.</div>';
+  if (pw.al.length && (!pw.cl.length || d.tot / d.M < 0.5)) h += '<div class="sb-scb al"><div class="sb-scb__h">' + (d.cut === 1 ? 'Still in the No. 1 race if' : 'Still alive if') + '</div>' + pwRows(pw.al, d, 'al', 2) + '</div>';
+  if (pw.el.length) h += '<div class="sb-scb el"><div class="sb-scb__h">' + (d.cut === 1 ? 'Out of the No. 1 race if' : 'Eliminated if') + '</div>' + pwRows(pw.el, d, 'el', 2) + '</div>';
+  return h + tieLine(d);
+}
+function tieLine(d){
+  var t = d.t, beats = d.rivals.filter(function(o){ return B.priPos[o] > B.priPos[t]; }), loses = d.rivals.filter(function(o){ return B.priPos[o] < B.priPos[t]; });
+  var tie = d.rivals.length ? 'If tied after H2H: wins vs ' + beats.length + ' of ' + d.rivals.length + ' contenders' + (loses.length ? ', loses to' : '') : '';
+  return '<div class="sb-pa__ft"><span>' + tie + '</span>' + loses.map(function(o){ return pill(o, 14); }).join('') + '<span>' + (tie ? '\u00b7 ' : '') + 'Proj AP ' + (B.apProj[t] * 100).toFixed(1) + '% \u00b7 Floor ' + rec(d.floor, d.games - d.floor) + '</span></div>';
+}
+function lockedStrip(c){
+  var l = B.open.filter(function(g){ return T[g.a].conf === c && picks[g.id] != null; });
+  if (!l.length) return '';
+  return '<div class="sb-locked"><span class="sb-pa__k">Locked</span>' + l.map(function(g){ var w = picks[g.id], lo = w === g.a ? g.b : g.a; return '<button type="button" class="sb-pc" data-act="pick" data-g="' + g.id + '" data-t="" title="Clear">' + pill(w, 14) + '<small>over</small>' + pill(lo, 14) + '<small>Wk ' + g.week + ' ×</small></button>'; }).join('') + '<button type="button" class="sb-btn xs gh" data-act="clearconf" data-c="' + c + '">Clear all</button></div>';
+}
+function recLikely(t){
+  var own = B.open.filter(function(g){ return g.conf && (g.a === t || g.b === t); }), dp = [1];
+  own.forEach(function(g){ var p = g.a === t ? g.p : 1 - g.p, nx = new Array(dp.length + 1).fill(0); dp.forEach(function(v, k){ nx[k] += v * (1 - p); nx[k + 1] += v * p; }); dp = nx; });
+  var best = 0; dp.forEach(function(v, k){ if (v > dp[best]) best = k; });
+  var bw = B.CW[t] + best, bl = B.CL[t] + own.length - best;
+  return '<span class="sb-pa__n sb-rl">' + rec(bw, bl) + '<em>' + pct(dp[best]) + ' most likely</em></span>';
+}
+function pathsCard(c){
+  var cut = ui.pcut, r = CNT[c], o = proj.orders[c], top = cut === 1 ? r.top1 : r.top2;
+  var live = o.filter(function(t){ var v = top[r.loc[t]]; return v > 0 && v < r.M; }), locked = o.filter(function(t){ return top[r.loc[t]] === r.M; }), out = o.filter(function(t){ return top[r.loc[t]] === 0; });
+  var h = '<div class="sb-card"><div class="sb-pa__hd"><div class="sb-pa__t">Pathways to ' + (cut === 2 ? 'the title game' : 'the No. 1 seed') + '<small>' + r.F + ' open games · all ' + num(r.M) + ' outcomes counted · tap a team for its pathways</small></div><div class="sb-seg"><button type="button" class="' + (cut === 2 ? 'on' : '') + '" data-act="pcut" data-v="2">Top 2</button><button type="button" class="' + (cut === 1 ? 'on' : '') + '" data-act="pcut" data-v="1">No. 1</button></div></div>';
+  lastPaths = {};
+  h += locked.concat(live).map(function(t){ var d = pathData(t, cut); lastPaths[t + ':' + cut] = d; var op = !!ui.pex[t]; return '<div class="sb-pa' + (op ? ' open' : '') + '"><button type="button" class="sb-pa__h sb-pa__btn" data-act="pex" data-t="' + t + '" aria-expanded="' + op + '">' + pill(t, 20) + recLikely(t) + '<span class="sb-pa__s">' + pathStatus(d) + '</span><span class="sb-pa__chev" aria-hidden="true"></span></button>' + (op ? pathBody(d) : '') + '</div>'; }).join('');
+  if (out.length) h += '<div class="sb-pa"><div class="sb-pa__l"><span class="sb-pa__k">Out</span>' + out.map(function(t){ return tm(t, 16, 'dim'); }).join('') + '</div></div>';
+  return h + '</div>';
+}
+
+/* ---- ties ---- */
+function vTies(){
+  var c = ui.conf, r = CNT[c];
+  var h = '<div class="sb-sub">' + confChips(function(i){ var q = CNT[i]; return q.over ? '\u2014' : pct(q.TB.n / q.M); }) + '</div>';
+  if (r.over) return h + lockCard(c);
+  h += '<div class="sb-legend"><span><i class="tb-h2h"></i>Head-to-head</span><span><i class="tb-ap"></i>All-play %</span><span><i class="tb-pts"></i>Total points</span><span><i class="tb-nat"></i>National rank</span></div>';
+  var groups = Array.from(r.TB.groups.values()).sort(function(a, b){ return b.n - a.n; }).slice(0, 8);
+  if (!groups.length) return h + '<div class="sb-empty">No ties for the 2nd CCG spot in any of the ' + num(r.M) + ' outcomes.</div>';
+  lastTies = groups.map(function(g){ var ex = {}; r.free.forEach(function(f, j){ ex[f.g.id] = (g.ex >> j) & 1 ? f.g.b : f.g.a; }); return ex; });
+  h += '<div class="sb-tsc">' + groups.map(function(g, gi){
+    var teams = g.grp.map(function(i){ return { t: r.mem[i], p: g.adv[i] / g.n }; }).sort(function(a, b){ return b.p - a.p; });
+    return '<div class="sb-tc"><div class="sb-tc__top"><span class="sb-tc__rec">' + teams.length + '-way tie at ' + rec(g.cw, r.G[g.grp[0]] - g.cw) + '</span><span class="sb-tc__f" title="' + num(g.n) + ' of ' + num(r.M) + ' outcomes">' + pct(g.n / r.M) + '</span></div>' +
+      '<div class="sb-tc__by">' + ['h2h', 'ap', 'pts', 'nat'].map(function(k){ var v = g.by[k] / g.n; return v > 0 ? '<span class="tb-' + k + '" style="flex-grow:' + v + '" title="' + SB_TB[k] + '">' + (v >= 0.2 ? SB_TB_SHORT[k] + ' ' + Math.round(v * 100) + '%' : '') + '</span>' : ''; }).join('') + '</div>' +
+      '<div class="sb-tc__adv">' + teams.map(function(a){ return '<button type="button" data-act="team" data-t="' + a.t + '">' + pill(a.t, 20, a.p < 0.05 ? 'dim' : '') + '<span class="' + oc(a.p) + '">' + pct(a.p) + '</span></button>'; }).join('') + '</div>' +
+      '<div class="sb-tc__ft"><span>' + num(g.n) + ' outcomes \u00b7 % = reaches CCG in them</span><button type="button" class="sb-btn xs" data-act="setup" data-i="' + gi + '">Set up</button></div></div>';
+  }).join('') + '</div><p class="sb-note">Most common ties for the 2nd title-game spot across all ' + num(r.M) + ' outcomes. The bar shows which tiebreaker settles it. Set up loads one outcome that creates the tie.</p>';
+  return h;
+}
+
+/* ---- playoff ---- */
+var TROPHY = '<svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="sbtr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8C547"></stop><stop offset=".5" stop-color="#C9A227"></stop><stop offset="1" stop-color="#8B6F1F"></stop></linearGradient></defs><path d="M7 4h10v3.2a5 5 0 0 1-10 0V4Z" fill="url(#sbtr)"></path><path d="M7 5H4.2v1.2A2.8 2.8 0 0 0 7 9M17 5h2.8v1.2A2.8 2.8 0 0 1 17 9" stroke="url(#sbtr)" stroke-width="1.4" fill="none"></path><path d="M11 11.8h2V16h2.4a1 1 0 0 1 1 1v1.2H7.6V17a1 1 0 0 1 1-1H11v-4.2Z" fill="url(#sbtr)"></path></svg>';
+function vPlayoff(){
+  var h = '<div class="sb-seeds">';
+  for (var sd = 1; sd <= SB_FIELD; sd++) {
+    var c = SB_ALL.map(function(t){ return { t: t, n: tw.seeds[t] ? tw.seeds[t][sd] : 0 }; }).filter(function(x){ return x.n > 0; }).sort(function(a, b){ return b.n - a.n || B.natPos[a.t] - B.natPos[b.t]; });
+    var aq = function(t){ return tw.auto[t] === tw.po[t] && tw.auto[t] > 0 ? '<span class="sb-bye">AQ</span>' : ''; };
+    var tip = function(x){ return T[x.t].name + ' \u00b7 ' + num(x.n) + ' of ' + tw.C + ' outcomes'; };
+    var lead = c[0], rest = c.slice(1, 5);
+    h += '<div class="sb-seed"><div class="sb-seed__n">' + sd + '</div><div class="sb-seed__b">' +
+      (lead ? '<button type="button" class="sb-seed__lead" data-act="team" data-t="' + lead.t + '" title="' + tip(lead) + '">' + pill(lead.t, 26) + aq(lead.t) + '<b class="' + oc(lead.n / tw.C) + '">' + pct(lead.n / tw.C) + '</b></button>' : '') +
+      (rest.length ? '<div class="sb-seed__c">' + rest.map(function(x){ return '<button type="button" class="sb-seed__t" data-act="team" data-t="' + x.t + '" title="' + tip(x) + '">' + pill(x.t, 13) + '<span>' + pct(x.n / tw.C) + '</span></button>'; }).join('') + (c.length > 5 ? '<span class="sb-seed__m">+' + (c.length - 5) + '</span>' : '') + '</div>' : '') +
+      '</div></div>';
+  }
+  return h + '</div><p class="sb-note">Biggest pill = most likely team at that seed; smaller pills are the other teams that can land there. % = share of the ' + tw.C + ' Week 13 title-game outcomes (regular season with favorites winning). AQ = in only as an auto-bid champion. 16 teams, no byes; the five power-conference champions (ACC/B10/B12/P12/SEC) get auto bids and the AAC champion must earn an at-large bid — all seeded by final national ranking.</p>';
+}
+
+/* ---- bowls ---- */
+function vBowls(){
+  var tip = function(t, n){ return T[t].name + ' \u00b7 ' + num(n) + ' of ' + tw.C + ' outcomes \u00b7 avg final rank #' + Math.round(tw.rank[t]); };
+  var lead = function(x){ return '<button type="button" class="sb-seed__lead" data-act="team" data-t="' + x.t + '" title="' + tip(x.t, x.n) + '">' + pill(x.t, 24) + '<span class="sb-bwx__rk">Rk #' + Math.round(tw.rank[x.t]) + '</span><b class="' + oc(x.n / tw.C) + '">' + pct(x.n / tw.C) + '</b></button>'; };
+  return '<div class="sb-bowls">' + SB_BOWLS.map(function(b, bi){
+    var c = SB_ALL.map(function(t){ var v = tw.bowls[t]; return { t: t, n: v ? v[bi * 2] + v[bi * 2 + 1] : 0 }; }).filter(function(x){ return x.n > 0; }).sort(function(p, q){ return q.n - p.n || tw.rank[p.t] - tw.rank[q.t]; });
+    var top = c.slice(0, 2).sort(function(p, q){ return tw.rank[p.t] - tw.rank[q.t]; }), rest = c.slice(2, 7);
+    var h = '<div class="sb-bw"><div class="sb-bw__h"><span class="sb-bw__n">' + b.name + '</span><span class="sb-bw__c">Pick ' + (bi + 1) + '</span></div><div class="sb-bwx">';
+    if (!top.length) return h + '<div class="sb-pa__n">No eligible teams in any outcome</div></div></div>';
+    h += '<div class="sb-bwx__s">' + lead(top[0]) + '</div>' + (top[1] ? '<span class="sb-vs">vs</span><div class="sb-bwx__s">' + lead(top[1]) + '</div>' : '') + '</div>';
+    if (rest.length) h += '<div class="sb-bwx__o"><span class="sb-bwx__tie">Also possible</span><div class="sb-seed__c">' + rest.map(function(x){ return '<button type="button" class="sb-seed__t" data-act="team" data-t="' + x.t + '" title="' + tip(x.t, x.n) + '">' + pill(x.t, 13) + '<span>' + pct(x.n / tw.C) + ' \u00b7 #' + Math.round(tw.rank[x.t]) + '</span></button>'; }).join('') + (c.length > 7 ? '<span class="sb-seed__m">+' + (c.length - 7) + '</span>' : '') + '</div></div>';
+    return h + '</div>';
+  }).join('') + '</div><p class="sb-note">No conference tie-ins \u2014 matchups follow the final national ranking after championship week (record incl. CCG \u2192 national rank). After the 16 playoff teams, the best-ranked ' + SB_MIN_WINS + '+ win teams fill the bowls in order: Pick 1 gets the top two, Pick 2 the next two, and so on. Big pills = most likely matchup; % = share of the ' + tw.C + ' Week 13 title-game outcomes that put the team in that bowl (regular season with favorites winning); Rk = average final national rank.</p>';
+}
+
+/* ---- team sheet ---- */
+function sheet(){
+  var el = $('sheet'), t = ui.sheet;
+  if (t == null) { el.innerHTML = ''; return; }
+  var tmm = T[t], cf = C[tmm.conf], r = R(t), i = r.loc[t];
+  var sIdx = proj.field.indexOf(t), bIdx = -1;
+  proj.bowls.forEach(function(b, k){ if (b.a === t || b.b === t) bIdx = k; });
+  var status = sIdx >= 0 ? 'Projected No. ' + (sIdx + 1) + ' seed' : bIdx >= 0 ? 'Projected ' + proj.bowls[bIdx].bowl.name : 'Projected out of postseason';
+  var tile = function(l, v, sub){ return '<div class="sb-tile"><small>' + l + '</small><b>' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; };
+  var tiles = r.over ? tile('CCG', '\u2014', 'pick to unlock') + tile('No. 1 seed', '\u2014', '') : tile('CCG', pct(r.top2[i] / r.M), num(r.top2[i]) + '/' + num(r.M)) + tile('No. 1 seed', pct(r.top1[i] / r.M), num(r.top1[i]) + '/' + num(r.M));
+  tiles += tile('Playoff', pct(poV(t)), num(tw.po[t]) + '/' + tw.C) + tile('Auto bid', pct(tw.auto[t] / tw.C), num(tw.auto[t]) + '/' + tw.C);
+  var h = '<div class="sb-scrim" data-act="close"></div><div class="sb-sheet" role="dialog" aria-label="' + tmm.name + '">' +
+    '<div class="sb-sh__top"><div class="sb-sh__id">' + pill(t, 36) + '<div class="sb-sh__n">' + tmm.name + '</div><div class="sb-sh__m">' + cf.name + ' No. ' + (proj.orders[tmm.conf].indexOf(t) + 1) + ' \u00b7 Now <b>' + rec(B.W[t], B.L[t]) + '</b> \u00b7 Proj <b>' + rec(proj.W[t], proj.L[t]) + '</b></div><div class="sb-sh__st">' + status + '</div></div><button type="button" class="sb-x" data-act="close" aria-label="Close">\u00d7</button></div>' +
+    '<div class="sb-ds"><div class="sb-tiles">' + tiles + '</div></div>';
+  if (r.over) { el.innerHTML = h + '<div class="sb-ds">' + lockCard(tmm.conf) + '</div></div>'; return; }
+  var on = r.ownN[i];
+  if (on) {
+    var rows = []; for (var k = on; k >= 0; k--) { var bn = r.M * binom(on, k) / Math.pow(2, on); rows.push({ k: k, bn: bn, c2: r.bC2[i][k], c1: r.bC1[i][k] }); }
+    h += '<div class="sb-ds"><div class="sb-ds__h">What they need<span>own ' + on + ' open game' + (on > 1 ? 's' : '') + '</span></div><table class="sb-need"><thead><tr><th>Finish</th><th>Outcomes</th><th>CCG</th><th>No. 1</th></tr></thead><tbody>' +
+      rows.map(function(q){ return '<tr><td>' + rec(q.k, on - q.k) + (q.k === on ? ' \u00b7 win out' : '') + '</td><td class="f">' + num(q.bn) + '</td><td class="' + oc(q.c2 / q.bn) + '">' + pct(q.c2 / q.bn) + '</td><td class="' + oc(q.c1 / q.bn) + '">' + pct(q.c1 / q.bn) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  var d = pathData(t, 2); lastPaths[t + ':2'] = d;
+  h += '<div class="sb-ds"><div class="sb-ds__h sb-ds__h--st">Pathway to the title game<span class="sb-pa__s">' + pathStatus(d) + '</span></div><div style="display:grid;gap:6px">' + pathBody(d) + '</div></div>';
+  var tie = proj.confs[tmm.conf].ties.filter(function(x){ return x.teams.indexOf(t) >= 0; })[0];
+  h += '<div class="sb-ds"><div class="sb-ds__h">Tiebreakers<span>Proj AP% ' + (B.apProj[t] * 100).toFixed(1) + ' (now ' + (B.apNow[t] * 100).toFixed(1) + ') \u00b7 rank #' + B.natPos[t] + '</span></div><div class="sb-sh__m">In a tie for the 2nd spot in <b>' + num(r.tbIn[i] + r.tbOut[i]) + '</b> outcomes \u00b7 wins it in <b class="up">' + num(r.tbIn[i]) + '</b>, loses it in <b class="dn">' + num(r.tbOut[i]) + '</b></div>' + (tie ? '<div style="margin:8px -12px -12px">' + tieTable(tie) + '</div>' : '') + '</div>';
+  var roots = d.helps.filter(function(x){ return x.w !== t && x.l !== t; }).slice(0, 5);
+  h += '<div class="sb-ds"><div class="sb-ds__h">Root for<span>CCG share if this result happens</span></div>' +
+    (roots.length ? roots.map(function(x){ return '<div class="sb-root">' + pill(x.w, 18) + '<span>over</span>' + pill(x.l, 18, 'dim') + '<span>Wk ' + x.g.week + '</span><span class="sb-root__d"><small>' + pct(x.pl) + '\u2192</small>' + pct(x.pw) + '</span></div>'; }).join('') : '<div class="sb-sh__m">No other open game moves their CCG share 1 point or more.</div>') + '</div></div>';
+  el.innerHTML = h;
+}
+function binom(n, k){ var r = 1; for (var i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+
+/* ---- render ---- */
+function view(){
+  tabs();
+  $('view').innerHTML = ui.tab === 'races' ? vRaces() : ui.tab === 'playoff' ? vPlayoff() : vBowls();
+  sheet();
+}
+function all(){ recompute(); save(); bar(); if (root.classList.contains('is-open')) view(); else sheet(); }
+
+root.addEventListener('click', function(e){
+  var b = e.target.closest('[data-act]'); if (!b || !root.contains(b)) return;
+  if (!B) return;   // league data not loaded yet
+  var a = b.getAttribute('data-act'), v = b.getAttribute('data-v'), t = b.getAttribute('data-t'), g = b.getAttribute('data-g');
+  if (a === 'tab') { ui.tab = v; view(); return; }
+  if (a === 'wk') { ui.wk = +v; view(); return; }
+  if (a === 'conf') { ui.conf = +v; view(); return; }
+  if (a === 'metric') { ui.metric = v; view(); return; }
+  if (a === 'pex') { ui.pex[t] = !ui.pex[t]; view(); return; }
+  if (a === 'pcut') { ui.pcut = +v; view(); return; }
+  if (a === 'imp') { ui.open[g] = !ui.open[g]; view(); return; }
+  if (a === 'team') { ui.sheet = +t; sheet(); return; }
+  if (a === 'close') { ui.sheet = null; sheet(); return; }
+  if (a === 'pick' || a === 'apply') { if (t === '' || (a === 'pick' && picks[g] === +t)) delete picks[g]; else picks[g] = +t; all(); return; }
+  if (a === 'ccg') { var c = +b.getAttribute('data-c'); ccgPick[c] = ccgPick[c] === +t ? null : +t; all(); return; }
+  if (a === 'po') { if (poPicks[g] === +t) delete poPicks[g]; else poPicks[g] = +t; all(); return; }
+  if (a === 'lockwk') { var lc = +b.getAttribute('data-c'); B.open.forEach(function(gm){ if (gm.week === +v && T[gm.a].conf === lc && picks[gm.id] == null) picks[gm.id] = gm.p >= .5 ? gm.a : gm.b; }); all(); return; }
+  if (a === 'play') { var dd = lastPaths[t + ':' + ui.pcut] || lastPaths[t + ':1']; var lst = dd && dd.pw && dd.pw[b.getAttribute('data-k')][+b.getAttribute('data-i')]; if (lst) { lst.lits.forEach(function(x){ picks[x.g.id] = x.w; }); ui.sheet = null; ui.tab = 'races'; ui.conf = T[+t].conf; all(); } return; }
+  if (a === 'clearconf') { var cc2 = +b.getAttribute('data-c'); Object.keys(picks).forEach(function(k){ var gm = B.open[B.kOf[k]]; if (gm && T[gm.a].conf === cc2) delete picks[k]; }); all(); return; }
+  if (a === 'path') { var d = lastPaths[+t]; if (d && d.path) { for (var k in d.path) picks[k] = d.path[k]; ui.sheet = null; ui.tab = 'races'; ui.conf = T[+t].conf; all(); } return; }
+  if (a === 'setup') { var ex = lastTies[+b.getAttribute('data-i')]; if (ex) { for (var k2 in ex) picks[k2] = ex[k2]; ui.tab = 'races'; all(); } return; }
+  if (a === 'bulk') { B.open.forEach(function(gm){ if (v === 'wk' && gm.week !== ui.wk) return; picks[gm.id] = v === 'dog' ? (gm.p >= .5 ? gm.b : gm.a) : (gm.p >= .5 ? gm.a : gm.b); }); all(); return; }
+  if (a === 'reset') { picks = {}; ccgPick = nulls(); poPicks = {}; all(); return; }
+});
+var barEl = root.querySelector('.sb-bar');
+function toggle(){
+  if (!B) return;   // league data not loaded yet
+  var open = !root.classList.contains('is-open');
+  root.classList.toggle('is-open', open); barEl.setAttribute('aria-expanded', open);
+  $('tog').textContent = open ? 'COLLAPSE' : 'PLAY IT OUT';
+  if (open) view();
+}
+barEl.addEventListener('click', toggle);
+barEl.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && ui.sheet != null) { ui.sheet = null; sheet(); } });
+
+/* ---- boot: load live league data (or sample fallback), then render ---- */
+function init(){
+  function apply(data){
+    sbApplyData(data);
+    T = SB_TEAMS; C = SB_CONFS;
+    B = sbBase(SB_ACTUAL_PLAYED);
+    ccgPick = nulls();
+    SB_CCG_RESULTS.forEach(function(w, c){ if (w != null) ccgPick[c] = w; });   // lock any played CCGs
+    ui.wk = SB_ACTUAL_PLAYED + 1;
+    all();
+  }
+  var done = false;
+  function go(data){ if (done) return; done = true; apply(data); }
+  try {
+    if (window.CFFB_SB_LOAD) {
+      window.CFFB_SB_LOAD()
+        .then(function(d){ go(d && d.teams && d.teams.length ? d : sbSampleData()); })
+        .catch(function(){ go(sbSampleData()); });
+    } else { go(sbSampleData()); }
+  } catch (e) { go(sbSampleData()); }
+}
+init();
+})();
+</script>
+<!-- ===== END MFL MESSAGE ===== -->
+</body></html>

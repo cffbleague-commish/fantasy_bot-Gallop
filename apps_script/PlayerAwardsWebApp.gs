@@ -260,7 +260,8 @@ function buildConfTiers(awards, teamOf) {
 
 /**
  * Read RecruitingDollars for a year and group the per-category columns into the
- * four buckets the dashboard shows: Wins, Awards, Rivalry, Draft−Retention.
+ * five buckets the dashboard shows: Wins, Awards, Rivalry, Draft−Retention,
+ * GameDay (Game-of-the-Week + THE-Gameday-matchup weekly bonuses).
  */
 function buildRecruiting(year, teamOf) {
   const config = getConfig();
@@ -287,22 +288,25 @@ function buildRecruiting(year, teamOf) {
                     g(row, "SecondTeamDollars") + g(row, "ThirdTeamDollars");
     const rivalryNet = g(row, "WagerNet");
     const draftNet = g(row, "DraftBonusDollars") - g(row, "RetentionCostDollars");
+    // College GameDay bucket: Game-of-the-Week + THE-Gameday-matchup weekly bonuses.
+    const gameday = g(row, "GameOfWeekDollars") + g(row, "GamedayDollars");
     const total = idx["TotalBonusDollars"] != null
       ? g(row, "TotalBonusDollars")
-      : wins + awardsD + rivalryNet + draftNet;
+      : wins + awardsD + rivalryNet + draftNet + gameday;
 
     const team = teamOf(fid);
     out.teams[fid] = {
       name: team.name, abbr: team.abbr, color: team.color, txt: team.txt,
       conf: team.conf, owner: team.owner, logo: team.logo, squareLogo: team.squareLogo,
-      total: total, wins: wins, awards: awardsD, rivalryNet: rivalryNet, draftNet: draftNet,
+      total: total, wins: wins, awards: awardsD, rivalryNet: rivalryNet, draftNet: draftNet, gameday: gameday,
       raw: {
         regSeason: g(row, "RegSeasonDollars"), postseason: g(row, "PostseasonDollars"),
         national: g(row, "NationalPositionDollars"), heisman: g(row, "HeismanDollars"),
         coty: g(row, "CoachOfYearDollars"),
         first: g(row, "FirstTeamDollars"), second: g(row, "SecondTeamDollars"), third: g(row, "ThirdTeamDollars"),
         wagerWon: g(row, "WagerWon"), wagerLost: g(row, "WagerLost"),
-        draftBonus: g(row, "DraftBonusDollars"), retention: g(row, "RetentionCostDollars")
+        draftBonus: g(row, "DraftBonusDollars"), retention: g(row, "RetentionCostDollars"),
+        gameOfWeek: g(row, "GameOfWeekDollars"), gamedayMatch: g(row, "GamedayDollars")
       }
     };
   });

@@ -797,25 +797,31 @@ function importFromKeepTradeCut(clearExisting = false) {
 
     const html = response.getContentText();
 
-    // Extract the playersArray from the JavaScript
-    // Look for pattern: var defined = [...] or playersArray = [...]
-    const playerArrayMatch = html.match(/var\s+defined\s*=\s*(\[[\s\S]*?\]);?\s*(?:var|const|let|function|<)/);
+    // Extract the player data. Current KTC markup embeds the JSON inside a
+    //   <script type="application/json" id="ktc-players">[...]</script>
+    // block (parsed client-side via JSON.parse). Older markup assigned it
+    // inline as `var defined = [...]` or `playersArray = [...]`, so keep those
+    // as fallbacks in case the page structure shifts.
+    let jsonStr = null;
+    const scriptMatch = html.match(/<script[^>]*id=["']ktc-players["'][^>]*>([\s\S]*?)<\/script>/);
+    if (scriptMatch) {
+      jsonStr = scriptMatch[1].trim();
+    } else {
+      const definedMatch = html.match(/var\s+defined\s*=\s*(\[[\s\S]*?\]);?\s*(?:var|const|let|function|<)/);
+      const arrayMatch = html.match(/playersArray\s*=\s*(\[[\s\S]*?\]);/);
+      jsonStr = definedMatch ? definedMatch[1] : (arrayMatch ? arrayMatch[1] : null);
+    }
 
-    if (!playerArrayMatch) {
-      // Try alternative pattern
-      const altMatch = html.match(/playersArray\s*=\s*(\[[\s\S]*?\]);/);
-      if (!altMatch) {
-        return {
-          success: false,
-          message: "Could not find player data in page. The page structure may have changed."
-        };
-      }
+    if (!jsonStr) {
+      return {
+        success: false,
+        message: "Could not find player data in page. The page structure may have changed."
+      };
     }
 
     // Parse the JSON array
     let playersJson;
     try {
-      const jsonStr = playerArrayMatch ? playerArrayMatch[1] : html.match(/playersArray\s*=\s*(\[[\s\S]*?\]);/)[1];
       playersJson = JSON.parse(jsonStr);
     } catch (parseError) {
       return {
@@ -890,8 +896,9 @@ function importFromKeepTradeCut(clearExisting = false) {
       };
       const position = positionMap[player.positionID] || player.position || "Unknown";
 
-      // Get draft year (when they'll enter NFL)
-      const draftYear = player.draftYear || new Date().getFullYear() + 1;
+      // Get draft year (when they'll enter NFL). If KTC doesn't list one,
+      // leave it blank rather than guessing a year.
+      const draftYear = player.draftYear || "";
 
       // Generate base player ID using KTC's player ID
       const basePlayerId = `KTC_${player.playerID || Date.now()}_${firstName.substring(0,3).toUpperCase()}${lastName.substring(0,3).toUpperCase()}`;
